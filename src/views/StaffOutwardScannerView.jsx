@@ -29,7 +29,7 @@ import {
   Sliders,
   Layers
 } from 'lucide-react';
-import { playScanBeep, playSuccessChime, playSafeLockSound, triggerGoldenConfetti } from '../utils/audioUtils';
+import { playScanBeep, playSuccessChime, playSafeLockSound, triggerGoldenConfetti, speakVoiceFeedback } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
 
 export function StaffOutwardScannerView() {
@@ -45,9 +45,13 @@ export function StaffOutwardScannerView() {
   // Camera & Media Stream State
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
+  const [soundProfile, setSoundProfile] = useState('LASER_BEEP'); // 'LASER_BEEP' | 'VOICE_ANNOUNCER' | 'CHIME' | 'SILENT'
+  const [isHighContrast, setIsHighContrast] = useState(false);
+  const [flashActive, setFlashActive] = useState(false);
   const [cargoProofPhotos, setCargoProofPhotos] = useState([]);
   const videoRef = useRef(null);
   const mediaStreamRef = useRef(null);
+  const lastScanRef = useRef({ code: '', time: 0 });
 
   // Edit Dispatch Details Header State
   const [isEditingDispatch, setIsEditingDispatch] = useState(false);
@@ -358,6 +362,13 @@ export function StaffOutwardScannerView() {
     if (!raw) return;
     const val = raw.trim().toUpperCase();
 
+    // 2.5s Anti-Duplicate Debounce Filter
+    const now = Date.now();
+    if (lastScanRef.current.code === val && (now - lastScanRef.current.time) < 2500) {
+      return;
+    }
+    lastScanRef.current = { code: val, time: now };
+
     const matchedLetter = boxLetters.find(l => 
       val.includes(`BOX-${l}`) || 
       val.includes(`-${l}`) ||
@@ -365,11 +376,24 @@ export function StaffOutwardScannerView() {
       val.endsWith(l)
     );
 
+    // Trigger visual green laser decode flash
+    setFlashActive(true);
+    setTimeout(() => setFlashActive(false), 200);
+
     if (matchedLetter) {
       if (!loadedBoxes.includes(matchedLetter)) {
         setLoadedBoxes(prev => [...prev, matchedLetter]);
-        playScanBeep();
+        
+        // Audio Profile Dispatch
+        if (soundProfile === 'VOICE_ANNOUNCER') {
+          speakVoiceFeedback(`Carton ${matchedLetter} Loaded in Truck`);
+        } else if (soundProfile === 'CHIME') {
+          playSuccessChime();
+        } else if (soundProfile === 'LASER_BEEP') {
+          playScanBeep();
+        }
         triggerHaptic();
+
         setScanHistoryLog(prev => [
           { id: Date.now(), time: new Date().toLocaleTimeString(), code: val, label: `Carton ${matchedLetter} Loaded`, status: 'LOADED' },
           ...prev.slice(0, 19)
@@ -378,8 +402,11 @@ export function StaffOutwardScannerView() {
       }
     } else if (val.includes(selectedOrderId) || val.includes(activeOrder.Ordered_SKU)) {
       setLoadedBoxes([...boxLetters]);
-      playScanBeep();
-      playSuccessChime();
+      if (soundProfile === 'VOICE_ANNOUNCER') {
+        speakVoiceFeedback(`All ${totalBoxesRequired} cartons loaded for Order ${selectedOrderId}`);
+      } else {
+        playSuccessChime();
+      }
       triggerHaptic();
       setScanHistoryLog(prev => [
         { id: Date.now(), time: new Date().toLocaleTimeString(), code: val, label: `Order ${selectedOrderId} Complete (${totalBoxesRequired} Cartons)`, status: 'LOADED_ALL' },
@@ -391,6 +418,38 @@ export function StaffOutwardScannerView() {
     if (!isContinuousScan) {
       stopCamera();
     }
+  };
+
+  // 1-Tap Fullscreen Kiosk Mode
+  const toggleFullscreen = () => {
+    try {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+        showToast("⛶ Fullscreen Vehicle Loading Terminal Active");
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+        showToast("Standard Window View");
+      }
+    } catch (e) {}
+  };
+
+  // 1-Click WhatsApp Gate Pass
+  const sendWhatsAppGatePass = () => {
+    const text = `🚚 *GODREJ INTERIO RAYAGADA — VEHICLE OUTWARD GATE PASS*
+━━━━━━━━━━━━━━━━━━━━
+📅 Date: ${new Date().toLocaleDateString('en-IN')} ${new Date().toLocaleTimeString('en-IN')}
+📋 Order ID: ${selectedOrderId}
+👤 Customer: ${editCustomerName} (${editCustomerPhone})
+📍 Destination: ${editAddress}
+🚛 Driver: ${activeDriver.Driver_Name} (${activeDriver.Vehicle_Plate})
+🔨 Master Carpenter: ${editCarpenter} (Payout: ₹${editCarpenterPayout})
+📦 Loaded Cartons: ${loadedBoxes.join(', ')} / ${totalBoxesRequired} (${isFullyLoaded ? '100% COMPLETE ✓' : 'PARTIAL'})
+⚖️ Vehicle Payload: ${totalPayloadWeight} KG (${payloadPercentage}% of 750 KG)
+💳 Balance Due at Doorstep: ₹${editBalanceDue.toLocaleString()} (${editPaymentMode})
+━━━━━━━━━━━━━━━━━━━━
+🛡️ Anti-Partial Load Defense: PASSED & CLEARED FOR ROAD TRANSIT
+👤 Dispatch Security Desk: Rayagada Hub`;
+    window.open(`https://wa.me/91${editCustomerPhone}?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   // Barcode Gun & Scanner
@@ -408,7 +467,11 @@ export function StaffOutwardScannerView() {
       showToast(`Box ${letter} unloaded.`);
     } else {
       setLoadedBoxes(prev => [...prev, letter]);
-      playScanBeep();
+      if (soundProfile === 'VOICE_ANNOUNCER') {
+        speakVoiceFeedback(`Carton ${letter} verified manually`);
+      } else {
+        playScanBeep();
+      }
       showToast(`Box ${letter} manually loaded in truck ✓`);
     }
   };
@@ -417,6 +480,9 @@ export function StaffOutwardScannerView() {
     playScanBeep();
     setLoadedBoxes(boxLetters);
     playSuccessChime();
+    if (soundProfile === 'VOICE_ANNOUNCER') {
+      speakVoiceFeedback(`All ${totalBoxesRequired} cartons loaded in truck`);
+    }
     showToast(`⚡ 1-Click Load All: 5/5 Component Cartons Verified in Vehicle!`);
   };
 
@@ -620,7 +686,7 @@ export function StaffOutwardScannerView() {
 
           {/* Live Smartphone Camera Viewport */}
           {isCameraActive && (
-            <div style={{ position: 'relative', width: '100%', height: '240px', background: '#000', borderRadius: '12px', overflow: 'hidden', margin: '12px 0', border: '2px solid var(--accent-amber)' }}>
+            <div style={{ position: 'relative', width: '100%', height: '260px', background: '#000', borderRadius: '12px', overflow: 'hidden', margin: '12px 0', border: '2px solid var(--accent-amber)' }}>
               <video 
                 ref={videoRef} 
                 autoPlay 
@@ -630,32 +696,59 @@ export function StaffOutwardScannerView() {
                   width: '100%', 
                   height: '100%', 
                   objectFit: 'cover',
+                  filter: isHighContrast ? 'contrast(220%) grayscale(100%) brightness(1.1)' : 'none',
                   transform: zoomLevel > 1 ? `scale(${zoomLevel})` : 'none',
-                  transition: 'transform 0.2s ease'
+                  transition: 'transform 0.2s ease, filter 0.2s ease'
                 }} 
               />
               
-              {/* Aiming Reticle */}
+              {/* Decode Success Green Flash Overlay */}
+              {flashActive && (
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'rgba(16,185,129,0.45)',
+                  boxShadow: 'inset 0 0 40px #10B981',
+                  zIndex: 20,
+                  pointerEvents: 'none'
+                }} />
+              )}
+
+              {/* Industrial Target Finder Reticle with Corner Brackets [ ┼ ] */}
               <div style={{
                 position: 'absolute',
-                top: '50%',
-                left: '10%',
-                right: '10%',
-                height: '2px',
-                background: 'linear-gradient(90deg, transparent, #F59E0B, #FFFFFF, #F59E0B, transparent)',
-                boxShadow: '0 0 15px #F59E0B, 0 0 25px #F59E0B',
-                animation: 'pulse 1.2s infinite'
-              }} />
+                top: '20%',
+                bottom: '20%',
+                left: '15%',
+                right: '15%',
+                border: '2px dashed rgba(245,158,11,0.75)',
+                borderRadius: '10px',
+                pointerEvents: 'none',
+                boxShadow: '0 0 0 9999px rgba(0,0,0,0.35)',
+                zIndex: 5
+              }}>
+                {/* Aiming Reticle Line */}
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: 0,
+                  right: 0,
+                  height: '2.5px',
+                  background: 'linear-gradient(90deg, transparent, #F59E0B, #FFFFFF, #F59E0B, transparent)',
+                  boxShadow: '0 0 15px #F59E0B, 0 0 25px #F59E0B',
+                  animation: 'pulse 1.2s infinite'
+                }} />
+              </div>
 
-              {/* Top-Left Mode Pills */}
-              <div style={{ position: 'absolute', top: '8px', left: '8px', display: 'flex', gap: '4px' }}>
+              {/* Top-Left Mode & Audio Pills */}
+              <div style={{ position: 'absolute', top: '8px', left: '8px', display: 'flex', gap: '4px', zIndex: 10, flexWrap: 'wrap', maxWidth: '65%' }}>
                 <button 
                   type="button" 
                   onClick={() => setIsContinuousScan(!isContinuousScan)}
                   style={{ background: isContinuousScan ? 'rgba(16,185,129,0.9)' : 'rgba(0,0,0,0.7)', color: '#FFFFFF', border: 'none', borderRadius: '4px', padding: '2px 6px', fontSize: '9.5px', fontWeight: '800', cursor: 'pointer' }}
                   title="Toggle Continuous Fast Auto-Scan"
                 >
-                  ⚡ {isContinuousScan ? 'Continuous ON' : 'Single Shot'}
+                  ⚡ {isContinuousScan ? 'Continuous' : 'Single'}
                 </button>
                 <button 
                   type="button" 
@@ -665,10 +758,38 @@ export function StaffOutwardScannerView() {
                 >
                   🔍 {zoomLevel}x
                 </button>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    const next = soundProfile === 'LASER_BEEP' ? 'VOICE_ANNOUNCER' : soundProfile === 'VOICE_ANNOUNCER' ? 'CHIME' : soundProfile === 'CHIME' ? 'SILENT' : 'LASER_BEEP';
+                    setSoundProfile(next);
+                    showToast(`🔊 Sound Mode: ${next}`);
+                  }}
+                  style={{ background: 'rgba(245,158,11,0.9)', color: '#000000', border: 'none', borderRadius: '4px', padding: '2px 6px', fontSize: '9.5px', fontWeight: '800', cursor: 'pointer' }}
+                  title="Cycle Audio Feedback: Laser Beep / Voice Speech / Chime / Silent"
+                >
+                  {soundProfile === 'LASER_BEEP' ? '🔊 Laser Beep' : soundProfile === 'VOICE_ANNOUNCER' ? '🗣️ Voice Callout' : soundProfile === 'CHIME' ? '🎵 Chime' : '📳 Silent'}
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setIsHighContrast(!isHighContrast)}
+                  style={{ background: isHighContrast ? '#FFFFFF' : 'rgba(0,0,0,0.75)', color: isHighContrast ? '#000' : '#FFF', border: 'none', borderRadius: '4px', padding: '2px 6px', fontSize: '9.5px', fontWeight: '800', cursor: 'pointer' }}
+                  title="Toggle High-Contrast Filter for Faded Barcodes"
+                >
+                  🌓 {isHighContrast ? 'B&W Contrast ON' : 'Normal'}
+                </button>
               </div>
 
               {/* Viewport Controls Overlay */}
-              <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', gap: '6px' }}>
+              <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', gap: '6px', zIndex: 10 }}>
+                <button 
+                  type="button" 
+                  onClick={toggleFullscreen}
+                  style={{ background: 'rgba(30,41,59,0.85)', color: '#FFFFFF', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                  title="Fullscreen Kiosk Mode"
+                >
+                  <Maximize2 size={14} />
+                </button>
                 <button 
                   type="button" 
                   onClick={flipCamera}
@@ -695,8 +816,8 @@ export function StaffOutwardScannerView() {
                 </button>
               </div>
 
-              <div style={{ position: 'absolute', bottom: '8px', left: '12px', background: 'rgba(0,0,0,0.8)', padding: '3px 8px', borderRadius: '4px', fontSize: '10px', color: '#F59E0B', fontWeight: '800' }}>
-                TRUCK LOADING BAY CAMERA • {cameraFacing === 'environment' ? 'REAR LENS' : 'FRONT LENS'} {hapticsEnabled ? '• 📳 HAPTICS ON' : ''}
+              <div style={{ position: 'absolute', bottom: '8px', left: '12px', background: 'rgba(0,0,0,0.85)', padding: '3px 8px', borderRadius: '4px', fontSize: '10px', color: '#F59E0B', fontWeight: '800', zIndex: 10 }}>
+                TRUCK LOADING BAY CAMERA • {cameraFacing === 'environment' ? 'REAR HD LENS' : 'FRONT LENS'} {hapticsEnabled ? '• 📳 HAPTICS ACTIVE' : ''}
               </div>
             </div>
           )}
@@ -995,22 +1116,40 @@ export function StaffOutwardScannerView() {
             })}
           </div>
 
-          {/* Release Vehicle Gate Pass Button */}
-          <button 
-            className="btn-luxury-gold" 
-            onClick={handleReleaseVehicle}
-            disabled={!isFullyLoaded}
-            style={{ 
-              width: '100%', 
-              justifyContent: 'center', 
-              padding: '12px', 
-              fontSize: '13.5px',
-              fontWeight: '900',
-              opacity: isFullyLoaded ? 1 : 0.45
-            }}
-          >
-            <Lock size={16} /> 🚀 Release Vehicle & Generate Security Gate Pass ({totalPayloadWeight} KG Verified)
-          </button>
+          {/* Release Vehicle Gate Pass & WhatsApp Dispatch Ribbons */}
+          <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+            <button 
+              className="btn-luxury-gold" 
+              onClick={handleReleaseVehicle}
+              disabled={!isFullyLoaded}
+              style={{ 
+                flex: 2, 
+                justifyContent: 'center', 
+                padding: '14px', 
+                fontSize: '13.5px',
+                fontWeight: '900',
+                opacity: isFullyLoaded ? 1 : 0.45
+              }}
+            >
+              <Lock size={16} /> 🚀 Release Vehicle & Generate Gate Pass ({totalPayloadWeight} KG Verified)
+            </button>
+            <button 
+              className="btn-emerald" 
+              onClick={sendWhatsAppGatePass}
+              style={{ 
+                flex: 1, 
+                justifyContent: 'center', 
+                padding: '14px', 
+                fontSize: '12.5px',
+                fontWeight: '900',
+                background: '#25D366',
+                color: '#000000'
+              }}
+              title="Send Outward Gate Pass to Customer & Driver WhatsApp"
+            >
+              📲 WhatsApp Gate Pass
+            </button>
+          </div>
         </div>
 
       </div>

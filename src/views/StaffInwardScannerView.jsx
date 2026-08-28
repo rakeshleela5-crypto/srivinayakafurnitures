@@ -29,7 +29,7 @@ import {
   Tag,
   Sliders
 } from 'lucide-react';
-import { playScanBeep, playSuccessChime, playSafeLockSound, triggerGoldenConfetti } from '../utils/audioUtils';
+import { playScanBeep, playSuccessChime, playSafeLockSound, triggerGoldenConfetti, speakVoiceFeedback } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
 
 export function StaffInwardScannerView() {
@@ -38,9 +38,12 @@ export function StaffInwardScannerView() {
   const [sunnyMode, setSunnyMode] = useState(false);
   const [scannedInput, setScannedInput] = useState('');
   const [selectedPoSku, setSelectedPoSku] = useState('BED-MOD-001');
-  const [inwardQuantity, setInwardQuantity] = useState(2);
+  const [inwardQuantity, setInwardQuantity] = useState(1); // Default to 1 Set
   const [batchNo, setBatchNo] = useState(`BATCH-GI-${new Date().getFullYear()}-0881`);
   const [storageBay, setStorageBay] = useState('Dock-A1');
+  const [truckNumber, setTruckNumber] = useState('OD-02-C-9988');
+  const [biltyNumber, setBiltyNumber] = useState('LR-88912');
+  const [transporterName, setTransporterName] = useState('Century Logistics Rayagada');
   const [supplierNotes, setSupplierNotes] = useState('Factory shipment via Century Logistics truck #OD-02-C-9988');
 
   // Camera & Media Stream State
@@ -49,11 +52,15 @@ export function StaffInwardScannerView() {
   const [isContinuousScan, setIsContinuousScan] = useState(true);
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const [zoomLevel, setZoomLevel] = useState(1); // 1x, 1.5x, 2x
+  const [soundProfile, setSoundProfile] = useState('LASER_BEEP'); // 'LASER_BEEP' | 'VOICE_ANNOUNCER' | 'CHIME' | 'SILENT'
+  const [isHighContrast, setIsHighContrast] = useState(false);
+  const [flashActive, setFlashActive] = useState(false);
   const [scanHistoryLog, setScanHistoryLog] = useState([]);
   const [damageSnapshots, setDamageSnapshots] = useState([]);
   const videoRef = useRef(null);
   const mediaStreamRef = useRef(null);
   const fileInputRef = useRef(null);
+  const lastScanRef = useRef({ code: '', time: 0 });
 
   // Edit Shipment Header Drawer
   const [isEditingShipment, setIsEditingShipment] = useState(false);
@@ -113,8 +120,9 @@ export function StaffInwardScannerView() {
 
   const activeProduct = catalog.find(c => c.SKU === selectedPoSku) || catalog[0];
 
-  // Calculate Total Knockdown Weight
+  // Calculate Total Knockdown Weight (Per Set and Total for All Sets)
   const totalKnockdownWeight = customBoxes.reduce((sum, b) => sum + (Number(b.weight) || 0), 0);
+  const totalShipmentWeight = (totalKnockdownWeight * Math.max(1, inwardQuantity)).toFixed(1);
 
   // Haptic feedback trigger for noisy warehouse docks
   const triggerHaptic = () => {
@@ -333,6 +341,13 @@ export function StaffInwardScannerView() {
     if (!raw) return;
     const val = raw.trim().toUpperCase();
 
+    // 2.5s Anti-Duplicate Debounce Filter
+    const now = Date.now();
+    if (lastScanRef.current.code === val && (now - lastScanRef.current.time) < 2500) {
+      return;
+    }
+    lastScanRef.current = { code: val, time: now };
+
     const matchedBox = customBoxes.find(b => 
       val.includes(`BOX-${b.id}`) || 
       val.includes(`-${b.id}`) || 
@@ -341,11 +356,24 @@ export function StaffInwardScannerView() {
       val === b.barcode
     );
 
+    // Trigger visual green laser decode flash
+    setFlashActive(true);
+    setTimeout(() => setFlashActive(false), 200);
+
     if (matchedBox) {
       if (!verifiedBoxes.includes(matchedBox.id)) {
         setVerifiedBoxes(prev => [...prev, matchedBox.id]);
-        playScanBeep();
+        
+        // Audio Profile Dispatch
+        if (soundProfile === 'VOICE_ANNOUNCER') {
+          speakVoiceFeedback(`Box ${matchedBox.id} ${matchedBox.name} Verified`);
+        } else if (soundProfile === 'CHIME') {
+          playSuccessChime();
+        } else if (soundProfile === 'LASER_BEEP') {
+          playScanBeep();
+        }
         triggerHaptic();
+
         setScanHistoryLog(prev => [
           { id: Date.now(), time: new Date().toLocaleTimeString(), code: val, label: `Box ${matchedBox.id} (${matchedBox.name})`, status: 'VERIFIED' },
           ...prev.slice(0, 19)
@@ -356,8 +384,11 @@ export function StaffInwardScannerView() {
       }
     } else if (val.includes(selectedPoSku)) {
       setVerifiedBoxes(customBoxes.map(b => b.id));
-      playScanBeep();
-      playSuccessChime();
+      if (soundProfile === 'VOICE_ANNOUNCER') {
+        speakVoiceFeedback(`All ${customBoxes.length} cartons verified for ${selectedPoSku}`);
+      } else {
+        playSuccessChime();
+      }
       triggerHaptic();
       setScanHistoryLog(prev => [
         { id: Date.now(), time: new Date().toLocaleTimeString(), code: val, label: `Full SKU ${selectedPoSku} (All Boxes)`, status: 'VERIFIED_ALL' },
@@ -369,6 +400,39 @@ export function StaffInwardScannerView() {
     if (!isContinuousScan) {
       stopCamera();
     }
+  };
+
+  // 1-Tap Fullscreen Kiosk Mode
+  const toggleFullscreen = () => {
+    try {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+        showToast("⛶ Fullscreen Warehouse Terminal Mode Active");
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+        showToast("Standard Window View");
+      }
+    } catch (e) {}
+  };
+
+  // 1-Click WhatsApp Inward Report
+  const sendWhatsAppReport = () => {
+    const text = `📦 *GODREJ INTERIO RAYAGADA — FACTORY INWARD RECEIVING REPORT*
+━━━━━━━━━━━━━━━━━━━━
+📅 Date: ${new Date().toLocaleDateString('en-IN')} ${new Date().toLocaleTimeString('en-IN')}
+🚚 Truck No: ${truckNumber}
+📋 Bilty / LR: ${biltyNumber}
+🏢 Transporter: ${transporterName}
+🏷️ SKU: ${selectedPoSku} (${activeProduct.Product_Name})
+📦 Total Sets: ${inwardQuantity} Set(s)
+⚖️ Total Weight: ${totalShipmentWeight} KG
+📍 Storage Bay: ${storageBay}
+🏭 Batch No: ${batchNo}
+🧩 Verified Boxes: ${verifiedBoxes.join(', ')} / ${customBoxes.length} (${verifiedBoxes.length === customBoxes.length ? '100% COMPLETE ✓' : 'PARTIAL'})
+━━━━━━━━━━━━━━━━━━━━
+✅ QC Status: PASSED & ADDED TO MASTER INVENTORY
+👤 Dock Supervisor: Rakesh (9390553301)`;
+    window.open(`https://wa.me/919390553301?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   // Barcode Gun / Input Handler
@@ -386,7 +450,11 @@ export function StaffInwardScannerView() {
       showToast(`Box ${boxId} unmarked.`);
     } else {
       setVerifiedBoxes(prev => [...prev, boxId]);
-      playScanBeep();
+      if (soundProfile === 'VOICE_ANNOUNCER') {
+        speakVoiceFeedback(`Box ${boxId} verified manually`);
+      } else {
+        playScanBeep();
+      }
       showToast(`Box ${boxId} manually verified ✓`);
     }
   };
@@ -395,6 +463,9 @@ export function StaffInwardScannerView() {
     playScanBeep();
     setVerifiedBoxes(customBoxes.map(b => b.id));
     playSuccessChime();
+    if (soundProfile === 'VOICE_ANNOUNCER') {
+      speakVoiceFeedback(`All ${customBoxes.length} boxes verified`);
+    }
     showToast(`⚡ 1-Click Scan All: ${customBoxes.length}/${customBoxes.length} Boxes Verified!`);
   };
 
@@ -449,15 +520,18 @@ export function StaffInwardScannerView() {
     playSafeLockSound();
     playSuccessChime();
     triggerGoldenConfetti();
-    showToast(`🎉 Inward QC Complete! +${inwardQuantity} Sets of ${selectedPoSku} (${totalKnockdownWeight} KG) added to ${storageBay}!`, true);
+    showToast(`🎉 Inward QC Complete! +${inwardQuantity} Sets of ${selectedPoSku} (${totalShipmentWeight} KG) added to ${storageBay}!`, true);
 
     dispatchWebhookAction('INWARD_STOCK_SCAN', {
       sku: selectedPoSku,
       quantity: inwardQuantity,
       batch_no: batchNo,
       storage_bay: storageBay,
+      truck_no: truckNumber,
+      bilty_no: biltyNumber,
+      transporter: transporterName,
       supplier_notes: supplierNotes,
-      total_weight_kg: totalKnockdownWeight,
+      total_weight_kg: totalShipmentWeight,
       dock_worker: "Warehouse Dock Supervisor (Rayagada)",
       verified_boxes: verifiedBoxes.join(', '),
       damaged_boxes_count: damagedBoxes.length,
@@ -595,7 +669,7 @@ export function StaffInwardScannerView() {
 
           {/* Live Smartphone Camera Viewport */}
           {isCameraActive && (
-            <div style={{ position: 'relative', width: '100%', height: '240px', background: '#000', borderRadius: '12px', overflow: 'hidden', margin: '12px 0', border: '2px solid var(--accent-cyan)' }}>
+            <div style={{ position: 'relative', width: '100%', height: '260px', background: '#000', borderRadius: '12px', overflow: 'hidden', margin: '12px 0', border: '2px solid var(--accent-cyan)' }}>
               <video 
                 ref={videoRef} 
                 autoPlay 
@@ -605,32 +679,59 @@ export function StaffInwardScannerView() {
                   width: '100%', 
                   height: '100%', 
                   objectFit: 'cover',
+                  filter: isHighContrast ? 'contrast(220%) grayscale(100%) brightness(1.1)' : 'none',
                   transform: zoomLevel > 1 ? `scale(${zoomLevel})` : 'none',
-                  transition: 'transform 0.2s ease'
+                  transition: 'transform 0.2s ease, filter 0.2s ease'
                 }} 
               />
               
-              {/* Laser Line Viewfinder Animation */}
+              {/* Decode Success Green Flash Overlay */}
+              {flashActive && (
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  background: 'rgba(16,185,129,0.45)',
+                  boxShadow: 'inset 0 0 40px #10B981',
+                  zIndex: 20,
+                  pointerEvents: 'none'
+                }} />
+              )}
+
+              {/* Industrial Target Finder Reticle with Corner Brackets [ ┼ ] */}
               <div style={{
                 position: 'absolute',
-                top: '50%',
-                left: '10%',
-                right: '10%',
-                height: '2px',
-                background: 'linear-gradient(90deg, transparent, #F43F5E, #FFFFFF, #F43F5E, transparent)',
-                boxShadow: '0 0 15px #F43F5E, 0 0 25px #F43F5E',
-                animation: 'pulse 1.2s infinite'
-              }} />
+                top: '20%',
+                bottom: '20%',
+                left: '15%',
+                right: '15%',
+                border: '2px dashed rgba(56,189,248,0.75)',
+                borderRadius: '10px',
+                pointerEvents: 'none',
+                boxShadow: '0 0 0 9999px rgba(0,0,0,0.35)',
+                zIndex: 5
+              }}>
+                {/* Center Laser Line Sweeper */}
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: 0,
+                  right: 0,
+                  height: '2.5px',
+                  background: 'linear-gradient(90deg, transparent, #F43F5E, #FFFFFF, #F43F5E, transparent)',
+                  boxShadow: '0 0 15px #F43F5E, 0 0 25px #F43F5E',
+                  animation: 'pulse 1.2s infinite'
+                }} />
+              </div>
 
-              {/* Top-Left Mode Pills */}
-              <div style={{ position: 'absolute', top: '8px', left: '8px', display: 'flex', gap: '4px' }}>
+              {/* Top-Left Mode & Audio Pills */}
+              <div style={{ position: 'absolute', top: '8px', left: '8px', display: 'flex', gap: '4px', zIndex: 10, flexWrap: 'wrap', maxWidth: '65%' }}>
                 <button 
                   type="button" 
                   onClick={() => setIsContinuousScan(!isContinuousScan)}
                   style={{ background: isContinuousScan ? 'rgba(16,185,129,0.9)' : 'rgba(0,0,0,0.7)', color: '#FFFFFF', border: 'none', borderRadius: '4px', padding: '2px 6px', fontSize: '9.5px', fontWeight: '800', cursor: 'pointer' }}
                   title="Toggle Continuous Fast Auto-Scan"
                 >
-                  ⚡ {isContinuousScan ? 'Continuous ON' : 'Single Shot'}
+                  ⚡ {isContinuousScan ? 'Continuous' : 'Single'}
                 </button>
                 <button 
                   type="button" 
@@ -640,10 +741,38 @@ export function StaffInwardScannerView() {
                 >
                   🔍 {zoomLevel}x
                 </button>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    const next = soundProfile === 'LASER_BEEP' ? 'VOICE_ANNOUNCER' : soundProfile === 'VOICE_ANNOUNCER' ? 'CHIME' : soundProfile === 'CHIME' ? 'SILENT' : 'LASER_BEEP';
+                    setSoundProfile(next);
+                    showToast(`🔊 Sound Mode: ${next}`);
+                  }}
+                  style={{ background: 'rgba(245,158,11,0.9)', color: '#000000', border: 'none', borderRadius: '4px', padding: '2px 6px', fontSize: '9.5px', fontWeight: '800', cursor: 'pointer' }}
+                  title="Cycle Audio Feedback: Laser Beep / Voice Speech / Chime / Silent"
+                >
+                  {soundProfile === 'LASER_BEEP' ? '🔊 Laser Beep' : soundProfile === 'VOICE_ANNOUNCER' ? '🗣️ Voice Callout' : soundProfile === 'CHIME' ? '🎵 Chime' : '📳 Silent'}
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setIsHighContrast(!isHighContrast)}
+                  style={{ background: isHighContrast ? '#FFFFFF' : 'rgba(0,0,0,0.75)', color: isHighContrast ? '#000' : '#FFF', border: 'none', borderRadius: '4px', padding: '2px 6px', fontSize: '9.5px', fontWeight: '800', cursor: 'pointer' }}
+                  title="Toggle High-Contrast Filter for Faded Barcodes"
+                >
+                  🌓 {isHighContrast ? 'B&W Contrast ON' : 'Normal'}
+                </button>
               </div>
 
               {/* Viewport Controls Overlay */}
-              <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', gap: '6px' }}>
+              <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', gap: '6px', zIndex: 10 }}>
+                <button 
+                  type="button" 
+                  onClick={toggleFullscreen}
+                  style={{ background: 'rgba(30,41,59,0.85)', color: '#FFFFFF', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                  title="Fullscreen Kiosk Mode"
+                >
+                  <Maximize2 size={14} />
+                </button>
                 <button 
                   type="button" 
                   onClick={flipCamera}
@@ -670,8 +799,8 @@ export function StaffInwardScannerView() {
                 </button>
               </div>
 
-              <div style={{ position: 'absolute', bottom: '8px', left: '12px', background: 'rgba(0,0,0,0.8)', padding: '3px 8px', borderRadius: '4px', fontSize: '10px', color: '#38BDF8', fontWeight: '800' }}>
-                LIVE CAMERA SCANNING • {cameraFacing === 'environment' ? 'REAR LENS' : 'FRONT LENS'} {hapticsEnabled ? '• 📳 HAPTICS ON' : ''}
+              <div style={{ position: 'absolute', bottom: '8px', left: '12px', background: 'rgba(0,0,0,0.85)', padding: '3px 8px', borderRadius: '4px', fontSize: '10px', color: '#38BDF8', fontWeight: '800', zIndex: 10 }}>
+                AIM LASER AT BARCODE • {cameraFacing === 'environment' ? 'REAR HD LENS' : 'FRONT LENS'} {hapticsEnabled ? '• 📳 HAPTICS ACTIVE' : ''}
               </div>
             </div>
           )}
@@ -963,22 +1092,40 @@ export function StaffInwardScannerView() {
             })}
           </div>
 
-          {/* Complete Inward QC Button */}
-          <button 
-            className="btn-luxury-gold" 
-            onClick={handleCompleteInward}
-            disabled={!isAllBoxesVerified}
-            style={{ 
-              width: '100%', 
-              justifyContent: 'center', 
-              padding: '12px', 
-              fontSize: '13.5px',
-              fontWeight: '900',
-              opacity: isAllBoxesVerified ? 1 : 0.45
-            }}
-          >
-            <Check size={16} /> ✅ 1-Click Complete Inward QC & Add +{inwardQuantity} Sets ({totalKnockdownWeight} KG) to {storageBay}
-          </button>
+          {/* Bottom Action Ribbons: Complete Inward QC & WhatsApp Report */}
+          <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+            <button 
+              className="btn-luxury-gold" 
+              onClick={handleCompleteInward}
+              disabled={!isAllBoxesVerified}
+              style={{ 
+                flex: 2, 
+                justifyContent: 'center', 
+                padding: '14px', 
+                fontSize: '13.5px',
+                fontWeight: '900',
+                opacity: isAllBoxesVerified ? 1 : 0.45
+              }}
+            >
+              <Check size={16} /> ✅ 1-Click Complete Inward QC & Add +{inwardQuantity} Set(s) ({totalShipmentWeight} KG) to {storageBay}
+            </button>
+            <button 
+              className="btn-emerald" 
+              onClick={sendWhatsAppReport}
+              style={{ 
+                flex: 1, 
+                justifyContent: 'center', 
+                padding: '14px', 
+                fontSize: '12.5px',
+                fontWeight: '900',
+                background: '#25D366',
+                color: '#000000'
+              }}
+              title="Send Inward Receiving Report to WhatsApp"
+            >
+              📲 WhatsApp Summary
+            </button>
+          </div>
         </div>
 
       </div>

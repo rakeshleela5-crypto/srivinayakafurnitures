@@ -11,6 +11,7 @@
     "deploy": "vite build && firebase deploy --only hosting"
   },
   "dependencies": {
+    "@zxing/library": "^0.23.0",
     "canvas-confetti": "^1.9.4",
     "lucide-react": "^1.34.0",
     "qrcode": "^1.5.4",

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
 import { Code128Barcode } from '../utils/barcode128';
+import { DynamicQrCode } from '../utils/qrcodeGenerator';
 import { 
   Barcode, 
   Printer, 
@@ -10,24 +11,31 @@ import {
   Sparkles, 
   Save, 
   RefreshCw, 
-  Tag,
-  DollarSign,
-  Sliders,
-  Send,
-  ShieldCheck,
-  Box,
-  Share2,
-  Zap,
-  Activity
+  Tag, 
+  DollarSign, 
+  Sliders, 
+  Send, 
+  ShieldCheck, 
+  Box, 
+  Share2, 
+  Zap, 
+  Activity, 
+  Copy, 
+  FileText, 
+  AlertTriangle, 
+  ArrowUp, 
+  Droplets, 
+  Wine, 
+  Download 
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
 
 export function BarcodeStudio() {
-  const { catalog, setCatalog, storeMeta, showToast } = useStore();
+  const { catalog, setCatalog, storeMeta, openModal, showToast } = useStore();
 
   const [selectedSku, setSelectedSku] = useState(catalog[0]?.SKU || 'BED-MOD-001');
-  const [printLayout, setPrintLayout] = useState('pallet_label'); // pallet_label | carton_strip | thermal_50x25 | a4_24up
+  const [printLayout, setPrintLayout] = useState('pallet_label'); // pallet_label | carton_strip | thermal_50x25 | a4_24up | zpl_code
 
   // Editable Barcode Fields
   const [skuCode, setSkuCode] = useState('BED-MOD-001');
@@ -40,6 +48,14 @@ export function BarcodeStudio() {
   const [warranty, setWarranty] = useState(10);
   const [boxCount, setBoxCount] = useState(5);
   const [batchNo, setBatchNo] = useState(`GI-${new Date().getFullYear()}-0881`);
+  const [storageBay, setStorageBay] = useState('Dock-A1');
+  const [totalWeightKg, setTotalWeightKg] = useState(119.2);
+
+  // Safety & Handling Visual Badges
+  const [isHeavyCarton, setIsHeavyCarton] = useState(true);
+  const [isFragileGlass, setIsFragileGlass] = useState(false);
+  const [isThisSideUp, setIsThisSideUp] = useState(true);
+  const [isKeepDry, setIsKeepDry] = useState(true);
 
   // Code-128 Barcode Line & Laser Features
   const [moduleWidth, setModuleWidth] = useState(1.6);
@@ -49,7 +65,7 @@ export function BarcodeStudio() {
   const [barcodeColor, setBarcodeColor] = useState('#000000');
   const [quietZone, setQuietZone] = useState(true);
 
-  // Load from Catalog
+  // Load from Master Catalog
   const handleSelectCatalogItem = (sku) => {
     setSelectedSku(sku);
     const item = catalog.find(c => c.SKU === sku);
@@ -63,6 +79,7 @@ export function BarcodeStudio() {
       setSellingPrice(item.Selling_Price_INR || 75000);
       setWarranty(item.Warranty_Years || 5);
       setBoxCount(item.Total_Component_Boxes || 3);
+      setIsFragileGlass(item.Material_Spec?.toLowerCase().includes('glass') || item.Material_Spec?.toLowerCase().includes('marble'));
       playScanBeep();
       showToast(`📦 Loaded Barcode SKU: ${item.SKU}`);
     }
@@ -70,6 +87,70 @@ export function BarcodeStudio() {
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleSaveToCatalog = async () => {
+    playSuccessChime();
+    triggerGoldenConfetti();
+
+    const updatedItem = {
+      SKU: skuCode,
+      Product_Name: productName,
+      Main_Category: category,
+      Material_Spec: material,
+      Dimensions: dimensions,
+      MRP_INR: Number(mrp),
+      Selling_Price_INR: Number(sellingPrice),
+      Warranty_Years: Number(warranty),
+      Total_Component_Boxes: Number(boxCount),
+      Assigned_Bay: storageBay
+    };
+
+    setCatalog(prev => {
+      const exists = prev.some(c => c.SKU === skuCode);
+      if (exists) {
+        return prev.map(c => c.SKU === skuCode ? { ...c, ...updatedItem } : c);
+      }
+      return [updatedItem, ...prev];
+    });
+
+    showToast(`💾 Barcode parameters saved for ${skuCode} & synced to Google Sheets!`, true);
+
+    await dispatchWebhookAction('UPDATE_INVENTORY', {
+      sku: skuCode,
+      productName: productName,
+      sellingPrice: Number(sellingPrice),
+      batchNo: batchNo,
+      boxCount: Number(boxCount),
+      bay: storageBay,
+      timestamp: new Date().toISOString()
+    });
+  };
+
+  // Generate Raw Zebra ZPL II Command String
+  const generateZplCode = () => {
+    return `^XA
+^PW812
+^LL1218
+^LH0,0
+^FO40,40^GB732,1138,4,B,0^FS
+^FO60,60^A0N,32,32^FDGODREJ INTERIO RAYAGADA^FS
+^FO550,60^A0N,24,24^FDBATCH: ${batchNo}^FS
+^FO60,110^GB692,2,B,0^FS
+^FO60,130^A0N,36,36^FD${productName.substring(0, 32)}^FS
+^FO60,180^A0N,22,22^FDSKU: ${skuCode} | Boxes: ${boxCount} Cartons | Spec: ${material.substring(0, 24)}^FS
+^FO60,230^BY3,3,100^BCN,100,Y,N,N^FD>:${skuCode}^FS
+^FO60,380^GB692,2,B,0^FS
+^FO60,405^A0N,26,26^FDSelling Rate: Rs.${Number(sellingPrice).toLocaleString()} (GST INCL)^FS
+^FO520,405^A0N,26,26^FDBAY: ${storageBay}^FS
+^FO60,450^A0N,20,20^FDQC STATUS: FACTORY PASSED [OK]^FS
+^XZ`;
+  };
+
+  const copyZplCode = () => {
+    navigator.clipboard.writeText(generateZplCode());
+    playScanBeep();
+    showToast("📋 Raw Zebra ZPL II Code copied to clipboard!");
   };
 
   return (
@@ -94,6 +175,10 @@ export function BarcodeStudio() {
             style={{ fontSize: '11.5px', padding: '6px 12px' }}
           >
             <ShieldCheck size={13} /> {bearerBars ? '📦 Bearer Guard Lines ON' : 'Bearer Lines OFF'}
+          </button>
+
+          <button className="btn-emerald" onClick={handleSaveToCatalog} style={{ fontSize: '11.5px', padding: '6px 12px' }}>
+            <Save size={13} /> 💾 Save to Google Sheets
           </button>
         </div>
 
@@ -156,6 +241,45 @@ export function BarcodeStudio() {
               <label>Total Knockdown Boxes</label>
               <input type="number" value={boxCount} onChange={e => setBoxCount(Number(e.target.value))} />
             </div>
+            <div className="form-field">
+              <label>Assigned Rack Bay</label>
+              <select value={storageBay} onChange={e => setStorageBay(e.target.value)}>
+                <option value="Dock-A1">Dock-A1 (Ground Pallet)</option>
+                <option value="Dock-A2">Dock-A2 (Hydraulic Beds)</option>
+                <option value="Bay-B1">Bay-B1 (Living Sectionals)</option>
+                <option value="Bay-C1">Bay-C1 (Marble Dining)</option>
+                <option value="Mezzanine-1">Mezzanine-1 (Fittings)</option>
+              </select>
+            </div>
+            <div className="form-field">
+              <label>Total Weight (KG)</label>
+              <input type="number" value={totalWeightKg} onChange={e => setTotalWeightKg(Number(e.target.value))} />
+            </div>
+          </div>
+
+          {/* Industrial Handling & Safety Warning Badges Config */}
+          <div style={{ background: '#030712', borderRadius: '12px', padding: '12px', border: '1px solid rgba(245,158,11,0.3)', marginTop: '12px' }}>
+            <div style={{ fontSize: '11px', fontWeight: '900', color: 'var(--accent-gold-light)', marginBottom: '8px', textTransform: 'uppercase' }}>
+              ⚠️ Warehouse Safety & Handling Warning Badges:
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#FFF', cursor: 'pointer' }}>
+                <input type="checkbox" checked={isHeavyCarton} onChange={e => setIsHeavyCarton(e.target.checked)} />
+                🏋️ Heavy Lift (30+ KG) Banner
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#FFF', cursor: 'pointer' }}>
+                <input type="checkbox" checked={isFragileGlass} onChange={e => setIsFragileGlass(e.target.checked)} />
+                🍷 Fragile Glass / Marble Warning
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#FFF', cursor: 'pointer' }}>
+                <input type="checkbox" checked={isThisSideUp} onChange={e => setIsThisSideUp(e.target.checked)} />
+                ⬆️⬆️ This Side Up Arrows
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#FFF', cursor: 'pointer' }}>
+                <input type="checkbox" checked={isKeepDry} onChange={e => setIsKeepDry(e.target.checked)} />
+                💧 Protect From Water
+              </label>
+            </div>
           </div>
 
           {/* Laser Scanner Barcode Styling Controls */}
@@ -199,12 +323,13 @@ export function BarcodeStudio() {
           </div>
 
           {/* Layout Tabs */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px', margin: '12px 0' }}>
+          <div className="no-print" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px', margin: '12px 0' }}>
             {[
-              { id: 'pallet_label', label: '📦 Pallet Label', desc: 'Warehouse master' },
-              { id: 'carton_strip', label: '🏷️ Carton Strips', desc: 'Component boxes' },
-              { id: 'thermal_50x25', label: '🖨️ Thermal (50x25)', desc: 'Handheld printer' },
-              { id: 'a4_24up', label: '📄 A4 24-Up Sheet', desc: 'Laser sticker paper' }
+              { id: 'pallet_label', label: '📦 4"×6" Pallet', desc: 'Warehouse master' },
+              { id: 'carton_strip', label: '🏷️ 2"×4" Cartons', desc: 'All box strips' },
+              { id: 'thermal_50x25', label: '🖨️ Thermal (50x25)', desc: 'Handheld tag' },
+              { id: 'a4_24up', label: '📄 A4 24-Up Sheet', desc: 'Laser paper' },
+              { id: 'zpl_code', label: '⚡ Zebra ZPL II', desc: 'Raw thermal code' }
             ].map(layout => (
               <button
                 key={layout.id}
@@ -215,13 +340,13 @@ export function BarcodeStudio() {
                   fontWeight: '900',
                   border: printLayout === layout.id ? '2px solid #FFFFFF' : '1px solid rgba(255,255,255,0.1)',
                   borderRadius: '10px',
-                  padding: '8px 6px',
+                  padding: '8px 4px',
                   cursor: 'pointer',
                   textAlign: 'center'
                 }}
               >
-                <div style={{ fontSize: '11px' }}>{layout.label}</div>
-                <div style={{ fontSize: '8.5px', opacity: 0.8 }}>{layout.desc}</div>
+                <div style={{ fontSize: '10.5px' }}>{layout.label}</div>
+                <div style={{ fontSize: '8px', opacity: 0.8 }}>{layout.desc}</div>
               </button>
             ))}
           </div>
@@ -229,9 +354,9 @@ export function BarcodeStudio() {
           {/* Live Printable Preview Canvas */}
           <div className="printable-area" style={{ background: '#030712', borderRadius: '16px', padding: '16px', border: '1.5px solid rgba(56,189,248,0.3)', minHeight: '360px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
             
-            {/* ================= LAYOUT 1: WAREHOUSE PALLET LABEL ================= */}
+            {/* ================= LAYOUT 1: WAREHOUSE MASTER PALLET LABEL (4"x6") ================= */}
             {printLayout === 'pallet_label' && (
-              <div style={{ position: 'relative', background: '#FFFFFF', color: '#000000', borderRadius: '12px', padding: '16px', maxWidth: '380px', width: '100%', border: '2.5px solid #000', boxShadow: '0 10px 30px rgba(0,0,0,0.8)', overflow: 'hidden' }}>
+              <div className="printable-card" style={{ position: 'relative', background: '#FFFFFF', color: '#000000', borderRadius: '12px', padding: '16px', maxWidth: '380px', width: '100%', border: '2.5px solid #000', boxShadow: '0 10px 30px rgba(0,0,0,0.8)', overflow: 'hidden' }}>
                 
                 {/* Red Laser Sweeper Animation */}
                 {isLaserSweeping && (
@@ -248,14 +373,30 @@ export function BarcodeStudio() {
                 )}
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #000', paddingBottom: '4px', marginBottom: '8px' }}>
-                  <div style={{ fontWeight: '900', fontSize: '12px', letterSpacing: '0.5px' }}>GODREJ INTERIO RAYAGADA</div>
-                  <div style={{ fontWeight: '800', fontSize: '10px', background: '#000', color: '#FFF', padding: '2px 6px', borderRadius: '3px' }}>BATCH: {batchNo}</div>
+                  <div>
+                    <div style={{ fontWeight: '900', fontSize: '13px', letterSpacing: '0.5px' }}>GODREJ INTERIO</div>
+                    <div style={{ fontSize: '9px', fontWeight: '700', color: '#475569' }}>RAYAGADA FLAGSHIP WAREHOUSE</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: '800', fontSize: '10px', background: '#000', color: '#FFF', padding: '2px 6px', borderRadius: '3px' }}>BATCH: {batchNo}</div>
+                    <div style={{ fontSize: '9px', fontWeight: '800', color: '#0284C7', marginTop: '2px' }}>BAY: {storageBay}</div>
+                  </div>
                 </div>
 
                 <div style={{ fontSize: '14px', fontWeight: '900', marginBottom: '2px' }}>{productName}</div>
                 <div style={{ fontSize: '10px', color: '#334155', marginBottom: '8px' }}>
                   <b>SKU:</b> {skuCode} • <b>Boxes:</b> {boxCount} Cartons • <b>Spec:</b> {material}
                 </div>
+
+                {/* Safety Warning Banners */}
+                {(isHeavyCarton || isFragileGlass || isThisSideUp || isKeepDry) && (
+                  <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', margin: '6px 0', padding: '4px 8px', background: '#FEF08A', border: '1px solid #CA8A04', borderRadius: '6px' }}>
+                    {isHeavyCarton && <span style={{ fontSize: '8.5px', fontWeight: '900', color: '#854D0E' }}>🏋️ HEAVY LIFT ({totalWeightKg} KG)</span>}
+                    {isFragileGlass && <span style={{ fontSize: '8.5px', fontWeight: '900', color: '#B91C1C' }}>🍷 FRAGILE</span>}
+                    {isThisSideUp && <span style={{ fontSize: '8.5px', fontWeight: '900', color: '#1E3A8A' }}>⬆️ THIS SIDE UP</span>}
+                    {isKeepDry && <span style={{ fontSize: '8.5px', fontWeight: '900', color: '#047857' }}>💧 KEEP DRY</span>}
+                  </div>
+                )}
 
                 <div style={{ display: 'flex', justifyContent: 'center', padding: '6px 0', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #CBD5E1' }}>
                   <Code128Barcode 
@@ -275,7 +416,7 @@ export function BarcodeStudio() {
               </div>
             )}
 
-            {/* ================= LAYOUT 2: CARTON STRIPS ================= */}
+            {/* ================= LAYOUT 2: 2"x4" CARTON STRIPS (ALL BOXES) ================= */}
             {printLayout === 'carton_strip' && (
               <div className="print-carton-list" style={{ width: '100%', gap: '10px' }}>
                 {Array.from({ length: boxCount }).map((_, idx) => {
@@ -285,6 +426,7 @@ export function BarcodeStudio() {
                       <div>
                         <div style={{ fontSize: '12px', fontWeight: '900' }}>GODREJ • BOX {letter} ({idx + 1}/{boxCount})</div>
                         <div style={{ fontSize: '10px', color: '#334155' }}>{skuCode} • {productName}</div>
+                        <div style={{ fontSize: '8.5px', color: '#64748B', marginTop: '2px' }}>Bay: {storageBay} | Batch: {batchNo}</div>
                       </div>
                       <Code128Barcode 
                         value={`${skuCode}-BOX-${letter}`} 
@@ -341,12 +483,32 @@ export function BarcodeStudio() {
               </div>
             )}
 
+            {/* ================= LAYOUT 5: ZEBRA ZPL II RAW CODE EXPORTER ================= */}
+            {printLayout === 'zpl_code' && (
+              <div style={{ width: '100%', background: '#0F172A', borderRadius: '12px', padding: '16px', border: '1px solid var(--accent-cyan)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: '900', color: 'var(--accent-cyan)' }}>
+                    ⚡ RAW ZEBRA ZPL II PRINTER COMMANDS (4"×6" Thermal Label)
+                  </span>
+                  <button className="btn-luxury-gold" onClick={copyZplCode} style={{ fontSize: '10.5px', padding: '4px 10px' }}>
+                    <Copy size={12} /> Copy ZPL Code
+                  </button>
+                </div>
+                <pre style={{ background: '#030712', color: '#38BDF8', padding: '12px', borderRadius: '8px', fontSize: '11px', fontFamily: 'JetBrains Mono', overflowX: 'auto', margin: 0 }}>
+                  {generateZplCode()}
+                </pre>
+              </div>
+            )}
+
           </div>
 
           {/* Action Footer */}
           <div className="no-print" style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
             <button className="btn-cyan" onClick={handlePrint} style={{ flex: 1, justifyContent: 'center', padding: '12px', fontWeight: '900' }}>
               <Printer size={16} /> 🖨️ 1-Click Print Barcodes
+            </button>
+            <button className="btn-emerald" onClick={handleSaveToCatalog} style={{ flex: 1, justifyContent: 'center' }}>
+              <Save size={16} /> 💾 Save to Google Sheets
             </button>
           </div>
         </div>

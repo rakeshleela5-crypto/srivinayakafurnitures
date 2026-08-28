@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { 
   X, 
@@ -17,20 +17,33 @@ import { playSuccessChime, triggerGoldenConfetti } from '../../utils/audioUtils'
 import { dispatchWebhookAction } from '../../services/webhookService';
 
 export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
-  const { bots, updateBotConfig, showToast } = useStore();
+  const { updateBotConfig, showToast } = useStore();
 
-  const [botName, setBotName] = useState(bot.name || '');
-  const [status, setStatus] = useState(bot.status || 'ACTIVE'); // 'ACTIVE' | 'PAUSED'
-  const [trigger, setTrigger] = useState(bot.trigger || 'On New Order');
-  const [schedule, setSchedule] = useState(bot.schedule || 'Instant Real-Time');
-  const [targetChannel, setTargetChannel] = useState(bot.targetChannel || 'WhatsApp Cloud + Google Sheets');
-  const [template, setTemplate] = useState(
-    bot.customTemplate || 
-    `Namaskar {Customer_Name}! Your Godrej Interio order {Order_ID} is SAFELOCKED. Advance Token Received: ₹{Advance_Amount}. Est Delivery: {Delivery_Date}. Helpline: +91 9390553301.`
-  );
-  const [threshold, setThreshold] = useState(bot.threshold || 'Buffer <= 2 Units');
+  const [botName, setBotName] = useState('');
+  const [status, setStatus] = useState('ACTIVE');
+  const [trigger, setTrigger] = useState('On New Order');
+  const [schedule, setSchedule] = useState('Instant Real-Time');
+  const [targetChannel, setTargetChannel] = useState('WhatsApp Cloud + Google Sheets');
+  const [template, setTemplate] = useState('');
+  const [threshold, setThreshold] = useState('Buffer <= 2 Units');
 
-  if (!isOpen) return null;
+  // Sync state dynamically whenever a new bot is selected or modal opens
+  useEffect(() => {
+    if (isOpen && bot) {
+      setBotName(bot.name || '');
+      setStatus(bot.status || 'ACTIVE');
+      setTrigger(bot.trigger || 'On New Order');
+      setSchedule(bot.schedule || 'Instant Real-Time');
+      setTargetChannel(bot.targetChannel || 'WhatsApp Cloud + Google Sheets');
+      setTemplate(
+        bot.customTemplate || 
+        `Namaskar {Customer_Name}! Your Godrej Interio order {Order_ID} is SAFELOCKED. Advance Token Received: ₹{Advance_Amount}. Est Delivery: {Delivery_Date}. Helpline: +91 9390553301.`
+      );
+      setThreshold(bot.threshold || 'Buffer <= 2 Units');
+    }
+  }, [isOpen, bot]);
+
+  if (!isOpen || !bot || !bot.botId) return null;
 
   const handleSave = () => {
     const updated = {
@@ -70,7 +83,7 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
   return (
     <div className="modal-overlay">
       <div 
-        className="modal-content glass-panel" 
+        className="modal-card glass-panel" 
         style={{ 
           maxWidth: '650px', 
           width: '95%', 
@@ -89,7 +102,7 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="badge badge-gold">{bot.botId || 'BOT-01'}</span>
+                <span className="badge badge-gold">{bot.botId}</span>
                 <h2 style={{ fontSize: '18px', fontWeight: '900', color: '#FFFFFF', margin: 0 }}>
                   Configure Automation Bot
                 </h2>
@@ -163,6 +176,7 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
               <option value="On Buffer Deficit">On Low Stock Buffer Deficit</option>
               <option value="Daily 21:00 IST">Daily 9 PM Showroom Cash Lock</option>
               <option value="Hourly Cron">Hourly Universal Deduplication</option>
+              <option value="Manual / Scheduled">Manual / Scheduled Trigger</option>
             </select>
           </div>
 

@@ -693,3 +693,125 @@ table.luxury-table tr:hover td {
     opacity: 0.2;
   }
 }
+
+/* ==============================================================================================
+ * MOBILE FIRST RESPONSIVE ARCHITECTURE & DOCK SCANNER STYLES
+ * ============================================================================================== */
+
+.dock-scanner-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.mobile-worker-app-header {
+  background: rgba(13, 19, 34, 0.95);
+  border-bottom: 2px solid var(--accent-gold);
+  backdrop-filter: blur(20px);
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+}
+
+@media (max-width: 900px) {
+  .dock-scanner-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .main-layout {
+    padding: 12px 10px !important;
+    max-width: 100% !important;
+  }
+
+  .app-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 14px 16px;
+  }
+
+  .header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  .tabs-ribbon {
+    padding: 8px 10px;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tab-btn {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+
+  .tab-action-ribbon {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    padding: 12px 14px !important;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .bottom-dock {
+    bottom: 8px;
+    padding: 5px 8px;
+    border-radius: 20px;
+    max-width: 98vw;
+  }
+
+  .dock-btn {
+    padding: 6px 9px;
+    font-size: 10.5px;
+  }
+
+  .kpi-stat-card {
+    padding: 12px 14px;
+  }
+
+  .modal-card {
+    width: 96% !important;
+    padding: 16px !important;
+    max-height: 92vh !important;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding-bottom: 75px;
+  }
+
+  .brand-text h1 {
+    font-size: 16px;
+  }
+
+  .brand-text p {
+    font-size: 10px;
+  }
+
+  .btn-luxury-gold, .btn-emerald, .btn-cyan, .btn-ghost-edit {
+    font-size: 11.5px;
+    padding: 8px 12px;
+  }
+
+  .global-toast {
+    left: 12px;
+    right: 12px;
+    bottom: 70px;
+    font-size: 11.5px;
+  }
+}
+

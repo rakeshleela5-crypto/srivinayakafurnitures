@@ -405,7 +405,7 @@ export function StaffOutwardScannerView() {
       )}
 
       {/* Main Grid: Loading Bay Cockpit + Granular 5-Box Vehicle Loading Checklist */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.35fr', gap: '20px', alignItems: 'start' }}>
+      <div className="dock-scanner-grid">
         
         {/* Left Column: Camera + Order Matcher & Scanner Gun Interface */}
         <div className="glass-panel" style={{ background: sunnyMode ? '#FFFFFF' : '#0B132B', border: sunnyMode ? '2px solid #000' : '1px solid rgba(255,255,255,0.12)' }}>

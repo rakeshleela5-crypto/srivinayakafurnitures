@@ -23,21 +23,32 @@ import { StaffQrHubView } from './views/StaffQrHubView';
 
 function AppContent() {
   const { activeTab, setActiveTab, currentUser } = useStore();
+  const [workerMode, setWorkerMode] = React.useState(() => {
+    return ['#inward', '#outward', '#barcode', '#qr-studio', '#logistics', '#qr'].some(h => window.location.hash.toLowerCase().includes(h));
+  });
 
-  // URL Hash listener for direct worker links (e.g. #inward, #outward, #barcode, #qr-studio, #qr)
+  // URL Hash listener for direct worker links (e.g. #inward, #outward, #barcode, #qr-studio, #logistics, #qr)
   React.useEffect(() => {
     const handleHash = () => {
       const hash = window.location.hash.toLowerCase();
       if (hash.includes('inward')) {
         setActiveTab('inward_scanner');
+        setWorkerMode(true);
       } else if (hash.includes('outward')) {
         setActiveTab('outward_scanner');
+        setWorkerMode(true);
       } else if (hash.includes('barcode')) {
         setActiveTab('barcode_studio');
+        setWorkerMode(true);
       } else if (hash.includes('qr-studio') || hash.includes('qrstudio')) {
         setActiveTab('qr_studio');
+        setWorkerMode(true);
+      } else if (hash.includes('logistics')) {
+        setActiveTab('logistics_epod');
+        setWorkerMode(true);
       } else if (hash.includes('qr')) {
         setActiveTab('staff_qr');
+        setWorkerMode(true);
       }
     };
     handleHash();
@@ -46,8 +57,8 @@ function AppContent() {
   }, [setActiveTab]);
 
   // If user is locked and not accessing a direct dock worker QR hash, show Lock Screen
-  const isDirectWorkerHash = ['#inward', '#outward', '#barcode', '#qr-studio', '#qr'].some(h => window.location.hash.toLowerCase().includes(h));
-  if (!currentUser && !isDirectWorkerHash) {
+  const isDirectWorkerHash = ['#inward', '#outward', '#barcode', '#qr-studio', '#logistics', '#qr'].some(h => window.location.hash.toLowerCase().includes(h));
+  if (!currentUser && !isDirectWorkerHash && !workerMode) {
     return <AuthLockScreen />;
   }
 
@@ -95,15 +106,42 @@ function AppContent() {
       <div className="ambient-glow-1" />
       <div className="ambient-glow-2" />
 
-      <TopTicker />
-      <AppHeader />
-      <TabsRibbon />
+      {workerMode ? (
+        <div className="mobile-worker-app-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="brand-logo-badge" style={{ width: '34px', height: '34px', fontSize: '13px', borderRadius: '8px' }}>GI</div>
+            <div>
+              <div style={{ fontSize: '13px', fontWeight: '900', color: '#FFFFFF' }}>
+                {activeTab === 'inward_scanner' ? '📦 DOCK 1: INWARD SCANNER' :
+                 activeTab === 'outward_scanner' ? '🚚 DOCK 2: OUTWARD DISPATCH' :
+                 activeTab === 'logistics_epod' ? '📱 DRIVER DESK: DELIVERY ePOD' :
+                 activeTab === 'barcode_studio' ? '🏷️ 1D CODE-128 STUDIO' :
+                 activeTab === 'qr_studio' ? '📱 2D QR STUDIO' : '📱 STAFF MOBILE PORTAL'}
+              </div>
+              <div style={{ fontSize: '10px', color: 'var(--accent-gold-light)' }}>Godrej Interio Rayagada</div>
+            </div>
+          </div>
+          <button 
+            className="btn-luxury-gold" 
+            onClick={() => setWorkerMode(false)}
+            style={{ fontSize: '11px', padding: '6px 12px' }}
+          >
+            🌐 Full Desktop OS
+          </button>
+        </div>
+      ) : (
+        <>
+          <TopTicker />
+          <AppHeader />
+          <TabsRibbon />
+        </>
+      )}
 
       <main className="main-layout">
         {renderActiveView()}
       </main>
 
-      <BottomDock />
+      {!workerMode && <BottomDock />}
       <ModalContainer />
     </>
   );

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>OmniBuild OS™ — Enterprise Client Onboarding & Data Collection Spec</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap');
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0F172A;
+      color: #F8FAFC;
+      margin: 0;
+      padding: 40px 20px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #1E293B;
+      padding: 40px;
+      border-radius: 16px;
+      border: 1px solid rgba(212,175,55,0.4);
+      box-shadow: 0 25px 60px rgba(0,0,0,0.8);
+    }
+    .header {
+      border-bottom: 2px solid #D4AF37;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .badge {
+      background: linear-gradient(135deg, #D4AF37, #B45309);
+      color: #000;
+      font-weight: 900;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    h1 {
+      font-size: 26px;
+      font-weight: 900;
+      color: #FFFFFF;
+      margin: 6px 0;
+    }
+    h2 {
+      font-size: 18px;
+      font-weight: 800;
+      color: #D4AF37;
+      margin-top: 30px;
+      border-left: 4px solid #D4AF37;
+      padding-left: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13px;
+    }
+    th, td {
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 10px 14px;
+      text-align: left;
+    }
+    th {
+      background: #0B132B;
+      color: #D4AF37;
+      font-weight: 800;
+    }
+    tr:nth-child(even) {
+      background: rgba(255,255,255,0.02);
+    }
+    .blank-field {
+      color: #38BDF8;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+    }
+    .print-btn {
+      background: linear-gradient(135deg, #D4AF37, #B45309);
+      color: #000;
+      font-weight: 900;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      box-shadow: 0 4px 15px rgba(212,175,55,0.4);
+      float: right;
+    }
+    @media print {
+      body {
+        background: #FFFFFF;
+        color: #000000;
+        padding: 0;
+      }
+      .container {
+        background: #FFFFFF;
+        color: #000000;
+        border: none;
+        box-shadow: none;
+        padding: 0;
+        max-width: 100%;
+      }
+      .print-btn {
+        display: none;
+      }
+      th {
+        background: #F1F5F9;
+        color: #0F172A;
+      }
+      th, td {
+        border: 1px solid #CBD5E1;
+        color: #0F172A;
+      }
+      h1, h2 {
+        color: #0F172A;
+      }
+      .badge {
+        border: 1px solid #000;
+        background: #F1F5F9;
+        color: #000;
+      }
+      .blank-field {
+        color: #0F172A;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <button class="print-btn" onclick="window.print()">🖨️ Export as PDF (Ctrl + P)</button>
+
+    <div class="header">
+      <div>
+        <span class="badge">AI Automation Agency Master Spec</span>
+        <h1>OmniBuild OS™ — Client Onboarding & Data Collection Blueprint</h1>
+        <div style="font-size: 13px; color: #94A3B8;">For Furniture Showrooms, Flagship Retailers & Godrej Interio Franchisees</div>
+      </div>
+    </div>
+
+    <h2>1. Store & Entity Legal Identity (Invoicing & Tax Engine)</h2>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Required Parameter</th><th>Example / Standard</th><th>Client Input Field</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1.1</td><td><b>Legal Registered Firm Name</b></td><td>Shree Ganesh Enterprises</td><td class="blank-field">___________________________</td></tr>
+        <tr><td>1.2</td><td><b>Trade / Franchise Brand Name</b></td><td>Godrej Interio Rayagada</td><td class="blank-field">___________________________</td></tr>
+        <tr><td>1.3</td><td><b>Managing Director Name</b></td><td>Rakesh</td><td class="blank-field">___________________________</td></tr>
+        <tr><td>1.4</td><td><b>GSTIN (15-Digit GST Number)</b></td><td>21AAAAA0000A1Z5</td><td class="blank-field">___________________________</td></tr>
+        <tr><td>1.5</td><td><b>PAN Number</b></td><td>AAAAA0000A</td><td class="blank-field">___________________________</td></tr>
+        <tr><td>1.6</td><td><b>Physical Showroom Address</b></td><td>Main Road, Rayagada, Odisha - 765001</td><td class="blank-field">___________________________</td></tr>
+        <tr><td>1.7</td><td><b>Helpline Phone & Email</b></td><td>+91 9390553301 / info@store.com</td><td class="blank-field">___________________________</td></tr>
+        <tr><td>1.8</td><td><b>Invoice Numbering Prefix</b></td><td>GI-RAY-2026-</td><td class="blank-field">___________________________</td></tr>
+      </tbody>
+    </table>
+
+    <h2>2. Banking, Primary UPI & 0-Cost EMI Merchant IDs</h2>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Financial System</th><th>Purpose in OmniBuild OS</th><th>Client Credentials</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>2.1</td><td><b>Primary Store UPI ID (VPA)</b></td><td>Embedded in all 50% Token & POS QR Codes</td><td class="blank-field">________________@_________</td></tr>
+        <tr><td>2.2</td><td><b>Current Bank Account & IFSC</b></td><td>Printed on GST Invoices for B2B transfers</td><td class="blank-field">Acc: ________ IFSC: ________</td></tr>
+        <tr><td>2.3</td><td><b>Bajaj Finserv Merchant ID</b></td><td>0-Cost EMI Calculator (3-24 months)</td><td class="blank-field">___________________________</td></tr>
+        <tr><td>2.4</td><td><b>PineLabs / HDFC POS Terminal ID</b></td><td>Credit/Debit Card Instant EMI schemes</td><td class="blank-field">___________________________</td></tr>
+        <tr><td>2.5</td><td><b>TVS Credit Dealer Code</b></td><td>Zero-downpayment customer financing</td><td class="blank-field">___________________________</td></tr>
+      </tbody>
+    </table>
+
+    <h2>3. Master Furniture SKU Catalog & Knockdown Boxes (Excel/CSV Export)</h2>
+    <div style="background: rgba(255,255,255,0.04); padding: 14px; border-radius: 8px; border: 1px dashed rgba(212,175,55,0.4); font-size: 12px; margin: 10px 0;">
+      <b>Provide Excel/CSV spreadsheet containing:</b><br>
+      • SKU Code (e.g. <code>BED-ROYAL-01</code>)<br>
+      • Model Name (e.g. <i>Royal Teak Hydraulic King Bed</i>)<br>
+      • Category (<i>Bedroom / Living / Dining / Storage / Office</i>)<br>
+      • Material Specs (<i>Solid Burma Teak, CRCA Steel, Italian Marble</i>)<br>
+      • Dimensions (<i>L x W x H inches</i>)<br>
+      • MRP (₹) & Showroom Selling Rate (₹)<br>
+      • Structural Warranty (<i>10 Years / 5 Years</i>)<br>
+      • Total Component Cartons (<i>N Boxes: Headboard, Storage Bay, Gas-Lifts, Slat Frame, Hardware Kit</i>)<br>
+      • Default Factory Supplier (<i>Godrej Shirwal Hub, Saharanpur Crafts</i>)
+    </div>
+
+    <h2>4. Warehouse Bays, Hardware Scanners & Old Furniture Buyback Rates</h2>
+    <table>
+      <thead>
+        <tr><th>#</th><th>Hardware / Warehouse Spec</th><th>Standard Value</th><th>Client Configuration</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>4.1</td><td><b>Inward Unloading Bay Names</b></td><td>Dock-A1, Dock-A2, Bay-B1</td><td class="blank-field">___________________________</td></tr>
+        <tr><td>4.2</td><td><b>Dock Scanner Gun Hardware</b></td><td>1D Laser Guns vs Android Phone Cameras</td><td class="blank-field">[ ] Laser Gun  [ ] Phone</td></tr>
+        <tr><td>4.3</td><td><b>Barcode Sticker Format</b></td><td>Thermal 50x25mm / Multi-Box / A4 24-Up</td><td class="blank-field">____ mm x ____ mm</td></tr>
+        <tr><td>4.4</td><td><b>Old Furniture Scrap Rate Card</b></td><td>Teak: ₹250/cft, Metal: ₹40/KG</td><td class="blank-field">[ ] Standard Rate Card</td></tr>
+      </tbody>
+    </table>
+
+    <h2>5. Logistics Fleet, Delivery Routes & Master Carpenter Roster</h2>
+    <table>
+      <thead>
+        <tr><th>Role</th><th>Staff Name</th><th>Contact Phone</th><th>Vehicle Reg / Wage Rate</th><th>4-Digit PIN</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><b>Fleet Driver 1</b></td><td>Tophan Gouda</td><td>9437188291</td><td>Tata Ace (OD-18-B-4491)</td><td class="blank-field">5566</td></tr>
+        <tr><td><b>Fleet Driver 2</b></td><td>________________</td><td>____________</td><td>_________________________</td><td class="blank-field">____</td></tr>
+        <tr><td><b>Master Carpenter 1</b></td><td>Bikram Mistry</td><td>9438012345</td><td>₹450 / Bed, ₹300 / Almirah</td><td class="blank-field">—</td></tr>
+        <tr><td><b>Master Carpenter 2</b></td><td>________________</td><td>____________</td><td>_________________________</td><td class="blank-field">—</td></tr>
+      </tbody>
+    </table>
+
+    <h2>6. VIP Architect & Interior Designer Network Slabs</h2>
+    <table>
+      <thead>
+        <tr><th>Tier Slab</th><th>Commission (%)</th><th>Privilege Client Discount (%)</th><th>Settlement Mode</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><b>👑 Platinum Tier</b></td><td><b>8.5%</b></td><td>8.0% Combo Savings</td><td>Instant Real-Time UPI</td></tr>
+        <tr><td><b>⭐ Gold Tier</b></td><td><b>6.5%</b></td><td>5.0% Combo Savings</td><td>Instant Real-Time UPI</td></tr>
+        <tr><td><b>🔹 Silver Tier</b></td><td><b>5.0%</b></td><td>3.0% Combo Savings</td><td>Instant Real-Time UPI</td></tr>
+      </tbody>
+    </table>
+
+    <h2>7. Staff Role-Based Access Control (RBAC) & 4-Digit Security PINs</h2>
+    <table>
+      <thead>
+        <tr><th>Role</th><th>Default Name</th><th>Default PIN</th><th>Allowed Modules</th><th>Client Custom PIN</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>👑 <b>Store Director</b></td><td>Rakesh</td><td><code>8899</code></td><td>All 16 Tabs (Full P&L, POs, Cash Lock)</td><td class="blank-field">____</td></tr>
+        <tr><td>💼 <b>Sales Executive</b></td><td>Sunil</td><td><code>1122</code></td><td>Voice POS, 2D Matcher, CRM, Quotes</td><td class="blank-field">____</td></tr>
+        <tr><td>📦 <b>Warehouse Supervisor</b></td><td>Santosh</td><td><code>3344</code></td><td>Inward/Outward Docks, SafeLock Stock</td><td class="blank-field">____</td></tr>
+        <tr><td>🚚 <b>Delivery Driver</b></td><td>Tophan</td><td><code>5566</code></td><td>Mobile Logistics, 4-Digit OTP, ePOD</td><td class="blank-field">____</td></tr>
+        <tr><td>🏛️ <b>VIP Architect</b></td><td>Ar. Sunita</td><td><code>7788</code></td><td>Commission Ledger, Room Matcher</td><td class="blank-field">____</td></tr>
+      </tbody>
+    </table>
+
+    <h2>8. WhatsApp Automation Triggers</h2>
+    <div style="font-size: 13px; color: #E2E8F0;">
+      ✔ <b>1-Click WhatsApp 2-Page Digital Proposal PDF + Dynamic 50% Token UPI QR</b><br>
+      ✔ <b>4-Digit Delivery Dispatch OTP SMS & Driver Route Alert</b><br>
+      ✔ <b>10-Year Structural Warranty Card & Digital Signature ePOD Delivery Challan</b><br>
+      ✔ <b>Monthly Architect Commission Statement with 1-Click WhatsApp Dispatch</b>
+    </div>
+
+    <h2>9. Google Cloud & Webhook Infrastructure</h2>
+    <table>
+      <thead>
+        <tr><th>Asset</th><th>Current Configuration</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><b>Google Spreadsheet ID</b></td><td><code>14TqQ7LR5xSNppufWFhXDGo9hANC0JV_wRukc7HlIpaI</code></td><td>🟢 21 Tables Synced</td></tr>
+        <tr><td><b>Master Webhook URL</b></td><td><code>ALL_IN_ONE_MASTER_WEBHOOK.gs</code></td><td>🟢 Active & Live</td></tr>
+        <tr><td><b>Live Cloud Hosting</b></td><td><code>https://shreeganesh-godrej.web.app</code></td><td>🟢 Deployed (SSL Active)</td></tr>
+        <tr><td><b>Private GitHub Backup</b></td><td><code>rakeshleela5-crypto/shreeganesh-godrej-omnibuild-os</code></td><td>🔒 100% Private</td></tr>
+      </tbody>
+    </table>
+
+    <h2>10. DPDP Act 2023 Statutory Privacy Policy & DPO Safeguards</h2>
+    <table>
+      <thead>
+        <tr><th>Statutory Requirement</th><th>Current Standard</th><th>Client Input</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><b>Designated DPO Officer</b></td><td>Store Compliance Officer</td><td class="blank-field">Name: ______________________</td></tr>
+        <tr><td><b>DPO Grievance Helpline</b></td><td>+91 9390553301</td><td class="blank-field">Phone: _____________________</td></tr>
+        <tr><td><b>District Legal Jurisdiction</b></td><td>District & Sessions Court, Rayagada</td><td class="blank-field">___________________________</td></tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2); font-size: 11px; color: #94A3B8; text-align: center;">
+      OmniBuild OS™ — Enterprise Architecture Blueprint for AI Automation Agencies & Furniture Retailers.<br>
+      Confidential & Proprietary © 2026.
+    </div>
+
+  </div>
+
+</body>
+</html>

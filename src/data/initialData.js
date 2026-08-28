@@ -7,8 +7,8 @@ export const STORE_METADATA = {
   address: "Main Road, Near New Bus Stand, Rayagada, Odisha 765001",
   gstin: "21AAAAA0000A1Z5",
   cinPan: "AAECG1234F",
-  phone: "+91 94370 88990",
-  whatsapp: "+91 94370 88990",
+  phone: "+91 93905 53301",
+  whatsapp: "+91 93905 53301",
   manager: "Rakesh (Store Director & Operations Head)",
   upiVpa: "9390553301@ybl",
   merchantName: "Godrej Interio Rayagada",
@@ -1754,7 +1754,7 @@ export const INITIAL_ORDERS = [
   {
     Order_ID: "ORD-8921",
     Customer_Name: "Dr. Subhashish Jena",
-    Customer_Phone: "9437188291",
+    Customer_Phone: "9390553301",
     Project_Address: "Gayatri Nagar Villa, Rayagada",
     Designer_ID: "VIP-ARC-001",
     Ordered_SKU: "BED-MOD-001 (Solid King Bed)",
@@ -1773,7 +1773,7 @@ export const INITIAL_ORDERS = [
   {
     Order_ID: "ORD-8922",
     Customer_Name: "Smt. Minati Pradhan",
-    Customer_Phone: "9437255110",
+    Customer_Phone: "9390553301",
     Project_Address: "Kasturi Nagar Duplex, Rayagada",
     Designer_ID: "VIP-ARC-002",
     Ordered_SKU: "SOF-MOD-001 (Royal Velvet 7-Seater)",
@@ -1792,7 +1792,7 @@ export const INITIAL_ORDERS = [
   {
     Order_ID: "ORD-8923",
     Customer_Name: "Er. Alok Mishra",
-    Customer_Phone: "9437122334",
+    Customer_Phone: "9390553301",
     Project_Address: "Raniguda Farmhouse, Rayagada",
     Designer_ID: "VIP-ARC-001",
     Ordered_SKU: "DIN-MOD-001 (Italian Marble 6-Seater)",
@@ -1811,7 +1811,7 @@ export const INITIAL_ORDERS = [
   {
     Order_ID: "ORD-8924",
     Customer_Name: "Sri Rajesh Patnaik",
-    Customer_Phone: "9437344556",
+    Customer_Phone: "9390553301",
     Project_Address: "Ashok Nagar, Rayagada",
     Designer_ID: "VIP-ARC-003",
     Ordered_SKU: "ALM-MOD-001 (4-Door Sliding Wardrobe)",
@@ -1854,16 +1854,16 @@ export const INITIAL_SMARTKIT_BOXES = [
 
 // Initial Inquiries CRM Leads
 export const INITIAL_INQUIRIES = [
-  { Inquiry_ID: "INQ-2026-901", Inquiry_Date: "28-Aug-2026 10:30 AM", Customer_Name: "Prof. Ananya Mishra", Customer_Phone: "9437199882", Address: "Raniguda Farmhouse, Rayagada", Category_Models: "Luxury Solid Teak Bedroom Suite", Budget_INR: 180000, AI_Intent_Score: 92, Intent_Badge: "HOT_LEAD 🔥", Follow_Up_Date: "29-Aug-2026", Status: "HOT_LEAD", Assigned_Staff: "Rakesh (Store Manager)" },
-  { Inquiry_ID: "INQ-2026-902", Inquiry_Date: "28-Aug-2026 11:15 AM", Customer_Name: "Sri Tarun Patnaik (Advocate)", Customer_Phone: "9437288771", Address: "Sai Priya Nagar, Rayagada", Category_Models: "7-Seater Recliner Leatherette Sofa", Budget_INR: 110000, AI_Intent_Score: 84, Intent_Badge: "HOT_LEAD 🔥", Follow_Up_Date: "30-Aug-2026", Status: "HOT_LEAD", Assigned_Staff: "Sunil (Sales Rep)" },
-  { Inquiry_ID: "INQ-2026-903", Inquiry_Date: "27-Aug-2026 04:45 PM", Customer_Name: "Dr. B. K. Padhy (Clinic)", Customer_Phone: "9437377660", Address: "JK Pur Road, Rayagada", Category_Models: "Executive Ergonomic Office Chairs & Desk", Budget_INR: 65000, AI_Intent_Score: 68, Intent_Badge: "WARM_LEAD ⚡", Follow_Up_Date: "01-Sep-2026", Status: "FOLLOW_UP", Assigned_Staff: "Rakesh (Store Manager)" }
+  { Inquiry_ID: "INQ-2026-901", Inquiry_Date: "28-Aug-2026 10:30 AM", Customer_Name: "Prof. Ananya Mishra", Customer_Phone: "9390553301", Address: "Raniguda Farmhouse, Rayagada", Category_Models: "Luxury Solid Teak Bedroom Suite", Budget_INR: 180000, AI_Intent_Score: 92, Intent_Badge: "HOT_LEAD 🔥", Follow_Up_Date: "29-Aug-2026", Status: "HOT_LEAD", Assigned_Staff: "Rakesh (Store Manager)" },
+  { Inquiry_ID: "INQ-2026-902", Inquiry_Date: "28-Aug-2026 11:15 AM", Customer_Name: "Sri Tarun Patnaik (Advocate)", Customer_Phone: "9390553301", Address: "Sai Priya Nagar, Rayagada", Category_Models: "7-Seater Recliner Leatherette Sofa", Budget_INR: 110000, AI_Intent_Score: 84, Intent_Badge: "HOT_LEAD 🔥", Follow_Up_Date: "30-Aug-2026", Status: "HOT_LEAD", Assigned_Staff: "Sunil (Sales Rep)" },
+  { Inquiry_ID: "INQ-2026-903", Inquiry_Date: "27-Aug-2026 04:45 PM", Customer_Name: "Dr. B. K. Padhy (Clinic)", Customer_Phone: "9390553301", Address: "JK Pur Road, Rayagada", Category_Models: "Executive Ergonomic Office Chairs & Desk", Budget_INR: 65000, AI_Intent_Score: 68, Intent_Badge: "WARM_LEAD ⚡", Follow_Up_Date: "01-Sep-2026", Status: "FOLLOW_UP", Assigned_Staff: "Rakesh (Store Manager)" }
 ];
 
 // VIP Architect Partners
 export const INITIAL_ARCHITECTS = [
-  { Architect_ID: "VIP-ARC-001", Full_Name: "Ar. Sunita Patnaik", Firm_Name: "Studio Vastu Design", Phone_Number: "9437011223", Tier_Slab: "Platinum", Commission_Rate: "8.5%", Total_Sales_INR: 1845000, Commission_Earned_INR: 156825, Paid_Out_INR: 140000, Balance_Due_INR: 16825, GSTIN_PAN: "21AABCP1234D1Z8", UPI_Bank: "ar.sunita@upi" },
-  { Architect_ID: "VIP-ARC-002", Full_Name: "Er. Rajesh Mohanty", Firm_Name: "Rayagada Urban Planners", Phone_Number: "9437022334", Tier_Slab: "Gold", Commission_Rate: "6.5%", Total_Sales_INR: 1120000, Commission_Earned_INR: 72800, Paid_Out_INR: 65000, Balance_Due_INR: 7800, GSTIN_PAN: "21BBBCP5678E1Z9", UPI_Bank: "rajesh.civil@okaxis" },
-  { Architect_ID: "VIP-ARC-003", Full_Name: "Ar. Debashis Tripathy", Firm_Name: "Zenith Interior Spaces", Phone_Number: "9437033445", Tier_Slab: "Platinum", Commission_Rate: "8.5%", Total_Sales_INR: 1560000, Commission_Earned_INR: 132600, Paid_Out_INR: 120000, Balance_Due_INR: 12600, GSTIN_PAN: "21CCCPD9012F1Z0", UPI_Bank: "zenith.designs@icici" }
+  { Architect_ID: "VIP-ARC-001", Full_Name: "Ar. Sunita Patnaik", Firm_Name: "Studio Vastu Design", Phone_Number: "9390553301", Tier_Slab: "Platinum", Commission_Rate: "8.5%", Total_Sales_INR: 1845000, Commission_Earned_INR: 156825, Paid_Out_INR: 140000, Balance_Due_INR: 16825, GSTIN_PAN: "21AABCP1234D1Z8", UPI_Bank: "9390553301@ybl" },
+  { Architect_ID: "VIP-ARC-002", Full_Name: "Er. Rajesh Mohanty", Firm_Name: "Rayagada Urban Planners", Phone_Number: "9390553301", Tier_Slab: "Gold", Commission_Rate: "6.5%", Total_Sales_INR: 1120000, Commission_Earned_INR: 72800, Paid_Out_INR: 65000, Balance_Due_INR: 7800, GSTIN_PAN: "21BBBCP5678E1Z9", UPI_Bank: "9390553301@ybl" },
+  { Architect_ID: "VIP-ARC-003", Full_Name: "Ar. Debashis Tripathy", Firm_Name: "Zenith Interior Spaces", Phone_Number: "9390553301", Tier_Slab: "Platinum", Commission_Rate: "8.5%", Total_Sales_INR: 1560000, Commission_Earned_INR: 132600, Paid_Out_INR: 120000, Balance_Due_INR: 12600, GSTIN_PAN: "21CCCPD9012F1Z0", UPI_Bank: "9390553301@ybl" }
 ];
 
 // Fleet Drivers

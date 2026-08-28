@@ -160,7 +160,7 @@ export function ProductQrStudio() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
       {/* Top Action Ribbon */}
-      <div className="tab-action-ribbon">
+      <div className="tab-action-ribbon no-print">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className="badge badge-gold">📱 FURNITURE PRODUCT QR CODE GENERATION STUDIO</span>
 
@@ -186,7 +186,7 @@ export function ProductQrStudio() {
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.3fr', gap: '20px', alignItems: 'start' }}>
         
         {/* Left Column: Product Selector & Full In-Place Spec Editor */}
-        <div className="glass-panel">
+        <div className="glass-panel no-print">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ fontSize: '16px', fontWeight: '900' }}>🛋️ Master Catalog Product Customizer</h3>
             <span className="badge badge-purple">{catalog.length} SKUs LOADED</span>
@@ -332,7 +332,7 @@ export function ProductQrStudio() {
           </div>
 
           {/* Live Printable Preview Canvas */}
-          <div style={{ background: '#030712', borderRadius: '16px', padding: '16px', border: '1.5px solid rgba(212,175,55,0.3)', minHeight: '380px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="printable-area" style={{ background: '#030712', borderRadius: '16px', padding: '16px', border: '1.5px solid rgba(212,175,55,0.3)', minHeight: '380px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
             
             {/* ================= LAYOUT 1: FURNITURE FRAME STICKER ================= */}
             {printLayout === 'frame_sticker' && (
@@ -438,7 +438,7 @@ export function ProductQrStudio() {
           </div>
 
           {/* Quick Action Footer */}
-          <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+          <div className="no-print" style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
             <button className="btn-luxury-gold" onClick={handlePrint} style={{ flex: 1, justifyContent: 'center', padding: '12px', fontWeight: '900' }}>
               <Printer size={16} /> 🖨️ 1-Click Print Labels Now
             </button>

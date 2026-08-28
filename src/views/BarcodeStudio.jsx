@@ -76,7 +76,7 @@ export function BarcodeStudio() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
       {/* Top Action Ribbon */}
-      <div className="tab-action-ribbon">
+      <div className="tab-action-ribbon no-print">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className="badge badge-cyan">🏷️ GS1 CODE-128 1D BARCODE GENERATION STUDIO</span>
           
@@ -106,7 +106,7 @@ export function BarcodeStudio() {
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.3fr', gap: '20px', alignItems: 'start' }}>
         
         {/* Left Column: SKU Selector & Barcode Configuration */}
-        <div className="glass-panel">
+        <div className="glass-panel no-print">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ fontSize: '16px', fontWeight: '900', color: 'var(--accent-cyan)' }}>
               ⚙️ GS1 Code-128 Barcode Line Parameters
@@ -227,7 +227,7 @@ export function BarcodeStudio() {
           </div>
 
           {/* Live Printable Preview Canvas */}
-          <div style={{ background: '#030712', borderRadius: '16px', padding: '16px', border: '1.5px solid rgba(56,189,248,0.3)', minHeight: '360px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+          <div className="printable-area" style={{ background: '#030712', borderRadius: '16px', padding: '16px', border: '1.5px solid rgba(56,189,248,0.3)', minHeight: '360px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
             
             {/* ================= LAYOUT 1: WAREHOUSE PALLET LABEL ================= */}
             {printLayout === 'pallet_label' && (
@@ -235,7 +235,7 @@ export function BarcodeStudio() {
                 
                 {/* Red Laser Sweeper Animation */}
                 {isLaserSweeping && (
-                  <div style={{
+                  <div className="no-print" style={{
                     position: 'absolute',
                     top: 0,
                     bottom: 0,
@@ -344,7 +344,7 @@ export function BarcodeStudio() {
           </div>
 
           {/* Action Footer */}
-          <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+          <div className="no-print" style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
             <button className="btn-cyan" onClick={handlePrint} style={{ flex: 1, justifyContent: 'center', padding: '12px', fontWeight: '900' }}>
               <Printer size={16} /> 🖨️ 1-Click Print Barcodes
             </button>

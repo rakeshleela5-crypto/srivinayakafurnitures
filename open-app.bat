@@ -1,0 +1,3 @@
+@echo off
+echo Starting and Opening OmniBuild OS...
+start http://localhost:5173

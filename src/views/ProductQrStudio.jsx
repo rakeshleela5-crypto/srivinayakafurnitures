@@ -402,17 +402,17 @@ export function ProductQrStudio() {
 
             {/* ================= LAYOUT 3: 5-BOX KNOCKDOWN CARTON LABELS ================= */}
             {printLayout === '5_box_labels' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', width: '100%', maxHeight: '340px', overflowY: 'auto' }}>
+              <div className="print-carton-list" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', width: '100%' }}>
                 {Array.from({ length: boxCount }).map((_, idx) => {
                   const letter = String.fromCharCode(65 + idx);
                   return (
-                    <div key={letter} style={{ background: '#FFFFFF', color: '#000000', borderRadius: '8px', padding: '8px', border: '1.5px solid #000', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div key={letter} className="print-carton-item" style={{ background: '#FFFFFF', color: '#000000', borderRadius: '8px', padding: '10px', border: '1.5px solid #000', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <div style={{ fontSize: '9px', fontWeight: '900' }}>GODREJ INTERIO</div>
-                        <div style={{ fontSize: '11px', fontWeight: '900', color: '#B45309' }}>BOX {letter} ({idx + 1}/{boxCount})</div>
-                        <div style={{ fontSize: '8.5px', color: '#334155' }}>{skuCode}</div>
+                        <div style={{ fontSize: '10px', fontWeight: '900' }}>GODREJ INTERIO</div>
+                        <div style={{ fontSize: '12px', fontWeight: '900', color: '#B45309' }}>BOX {letter} ({idx + 1}/{boxCount})</div>
+                        <div style={{ fontSize: '9px', color: '#334155' }}>{skuCode}</div>
                       </div>
-                      <DynamicQrCode value={`${skuCode}-BOX-${letter}`} size={55} fgColor="#000" />
+                      <DynamicQrCode value={`${skuCode}-BOX-${letter}`} size={58} fgColor="#000" />
                     </div>
                   );
                 })}
@@ -421,9 +421,9 @@ export function ProductQrStudio() {
 
             {/* ================= LAYOUT 4: A4 24-UP ADHESIVE STICKER SHEET ================= */}
             {printLayout === 'a4_24up' && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', width: '100%', maxHeight: '340px', overflowY: 'auto', background: '#FFFFFF', padding: '10px', borderRadius: '8px' }}>
-                {Array.from({ length: 12 }).map((_, idx) => (
-                  <div key={idx} style={{ background: '#F8FAFC', color: '#000000', borderRadius: '6px', padding: '6px', border: '1px solid #CBD5E1', display: 'flex', gap: '6px', alignItems: 'center' }}>
+              <div className="print-grid-a4" style={{ width: '100%', background: '#FFFFFF', padding: '8px', borderRadius: '8px' }}>
+                {Array.from({ length: 24 }).map((_, idx) => (
+                  <div key={idx} className="print-carton-item" style={{ background: '#F8FAFC', color: '#000000', borderRadius: '6px', padding: '6px', border: '1px solid #CBD5E1', display: 'flex', gap: '6px', alignItems: 'center' }}>
                     <DynamicQrCode value={getQrPayload()} size={42} fgColor="#000" />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: '8px', fontWeight: '900', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{skuCode}</div>

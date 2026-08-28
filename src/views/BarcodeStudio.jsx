@@ -277,19 +277,19 @@ export function BarcodeStudio() {
 
             {/* ================= LAYOUT 2: CARTON STRIPS ================= */}
             {printLayout === 'carton_strip' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', maxHeight: '320px', overflowY: 'auto' }}>
+              <div className="print-carton-list" style={{ width: '100%', gap: '10px' }}>
                 {Array.from({ length: boxCount }).map((_, idx) => {
                   const letter = String.fromCharCode(65 + idx);
                   return (
-                    <div key={letter} style={{ background: '#FFFFFF', color: '#000000', borderRadius: '8px', padding: '8px 12px', border: '1.5px solid #000', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div key={letter} className="print-carton-item" style={{ background: '#FFFFFF', color: '#000000', borderRadius: '8px', padding: '10px 14px', border: '1.5px solid #000', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <div style={{ fontSize: '11px', fontWeight: '900' }}>GODREJ • BOX {letter} ({idx + 1}/{boxCount})</div>
-                        <div style={{ fontSize: '9px', color: '#334155' }}>{skuCode}</div>
+                        <div style={{ fontSize: '12px', fontWeight: '900' }}>GODREJ • BOX {letter} ({idx + 1}/{boxCount})</div>
+                        <div style={{ fontSize: '10px', color: '#334155' }}>{skuCode} • {productName}</div>
                       </div>
                       <Code128Barcode 
                         value={`${skuCode}-BOX-${letter}`} 
                         moduleWidth={1.2} 
-                        height={36} 
+                        height={38} 
                         bearerBars={bearerBars} 
                         quietZone={false}
                         fontSize={9} 
@@ -302,7 +302,7 @@ export function BarcodeStudio() {
 
             {/* ================= LAYOUT 3: THERMAL 50x25 LABEL ================= */}
             {printLayout === 'thermal_50x25' && (
-              <div style={{ background: '#FFFFFF', color: '#000000', borderRadius: '6px', padding: '10px 14px', width: '230px', border: '1.5px solid #000', textAlign: 'center', boxShadow: '0 8px 20px rgba(0,0,0,0.6)' }}>
+              <div className="printable-card" style={{ background: '#FFFFFF', color: '#000000', borderRadius: '6px', padding: '10px 14px', width: '230px', border: '1.5px solid #000', textAlign: 'center', boxShadow: '0 8px 20px rgba(0,0,0,0.6)' }}>
                 <div style={{ fontSize: '9px', fontWeight: '900', marginBottom: '2px' }}>GODREJ INTERIO RAYAGADA</div>
                 <div style={{ fontSize: '10px', fontWeight: '800', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{productName}</div>
                 <div style={{ display: 'flex', justifyContent: 'center', margin: '4px 0' }}>
@@ -321,9 +321,9 @@ export function BarcodeStudio() {
 
             {/* ================= LAYOUT 4: A4 24-UP ADHESIVE SHEET ================= */}
             {printLayout === 'a4_24up' && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', width: '100%', maxHeight: '320px', overflowY: 'auto', background: '#FFFFFF', padding: '10px', borderRadius: '8px' }}>
-                {Array.from({ length: 12 }).map((_, idx) => (
-                  <div key={idx} style={{ background: '#F8FAFC', color: '#000000', borderRadius: '6px', padding: '6px', border: '1px solid #CBD5E1', textAlign: 'center' }}>
+              <div className="print-grid-a4" style={{ width: '100%', background: '#FFFFFF', padding: '8px', borderRadius: '8px' }}>
+                {Array.from({ length: 24 }).map((_, idx) => (
+                  <div key={idx} className="print-carton-item" style={{ background: '#F8FAFC', color: '#000000', borderRadius: '6px', padding: '6px', border: '1px solid #CBD5E1', textAlign: 'center' }}>
                     <div style={{ fontSize: '8px', fontWeight: '900', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{skuCode}</div>
                     <div style={{ display: 'flex', justifyContent: 'center', margin: '2px 0' }}>
                       <Code128Barcode 

@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useStore } from '../../context/StoreContext';
+import { DynamicQrCode } from '../../utils/qrcodeGenerator';
 import { X, Check, Truck, Navigation, Star, Camera, MessageSquare, AlertTriangle, QrCode, Printer } from 'lucide-react';
 
 export function DigitalEpodModal({ isOpen, onClose, stop = {} }) {
@@ -269,8 +270,8 @@ export function WarehouseWallPosterModal({ isOpen, onClose }) {
           </div>
           
           <div style={{ display: 'inline-block', padding: '20px', background: '#F8FAFC', border: '3px dashed #000000', borderRadius: '16px', margin: '24px 0' }}>
-            <div style={{ width: '200px', height: '200px', background: '#000000', borderRadius: '12px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFFFFF', fontSize: '18px', fontWeight: '900' }}>
-              <QrCode size={140} color="#FFFFFF" />
+            <div style={{ background: '#FFFFFF', padding: '10px', borderRadius: '12px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <DynamicQrCode value="https://shreeganesh-godrej.web.app/#inward" size={180} fgColor="#000000" />
             </div>
             <div style={{ fontSize: '12px', fontWeight: '800', marginTop: '12px', color: '#000000' }}>
               SCAN TO LAUNCH DOCK INWARD SCANNER APP

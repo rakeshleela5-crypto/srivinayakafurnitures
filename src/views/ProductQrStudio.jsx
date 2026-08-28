@@ -144,7 +144,8 @@ export function ProductQrStudio() {
       case 'PRODUCT_SPEC':
         return `https://godrejinterio.com/products/${skuCode}?warranty=${warranty}Y&specs=${encodeURIComponent(material)}`;
       case 'DOCK_ROUTE':
-        return `${window.location.origin}/#inward?sku=${skuCode}&batch=GI-2026`;
+        const prodHost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://shreeganesh-godrej.web.app' : window.location.origin;
+        return `${prodHost}/#inward?sku=${skuCode}&batch=GI-2026`;
       case 'CUSTOM_URL':
       default:
         return customUrl;

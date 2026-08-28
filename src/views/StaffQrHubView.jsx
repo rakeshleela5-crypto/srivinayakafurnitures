@@ -18,7 +18,17 @@ import {
 export function StaffQrHubView() {
   const { storeMeta } = useStore();
 
-  const [customHost, setCustomHost] = useState(window.location.origin || 'http://localhost:5173');
+  const getProductionHost = () => {
+    if (typeof window !== 'undefined') {
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'https://shreeganesh-godrej.web.app';
+      }
+      return window.location.origin;
+    }
+    return 'https://shreeganesh-godrej.web.app';
+  };
+
+  const [customHost, setCustomHost] = useState(getProductionHost());
 
   const qrPortals = [
     {

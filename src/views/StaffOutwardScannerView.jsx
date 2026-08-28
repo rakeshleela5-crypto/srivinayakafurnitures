@@ -138,7 +138,24 @@ export function StaffOutwardScannerView() {
 
   // Camera Lifecycle & Real-Time Barcode Detector
   const [cameraFacing, setCameraFacing] = useState('environment');
+  const [isContinuousScan, setIsContinuousScan] = useState(true);
+  const [hapticsEnabled, setHapticsEnabled] = useState(true);
+  const [zoomLevel, setZoomLevel] = useState(1); // 1x, 1.5x, 2x
+  const [scanHistoryLog, setScanHistoryLog] = useState([
+    { id: 1, time: '02:15:10 PM', code: 'BED-MOD-001-BOX-A', label: 'Carton A (Headboard)', status: 'LOADED' },
+    { id: 2, time: '02:15:22 PM', code: 'BED-MOD-001-BOX-B', label: 'Carton B (Side Rails)', status: 'LOADED' }
+  ]);
   const scanIntervalRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  // Haptic feedback trigger for noisy loading docks
+  const triggerHaptic = () => {
+    if (hapticsEnabled && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate([100, 40, 100]);
+      } catch (e) {}
+    }
+  };
 
   useEffect(() => {
     return () => {
@@ -174,6 +191,7 @@ export function StaffOutwardScannerView() {
         }
         setIsCameraActive(true);
         playScanBeep();
+        triggerHaptic();
         showToast("📷 Vehicle Loading Camera Active! Scan cartons going into truck.", true);
 
         // Start continuous live barcode detection loop
@@ -193,6 +211,20 @@ export function StaffOutwardScannerView() {
     setCameraFacing(nextFacing);
     startCamera(nextFacing);
     showToast(`🔄 Switched to ${nextFacing === 'environment' ? 'Rear Main Camera' : 'Front Camera'}`);
+  };
+
+  const cycleZoom = async () => {
+    const nextZoom = zoomLevel === 1 ? 1.5 : zoomLevel === 1.5 ? 2 : 1;
+    setZoomLevel(nextZoom);
+    if (mediaStreamRef.current) {
+      const track = mediaStreamRef.current.getVideoTracks()[0];
+      if (track && track.getCapabilities && track.getCapabilities().zoom) {
+        try {
+          await track.applyConstraints({ advanced: [{ zoom: nextZoom }] });
+        } catch (e) {}
+      }
+    }
+    showToast(`🔍 Camera Zoom: ${nextZoom}x`);
   };
 
   const startLiveBarcodeScanner = () => {
@@ -262,6 +294,7 @@ export function StaffOutwardScannerView() {
 
   const captureCargoProof = () => {
     playScanBeep();
+    triggerHaptic();
     let realDataUrl = "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=400";
 
     // Grab real frame from active video element
@@ -288,6 +321,27 @@ export function StaffOutwardScannerView() {
     showToast("📸 Real Camera Cargo Proof Photo captured for Gate Pass!", true);
   };
 
+  const handlePhotoFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target.result;
+      const newProof = {
+        id: Date.now(),
+        timestamp: new Date().toLocaleTimeString(),
+        label: `Truck Loading Proof #${cargoProofPhotos.length + 1} (Direct Upload)`,
+        dataUrl: dataUrl
+      };
+      setCargoProofPhotos(prev => [newProof, ...prev]);
+      playScanBeep();
+      triggerHaptic();
+      showToast("📸 Real Cargo Photo captured via mobile camera file uploader!", true);
+    };
+    reader.readAsDataURL(file);
+  };
+
   // Process scanned code
   const handleProcessBarcodeScan = (raw) => {
     if (!raw) return;
@@ -304,13 +358,27 @@ export function StaffOutwardScannerView() {
       if (!loadedBoxes.includes(matchedLetter)) {
         setLoadedBoxes(prev => [...prev, matchedLetter]);
         playScanBeep();
+        triggerHaptic();
+        setScanHistoryLog(prev => [
+          { id: Date.now(), time: new Date().toLocaleTimeString(), code: val, label: `Carton ${matchedLetter} Loaded`, status: 'LOADED' },
+          ...prev.slice(0, 19)
+        ]);
         showToast(`🚚 Carton ${matchedLetter} Loaded into Truck!`, true);
       }
     } else if (val.includes(selectedOrderId) || val.includes(activeOrder.Ordered_SKU)) {
       setLoadedBoxes([...boxLetters]);
       playScanBeep();
       playSuccessChime();
+      triggerHaptic();
+      setScanHistoryLog(prev => [
+        { id: Date.now(), time: new Date().toLocaleTimeString(), code: val, label: `Order ${selectedOrderId} Complete (${totalBoxesRequired} Cartons)`, status: 'LOADED_ALL' },
+        ...prev.slice(0, 19)
+      ]);
       showToast(`🎯 Full Order Barcode Scanned! All ${totalBoxesRequired} cartons loaded.`);
+    }
+
+    if (!isContinuousScan) {
+      stopCamera();
     }
   };
 
@@ -500,13 +568,31 @@ export function StaffOutwardScannerView() {
             <h3 style={{ fontSize: '16px', fontWeight: '900', color: sunnyMode ? '#000000' : 'var(--accent-amber)' }}>
               📋 Loading Manifest & Camera Scanner
             </h3>
-            <div style={{ display: 'flex', gap: '6px' }}>
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                accept="image/*" 
+                capture="environment" 
+                style={{ display: 'none' }} 
+                onChange={handlePhotoFileUpload} 
+              />
+
+              <button 
+                className="btn-ghost-edit" 
+                style={{ fontSize: '11px', padding: '4px 8px' }}
+                onClick={() => fileInputRef.current?.click()}
+                title="Direct Snap / Upload Photo from Camera File"
+              >
+                📁 Snap / Upload Photo
+              </button>
+
               {isCameraActive ? (
-                <button className="btn-ghost-edit" style={{ color: 'var(--accent-rose)', border: '1px solid var(--accent-rose)' }} onClick={stopCamera}>
+                <button className="btn-ghost-edit" style={{ color: 'var(--accent-rose)', border: '1px solid var(--accent-rose)', fontSize: '11px', padding: '4px 8px' }} onClick={stopCamera}>
                   <VideoOff size={13} /> Stop Camera
                 </button>
               ) : (
-                <button className="btn-emerald" onClick={startCamera}>
+                <button className="btn-emerald" onClick={() => startCamera()} style={{ fontSize: '11px', padding: '4px 8px' }}>
                   <Video size={13} /> Start Camera Scanner
                 </button>
               )}
@@ -516,7 +602,19 @@ export function StaffOutwardScannerView() {
           {/* Live Smartphone Camera Viewport */}
           {isCameraActive && (
             <div style={{ position: 'relative', width: '100%', height: '240px', background: '#000', borderRadius: '12px', overflow: 'hidden', margin: '12px 0', border: '2px solid var(--accent-amber)' }}>
-              <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <video 
+                ref={videoRef} 
+                autoPlay 
+                playsInline 
+                muted 
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  objectFit: 'cover',
+                  transform: zoomLevel > 1 ? `scale(${zoomLevel})` : 'none',
+                  transition: 'transform 0.2s ease'
+                }} 
+              />
               
               {/* Aiming Reticle */}
               <div style={{
@@ -530,8 +628,28 @@ export function StaffOutwardScannerView() {
                 animation: 'pulse 1.2s infinite'
               }} />
 
+              {/* Top-Left Mode Pills */}
+              <div style={{ position: 'absolute', top: '8px', left: '8px', display: 'flex', gap: '4px' }}>
+                <button 
+                  type="button" 
+                  onClick={() => setIsContinuousScan(!isContinuousScan)}
+                  style={{ background: isContinuousScan ? 'rgba(16,185,129,0.9)' : 'rgba(0,0,0,0.7)', color: '#FFFFFF', border: 'none', borderRadius: '4px', padding: '2px 6px', fontSize: '9.5px', fontWeight: '800', cursor: 'pointer' }}
+                  title="Toggle Continuous Fast Auto-Scan"
+                >
+                  ⚡ {isContinuousScan ? 'Continuous ON' : 'Single Shot'}
+                </button>
+                <button 
+                  type="button" 
+                  onClick={cycleZoom}
+                  style={{ background: 'rgba(245,158,11,0.85)', color: '#000000', border: 'none', borderRadius: '4px', padding: '2px 6px', fontSize: '9.5px', fontWeight: '800', cursor: 'pointer' }}
+                  title="Cycle Digital Zoom"
+                >
+                  🔍 {zoomLevel}x
+                </button>
+              </div>
+
               {/* Viewport Controls Overlay */}
-              <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '6px' }}>
+              <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', gap: '6px' }}>
                 <button 
                   type="button" 
                   onClick={flipCamera}
@@ -559,7 +677,29 @@ export function StaffOutwardScannerView() {
               </div>
 
               <div style={{ position: 'absolute', bottom: '8px', left: '12px', background: 'rgba(0,0,0,0.8)', padding: '3px 8px', borderRadius: '4px', fontSize: '10px', color: '#F59E0B', fontWeight: '800' }}>
-                TRUCK LOADING BAY CAMERA • {cameraFacing === 'environment' ? 'REAR LENS' : 'FRONT LENS'}
+                TRUCK LOADING BAY CAMERA • {cameraFacing === 'environment' ? 'REAR LENS' : 'FRONT LENS'} {hapticsEnabled ? '• 📳 HAPTICS ON' : ''}
+              </div>
+            </div>
+          )}
+
+          {/* Live Scan Activity History Feed */}
+          {scanHistoryLog.length > 0 && (
+            <div style={{ background: '#030712', borderRadius: '10px', padding: '8px 10px', margin: '8px 0', border: '1px solid rgba(245,158,11,0.25)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <span style={{ fontSize: '10px', fontWeight: '800', color: 'var(--accent-gold-light)' }}>
+                  📜 Live Dispatch Scan Log:
+                </span>
+                <span style={{ fontSize: '9px', color: 'var(--text-secondary)' }}>
+                  {scanHistoryLog.length} Scans Recorded
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', maxHeight: '75px', overflowY: 'auto' }}>
+                {scanHistoryLog.slice(0, 4).map(log => (
+                  <div key={log.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontFamily: 'JetBrains Mono', background: 'rgba(255,255,255,0.03)', padding: '2px 6px', borderRadius: '4px' }}>
+                    <span style={{ color: 'var(--text-primary)' }}>{log.label}</span>
+                    <span style={{ color: 'var(--accent-emerald)', fontWeight: '800' }}>✓ {log.time}</span>
+                  </div>
+                ))}
               </div>
             </div>
           )}

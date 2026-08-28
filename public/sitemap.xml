@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Main Flagship Showroom Homepage -->
+  <url>
+    <loc>https://shreeganesh-godrej.web.app/</loc>
+    <lastmod>2026-08-28</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- Inward Dock Factory Scanner Portal -->
+  <url>
+    <loc>https://shreeganesh-godrej.web.app/#inward</loc>
+    <lastmod>2026-08-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Outward Dock Dispatch Scanner Portal -->
+  <url>
+    <loc>https://shreeganesh-godrej.web.app/#outward</loc>
+    <lastmod>2026-08-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Driver Mobile Delivery & Digital ePOD Desk -->
+  <url>
+    <loc>https://shreeganesh-godrej.web.app/#logistics</loc>
+    <lastmod>2026-08-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- 1D GS1 Code-128 Barcode Studio -->
+  <url>
+    <loc>https://shreeganesh-godrej.web.app/#barcode</loc>
+    <lastmod>2026-08-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- 2D Product & Standee QR Studio -->
+  <url>
+    <loc>https://shreeganesh-godrej.web.app/#qr-studio</loc>
+    <lastmod>2026-08-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- VIP Architect Referral Portal -->
+  <url>
+    <loc>https://shreeganesh-godrej.web.app/#architects</loc>
+    <lastmod>2026-08-28</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+</urlset>

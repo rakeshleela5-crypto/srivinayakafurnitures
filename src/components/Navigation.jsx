@@ -31,7 +31,7 @@ export function TopTicker() {
         </div>
         <div className="ticker-item">
           <span>📞</span>
-          <span>+91 94370 88990</span>
+          <span>+91 93905 53301</span>
         </div>
         <div className="ticker-item">
           <span>🔒</span>

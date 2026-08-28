@@ -1,2 +1,5 @@
 User-agent: *
-Disallow: /
+Allow: /
+
+# Official Sitemap
+Sitemap: https://shreeganesh-godrej.web.app/sitemap.xml

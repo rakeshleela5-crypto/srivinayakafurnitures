@@ -108,7 +108,12 @@ export function StoreProvider({ children }) {
   const [drivers, setDrivers] = useState(INITIAL_DRIVERS);
   const [routeStops, setRouteStops] = useState(INITIAL_ROUTE_STOPS);
   const [targets, setTargets] = useState(STORE_TARGETS);
-  const [bots, setBots] = useState(APPSHEET_BOTS);
+  const [bots, setBots] = useState(APPSHEET_BOTS.map(b => ({
+    ...b,
+    status: 'ACTIVE',
+    schedule: b.trigger && b.trigger.includes('Daily') ? 'Scheduled Daily at 21:00' : b.trigger && b.trigger.includes('Hourly') ? 'Scheduled Hourly' : 'Instant Real-Time',
+    targetChannel: 'WhatsApp Cloud + Google Sheets'
+  })));
   const [storeMeta, setStoreMeta] = useState(STORE_METADATA);
 
   // Additional Logs
@@ -418,6 +423,11 @@ export function StoreProvider({ children }) {
     });
   };
 
+  // 7.1. Update Bot Configuration
+  const updateBotConfig = (botId, updatedProps) => {
+    setBots(prev => prev.map(b => b.botId === botId ? { ...b, ...updatedProps } : b));
+  };
+
   // 8. 2-Way Sync with Google Sheets
   const syncWithGoogleSheets = async () => {
     setIsSyncing(true);
@@ -457,6 +467,8 @@ export function StoreProvider({ children }) {
       targets,
       setTargets,
       bots,
+      setBots,
+      updateBotConfig,
       storeMeta,
       setStoreMeta,
       paymentsLog,

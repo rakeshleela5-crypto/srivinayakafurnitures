@@ -8,6 +8,7 @@ import { WhatsAppProposalModal, EmiSchemeModal, FurnitureExchangeModal } from '.
 import { DpdpComplianceModal } from './DpdpComplianceModal';
 import { CsvImportModal } from './CsvImportModal';
 import { EditArchitectModal, ArchitectPassModal, ArchitectCertificateModal, ArchitectLedgerStatementModal } from './ArchitectExtendedModals';
+import { EditBotConfigModal } from './EditBotConfigModal';
 
 export function ModalContainer() {
   const { activeModal, modalProps, closeModal } = useStore();
@@ -52,6 +53,9 @@ export function ModalContainer() {
 
       {/* Bulk CSV Catalog Importer Modal */}
       <CsvImportModal isOpen={activeModal === 'csv_import'} onClose={closeModal} />
+
+      {/* Bot Configuration Modal */}
+      <EditBotConfigModal isOpen={activeModal === 'edit_bot_config'} onClose={closeModal} bot={modalProps.bot} />
     </>
   );
 }

@@ -49,10 +49,7 @@ export function StaffInwardScannerView() {
   const [isContinuousScan, setIsContinuousScan] = useState(true);
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const [zoomLevel, setZoomLevel] = useState(1); // 1x, 1.5x, 2x
-  const [scanHistoryLog, setScanHistoryLog] = useState([
-    { id: 1, time: '11:32:05 AM', code: 'BED-MOD-001-BOX-A', label: 'Box A (Headboard)', status: 'VERIFIED' },
-    { id: 2, time: '11:32:18 AM', code: 'BED-MOD-001-BOX-B', label: 'Box B (Side Rails)', status: 'VERIFIED' }
-  ]);
+  const [scanHistoryLog, setScanHistoryLog] = useState([]);
   const [damageSnapshots, setDamageSnapshots] = useState([]);
   const videoRef = useRef(null);
   const mediaStreamRef = useRef(null);
@@ -110,7 +107,8 @@ export function StaffInwardScannerView() {
     }
   ]);
 
-  const [verifiedBoxes, setVerifiedBoxes] = useState(['A', 'B']);
+  // Clean Zero State: Starts with 0 verified boxes for fresh shipment unloading
+  const [verifiedBoxes, setVerifiedBoxes] = useState([]);
   const [editingBoxIndex, setEditingBoxIndex] = useState(null); // Index of box currently being edited in modal/drawer
 
   const activeProduct = catalog.find(c => c.SKU === selectedPoSku) || catalog[0];
@@ -131,6 +129,15 @@ export function StaffInwardScannerView() {
   const [cameraFacing, setCameraFacing] = useState('environment'); // 'environment' | 'user'
   const scanIntervalRef = useRef(null);
 
+  // Auto-attach video stream whenever isCameraActive is toggled and videoRef mounts
+  useEffect(() => {
+    if (isCameraActive && videoRef.current && mediaStreamRef.current) {
+      videoRef.current.srcObject = mediaStreamRef.current;
+      videoRef.current.setAttribute('playsinline', 'true');
+      videoRef.current.play().catch(() => {});
+    }
+  }, [isCameraActive]);
+
   useEffect(() => {
     return () => {
       stopCamera();
@@ -145,6 +152,7 @@ export function StaffInwardScannerView() {
       }
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach(t => t.stop());
+        mediaStreamRef.current = null;
       }
 
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -158,12 +166,16 @@ export function StaffInwardScannerView() {
         };
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         mediaStreamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.setAttribute('playsinline', 'true');
-          videoRef.current.play().catch(() => {});
-        }
         setIsCameraActive(true);
+
+        setTimeout(() => {
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            videoRef.current.setAttribute('playsinline', 'true');
+            videoRef.current.play().catch(() => {});
+          }
+        }, 80);
+
         playScanBeep();
         triggerHaptic();
         showToast("📷 Live Smartphone Barcode Camera Active! Aim at carton barcode.", true);
@@ -175,8 +187,8 @@ export function StaffInwardScannerView() {
       }
     } catch (err) {
       console.error("Camera access error:", err);
-      showToast("⚠️ Camera permission required. Simulation scanner mode active.");
-      setIsCameraActive(true);
+      showToast("⚠️ Camera permission required or unavailable. Scanner mode active.");
+      setIsCameraActive(false);
     }
   };
 
@@ -485,6 +497,14 @@ export function StaffInwardScannerView() {
           </button>
           <button className="btn-ghost-edit" onClick={() => setIsEditingShipment(!isEditingShipment)}>
             <Edit size={14} /> {isEditingShipment ? '✕ Close Shipment Details' : '✏️ Edit Inward Batch & Bay Details'}
+          </button>
+          <button 
+            className="btn-ghost-edit" 
+            style={{ color: 'var(--accent-rose)', border: '1px solid var(--accent-rose)' }}
+            onClick={() => { setVerifiedBoxes([]); setScanHistoryLog([]); showToast("🔄 Inward Dock Verification reset to 0/5 boxes!"); }}
+            title="Reset verified boxes to start fresh shipment"
+          >
+            🔄 Reset Verification
           </button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

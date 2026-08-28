@@ -39,7 +39,8 @@ export function StaffOutwardScannerView() {
   const [selectedOrderId, setSelectedOrderId] = useState(orders[0]?.Order_ID || 'ORD-8921');
   const [selectedDriverId, setSelectedDriverId] = useState('DRV-01');
   const [scannedInput, setScannedInput] = useState('');
-  const [loadedBoxes, setLoadedBoxes] = useState(['A', 'B', 'C']);
+  // Clean Zero State: Starts with 0 loaded boxes for fresh truck loading
+  const [loadedBoxes, setLoadedBoxes] = useState([]);
 
   // Camera & Media Stream State
   const [isCameraActive, setIsCameraActive] = useState(false);
@@ -67,7 +68,7 @@ export function StaffOutwardScannerView() {
       name: 'Headboard & Hydraulic Lift Frame', 
       weight: 42.0, 
       stacking: 'MIDDLE_STACK', // 'BOTTOM_HEAVY' | 'MIDDLE_STACK' | 'TOP_FRAGILE'
-      status: 'VERIFIED_LOADED',
+      status: 'STAGED_AT_DOCK',
       notes: 'Carved teak headboard with pre-installed hydraulic lift brackets',
       barcode: 'BOX-A'
     },
@@ -76,7 +77,7 @@ export function StaffOutwardScannerView() {
       name: 'Solid Teak Side Rails & Footboard', 
       weight: 28.0, 
       stacking: 'MIDDLE_STACK',
-      status: 'VERIFIED_LOADED',
+      status: 'STAGED_AT_DOCK',
       notes: 'Dual side runners wrapped in protective blanket',
       barcode: 'BOX-B'
     },
@@ -85,7 +86,7 @@ export function StaffOutwardScannerView() {
       name: 'Heavy Metal Slats & Frame Grid', 
       weight: 24.5, 
       stacking: 'BOTTOM_HEAVY',
-      status: 'VERIFIED_LOADED',
+      status: 'STAGED_AT_DOCK',
       notes: 'Place on bottom floor of Tata Ace truck bed',
       barcode: 'BOX-C'
     },
@@ -141,12 +142,18 @@ export function StaffOutwardScannerView() {
   const [isContinuousScan, setIsContinuousScan] = useState(true);
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const [zoomLevel, setZoomLevel] = useState(1); // 1x, 1.5x, 2x
-  const [scanHistoryLog, setScanHistoryLog] = useState([
-    { id: 1, time: '02:15:10 PM', code: 'BED-MOD-001-BOX-A', label: 'Carton A (Headboard)', status: 'LOADED' },
-    { id: 2, time: '02:15:22 PM', code: 'BED-MOD-001-BOX-B', label: 'Carton B (Side Rails)', status: 'LOADED' }
-  ]);
+  const [scanHistoryLog, setScanHistoryLog] = useState([]);
   const scanIntervalRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  // Auto-attach video stream whenever isCameraActive is toggled and videoRef mounts
+  useEffect(() => {
+    if (isCameraActive && videoRef.current && mediaStreamRef.current) {
+      videoRef.current.srcObject = mediaStreamRef.current;
+      videoRef.current.setAttribute('playsinline', 'true');
+      videoRef.current.play().catch(() => {});
+    }
+  }, [isCameraActive]);
 
   // Haptic feedback trigger for noisy loading docks
   const triggerHaptic = () => {
@@ -171,6 +178,7 @@ export function StaffOutwardScannerView() {
       }
       if (mediaStreamRef.current) {
         mediaStreamRef.current.getTracks().forEach(t => t.stop());
+        mediaStreamRef.current = null;
       }
 
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
@@ -184,12 +192,16 @@ export function StaffOutwardScannerView() {
         };
         const stream = await navigator.mediaDevices.getUserMedia(constraints);
         mediaStreamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          videoRef.current.setAttribute('playsinline', 'true');
-          videoRef.current.play().catch(() => {});
-        }
         setIsCameraActive(true);
+
+        setTimeout(() => {
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            videoRef.current.setAttribute('playsinline', 'true');
+            videoRef.current.play().catch(() => {});
+          }
+        }, 80);
+
         playScanBeep();
         triggerHaptic();
         showToast("📷 Vehicle Loading Camera Active! Scan cartons going into truck.", true);
@@ -201,8 +213,7 @@ export function StaffOutwardScannerView() {
       }
     } catch (err) {
       console.error("Camera access error:", err);
-      showToast("⚠️ Camera permission required. Simulation scanner mode active.");
-      setIsCameraActive(true);
+      showToast("⚠️ Camera permission required or unavailable. Scanner mode active.");
     }
   };
 
@@ -486,6 +497,14 @@ export function StaffOutwardScannerView() {
           </button>
           <button className="btn-ghost-edit" onClick={() => setIsEditingDispatch(!isEditingDispatch)}>
             <Edit size={14} /> {isEditingDispatch ? '✕ Close Dispatch Details' : '✏️ Edit Dispatch, Driver & Carpenter Details'}
+          </button>
+          <button 
+            className="btn-ghost-edit" 
+            style={{ color: 'var(--accent-rose)', border: '1px solid var(--accent-rose)' }}
+            onClick={() => { setLoadedBoxes([]); setScanHistoryLog([]); showToast("🔄 Outward Truck Loading reset to 0/5 cartons!"); }}
+            title="Reset loaded cartons to start fresh truck loading"
+          >
+            🔄 Reset Truck Loading
           </button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

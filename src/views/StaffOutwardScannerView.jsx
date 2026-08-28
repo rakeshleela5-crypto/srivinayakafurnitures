@@ -344,15 +344,6 @@ export function StaffOutwardScannerView() {
       // 1. Run Universal Dual-Engine Decoder on the uploaded photo
       const detectedCode = await decodeBarcodeFromImageFile(dataUrl);
 
-      const newProof = {
-        id: Date.now(),
-        timestamp: new Date().toLocaleTimeString(),
-        label: detectedCode ? `Decoded: ${detectedCode}` : `Truck Loading Proof #${cargoProofPhotos.length + 1}`,
-        dataUrl: dataUrl,
-        decodedCode: detectedCode || null
-      };
-      setCargoProofPhotos(prev => [newProof, ...prev]);
-
       if (detectedCode) {
         handleProcessBarcodeScan(detectedCode);
         showToast(`🎯 Barcode Decoded from Photo: ${detectedCode}! Truck loading applied ✓`, true);

@@ -323,15 +323,6 @@ export function StaffInwardScannerView() {
       // 1. Run Universal Dual-Engine Decoder on the uploaded photo
       const detectedCode = await decodeBarcodeFromImageFile(dataUrl);
 
-      const newSnapshot = {
-        id: Date.now(),
-        timestamp: new Date().toLocaleTimeString(),
-        label: detectedCode ? `Decoded: ${detectedCode}` : `Carton Inspection Photo #${damageSnapshots.length + 1}`,
-        dataUrl: dataUrl,
-        decodedCode: detectedCode || null
-      };
-      setDamageSnapshots(prev => [newSnapshot, ...prev]);
-
       if (detectedCode) {
         handleProcessBarcodeScan(detectedCode);
         showToast(`🎯 Barcode Decoded from Photo: ${detectedCode}! Verification applied ✓`, true);

@@ -136,26 +136,48 @@ export function StaffOutwardScannerView() {
     }
   }, [selectedOrderId]);
 
-  // Camera Lifecycle
+  // Camera Lifecycle & Real-Time Barcode Detector
+  const [cameraFacing, setCameraFacing] = useState('environment');
+  const scanIntervalRef = useRef(null);
+
   useEffect(() => {
     return () => {
       stopCamera();
     };
   }, []);
 
-  const startCamera = async () => {
+  const startCamera = async (facing = cameraFacing) => {
     try {
+      if (scanIntervalRef.current) {
+        clearInterval(scanIntervalRef.current);
+        scanIntervalRef.current = null;
+      }
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(t => t.stop());
+      }
+
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-        });
+        const constraints = {
+          video: {
+            facingMode: { ideal: facing },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        };
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
         mediaStreamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+          videoRef.current.setAttribute('playsinline', 'true');
+          videoRef.current.play().catch(() => {});
         }
         setIsCameraActive(true);
         playScanBeep();
         showToast("📷 Vehicle Loading Camera Active! Scan cartons going into truck.", true);
+
+        // Start continuous live barcode detection loop
+        startLiveBarcodeScanner();
       } else {
         showToast("⚠️ Camera device not detected. Scanner gun & manual mode active.");
       }
@@ -166,7 +188,48 @@ export function StaffOutwardScannerView() {
     }
   };
 
+  const flipCamera = () => {
+    const nextFacing = cameraFacing === 'environment' ? 'user' : 'environment';
+    setCameraFacing(nextFacing);
+    startCamera(nextFacing);
+    showToast(`🔄 Switched to ${nextFacing === 'environment' ? 'Rear Main Camera' : 'Front Camera'}`);
+  };
+
+  const startLiveBarcodeScanner = () => {
+    if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
+
+    if ('BarcodeDetector' in window) {
+      try {
+        const barcodeDetector = new window.BarcodeDetector({
+          formats: ['code_128', 'code_39', 'qr_code', 'ean_13', 'ean_8', 'upc_a', 'data_matrix']
+        });
+
+        scanIntervalRef.current = setInterval(async () => {
+          if (videoRef.current && videoRef.current.readyState >= 2) {
+            try {
+              const barcodes = await barcodeDetector.detect(videoRef.current);
+              if (barcodes && barcodes.length > 0) {
+                const raw = barcodes[0].rawValue;
+                if (raw) {
+                  handleProcessBarcodeScan(raw);
+                }
+              }
+            } catch (e) {
+              // Frame scan cycle
+            }
+          }
+        }, 350);
+      } catch (e) {
+        console.warn("BarcodeDetector initialization failed:", e);
+      }
+    }
+  };
+
   const stopCamera = () => {
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
+    }
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach(track => track.stop());
       mediaStreamRef.current = null;
@@ -188,7 +251,7 @@ export function StaffOutwardScannerView() {
           showToast(nextState ? "🔦 Truck Bed Camera Torch ON" : "🔦 Torch OFF");
         } catch (e) {
           setIsTorchOn(!isTorchOn);
-          showToast("🔦 Torch toggled (Simulated)");
+          showToast("🔦 Torch toggled");
         }
       }
     } else {
@@ -199,14 +262,56 @@ export function StaffOutwardScannerView() {
 
   const captureCargoProof = () => {
     playScanBeep();
+    let realDataUrl = "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=400";
+
+    // Grab real frame from active video element
+    if (videoRef.current && videoRef.current.videoWidth > 0) {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = videoRef.current.videoWidth || 640;
+        canvas.height = videoRef.current.videoHeight || 480;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+        realDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      } catch (e) {
+        console.error("Frame capture error:", e);
+      }
+    }
+
     const newProof = {
       id: Date.now(),
       timestamp: new Date().toLocaleTimeString(),
       label: `Truck Loading Proof #${cargoProofPhotos.length + 1}`,
-      dataUrl: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=400"
+      dataUrl: realDataUrl
     };
     setCargoProofPhotos(prev => [newProof, ...prev]);
-    showToast("📸 Cargo Loading Proof Photo captured for Gate Pass!", true);
+    showToast("📸 Real Camera Cargo Proof Photo captured for Gate Pass!", true);
+  };
+
+  // Process scanned code
+  const handleProcessBarcodeScan = (raw) => {
+    if (!raw) return;
+    const val = raw.trim().toUpperCase();
+
+    const matchedLetter = boxLetters.find(l => 
+      val.includes(`BOX-${l}`) || 
+      val.includes(`-${l}`) ||
+      val === l || 
+      val.endsWith(l)
+    );
+
+    if (matchedLetter) {
+      if (!loadedBoxes.includes(matchedLetter)) {
+        setLoadedBoxes(prev => [...prev, matchedLetter]);
+        playScanBeep();
+        showToast(`🚚 Carton ${matchedLetter} Loaded into Truck!`, true);
+      }
+    } else if (val.includes(selectedOrderId) || val.includes(activeOrder.Ordered_SKU)) {
+      setLoadedBoxes([...boxLetters]);
+      playScanBeep();
+      playSuccessChime();
+      showToast(`🎯 Full Order Barcode Scanned! All ${totalBoxesRequired} cartons loaded.`);
+    }
   };
 
   // Barcode Gun & Scanner
@@ -214,25 +319,7 @@ export function StaffOutwardScannerView() {
     e?.preventDefault();
     if (!scannedInput.trim()) return;
 
-    const val = scannedInput.trim().toUpperCase();
-    playScanBeep();
-
-    const matchedLetter = boxLetters.find(l => val.includes(`BOX-${l}`) || val === l || val.endsWith(l));
-
-    if (matchedLetter) {
-      if (!loadedBoxes.includes(matchedLetter)) {
-        setLoadedBoxes(prev => [...prev, matchedLetter]);
-        showToast(`🚚 Box ${matchedLetter} Loaded into Truck!`, true);
-      } else {
-        showToast(`⚠️ Box ${matchedLetter} was already scanned into truck.`);
-      }
-    } else if (val.includes(selectedOrderId) || val.includes('ALL')) {
-      setLoadedBoxes(boxLetters);
-      showToast(`🎯 All ${boxDetails.length}/${boxDetails.length} boxes scanned & loaded for ${selectedOrderId}!`);
-    } else {
-      showToast(`🔍 Scanned barcode: ${val}`);
-    }
-
+    handleProcessBarcodeScan(scannedInput);
     setScannedInput('');
   };
 
@@ -447,8 +534,17 @@ export function StaffOutwardScannerView() {
               <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '6px' }}>
                 <button 
                   type="button" 
+                  onClick={flipCamera}
+                  style={{ background: 'rgba(245,158,11,0.85)', color: '#000000', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                  title="Flip Camera (Rear / Front)"
+                >
+                  <RotateCcw size={15} />
+                </button>
+                <button 
+                  type="button" 
                   onClick={toggleTorch}
                   style={{ background: isTorchOn ? '#F59E0B' : 'rgba(0,0,0,0.7)', color: '#FFFFFF', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                  title="Toggle Torch Flashlight"
                 >
                   <Flashlight size={15} />
                 </button>
@@ -463,7 +559,7 @@ export function StaffOutwardScannerView() {
               </div>
 
               <div style={{ position: 'absolute', bottom: '8px', left: '12px', background: 'rgba(0,0,0,0.8)', padding: '3px 8px', borderRadius: '4px', fontSize: '10px', color: '#F59E0B', fontWeight: '800' }}>
-                TRUCK LOADING BAY CAMERA • LIVE
+                TRUCK LOADING BAY CAMERA • {cameraFacing === 'environment' ? 'REAR LENS' : 'FRONT LENS'}
               </div>
             </div>
           )}

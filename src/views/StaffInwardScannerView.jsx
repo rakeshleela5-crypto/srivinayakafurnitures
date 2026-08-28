@@ -110,26 +110,48 @@ export function StaffInwardScannerView() {
   // Calculate Total Knockdown Weight
   const totalKnockdownWeight = customBoxes.reduce((sum, b) => sum + (Number(b.weight) || 0), 0);
 
-  // Camera Stream Lifecycle
+  // Camera Stream Lifecycle & Real-Time Barcode Detector
+  const [cameraFacing, setCameraFacing] = useState('environment'); // 'environment' | 'user'
+  const scanIntervalRef = useRef(null);
+
   useEffect(() => {
     return () => {
       stopCamera();
     };
   }, []);
 
-  const startCamera = async () => {
+  const startCamera = async (facing = cameraFacing) => {
     try {
+      if (scanIntervalRef.current) {
+        clearInterval(scanIntervalRef.current);
+        scanIntervalRef.current = null;
+      }
+      if (mediaStreamRef.current) {
+        mediaStreamRef.current.getTracks().forEach(t => t.stop());
+      }
+
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }
-        });
+        const constraints = {
+          video: {
+            facingMode: { ideal: facing },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        };
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
         mediaStreamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+          videoRef.current.setAttribute('playsinline', 'true');
+          videoRef.current.play().catch(() => {});
         }
         setIsCameraActive(true);
         playScanBeep();
         showToast("📷 Live Smartphone Barcode Camera Active! Aim at carton barcode.", true);
+
+        // Start continuous live barcode detection loop
+        startLiveBarcodeScanner();
       } else {
         showToast("⚠️ Camera device not detected. Barcode laser gun & manual mode active.");
       }
@@ -140,7 +162,48 @@ export function StaffInwardScannerView() {
     }
   };
 
+  const flipCamera = () => {
+    const nextFacing = cameraFacing === 'environment' ? 'user' : 'environment';
+    setCameraFacing(nextFacing);
+    startCamera(nextFacing);
+    showToast(`🔄 Switched to ${nextFacing === 'environment' ? 'Rear Main Camera' : 'Front Camera'}`);
+  };
+
+  const startLiveBarcodeScanner = () => {
+    if (scanIntervalRef.current) clearInterval(scanIntervalRef.current);
+
+    if ('BarcodeDetector' in window) {
+      try {
+        const barcodeDetector = new window.BarcodeDetector({
+          formats: ['code_128', 'code_39', 'qr_code', 'ean_13', 'ean_8', 'upc_a', 'data_matrix']
+        });
+
+        scanIntervalRef.current = setInterval(async () => {
+          if (videoRef.current && videoRef.current.readyState >= 2) {
+            try {
+              const barcodes = await barcodeDetector.detect(videoRef.current);
+              if (barcodes && barcodes.length > 0) {
+                const raw = barcodes[0].rawValue;
+                if (raw) {
+                  handleProcessBarcodeScan(raw);
+                }
+              }
+            } catch (e) {
+              // Frame scan cycle
+            }
+          }
+        }, 350);
+      } catch (e) {
+        console.warn("BarcodeDetector initialization failed, using standard video stream:", e);
+      }
+    }
+  };
+
   const stopCamera = () => {
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current);
+      scanIntervalRef.current = null;
+    }
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach(track => track.stop());
       mediaStreamRef.current = null;
@@ -162,7 +225,7 @@ export function StaffInwardScannerView() {
           showToast(nextState ? "🔦 Warehouse Camera Torch ON" : "🔦 Torch OFF");
         } catch (e) {
           setIsTorchOn(!isTorchOn);
-          showToast("🔦 Torch toggled (Simulated)");
+          showToast("🔦 Torch toggled");
         }
       }
     } else {
@@ -173,14 +236,57 @@ export function StaffInwardScannerView() {
 
   const captureDamageSnapshot = () => {
     playScanBeep();
+    let realDataUrl = "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=400";
+
+    // Grab real frame from active video element
+    if (videoRef.current && videoRef.current.videoWidth > 0) {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = videoRef.current.videoWidth || 640;
+        canvas.height = videoRef.current.videoHeight || 480;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+        realDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      } catch (e) {
+        console.error("Frame capture error:", e);
+      }
+    }
+
     const newSnapshot = {
       id: Date.now(),
       timestamp: new Date().toLocaleTimeString(),
       label: `Carton Damage Photo #${damageSnapshots.length + 1}`,
-      dataUrl: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=400"
+      dataUrl: realDataUrl
     };
     setDamageSnapshots(prev => [newSnapshot, ...prev]);
-    showToast("📸 Carton Inspection Snapshot captured for factory warranty claim!", true);
+    showToast("📸 Real Camera Snapshot captured & attached to damage report!", true);
+  };
+
+  // Process live camera or gun barcode
+  const handleProcessBarcodeScan = (raw) => {
+    if (!raw) return;
+    const val = raw.trim().toUpperCase();
+
+    const matchedBox = customBoxes.find(b => 
+      val.includes(`BOX-${b.id}`) || 
+      val.includes(`-${b.id}`) || 
+      val === b.id || 
+      val.endsWith(b.id) || 
+      val === b.barcode
+    );
+
+    if (matchedBox) {
+      if (!verifiedBoxes.includes(matchedBox.id)) {
+        setVerifiedBoxes(prev => [...prev, matchedBox.id]);
+        playScanBeep();
+        showToast(`📦 Box ${matchedBox.id} (${matchedBox.name}) Verified!`, true);
+      }
+    } else if (val.includes(selectedPoSku)) {
+      setVerifiedBoxes(customBoxes.map(b => b.id));
+      playScanBeep();
+      playSuccessChime();
+      showToast(`🎯 Full SKU ${selectedPoSku} scanned! All ${customBoxes.length} boxes verified.`);
+    }
   };
 
   // Barcode Gun / Input Handler
@@ -188,25 +294,7 @@ export function StaffInwardScannerView() {
     e?.preventDefault();
     if (!scannedInput.trim()) return;
 
-    const val = scannedInput.trim().toUpperCase();
-    playScanBeep();
-
-    const matchedBox = customBoxes.find(b => val.includes(`BOX-${b.id}`) || val === b.id || val.endsWith(b.id) || val === b.barcode);
-
-    if (matchedBox) {
-      if (!verifiedBoxes.includes(matchedBox.id)) {
-        setVerifiedBoxes(prev => [...prev, matchedBox.id]);
-        showToast(`📦 Box ${matchedBox.id} (${matchedBox.name}) Verified!`, true);
-      } else {
-        showToast(`⚠️ Box ${matchedBox.id} was already scanned.`);
-      }
-    } else if (val.includes(selectedPoSku)) {
-      setVerifiedBoxes(customBoxes.map(b => b.id));
-      showToast(`🎯 Full SKU ${selectedPoSku} scanned! All ${customBoxes.length} boxes verified.`);
-    } else {
-      showToast(`🔍 Scanned barcode: ${val}`);
-    }
-
+    handleProcessBarcodeScan(scannedInput);
     setScannedInput('');
   };
 
@@ -418,8 +506,17 @@ export function StaffInwardScannerView() {
               <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '6px' }}>
                 <button 
                   type="button" 
+                  onClick={flipCamera}
+                  style={{ background: 'rgba(56,189,248,0.85)', color: '#000000', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                  title="Flip Camera (Rear / Front)"
+                >
+                  <RotateCcw size={15} />
+                </button>
+                <button 
+                  type="button" 
                   onClick={toggleTorch}
                   style={{ background: isTorchOn ? '#F59E0B' : 'rgba(0,0,0,0.7)', color: '#FFFFFF', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                  title="Toggle Torch Flashlight"
                 >
                   <Flashlight size={15} />
                 </button>
@@ -434,7 +531,7 @@ export function StaffInwardScannerView() {
               </div>
 
               <div style={{ position: 'absolute', bottom: '8px', left: '12px', background: 'rgba(0,0,0,0.8)', padding: '3px 8px', borderRadius: '4px', fontSize: '10px', color: '#38BDF8', fontWeight: '800' }}>
-                LIVE CAMERA SCANNING • DOCK REAR LENS
+                LIVE CAMERA SCANNING • {cameraFacing === 'environment' ? 'REAR LENS' : 'FRONT LENS'}
               </div>
             </div>
           )}

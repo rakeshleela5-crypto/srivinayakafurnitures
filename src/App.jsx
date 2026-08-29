@@ -20,18 +20,22 @@ import { ProductQrStudio } from './views/ProductQrStudio';
 import { StaffInwardScannerView } from './views/StaffInwardScannerView';
 import { StaffOutwardScannerView } from './views/StaffOutwardScannerView';
 import { StaffQrHubView } from './views/StaffQrHubView';
+import { MobileCustomerChatView } from './views/MobileCustomerChatView';
 
 function AppContent() {
   const { activeTab, setActiveTab, currentUser } = useStore();
   const [workerMode, setWorkerMode] = React.useState(() => {
-    return ['#inward', '#outward', '#barcode', '#qr-studio', '#logistics', '#qr'].some(h => window.location.hash.toLowerCase().includes(h));
+    return ['#inward', '#outward', '#barcode', '#qr-studio', '#logistics', '#qr', '#chat', '#concierge'].some(h => window.location.hash.toLowerCase().includes(h));
   });
 
-  // URL Hash listener for direct worker links (e.g. #inward, #outward, #barcode, #qr-studio, #logistics, #qr)
+  // URL Hash listener for direct worker and customer QR links
   React.useEffect(() => {
     const handleHash = () => {
       const hash = window.location.hash.toLowerCase();
-      if (hash.includes('inward')) {
+      if (hash.includes('chat') || hash.includes('concierge')) {
+        setActiveTab('customer_chat');
+        setWorkerMode(true);
+      } else if (hash.includes('inward')) {
         setActiveTab('inward_scanner');
         setWorkerMode(true);
       } else if (hash.includes('outward')) {
@@ -56,14 +60,26 @@ function AppContent() {
     return () => window.removeEventListener('hashchange', handleHash);
   }, [setActiveTab]);
 
-  // If user is locked and not accessing a direct dock worker QR hash, show Lock Screen
-  const isDirectWorkerHash = ['#inward', '#outward', '#barcode', '#qr-studio', '#logistics', '#qr'].some(h => window.location.hash.toLowerCase().includes(h));
+  // Direct QR Hash routes bypass login screen
+  const isDirectWorkerHash = ['#inward', '#outward', '#barcode', '#qr-studio', '#logistics', '#qr', '#chat', '#concierge'].some(h => window.location.hash.toLowerCase().includes(h));
   if (!currentUser && !isDirectWorkerHash && !workerMode) {
     return <AuthLockScreen />;
   }
 
+  // Full-screen Standalone Mobile Customer AI Chat Experience
+  if (activeTab === 'customer_chat' || window.location.hash.toLowerCase().includes('chat') || window.location.hash.toLowerCase().includes('concierge')) {
+    return (
+      <>
+        <MobileCustomerChatView />
+        <ModalContainer />
+      </>
+    );
+  }
+
   const renderActiveView = () => {
     switch (activeTab) {
+      case 'customer_chat':
+        return <MobileCustomerChatView />;
       case 'executive':
         return <ExecutiveOverview />;
       case 'voice_pos':

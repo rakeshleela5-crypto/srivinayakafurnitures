@@ -43,7 +43,7 @@ export function ProductQrStudio() {
   const [supplier, setSupplier] = useState('Royal Teak Crafts, Saharanpur (UP)');
 
   // QR Code Engine Configuration
-  const [qrDestination, setQrDestination] = useState('UPI_TOKEN'); // 'UPI_TOKEN' | 'PRODUCT_SPEC' | 'DOCK_ROUTE' | 'CUSTOM_URL'
+  const [qrDestination, setQrDestination] = useState('MOBILE_AI_CONCIERGE'); // 'MOBILE_AI_CONCIERGE' | 'WHATSAPP_AI' | 'UPI_TOKEN' | 'PRODUCT_SPEC' | 'DOCK_ROUTE' | 'CUSTOM_URL'
   const [qrSize, setQrSize] = useState(160);
   const [qrColor, setQrColor] = useState('#000000'); // '#000000' | '#0F172A' | '#B45309' | '#0284C7'
   const [customUrl, setCustomUrl] = useState('https://godrejinterio.com/rayagada');
@@ -138,7 +138,11 @@ export function ProductQrStudio() {
 
   // Generate QR Value payload based on destination
   const getQrPayload = () => {
+    const prodHost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://shreeganesh-godrej.web.app' : window.location.origin;
+
     switch (qrDestination) {
+      case 'MOBILE_AI_CONCIERGE':
+        return `${prodHost}/#chat?sku=${skuCode}`;
       case 'WHATSAPP_AI': {
         const cleanPhone = (storeMeta.whatsapp || '+919390553301').replace(/[^0-9]/g, '');
         const msg = encodeURIComponent(`Namaskar Godrej Interio Rayagada! I am interested in ${productName} (${skuCode}). Please send me the official PDF brochure, festive discount quote, and teak wood warranty.`);
@@ -149,7 +153,6 @@ export function ProductQrStudio() {
       case 'PRODUCT_SPEC':
         return `https://godrejinterio.com/products/${skuCode}?warranty=${warranty}Y&specs=${encodeURIComponent(material)}`;
       case 'DOCK_ROUTE':
-        const prodHost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'https://shreeganesh-godrej.web.app' : window.location.origin;
         return `${prodHost}/#inward?sku=${skuCode}&batch=GI-2026`;
       case 'CUSTOM_URL':
       default:
@@ -273,7 +276,8 @@ export function ProductQrStudio() {
               <div className="form-field">
                 <label>QR Action / Target</label>
                 <select value={qrDestination} onChange={e => setQrDestination(e.target.value)}>
-                  <option value="WHATSAPP_AI">💬 WhatsApp 24/7 AI Assistant (Direct Lead Capture)</option>
+                  <option value="MOBILE_AI_CONCIERGE">🌟 Instant Mobile 24/7 AI Concierge (Best for Monday Demo!)</option>
+                  <option value="WHATSAPP_AI">💬 WhatsApp Click-to-Chat (Direct Lead Capture)</option>
                   <option value="UPI_TOKEN">💰 Instant 50% Token UPI QR (₹{tokenAdvance50.toLocaleString()})</option>
                   <option value="PRODUCT_SPEC">📄 Digital Spec & 10-Yr Warranty Certificate</option>
                   <option value="DOCK_ROUTE">📦 Staff Dock Inward/Outward Route</option>

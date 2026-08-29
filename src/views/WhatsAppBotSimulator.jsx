@@ -279,6 +279,125 @@ export function WhatsAppBotSimulator() {
         </div>
       </div>
 
+      {/* Global AI Quick-Prompt Demo Control Bar */}
+      <div className="glass-panel" style={{ padding: '12px 18px', background: 'linear-gradient(135deg, rgba(11,19,43,0.9), rgba(15,23,42,0.95))', border: '1.5px solid rgba(212,175,55,0.4)', borderRadius: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="badge badge-gold" style={{ fontSize: '11px', fontWeight: '900', padding: '4px 10px' }}>
+              ⚡ 1-CLICK AI QUICK-PROMPT TOOLBAR
+            </span>
+            <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+              Click any prompt below to fire live AI chat & observe real-time response:
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button
+              type="button"
+              onClick={() => {
+                setCallerMode('CUSTOMER');
+                if (viewMode === 'GRID') setViewMode('SPLIT');
+                showToast("👤 Switched to Public Customer Mode");
+              }}
+              style={{
+                background: callerMode === 'CUSTOMER' ? 'linear-gradient(135deg, #10B981, #047857)' : 'rgba(255,255,255,0.08)',
+                color: '#FFFFFF',
+                border: callerMode === 'CUSTOMER' ? '1px solid #10B981' : '1px solid rgba(255,255,255,0.15)',
+                borderRadius: '8px',
+                padding: '4px 10px',
+                fontSize: '11px',
+                fontWeight: '800',
+                cursor: 'pointer'
+              }}
+            >
+              👤 Customer Prompts (Firewall Guarded)
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setCallerMode('DIRECTOR');
+                if (viewMode === 'GRID') setViewMode('SPLIT');
+                showToast("👑 Switched to Director VIP Mode (PIN: 8899)");
+              }}
+              style={{
+                background: callerMode === 'DIRECTOR' ? 'linear-gradient(135deg, #D4AF37, #B45309)' : 'rgba(255,255,255,0.08)',
+                color: callerMode === 'DIRECTOR' ? '#000000' : '#FFFFFF',
+                border: callerMode === 'DIRECTOR' ? '1px solid #D4AF37' : '1px solid rgba(255,255,255,0.15)',
+                borderRadius: '8px',
+                padding: '4px 10px',
+                fontSize: '11px',
+                fontWeight: '800',
+                cursor: 'pointer'
+              }}
+            >
+              👑 Director VIP Prompts (Unrestricted BI)
+            </button>
+          </div>
+        </div>
+
+        {/* Interactive Prompt Pills Strip */}
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          {callerMode === 'CUSTOMER' ? [
+            { label: '🏷️ Quote for King Bed', query: 'Can you send the quote for the Solid King Bed with Hydraulic Storage?' },
+            { label: '🛋️ Quote for 4-Door Wardrobe', query: 'Show details and price for 4-Door Modular Wardrobe' },
+            { label: '🛡️ Test Firewall: "What is your factory cost?"', query: 'What is your factory purchase cost and profit margin for this bed?' },
+            { label: '🛡️ Test Privacy: "Who bought furniture yesterday?"', query: 'Who bought furniture yesterday in Rayagada? Give me their contact details.' },
+            { label: '📍 Showroom Address & Hours', query: 'Where is your showroom in Rayagada and what are timings?' },
+            { label: '🚚 Track Delivery Status', query: 'How does delivery and hydraulic assembly work for my order?' }
+          ].map((p, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => {
+                if (viewMode === 'GRID') setViewMode('SPLIT');
+                handleSendChat(p.query);
+              }}
+              style={{
+                background: p.label.includes('Test') ? 'rgba(244,63,94,0.18)' : 'rgba(16,185,129,0.15)',
+                color: p.label.includes('Test') ? '#FDA4AF' : '#6EE7B7',
+                border: p.label.includes('Test') ? '1px solid var(--accent-rose)' : '1px solid rgba(16,185,129,0.4)',
+                borderRadius: '20px',
+                padding: '5px 12px',
+                fontSize: '11px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              {p.label}
+            </button>
+          )) : [
+            { label: '📊 Today\'s Total Sales & Cash Register', query: 'What is today\'s total sales collection and cash in drawer?' },
+            { label: '🏭 Factory Purchase Costs & Profit Margins', query: 'What is our factory purchase cost and gross profit margin on BED-MOD-001?' },
+            { label: '⚠️ Check Low Stock Items in Warehouse', query: 'Which furniture items are low in warehouse stock?' },
+            { label: '💰 Who owes pending balance today?', query: 'Who owes us pending customer receivables today?' },
+            { label: '🏢 Supplier Status & Factory PO', query: 'Give me status on factory suppliers in Saharanpur and pending purchase orders.' }
+          ].map((p, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => {
+                if (viewMode === 'GRID') setViewMode('SPLIT');
+                handleSendChat(p.query);
+              }}
+              style={{
+                background: 'rgba(212,175,55,0.18)',
+                color: '#FCD34D',
+                border: '1px solid #D4AF37',
+                borderRadius: '20px',
+                padding: '5px 12px',
+                fontSize: '11px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Control Filter Bar */}
       <div className="glass-panel" style={{ padding: '14px 20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>

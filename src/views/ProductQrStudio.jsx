@@ -139,6 +139,11 @@ export function ProductQrStudio() {
   // Generate QR Value payload based on destination
   const getQrPayload = () => {
     switch (qrDestination) {
+      case 'WHATSAPP_AI': {
+        const cleanPhone = (storeMeta.whatsapp || '+919390553301').replace(/[^0-9]/g, '');
+        const msg = encodeURIComponent(`Namaskar Godrej Interio Rayagada! I am interested in ${productName} (${skuCode}). Please send me the official PDF brochure, festive discount quote, and teak wood warranty.`);
+        return `https://wa.me/${cleanPhone}?text=${msg}`;
+      }
       case 'UPI_TOKEN':
         return `upi://pay?pa=${storeMeta.upiId}&pn=${encodeURIComponent(storeMeta.storeName)}&am=${tokenAdvance50}&cu=INR&tn=${encodeURIComponent(`50% Token for ${skuCode} (${productName})`)}`;
       case 'PRODUCT_SPEC':
@@ -268,6 +273,7 @@ export function ProductQrStudio() {
               <div className="form-field">
                 <label>QR Action / Target</label>
                 <select value={qrDestination} onChange={e => setQrDestination(e.target.value)}>
+                  <option value="WHATSAPP_AI">💬 WhatsApp 24/7 AI Assistant (Direct Lead Capture)</option>
                   <option value="UPI_TOKEN">💰 Instant 50% Token UPI QR (₹{tokenAdvance50.toLocaleString()})</option>
                   <option value="PRODUCT_SPEC">📄 Digital Spec & 10-Yr Warranty Certificate</option>
                   <option value="DOCK_ROUTE">📦 Staff Dock Inward/Outward Route</option>

@@ -193,6 +193,36 @@ export function CsvImportModal({ isOpen, onClose }) {
         { SKU: "SOFA-CSV-10", Product_Name: "Modular 8-Seater Reversible U-Shape Sectional", Main_Category: "Living Room", Material_Spec: "Pocket Spring Core + Textured Fabric", Dimensions: "140x96x34 in", MRP_INR: 165000, Selling_Price_INR: 132000, Warranty_Years: 7, Total_Component_Boxes: 4, Default_Supplier: "Godrej Upholstery Works" }
       ]
     },
+    dining: {
+      name: "10_Italian_Marble_Dining_and_Study.csv",
+      rows: [
+        { SKU: "DIN-CSV-01", Product_Name: "Statuario Italian White Marble 6-Seater Dining", Main_Category: "Dining & Study", Material_Spec: "Imported Statuario Marble + Brass Base", Dimensions: "72x42x30 in", MRP_INR: 135000, Selling_Price_INR: 108000, Warranty_Years: 10, Total_Component_Boxes: 4, Default_Supplier: "Makrana Stone Works" },
+        { SKU: "DIN-CSV-02", Product_Name: "Solid Teak 8-Seater Royal Banquet Dining Table", Main_Category: "Dining & Study", Material_Spec: "100% Solid CP Teak Seasoned Wood", Dimensions: "96x44x30 in", MRP_INR: 128000, Selling_Price_INR: 102400, Warranty_Years: 10, Total_Component_Boxes: 5, Default_Supplier: "Royal Teak Crafts Saharanpur" },
+        { SKU: "DIN-CSV-03", Product_Name: "Milano Velvet Tufted Dining Chairs (Set of 6)", Main_Category: "Dining & Study", Material_Spec: "Sal Wood Frame + Water-Repellent Velvet", Dimensions: "22x24x38 in", MRP_INR: 48000, Selling_Price_INR: 38400, Warranty_Years: 7, Total_Component_Boxes: 3, Default_Supplier: "Godrej Upholstery Works" },
+        { SKU: "DIN-CSV-04", Product_Name: "Onyx Backlit Luxury 4-Seater Breakfast Table", Main_Category: "Dining & Study", Material_Spec: "Translucent Onyx Stone + LED Integration", Dimensions: "48x48x30 in", MRP_INR: 85000, Selling_Price_INR: 68000, Warranty_Years: 10, Total_Component_Boxes: 2, Default_Supplier: "Makrana Stone Works" },
+        { SKU: "DIN-CSV-05", Product_Name: "Teak Wood Buffet Sideboard Crockery Cabinet", Main_Category: "Dining & Study", Material_Spec: "Solid Teak + Fluted Glass Shutters", Dimensions: "66x18x36 in", MRP_INR: 54000, Selling_Price_INR: 43200, Warranty_Years: 10, Total_Component_Boxes: 2, Default_Supplier: "Royal Teak Crafts Saharanpur" },
+        { SKU: "DIN-CSV-06", Product_Name: "Nordic Solid Oak Minimalist Study Desk", Main_Category: "Dining & Study", Material_Spec: "Kiln-Dried White Oak + Built-in Wireless Charger", Dimensions: "54x24x30 in", MRP_INR: 32000, Selling_Price_INR: 25600, Warranty_Years: 10, Total_Component_Boxes: 1, Default_Supplier: "Bangalore Modular Plant" },
+        { SKU: "DIN-CSV-07", Product_Name: "Ergonomic Leatherette Study Swivel Armchair", Main_Category: "Dining & Study", Material_Spec: "High Density Molded Foam + Chrome Star Base", Dimensions: "24x24x36 in", MRP_INR: 18000, Selling_Price_INR: 14400, Warranty_Years: 5, Total_Component_Boxes: 1, Default_Supplier: "Featherlite Seating Hyderabad" },
+        { SKU: "DIN-CSV-08", Product_Name: "Wall-Mounted Solid Wood Foldable Study Station", Main_Category: "Dining & Study", Material_Spec: "Heavy Plywood + Hydraulic Support Gas Spring", Dimensions: "36x24x18 in", MRP_INR: 14000, Selling_Price_INR: 11200, Warranty_Years: 5, Total_Component_Boxes: 1, Default_Supplier: "Bangalore Modular Plant" },
+        { SKU: "DIN-CSV-09", Product_Name: "Imperial Bar Cabinet with Wine Glass Rack", Main_Category: "Dining & Study", Material_Spec: "Sheesham Wood Antique Walnut Finish", Dimensions: "42x20x48 in", MRP_INR: 46000, Selling_Price_INR: 36800, Warranty_Years: 10, Total_Component_Boxes: 2, Default_Supplier: "Jodhpur Artisan Guild" },
+        { SKU: "DIN-CSV-10", Product_Name: "Round 4-Seater Glass Top Cafe Dining Set", Main_Category: "Dining & Study", Material_Spec: "12mm Toughened Glass + Electroplated Gold Legs", Dimensions: "42x42x30 in", MRP_INR: 38000, Selling_Price_INR: 30400, Warranty_Years: 5, Total_Component_Boxes: 2, Default_Supplier: "Bangalore Modular Plant" }
+      ]
+    },
+    kitchen: {
+      name: "10_Modular_Kitchen_and_Wardrobes.csv",
+      rows: [
+        { SKU: "MOD-CSV-01", Product_Name: "Titan 3-Door Toughened Mirror Sliding Wardrobe", Main_Category: "Storage & Wardrobes", Material_Spec: "CRCA Steel + Toughened Mirror + Soft-Close", Dimensions: "78x66x24 in", MRP_INR: 85000, Selling_Price_INR: 68000, Warranty_Years: 10, Total_Component_Boxes: 4, Default_Supplier: "Godrej Interio Shirwal Hub" },
+        { SKU: "MOD-CSV-02", Product_Name: "High-Gloss Acrylic Modular L-Shape Kitchen Base", Main_Category: "Modular Kitchen", Material_Spec: "BWP Marine Grade Plywood + Blum Soft-Close", Dimensions: "120x96x34 in", MRP_INR: 185000, Selling_Price_INR: 148000, Warranty_Years: 10, Total_Component_Boxes: 6, Default_Supplier: "Godrej Modular Kitchens" },
+        { SKU: "MOD-CSV-03", Product_Name: "Overhead Glass Lift-Up Kitchen Wall Cabinets", Main_Category: "Modular Kitchen", Material_Spec: "Hafele Gas Struts + Frosted Fluted Glass", Dimensions: "96x14x24 in", MRP_INR: 52000, Selling_Price_INR: 41600, Warranty_Years: 10, Total_Component_Boxes: 3, Default_Supplier: "Godrej Modular Kitchens" },
+        { SKU: "MOD-CSV-04", Product_Name: "Walk-In Closet Island Drawer Unit with Glass Top", Main_Category: "Storage & Wardrobes", Material_Spec: "High-Density Engineered Wood + Jewelry Tray", Dimensions: "48x36x36 in", MRP_INR: 46000, Selling_Price_INR: 36800, Warranty_Years: 10, Total_Component_Boxes: 2, Default_Supplier: "Godrej Interio Shirwal Hub" },
+        { SKU: "MOD-CSV-05", Product_Name: "Corner Carousel 360-Degree Kitchen Pantry Unit", Main_Category: "Modular Kitchen", Material_Spec: "Stainless Steel 304 Chrome Baskets", Dimensions: "36x36x78 in", MRP_INR: 68000, Selling_Price_INR: 54400, Warranty_Years: 10, Total_Component_Boxes: 3, Default_Supplier: "Godrej Modular Kitchens" },
+        { SKU: "MOD-CSV-06", Product_Name: "2-Door Slim Entryway Shoe & Coat Rack Cabinet", Main_Category: "Storage & Wardrobes", Material_Spec: "Prelam Board + Louvered Ventilation Doors", Dimensions: "36x15x42 in", MRP_INR: 22000, Selling_Price_INR: 17600, Warranty_Years: 5, Total_Component_Boxes: 1, Default_Supplier: "Bangalore Modular Plant" },
+        { SKU: "MOD-CSV-07", Product_Name: "Full-Height Pull-Out Multi-Tier Spice Pantry", Main_Category: "Modular Kitchen", Material_Spec: "Heavy Duty 80KG Soft-Close Slides", Dimensions: "18x24x78 in", MRP_INR: 44000, Selling_Price_INR: 35200, Warranty_Years: 10, Total_Component_Boxes: 2, Default_Supplier: "Godrej Modular Kitchens" },
+        { SKU: "MOD-CSV-08", Product_Name: "Loft Storage Overhead 4-Door Wardrobe Extension", Main_Category: "Storage & Wardrobes", Material_Spec: "CRCA Steel Anti-Rust Powder Coated", Dimensions: "72x24x20 in", MRP_INR: 28000, Selling_Price_INR: 22400, Warranty_Years: 10, Total_Component_Boxes: 2, Default_Supplier: "Godrej Interio Shirwal Hub" },
+        { SKU: "MOD-CSV-09", Product_Name: "Modular Quartz Countertop Kitchen Island", Main_Category: "Modular Kitchen", Material_Spec: "Engineered Quartz Stone + 4 Deep Pots Drawers", Dimensions: "60x36x36 in", MRP_INR: 76000, Selling_Price_INR: 60800, Warranty_Years: 10, Total_Component_Boxes: 3, Default_Supplier: "Makrana Stone Works" },
+        { SKU: "MOD-CSV-10", Product_Name: "Stainless Steel 304 Multi-Compartment Sink Vanity", Main_Category: "Modular Kitchen", Material_Spec: "Sound-Deadened 1.2mm SS304 + Pull-Out Faucet", Dimensions: "36x22x34 in", MRP_INR: 34000, Selling_Price_INR: 27200, Warranty_Years: 10, Total_Component_Boxes: 2, Default_Supplier: "Godrej Modular Kitchens" }
+      ]
+    },
     office: {
       name: "10_Commercial_Office_Workstations.csv",
       rows: [
@@ -344,7 +374,7 @@ export function CsvImportModal({ isOpen, onClose }) {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))', gap: '8px' }}>
             <button
               type="button"
               onClick={() => loadDemoPackDirect('bedroom')}
@@ -353,15 +383,15 @@ export function CsvImportModal({ isOpen, onClose }) {
                 color: '#FCD34D',
                 border: '1px solid #D4AF37',
                 borderRadius: '8px',
-                padding: '8px 10px',
-                fontSize: '11px',
+                padding: '8px 6px',
+                fontSize: '10.5px',
                 fontWeight: '800',
                 cursor: 'pointer',
                 textAlign: 'center',
                 transition: 'all 0.2s ease'
               }}
             >
-              🛌 1-Click: 10 Luxury Bedroom SKUs
+              🛌 1-Click: 10 Bedroom SKUs
             </button>
 
             <button
@@ -372,15 +402,53 @@ export function CsvImportModal({ isOpen, onClose }) {
                 color: '#7DD3FC',
                 border: '1px solid #38BDF8',
                 borderRadius: '8px',
-                padding: '8px 10px',
-                fontSize: '11px',
+                padding: '8px 6px',
+                fontSize: '10.5px',
                 fontWeight: '800',
                 cursor: 'pointer',
                 textAlign: 'center',
                 transition: 'all 0.2s ease'
               }}
             >
-              🛋️ 1-Click: 10 Living Room Sectionals
+              🛋️ 1-Click: 10 Living Room
+            </button>
+
+            <button
+              type="button"
+              onClick={() => loadDemoPackDirect('dining')}
+              style={{
+                background: 'rgba(236,72,153,0.2)',
+                color: '#F472B6',
+                border: '1px solid #EC4899',
+                borderRadius: '8px',
+                padding: '8px 6px',
+                fontSize: '10.5px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                textAlign: 'center',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              🍽️ 1-Click: 10 Dining & Study
+            </button>
+
+            <button
+              type="button"
+              onClick={() => loadDemoPackDirect('kitchen')}
+              style={{
+                background: 'rgba(168,85,247,0.2)',
+                color: '#C084FC',
+                border: '1px solid #A855F7',
+                borderRadius: '8px',
+                padding: '8px 6px',
+                fontSize: '10.5px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                textAlign: 'center',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              🚪 1-Click: 10 Modular Kitchen
             </button>
 
             <button
@@ -391,44 +459,58 @@ export function CsvImportModal({ isOpen, onClose }) {
                 color: '#6EE7B7',
                 border: '1px solid #10B981',
                 borderRadius: '8px',
-                padding: '8px 10px',
-                fontSize: '11px',
+                padding: '8px 6px',
+                fontSize: '10.5px',
                 fontWeight: '800',
                 cursor: 'pointer',
                 textAlign: 'center',
                 transition: 'all 0.2s ease'
               }}
             >
-              🏢 1-Click: 10 Office Workstations
+              🏢 1-Click: 10 Office Suites
             </button>
           </div>
 
           {/* Download Physical CSV Files Strip */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '8px', flexWrap: 'wrap', gap: '8px' }}>
             <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-              📥 Download pre-formatted sample files to test drag-and-drop:
+              📥 Download pre-formatted sample files to Desktop:
             </span>
-            <div style={{ display: 'flex', gap: '6px' }}>
+            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
               <button 
                 type="button"
                 onClick={() => downloadPackCsv('bedroom')} 
-                style={{ background: 'rgba(255,255,255,0.06)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '4px 8px', fontSize: '10px', cursor: 'pointer' }}
+                style={{ background: 'rgba(255,255,255,0.06)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '4px 6px', fontSize: '9.5px', cursor: 'pointer' }}
               >
-                <Download size={11} /> Bedroom .csv
+                <Download size={10} /> Bedroom .csv
               </button>
               <button 
                 type="button"
                 onClick={() => downloadPackCsv('living')} 
-                style={{ background: 'rgba(255,255,255,0.06)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '4px 8px', fontSize: '10px', cursor: 'pointer' }}
+                style={{ background: 'rgba(255,255,255,0.06)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '4px 6px', fontSize: '9.5px', cursor: 'pointer' }}
               >
-                <Download size={11} /> Living .csv
+                <Download size={10} /> Living .csv
+              </button>
+              <button 
+                type="button"
+                onClick={() => downloadPackCsv('dining')} 
+                style={{ background: 'rgba(255,255,255,0.06)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '4px 6px', fontSize: '9.5px', cursor: 'pointer' }}
+              >
+                <Download size={10} /> Dining .csv
+              </button>
+              <button 
+                type="button"
+                onClick={() => downloadPackCsv('kitchen')} 
+                style={{ background: 'rgba(255,255,255,0.06)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '4px 6px', fontSize: '9.5px', cursor: 'pointer' }}
+              >
+                <Download size={10} /> Kitchen .csv
               </button>
               <button 
                 type="button"
                 onClick={() => downloadPackCsv('office')} 
-                style={{ background: 'rgba(255,255,255,0.06)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '4px 8px', fontSize: '10px', cursor: 'pointer' }}
+                style={{ background: 'rgba(255,255,255,0.06)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '4px 6px', fontSize: '9.5px', cursor: 'pointer' }}
               >
-                <Download size={11} /> Office .csv
+                <Download size={10} /> Office .csv
               </button>
             </div>
           </div>

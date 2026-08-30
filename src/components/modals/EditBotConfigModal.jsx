@@ -27,7 +27,9 @@ import {
   Wrench,
   Package,
   Calendar,
-  AlertTriangle
+  AlertTriangle,
+  Database,
+  Target
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../../utils/audioUtils';
 import { dispatchWebhookAction } from '../../services/webhookService';
@@ -43,8 +45,7 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
   const [threshold, setThreshold] = useState('');
   const [language, setLanguage] = useState('EN');
 
-  // Domain controls states
-  // 1. Dispatch & Fleet (BOT-01, BOT-03, BOT-04, BOT-05)
+  // Domain states
   const [vehiclePlate, setVehiclePlate] = useState('Tata Ace (OD-18-A-1234)');
   const [driverAssign, setDriverAssign] = useState('Tophan Gouda (+91 94371 88291)');
   const [loadingBay, setLoadingBay] = useState('Bay 1 (Heavy Solid Teak Dock)');
@@ -52,7 +53,6 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
   const [otpProtection, setOtpProtection] = useState(true);
   const [geotagRadiusKm, setGeotagRadiusKm] = useState(3);
 
-  // 2. Financial & Architect (BOT-06, BOT-07, BOT-14, BOT-20)
   const [tokenPercent, setTokenPercent] = useState(50);
   const [merchantVpa, setMerchantVpa] = useState('9390553301@ybl');
   const [splitTokenLakh, setSplitTokenLakh] = useState(true);
@@ -62,34 +62,29 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
   const [emiFinancier, setEmiFinancier] = useState('Bajaj Finserv No-Cost 0% EMI');
   const [emiTenureMonths, setEmiTenureMonths] = useState(6);
 
-  // 3. Assembly & Work Order (BOT-09, BOT-13, BOT-15)
   const [carpenterAssign, setCarpenterAssign] = useState('Narayana Mistri (+91 98612 34567)');
   const [assemblyPayout, setAssemblyPayout] = useState(500);
   const [toolChecklist, setToolChecklist] = useState(true);
   const [assemblySlot, setAssemblySlot] = useState('Morning 10:30 AM (Brahma Muhurat)');
   const [staircaseFloor, setStaircaseFloor] = useState('1st Floor (Wide Staircase)');
-  const [extraPortersNeeded, setExtraPortersNeeded] = useState(false);
   const [warrantyHologramSerial, setWarrantyHologramSerial] = useState('GODREJ-WARR-2026-8899');
   const [warrantyYears, setWarrantyYears] = useState(10);
 
-  // 4. Inventory, Reorder & Aging (BOT-02, BOT-08, BOT-10, BOT-18)
   const [bufferUnits, setBufferUnits] = useState(2);
   const [factoryPlant, setFactoryPlant] = useState('Godrej Khalapur Main Plant (Maharashtra)');
   const [autoPoQty, setAutoPoQty] = useState(10);
   const [exchangeCategory, setExchangeCategory] = useState('Old Wooden Bed (Teak/Sal)');
   const [buybackCreditAmt, setBuybackCreditAmt] = useState(12000);
-  const [inwardQcPassingGrade, setInwardQcPassingGrade] = useState('GRADE_A_PREMIUM');
+  const [inwardPassingGrade, setInwardPassingGrade] = useState('GRADE_A_PREMIUM');
 
-  // 5. Marketing, CRM, 9 PM Lock & Telemetry (BOT-11, BOT-12, BOT-16, BOT-17, BOT-19)
   const [promoCode, setPromoCode] = useState('RAYAGADA5000');
   const [audienceSegment, setAudienceSegment] = useState('HOT_LEADS');
   const [freePillowsSweetener, setFreePillowsSweetener] = useState(true);
-  const [eodCashDrawerTarget, setEodCashDrawerTarget] = useState(45000);
   const [directorPin, setDirectorPin] = useState('8899');
   const [pinVerified, setPinVerified] = useState(false);
-  const [hotLeadThresholdScore, setHotLeadThresholdScore] = useState(85);
-  const [followUpDelayHours, setFollowUpDelayHours] = useState(48);
-  const [monthlyTargetSalesINR, setMonthlyTargetSalesINR] = useState(4500000);
+  const [hesitationReason, setHesitationReason] = useState('FAMILY_CONSULT');
+  const [delayDays, setDelayDays] = useState(2);
+  const [monthlyTargetINR, setMonthlyTargetINR] = useState(4500000);
 
   useEffect(() => {
     if (isOpen && bot) {
@@ -105,14 +100,6 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
   if (!isOpen || !bot) return null;
 
   const currentBotId = bot.botId || 'BOT-01';
-  const nameLower = (bot.name || '').toLowerCase();
-
-  // Robust domain category resolver (Checks Bot ID and Name keywords)
-  const isOrderOrDispatchBot = currentBotId === 'BOT-01' || currentBotId === 'BOT-03' || currentBotId === 'BOT-04' || currentBotId === 'BOT-05' || nameLower.includes('dispatch') || nameLower.includes('order') || nameLower.includes('staging') || nameLower.includes('driver') || nameLower.includes('epod');
-  const isArchitectOrFinanceBot = currentBotId === 'BOT-06' || currentBotId === 'BOT-07' || currentBotId === 'BOT-14' || currentBotId === 'BOT-20' || nameLower.includes('architect') || nameLower.includes('commission') || nameLower.includes('upi') || nameLower.includes('emi') || nameLower.includes('finance') || nameLower.includes('settlement');
-  const isAssemblyOrWarrantyBot = currentBotId === 'BOT-09' || currentBotId === 'BOT-13' || currentBotId === 'BOT-15' || nameLower.includes('carpenter') || nameLower.includes('mistri') || nameLower.includes('warranty') || nameLower.includes('clearance') || nameLower.includes('stairway') || nameLower.includes('fitment');
-  const isInventoryOrReorderBot = currentBotId === 'BOT-02' || currentBotId === 'BOT-08' || currentBotId === 'BOT-10' || currentBotId === 'BOT-18' || nameLower.includes('stock') || nameLower.includes('inventory') || nameLower.includes('autoprocure') || nameLower.includes('buyback') || nameLower.includes('exchange') || nameLower.includes('inward') || nameLower.includes('supplier');
-  const isMarketingOrCrmBot = currentBotId === 'BOT-11' || currentBotId === 'BOT-12' || currentBotId === 'BOT-16' || currentBotId === 'BOT-17' || currentBotId === 'BOT-19' || nameLower.includes('festive') || nameLower.includes('broadcast') || nameLower.includes('cash lock') || nameLower.includes('hot lead') || nameLower.includes('target') || nameLower.includes('deduplication');
 
   const handleVerifyPin = () => {
     if (directorPin === '8899') {
@@ -126,55 +113,76 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
 
   // Generate localized WhatsApp message preview
   const getLocalizedBotPreview = (lang) => {
-    if (isArchitectOrFinanceBot) {
-      if (nameLower.includes('architect') || currentBotId === 'BOT-07') {
+    switch (currentBotId) {
+      case 'BOT-01':
+        return lang === 'OR'
+          ? `🔒 *ଗୋଦ୍ରେଜ୍ ଇଣ୍ଟେରିଓ ରାୟଗଡ଼ା — ଅର୍ଡର ସୁରକ୍ଷିତ ବୁକିଂ*\nଅର୍ଡର #ORD-101 (Solid Teak King Bed) ସଫଳତାର ସହ SafeLock ହୋଇଛି। ଅଗ୍ରିମ ଟୋକନ୍: ₹୪୫,୦୦୦ (${tokenPercent}%)। ଡେଲିଭରୀ ତାରିଖ: ଆଜି ସନ୍ଧ୍ୟା ୦୪:୩୦।`
+          : `🔒 *GODREJ INTERIO RAYAGADA — SAFELOCK ORDER CONFIRMED*\nOrder #ORD-101 (Solid Teak King Bed) is SAFELOCKED. Advance Token: ₹45,000 (${tokenPercent}%). Est Delivery: Today 04:30 PM. Helpline: +91 93905 53301.`;
+
+      case 'BOT-02':
+        return `🛡️ *ATOMIC INVENTORY STOCK HOLD ACTIVE*\nSKU: BED-MOD-001 locked for Order #ORD-101. Available Stock decremented to 2 Units. Minimum Buffer: ${bufferUnits} Units.`;
+
+      case 'BOT-03':
+        return `📦 *SMARTKIT 5-BOX STAGING GATEPASS*\nLoading Bay: ${loadingBay} | 5/5 Boxes Staged ✓. Monsoon Weather Seal: ${rainShield ? 'ACTIVE ✓' : 'OFF'}. Gatepass Generated.`;
+
+      case 'BOT-04':
+        return `🚚 *DELIVERY DRIVER ASSIGNMENT & OTP DISPATCH*\nVehicle: ${vehiclePlate} | Driver: ${driverAssign}\nCustomer Delivery OTP: 8892 | SafeLock Dispatch Validated ✓.`;
+
+      case 'BOT-05':
+        return `📍 *DIGITAL ePOD & GPS GEOTAG LOCK*\nGeotag Radius: ${geotagRadiusKm} KM | Customer Signature Captured | Proof uploaded to Google Drive folder 'ePOD_Signatures_2026'.`;
+
+      case 'BOT-06':
+        return `📱 *DOORSTEP DYNAMIC UPI QR INVOICE*\nPayable Balance: ₹45,000 (${tokenPercent}% Token) | VPA: ${merchantVpa} | Zero Transaction Fee ✓ | Auto-dispatches instant receipt.`;
+
+      case 'BOT-07':
         return lang === 'OR'
           ? `🏛️ *ନମସ୍କାର ଆର୍କିଟେକ୍ଟ୍!* ଆପଣଙ୍କ ରେଫରାଲ୍ କମିଶନ ₹୧୪,୨୦୦ (${commissionSlab}%) ସେକ୍ସନ 194H ୫% TDS କଟି ଆପଣଙ୍କ UPI କୁ କ୍ରେଡିଟ୍ ହୋଇଛି। ଫର୍ମ 16A ରେଡ଼ି ଅଛି।`
-          : lang === 'TE'
-          ? `🏛️ *నమస్కారం ఆర్కిటెక్ట్!* మీ రిఫెరల్ కమిషన్ ₹14,200 (${commissionSlab}%) 5% TDS తగ్గింపుతో మీ UPI కి జమ చేయబడింది. ఫారం 16A సిద్ధంగా ఉంది.`
-          : `🏛️ *VIP ARCHITECT INSTANT PAYOUT — GODREJ INTERIO RAYAGADA*\nCommission: ₹14,200 (${commissionSlab}%) credited via ${payoutMode}. 5% TDS under Sec 194H deducted. Form 16A generated.`;
-      }
-      if (nameLower.includes('emi') || currentBotId === 'BOT-14') {
-        return `💳 *0% NO-COST EMI SCHEME APPROVED*\nFinancier: ${emiFinancier} | Tenure: ${emiTenureMonths} Months | Zero Down Payment | Monthly EMI: ₹6,520.`;
-      }
-      return `📱 *GODREJ INTERIO 50% ADVANCE TOKEN INVOICE*\nCustomer: Dr. Subhashish Jena | Payable: ₹45,000 (${tokenPercent}% Token)\nUPI VPA: ${merchantVpa} | Zero Gateway Fee ✓`;
-    }
+          : `🏛️ *VIP ARCHITECT COMMISSION SETTLED*\nCommission: ₹14,200 (${commissionSlab}%) credited via ${payoutMode}. 5% TDS under Sec 194H deducted. Form 16A generated.`;
 
-    if (isAssemblyOrWarrantyBot) {
-      if (nameLower.includes('warranty') || currentBotId === 'BOT-15') {
-        return `🛡️ *OFFICIAL ${warrantyYears}-YEAR GODREJ DIGITAL WARRANTY CERTIFICATE*\nHologram Serial: ${warrantyHologramSerial} | 5-Point Assembly QC Verified by Master Mistri ✓.`;
-      }
-      if (nameLower.includes('carpenter') || currentBotId === 'BOT-09') {
-        return `🪚 *MASTER MISTRI ASSEMBLY DISPATCH*\nCarpenter: ${carpenterAssign} | Slot: ${assemblySlot}\nWork Order: 5-Box Solid Teak Bed Hydraulic Assembly. Payout Token: ₹${assemblyPayout} (Cash on QC Sign-off).`;
-      }
-      return `📐 *ROOM FITMENT & STAIRWAY CLEARANCE PASS*\nDelivery Floor: ${staircaseFloor} | 100% Knockdown 5-Box Assembly Guarantee Verified.`;
-    }
+      case 'BOT-08':
+        return `🏭 *AUTOPROCURE PREDICTIVE LOW-STOCK PO*\nSKU: BED-MOD-001 at ${bufferUnits} Units (Below Safe Buffer). Auto-PO generated for ${autoPoQty} Units from ${factoryPlant}.`;
 
-    if (isInventoryOrReorderBot) {
-      if (nameLower.includes('buyback') || currentBotId === 'BOT-10') {
+      case 'BOT-09':
+        return `🪚 *MASTER MISTRI ASSEMBLY WORK ORDER*\nCarpenter: ${carpenterAssign} | Slot: ${assemblySlot}\nWork Order: 5-Box Solid Teak Bed Hydraulic Assembly. Payout Token: ₹${assemblyPayout} (Cash on QC Sign-off).`;
+
+      case 'BOT-10':
         return `🔄 *OLD FURNITURE TRADE-IN CERTIFICATE*\nCategory: ${exchangeCategory} | Buyback Credit: ₹${buybackCreditAmt.toLocaleString()} applied to your new bill + Free Doorstep Scrap Disposal!`;
-      }
-      return `⚠️ *AUTOPROCURE FACTORY REORDER ALERT*\nSKU: BED-MOD-001 at ${bufferUnits} Units (Below Safe Buffer). Auto-PO generated for ${autoPoQty} Units from ${factoryPlant}.`;
-    }
 
-    if (isMarketingOrCrmBot) {
-      if (nameLower.includes('cash lock') || currentBotId === 'BOT-12') {
-        return `🔒 *GODREJ INTERIO RAYAGADA — 9:00 PM DAILY CASH CLOSING SLIP*\nTotal Gross Sales: ₹1,69,000 | Cash in Safe: ₹45,000 | UPI Settled: ₹1,24,000 | Zero Discrepancy ✓ | Director PIN: 8899.`;
-      }
-      if (nameLower.includes('festive') || currentBotId === 'BOT-11') {
+      case 'BOT-11':
         return lang === 'OR'
           ? `✨ *ରାୟଗଡ଼ା ଗୋଦ୍ରେଜ୍ ଫେଷ୍ଟିଭ୍ ଧମାକା!* ପ୍ରୋମୋ କୋଡ୍ ${promoCode} ବ୍ୟବହାର କରି ପାଆନ୍ତୁ ଫ୍ଲାଟ୍ ₹୫,୦୦୦ ରିହାତି + ୨ଟି ଅର୍ଥୋ ପିଲୋ ମାଗଣା!`
-          : `✨ *FESTIVE TEAK UTSAV — GODREJ INTERIO RAYAGADA*\nUse Promo Code *${promoCode}* for instant flat discount + 2x Free Ortho Memory Foam Pillows!`;
-      }
-      return `🔥 *HOT LEAD 48-HOUR FOLLOW-UP ALERT*\nCustomer: Dr. Subhashish Jena | AI Intent Score: ${hotLeadThresholdScore}% | Follow-Up Delay: ${followUpDelayHours}h.`;
-    }
+          : `✨ *FESTIVE TEAK UTSAV — GODREJ INTERIO RAYAGADA*\nUse Promo Code *${promoCode}* for instant flat discount + 2x Free Ortho Memory Foam Pillows! Target: ${audienceSegment}.`;
 
-    // Default Order / Dispatch
-    return lang === 'OR' 
-      ? `🚚 *ଗୋଦ୍ରେଜ୍ ଇଣ୍ଟେରିଓ ରାୟଗଡ଼ା — ଅର୍ଡର ଡେଲିଭରୀ ବାହାରିଲା*\nଅର୍ଡର #ORD-101 ର ୫/୫ ବକ୍ସ ${vehiclePlate} ରେ ଲୋଡ୍ ହୋଇଛି। ଡ୍ରାଇଭର: ${driverAssign}। ୱାଟରପ୍ରୁଫ୍ ସିଲ୍ ସୁରକ୍ଷିତ ✓।`
-      : lang === 'TE'
-      ? `🚚 *గోద్రెజ్ ఇంటీరియో రాయగడ — డెలివరీ బయలుదేరింది*\nఆర్డర్ #ORD-101 యొక్క 5/5 బాక్సులు ${vehiclePlate} లో లోడ్ అయ్యాయి. డ్రైవర్: ${driverAssign}।`
-      : `🚚 *GODREJ INTERIO RAYAGADA — OUT FOR DELIVERY*\nOrder #ORD-101 (5/5 Boxes Staged) is loaded into ${vehiclePlate}. Driver: ${driverAssign}. Loading Bay: ${loadingBay}.`;
+      case 'BOT-12':
+        return `🔒 *GODREJ INTERIO RAYAGADA — 9:00 PM DAILY CASH CLOSING SLIP*\nTotal Gross Sales: ₹1,69,000 | Cash in Safe: ₹45,000 | UPI Settled: ₹1,24,000 | Zero Discrepancy ✓ | Director PIN: 8899.`;
+
+      case 'BOT-13':
+        return `📐 *ROOM FITMENT & STAIRWAY CLEARANCE PASS*\nDelivery Floor: ${staircaseFloor} | 100% Knockdown 5-Box Assembly Guarantee Verified by Master Mistri.`;
+
+      case 'BOT-14':
+        return `💳 *0% NO-COST EMI FINANCING APPROVED*\nFinancier: ${emiFinancier} | Tenure: ${emiTenureMonths} Months | Zero Down Payment | Monthly EMI: ₹6,520.`;
+
+      case 'BOT-15':
+        return `🛡️ *OFFICIAL ${warrantyYears}-YEAR GODREJ DIGITAL WARRANTY CERTIFICATE*\nHologram Serial: ${warrantyHologramSerial} | 5-Point Assembly QC Verified by Master Mistri ✓.`;
+
+      case 'BOT-16':
+        return `🔥 *HOT LEAD 48-HOUR SMART FURNITURE DRIP*\nCustomer: Dr. Subhashish Jena | Hesitation Reason: ${hesitationReason} | Follow-Up Delay: ${delayDays} Days (48 Hours) | Auto-cancels on advance token.`;
+
+      case 'BOT-17':
+        return `⚙️ *UNIVERSAL 21-TABLE DEDUPLICATION BOT*\nHourly Cron Active | Deduplicated Primary Keys across Orders_SafeLock, Inventory_Stock, Inquiries_Log. Zero collisions.`;
+
+      case 'BOT-18':
+        return `📦 *SUPPLIER SHIPMENT INWARD QC GATEPASS*\nInspection Result: ${inwardPassingGrade} ✓ | 50 Units Solid Teak Staged to Warehouse Inward Dock.`;
+
+      case 'BOT-19':
+        return `📊 *SHOWROOM MONTHLY SALES PACER*\nTarget: ₹${(monthlyTargetINR / 100000).toFixed(1)} Lakhs | Achieved: ₹38.45 Lakhs (85.4% on track) | Projected: ₹46.2 Lakhs.`;
+
+      case 'BOT-20':
+        return `⚡ *MASTER GOOGLE APPS SCRIPT 2-WAY SYNC*\nStatus: HTTP 200 OK | Sub-100ms Push-Pull Synchronization active across all 22 Google Sheets tables.`;
+
+      default:
+        return `🤖 *${bot.name || 'Godrej Interio Autonomous Bot'}*\nTrigger: ${trigger} | Channel: ${targetChannel} | Threshold: ${threshold}`;
+    }
   };
 
   const handleSave = () => {
@@ -196,7 +204,10 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
         tokenPercent,
         promoCode,
         merchantVpa,
-        emiFinancier
+        emiFinancier,
+        warrantyYears,
+        buybackCreditAmt,
+        monthlyTargetINR
       }
     };
 
@@ -271,7 +282,7 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
         {/* Master Status Switcher */}
         <div style={{ background: '#030712', borderRadius: '12px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', border: '1px solid rgba(255,255,255,0.1)' }}>
           <div>
-            <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#FFFFFF' }}>Bot Automation Operational Status</div>
+            <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#FFFFFF' }}>Bot Operational Status</div>
             <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>Toggle this bot active or pause automation temporarily</div>
           </div>
           <div style={{ display: 'flex', gap: '6px' }}>
@@ -295,27 +306,43 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
         </div>
 
         {/* ========================================================================= */}
-        {/* DYNAMIC DOMAIN CONTROLS SECTION (100% GUARANTEED MATCH)                     */}
+        {/* EXACT, NON-DUPLICATING DOMAIN CONTROLS PANEL (ONE PANEL PER BOT ID)         */}
         {/* ========================================================================= */}
         <div style={{ background: '#030712', borderRadius: '12px', padding: '16px', border: '1px solid rgba(212,175,55,0.3)', marginBottom: '14px' }}>
           <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-gold-light)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
-            <Sliders size={14} /> Specialized Furniture Retail Domain Controls:
+            <Sliders size={14} /> Specialized Furniture Domain Controls ({currentBotId}):
           </label>
 
-          {/* 1. DISPATCH, FLEET & EPOD BOTS */}
-          {isOrderOrDispatchBot && (
+          {/* BOT-01: SafeLock Order Confirmation */}
+          {currentBotId === 'BOT-01' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div className="form-field">
-                <label>Assigned Delivery Vehicle</label>
-                <select value={vehiclePlate} onChange={e => setVehiclePlate(e.target.value)}>
-                  <option value="Tata Ace (OD-18-A-1234)">Tata Ace (OD-18-A-1234) — 1.5 Ton</option>
-                  <option value="Mahindra Bolero Pickup (OD-18-B-5678)">Mahindra Bolero (OD-18-B-5678) — 2.0 Ton</option>
-                </select>
+                <label>Advance Token Requirement: <b>{tokenPercent}%</b></label>
+                <input type="range" min="20" max="100" step="10" value={tokenPercent} onChange={e => setTokenPercent(Number(e.target.value))} />
               </div>
               <div className="form-field">
-                <label>Driver & Contact Phone</label>
-                <input value={driverAssign} onChange={e => setDriverAssign(e.target.value)} />
+                <label>Merchant UPI VPA</label>
+                <input value={merchantVpa} onChange={e => setMerchantVpa(e.target.value)} />
               </div>
+            </div>
+          )}
+
+          {/* BOT-02: Real-Time Stock Decrement & Defense */}
+          {currentBotId === 'BOT-02' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div className="form-field">
+                <label>Minimum Stock Buffer: <b>{bufferUnits} Units</b></label>
+                <input type="range" min="1" max="10" value={bufferUnits} onChange={e => setBufferUnits(Number(e.target.value))} />
+              </div>
+              <div className="form-field" style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '18px' }}>
+                <span className="badge badge-cyan">Atomic Row-Level Inventory Locking Active ✓</span>
+              </div>
+            </div>
+          )}
+
+          {/* BOT-03: SmartKit 5-Box Staging Dispatch Guard */}
+          {currentBotId === 'BOT-03' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div className="form-field">
                 <label>Loading Dock Bay</label>
                 <select value={loadingBay} onChange={e => setLoadingBay(e.target.value)}>
@@ -331,30 +358,62 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
             </div>
           )}
 
-          {/* 2. ARCHITECT, COMMISSION & FINANCE BOTS */}
-          {isArchitectOrFinanceBot && (
+          {/* BOT-04: Delivery Driver Assignment & OTP Dispatcher */}
+          {currentBotId === 'BOT-04' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div className="form-field">
+                <label>Assigned Delivery Vehicle</label>
+                <select value={vehiclePlate} onChange={e => setVehiclePlate(e.target.value)}>
+                  <option value="Tata Ace (OD-18-A-1234)">Tata Ace (OD-18-A-1234) — 1.5 Ton</option>
+                  <option value="Mahindra Bolero Pickup (OD-18-B-5678)">Mahindra Bolero (OD-18-B-5678) — 2.0 Ton</option>
+                </select>
+              </div>
+              <div className="form-field">
+                <label>Driver & Contact Phone</label>
+                <input value={driverAssign} onChange={e => setDriverAssign(e.target.value)} />
+              </div>
+            </div>
+          )}
+
+          {/* BOT-05: Digital ePOD & GPS Geotag Lock Bot */}
+          {currentBotId === 'BOT-05' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div className="form-field">
+                <label>GPS Geotag Enforcement Radius: <b>{geotagRadiusKm} KM</b></label>
+                <input type="range" min="1" max="10" value={geotagRadiusKm} onChange={e => setGeotagRadiusKm(Number(e.target.value))} />
+              </div>
+              <div className="form-field" style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '18px' }}>
+                <span className="badge badge-emerald">Google Drive PDF Signature Backup Active ✓</span>
+              </div>
+            </div>
+          )}
+
+          {/* BOT-06: Doorstep UPI Dynamic QR Settlement Bot */}
+          {currentBotId === 'BOT-06' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div className="form-field">
+                <label>Merchant UPI VPA</label>
+                <input value={merchantVpa} onChange={e => setMerchantVpa(e.target.value)} />
+              </div>
+              <div className="form-field" style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '18px' }}>
+                <input type="checkbox" checked={splitTokenLakh} onChange={e => setSplitTokenLakh(e.target.checked)} />
+                <span style={{ fontSize: '11.5px', color: 'var(--accent-emerald)' }}>Split into two 50/50 links if &gt; ₹1 Lakh</span>
+              </div>
+            </div>
+          )}
+
+          {/* BOT-07: Architect Tiered Commission Auto-Ledger */}
+          {currentBotId === 'BOT-07' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div className="form-field">
                 <label>Architect Commission Slab: <b>{commissionSlab}%</b></label>
                 <input type="range" min="5.0" max="15.0" step="0.5" value={commissionSlab} onChange={e => setCommissionSlab(Number(e.target.value))} />
               </div>
               <div className="form-field">
-                <label>Payout Settlement Channel</label>
+                <label>Payout Mode</label>
                 <select value={payoutMode} onChange={e => setPayoutMode(e.target.value)}>
                   <option value="INSTANT_UPI">Instant IMPS / UPI to Architect VPA</option>
                   <option value="NEFT_BANK_TRANSFER">NEFT Commercial Bank Account</option>
-                </select>
-              </div>
-              <div className="form-field">
-                <label>Merchant UPI VPA</label>
-                <input value={merchantVpa} onChange={e => setMerchantVpa(e.target.value)} />
-              </div>
-              <div className="form-field">
-                <label>0% EMI Financing Partner</label>
-                <select value={emiFinancier} onChange={e => setEmiFinancier(e.target.value)}>
-                  <option value="Bajaj Finserv No-Cost 0% EMI">Bajaj Finserv (Instant Approval)</option>
-                  <option value="HDFC Bank EasyEMI">HDFC Bank EasyEMI</option>
-                  <option value="IDFC First Bank Consumer Finance">IDFC First Bank</option>
                 </select>
               </div>
               <div className="form-field" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -364,41 +423,11 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
             </div>
           )}
 
-          {/* 3. ASSEMBLY, MISTRI & WARRANTY BOTS */}
-          {isAssemblyOrWarrantyBot && (
+          {/* BOT-08: AutoProcure Predictive Low-Stock PO Bot */}
+          {currentBotId === 'BOT-08' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div className="form-field">
-                <label>Assigned Master Carpenter</label>
-                <input value={carpenterAssign} onChange={e => setCarpenterAssign(e.target.value)} />
-              </div>
-              <div className="form-field">
-                <label>Assembly Payout Rate (₹): <b>₹{assemblyPayout}</b></label>
-                <input type="number" step="100" value={assemblyPayout} onChange={e => setAssemblyPayout(Number(e.target.value))} />
-              </div>
-              <div className="form-field">
-                <label>Preferred Assembly Slot</label>
-                <select value={assemblySlot} onChange={e => setAssemblySlot(e.target.value)}>
-                  <option value="Morning 10:30 AM (Brahma Muhurat)">Morning 10:30 AM (Brahma Muhurat)</option>
-                  <option value="Afternoon 03:00 PM">Afternoon 03:00 PM</option>
-                  <option value="Evening 06:30 PM">Evening 06:30 PM</option>
-                </select>
-              </div>
-              <div className="form-field">
-                <label>Warranty Coverage: <b>{warrantyYears} Years</b></label>
-                <input type="range" min="5" max="15" step="1" value={warrantyYears} onChange={e => setWarrantyYears(Number(e.target.value))} />
-              </div>
-              <div className="form-field" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <input type="checkbox" checked={toolChecklist} onChange={e => setToolChecklist(e.target.checked)} />
-                <span style={{ fontSize: '11.5px', color: '#CBD5E1' }}>Hydraulic Allen Key & Spirit Level Tool Kit Verified ✓ (Mistri QC Certified)</span>
-              </div>
-            </div>
-          )}
-
-          {/* 4. INVENTORY, REORDER & BUYBACK BOTS */}
-          {isInventoryOrReorderBot && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <div className="form-field">
-                <label>Minimum Safe Buffer Threshold: <b>{bufferUnits} Units</b></label>
+                <label>Minimum Safe Buffer: <b>{bufferUnits} Units</b></label>
                 <input type="range" min="1" max="10" value={bufferUnits} onChange={e => setBufferUnits(Number(e.target.value))} />
               </div>
               <div className="form-field">
@@ -409,6 +438,42 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
                   <option value="Godrej Shirwal Plant (Pune)">Godrej Shirwal Plant</option>
                 </select>
               </div>
+              <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+                <label>Auto-PO Reorder Batch Qty: <b>{autoPoQty} Units</b></label>
+                <input type="range" min="5" max="50" step="5" value={autoPoQty} onChange={e => setAutoPoQty(Number(e.target.value))} />
+              </div>
+            </div>
+          )}
+
+          {/* BOT-09: Master Carpenter ₹500 Job Card Voucher */}
+          {currentBotId === 'BOT-09' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div className="form-field">
+                <label>Assigned Master Carpenter</label>
+                <input value={carpenterAssign} onChange={e => setCarpenterAssign(e.target.value)} />
+              </div>
+              <div className="form-field">
+                <label>Assembly Payout (₹): <b>₹{assemblyPayout}</b></label>
+                <input type="number" step="100" value={assemblyPayout} onChange={e => setAssemblyPayout(Number(e.target.value))} />
+              </div>
+              <div className="form-field">
+                <label>Preferred Slot</label>
+                <select value={assemblySlot} onChange={e => setAssemblySlot(e.target.value)}>
+                  <option value="Morning 10:30 AM (Brahma Muhurat)">Morning 10:30 AM (Brahma Muhurat)</option>
+                  <option value="Afternoon 03:00 PM">Afternoon 03:00 PM</option>
+                  <option value="Evening 06:30 PM">Evening 06:30 PM</option>
+                </select>
+              </div>
+              <div className="form-field" style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '18px' }}>
+                <input type="checkbox" checked={toolChecklist} onChange={e => setToolChecklist(e.target.checked)} />
+                <span style={{ fontSize: '11.5px', color: '#CBD5E1' }}>Hydraulic Allen Key Tool Kit Verified ✓</span>
+              </div>
+            </div>
+          )}
+
+          {/* BOT-10: Old Furniture Buyback Valuation Bot */}
+          {currentBotId === 'BOT-10' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div className="form-field">
                 <label>Old Item Trade-In Category</label>
                 <select value={exchangeCategory} onChange={e => setExchangeCategory(e.target.value)}>
@@ -418,14 +483,14 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
                 </select>
               </div>
               <div className="form-field">
-                <label>Buyback Credit Allowance (₹)</label>
+                <label>Instant Buyback Credit Allowance (₹)</label>
                 <input type="number" value={buybackCreditAmt} onChange={e => setBuybackCreditAmt(Number(e.target.value))} />
               </div>
             </div>
           )}
 
-          {/* 5. MARKETING, CRM, 9 PM CASH LOCK & TELEMETRY BOTS */}
-          {isMarketingOrCrmBot && (
+          {/* BOT-11: WhatsApp VIP Broadcast Festive Bot */}
+          {currentBotId === 'BOT-11' && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div className="form-field">
                 <label>Festive Promo Code</label>
@@ -440,12 +505,150 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
                   <option value="500_CSV">📁 500 Offline Customer Phonebook</option>
                 </select>
               </div>
-              <div className="form-field" style={{ gridColumn: '1 / -1' }}>
-                <label style={{ color: 'var(--accent-gold-light)', fontWeight: '800' }}>Director Authorization PIN (To Unlock Sub-MRP / Register Locks)</label>
+            </div>
+          )}
+
+          {/* BOT-12: Daily 9 PM Showroom Cash Lock & EOD Slip */}
+          {currentBotId === 'BOT-12' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div className="form-field">
+                <label>Director Authorization PIN</label>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <input type="password" maxLength={4} value={directorPin} onChange={e => setDirectorPin(e.target.value)} placeholder="PIN 8899" style={{ width: '120px', textAlign: 'center' }} />
                   <button type="button" className="btn-ghost-edit" onClick={handleVerifyPin}>{pinVerified ? '✓ Verified' : 'Verify PIN'}</button>
                 </div>
+              </div>
+              <div className="form-field" style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '18px' }}>
+                <span className="badge badge-emerald">Denomination Machine & Telegram EOD Sync Active ✓</span>
+              </div>
+            </div>
+          )}
+
+          {/* BOT-13: Room Fitment & Stairway Clearance Checker */}
+          {currentBotId === 'BOT-13' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div className="form-field">
+                <label>Delivery Floor</label>
+                <select value={staircaseFloor} onChange={e => setStaircaseFloor(e.target.value)}>
+                  <option value="Ground Floor">Ground Floor (Direct Access)</option>
+                  <option value="1st Floor (Wide Staircase)">1st Floor (Wide Staircase)</option>
+                  <option value="2nd-4th Floor (Narrow Staircase)">2nd-4th Floor (Narrow Staircase)</option>
+                  <option value="Elevator Lift Available">Elevator Lift Available</option>
+                </select>
+              </div>
+              <div className="form-field" style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '18px' }}>
+                <span className="badge badge-cyan">100% Knockdown 5-Box Flatpack Guarantee ✓</span>
+              </div>
+            </div>
+          )}
+
+          {/* BOT-14: 0% No-Cost EMI Financing Advisor Bot */}
+          {currentBotId === 'BOT-14' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div className="form-field">
+                <label>Financing Partner</label>
+                <select value={emiFinancier} onChange={e => setEmiFinancier(e.target.value)}>
+                  <option value="Bajaj Finserv No-Cost 0% EMI">Bajaj Finserv (Instant Approval)</option>
+                  <option value="HDFC Bank EasyEMI">HDFC Bank EasyEMI</option>
+                  <option value="IDFC First Bank Consumer Finance">IDFC First Bank</option>
+                </select>
+              </div>
+              <div className="form-field">
+                <label>No-Cost Tenure: <b>{emiTenureMonths} Months</b></label>
+                <select value={emiTenureMonths} onChange={e => setEmiTenureMonths(Number(e.target.value))}>
+                  <option value={3}>3 Months (0% Interest)</option>
+                  <option value={6}>6 Months (0% Interest)</option>
+                  <option value={9}>9 Months (0% Interest)</option>
+                  <option value={12}>12 Months (0% Interest)</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* BOT-15: 10-Year Digital Warranty Certificate Bot */}
+          {currentBotId === 'BOT-15' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div className="form-field">
+                <label>Warranty Hologram Serial</label>
+                <input value={warrantyHologramSerial} onChange={e => setWarrantyHologramSerial(e.target.value)} />
+              </div>
+              <div className="form-field">
+                <label>Warranty Coverage: <b>{warrantyYears} Years</b></label>
+                <input type="range" min="5" max="15" step="1" value={warrantyYears} onChange={e => setWarrantyYears(Number(e.target.value))} />
+              </div>
+            </div>
+          )}
+
+          {/* BOT-16: Showroom Walk-in Hot Lead AI Scorer & 48h Drip */}
+          {currentBotId === 'BOT-16' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div className="form-field">
+                <label>Hesitation Reason</label>
+                <select value={hesitationReason} onChange={e => setHesitationReason(e.target.value)}>
+                  <option value="MEASURING_ROOM">Measuring Room Size</option>
+                  <option value="FAMILY_CONSULT">Discussing Polish with Family</option>
+                  <option value="BUDGET_EMI">Budget / EMI Hesitation</option>
+                  <option value="WEDDING_GRIHA">Wedding / Griha Pravesh Planning</option>
+                </select>
+              </div>
+              <div className="form-field">
+                <label>Follow-Up Delay: <b>{delayDays} Days (48 Hours)</b></label>
+                <input type="range" min="1" max="7" value={delayDays} onChange={e => setDelayDays(Number(e.target.value))} />
+              </div>
+            </div>
+          )}
+
+          {/* BOT-17: Universal Table Deduplication & Key Fixer */}
+          {currentBotId === 'BOT-17' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div className="form-field">
+                <label>Deduplication Schedule</label>
+                <input value="Hourly Cron (Continuous Background Check)" disabled />
+              </div>
+              <div className="form-field" style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '18px' }}>
+                <span className="badge badge-emerald">21 Google Sheets Tables Deduplicated ✓</span>
+              </div>
+            </div>
+          )}
+
+          {/* BOT-18: Supplier Shipment Inward QC Gatepass */}
+          {currentBotId === 'BOT-18' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div className="form-field">
+                <label>Inward Inspection Grade</label>
+                <select value={inwardPassingGrade} onChange={e => setInwardPassingGrade(e.target.value)}>
+                  <option value="GRADE_A_PREMIUM">Grade A Premium (100% Solid CP Teak)</option>
+                  <option value="GRADE_B_COMMERCIAL">Grade B Commercial Standard</option>
+                </select>
+              </div>
+              <div className="form-field" style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '18px' }}>
+                <span className="badge badge-cyan">Inward Gatepass Auto-Generated ✓</span>
+              </div>
+            </div>
+          )}
+
+          {/* BOT-19: Showroom Sales Target vs Actual Pacer */}
+          {currentBotId === 'BOT-19' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div className="form-field">
+                <label>Monthly Target (₹): <b>₹{(monthlyTargetINR / 100000).toFixed(1)} Lakhs</b></label>
+                <input type="number" step="100000" value={monthlyTargetINR} onChange={e => setMonthlyTargetINR(Number(e.target.value))} />
+              </div>
+              <div className="form-field" style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '18px' }}>
+                <span className="badge badge-gold">Real-Time Pacer Gauge Active ✓</span>
+              </div>
+            </div>
+          )}
+
+          {/* BOT-20: Master Apps Script Webhook 2-Way Sync Engine */}
+          {currentBotId === 'BOT-20' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div className="form-field">
+                <label>Synchronization Status</label>
+                <input value="HTTP 200 OK (22 Sheets Detected)" disabled />
+              </div>
+              <div className="form-field" style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '18px' }}>
+                <span className="badge badge-emerald">Sub-100ms Push-Pull Synchronization Active ✓</span>
               </div>
             </div>
           )}

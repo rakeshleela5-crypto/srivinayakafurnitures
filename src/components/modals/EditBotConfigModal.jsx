@@ -386,11 +386,16 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
             <div className="form-field">
               <label>🎯 Target Channel & Route</label>
               <select value={targetChannel} onChange={e => setTargetChannel(e.target.value)}>
-                <option value="WhatsApp Cloud + Google Sheets">WhatsApp Business Cloud + Google Sheets</option>
-                <option value="Customer SMS OTP Gateway">Customer SMS OTP Gateway</option>
-                <option value="Owner Telegram / Email Slip">Owner Telegram / Email Slip</option>
-                <option value="Fleet Driver Mobile App">Fleet Driver Mobile App Route</option>
-                <option value="Supplier WhatsApp PO">Factory Supplier WhatsApp PO</option>
+                <option value="WhatsApp Cloud + Google Sheets">📱 WhatsApp Business Cloud API + Google Sheets</option>
+                <option value="Customer SMS OTP Gateway">📳 Customer SMS OTP Gateway (Fast2SMS / DLT)</option>
+                <option value="Fleet Driver Mobile App">🚚 Fleet Driver Mobile App Route (GPS Geotag & ePOD)</option>
+                <option value="Carpenter & Mistri Work Order Vault">🪚 Carpenter & Mistri Work Order Vault (₹500 Payout)</option>
+                <option value="Architect VIP Portal & UPI Payout Wallet">🏛️ Architect VIP Portal & UPI Wallet (Form 16A TDS)</option>
+                <option value="Factory Supplier WhatsApp PO">🏭 Factory Supplier WhatsApp PO (Godrej Plants)</option>
+                <option value="Owner Telegram & Email Daily Closing Slip">🔒 Owner Telegram & Email Closing Slip (PIN 8899)</option>
+                <option value="Bajaj Finserv & HDFC Consumer Finance Gateway">💳 Bajaj Finserv & HDFC Finance Gateway (0% EMI)</option>
+                <option value="Google Drive Document & Warranty PDF Archive">☁️ Google Drive Document & Warranty PDF Archive</option>
+                <option value="Showroom Live KPI Gauge & Database Sync Engine">📊 Showroom Live KPI Gauge & Database Sync Engine</option>
               </select>
             </div>
 

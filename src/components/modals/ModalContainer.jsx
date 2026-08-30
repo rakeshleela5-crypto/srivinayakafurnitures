@@ -21,6 +21,7 @@ import {
   GodrejCareAmcModal,
   B2bTurnkeyModal
 } from './HeartEngineModals';
+import { BulkBotBroadcastModal } from './BulkBotBroadcastModal';
 
 export function ModalContainer() {
   const { activeModal, modalProps, closeModal } = useStore();
@@ -68,6 +69,9 @@ export function ModalContainer() {
 
       {/* Bot Configuration Modal */}
       <EditBotConfigModal isOpen={activeModal === 'edit_bot_config'} onClose={closeModal} bot={modalProps.bot} />
+
+      {/* Bulk Bot Broadcast Modal */}
+      <BulkBotBroadcastModal isOpen={activeModal === 'bulk_bot_broadcast'} onClose={closeModal} />
 
       {/* ❤️ THE 11 HEART ENGINES */}
       <TierPricingModal isOpen={activeModal === 'tier_pricing'} onClose={closeModal} sku={modalProps.sku} />

@@ -29,7 +29,10 @@ export function ShowroomCrmView() {
       <div className="tab-action-ribbon">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className="badge badge-rose">👥 SHOWROOM CRM & FOOTFALL LEADS</span>
-          <button className="btn-luxury-gold" onClick={() => openModal('new_inquiry')}>
+          <button className="btn-luxury-gold" onClick={() => openModal('bulk_bot_broadcast')}>
+            📢 Bulk 500-Customer Bot Broadcast
+          </button>
+          <button className="btn-cyan" onClick={() => openModal('new_inquiry')}>
             <UserPlus size={14} /> ➕ Log Walk-In Lead
           </button>
         </div>

@@ -48,6 +48,7 @@ export function WhatsAppProposalModal({ isOpen, onClose, proposalData = {} }) {
 
   const proposalNumber = proposalData.proposalNumber || `PROP-GI-2026-${Math.floor(1000 + Math.random() * 9000)}`;
   const validUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  const [proposalLang, setProposalLang] = useState('EN');
 
   if (!isOpen) return null;
 
@@ -55,19 +56,64 @@ export function WhatsAppProposalModal({ isOpen, onClose, proposalData = {} }) {
     playScanBeep();
     const upiLink = `upi://pay?pa=${storeMeta.upiId}&pn=${encodeURIComponent(storeMeta.storeName)}&am=${advance50Pct}&cu=INR&tn=${encodeURIComponent(`Token Advance for ${proposalNumber}`)}`;
     
-    const message = `*🏛️ GODREJ INTERIO RAYAGADA — LUXURY DESIGN PROPOSAL*\n` +
-      `*Proposal Ref:* ${proposalNumber} (Valid till ${validUntil})\n` +
-      `*Customer:* ${customerName}\n` +
-      `*Room:* ${roomTitle} (${dimensions})\n\n` +
-      `*Selected Furniture Pieces:*\n` +
-      items.map((it, idx) => `${idx + 1}. ${it.name} (${it.sku}) — ₹${it.price.toLocaleString()}`).join('\n') + `\n\n` +
-      `*Total Individual MRP:* ₹${totalMRP.toLocaleString()}\n` +
-      `*Showroom Suite Combo Savings:* -₹${comboSavings.toLocaleString()}\n` +
-      (proposalData.exchangeCredit ? `*Old Furniture Exchange Credit:* -₹${proposalData.exchangeCredit.toLocaleString()}\n` : '') +
-      `*Net Proposal Price (GST 18% Incl.):* ₹${finalAmount.toLocaleString()}\n` +
-      `*50% SafeLock Advance Token:* ₹${advance50Pct.toLocaleString()}\n\n` +
-      `👉 *Click to Pay 50% Token via UPI (GPay/PhonePe/Paytm):*\n${upiLink}\n\n` +
-      `*Flagship Store:* Near New Bus Stand, Rayagada | 📞 9390553301`;
+    let message = '';
+    if (proposalLang === 'OR') {
+      message = `*🏛️ ଗୋଦ୍ରେଜ୍ ଇଣ୍ଟେରିଓ ରାୟଗଡ଼ା — ଲକଜରୀ ଡିଜାଇନ୍ ପ୍ରସ୍ତାବ*\n` +
+        `*ପ୍ରସ୍ତାବ ନଂ:* ${proposalNumber} (ବୈଧତା: ${validUntil})\n` +
+        `*ଗ୍ରାହକ:* ${customerName}\n` +
+        `*ରୁମ୍:* ${roomTitle} (${dimensions})\n\n` +
+        `*ମନୋନୀତ ଫର୍ନିଚର ସାମଗ୍ରୀ:*\n` +
+        items.map((it, idx) => `${idx + 1}. ${it.name} (${it.sku}) — ₹${it.price.toLocaleString()}`).join('\n') + `\n\n` +
+        `*ମୋଟ MRP ମୂଲ୍ୟ:* ₹${totalMRP.toLocaleString()}\n` +
+        `*ଶୋ'ରୁମ୍ ସୁଇଟ୍ ବଣ୍ଡଲ୍ ରିହାତି:* -₹${comboSavings.toLocaleString()}\n` +
+        (proposalData.exchangeCredit ? `*ପୁରୁଣା ଫର୍ନିଚର ଏକ୍ସଚେଞ୍ଜ୍ ରିହାତି:* -₹${proposalData.exchangeCredit.toLocaleString()}\n` : '') +
+        `*ନିଟ୍ ପ୍ରସ୍ତାବ ମୂଲ୍ୟ (GST 18% ସହିତ):* ₹${finalAmount.toLocaleString()}\n` +
+        `*୫୦% ସୁରକ୍ଷିତ ଟୋକନ୍ ଅଗ୍ରିମ:* ₹${advance50Pct.toLocaleString()}\n\n` +
+        `👉 *୫୦% ଅଗ୍ରିମ UPI ମାଧ୍ୟମରେ ଦେୟ କରନ୍ତୁ:*\n${upiLink}\n\n` +
+        `*ଫ୍ଲାଗସିପ୍ ଷ୍ଟୋର:* ନୂଆ ବସ୍ ଷ୍ଟାଣ୍ଡ ନିକଟ, ରାୟଗଡ଼ା | 📞 9390553301`;
+    } else if (proposalLang === 'TE') {
+      message = `*🏛️ గోద్రెజ్ ఇంటీరియో రాయగడ — లగ్జరీ డిజైన్ ప్రపోజల్*\n` +
+        `*ప్రపోజల్ నం:* ${proposalNumber} (వ్యాలిడిటీ: ${validUntil})\n` +
+        `*కస్టమర్:* ${customerName}\n` +
+        `*గది:* ${roomTitle} (${dimensions})\n\n` +
+        `*ఎంపిక చేసిన ఫర్నిచర్ ఐటమ్స్:*\n` +
+        items.map((it, idx) => `${idx + 1}. ${it.name} (${it.sku}) — ₹${it.price.toLocaleString()}`).join('\n') + `\n\n` +
+        `*మొత్తం MRP:* ₹${totalMRP.toLocaleString()}\n` +
+        `*షోరూమ్ కాంబో సేవింగ్స్:* -₹${comboSavings.toLocaleString()}\n` +
+        (proposalData.exchangeCredit ? `*పాత ఫర్నిచర్ ఎక్స్ఛేంజ్ క్రెడిట్:* -₹${proposalData.exchangeCredit.toLocaleString()}\n` : '') +
+        `*నెట్ ప్రపోజల్ ధర (18% GST తో):* ₹${finalAmount.toLocaleString()}\n` +
+        `*50% టోకెన్ అడ్వాన్స్:* ₹${advance50Pct.toLocaleString()}\n\n` +
+        `👉 *UPI ద్వారా 50% అడ్వాన్స్ చెల్లించండి:*\n${upiLink}\n\n` +
+        `*ఫ్లాగ్‌షిప్ షోరూమ్:* న్యూ బస్ స్టాండ్ దగ్గర, రాయగడ | 📞 9390553301`;
+    } else if (proposalLang === 'HI') {
+      message = `*🏛️ गोदरेज इंटीरियो रायगड़ा — लक्जरी डिजाइन प्रस्ताव*\n` +
+        `*प्रस्ताव संख्या:* ${proposalNumber} (वैधता: ${validUntil})\n` +
+        `*ग्राहक:* ${customerName}\n` +
+        `*रूम:* ${roomTitle} (${dimensions})\n\n` +
+        `*चयनित फर्नीचर:* \n` +
+        items.map((it, idx) => `${idx + 1}. ${it.name} (${it.sku}) — ₹${it.price.toLocaleString()}`).join('\n') + `\n\n` +
+        `*कुल MRP:* ₹${totalMRP.toLocaleString()}\n` +
+        `*कॉम्बो सुइट बचत:* -₹${comboSavings.toLocaleString()}\n` +
+        (proposalData.exchangeCredit ? `*पुराने फर्नीचर एक्सचेंज छूट:* -₹${proposalData.exchangeCredit.toLocaleString()}\n` : '') +
+        `*अंतिम प्रस्ताव मूल्य (18% GST सहित):* ₹${finalAmount.toLocaleString()}\n` +
+        `*50% टोकन एडवांस:* ₹${advance50Pct.toLocaleString()}\n\n` +
+        `👉 *UPI द्वारा 50% एडवांस भुगतान करें:*\n${upiLink}\n\n` +
+        `*शोरूम:* न्यू बस स्टैंड के पास, रायगड़ा | 📞 9390553301`;
+    } else {
+      message = `*🏛️ GODREJ INTERIO RAYAGADA — LUXURY DESIGN PROPOSAL*\n` +
+        `*Proposal Ref:* ${proposalNumber} (Valid till ${validUntil})\n` +
+        `*Customer:* ${customerName}\n` +
+        `*Room:* ${roomTitle} (${dimensions})\n\n` +
+        `*Selected Furniture Pieces:*\n` +
+        items.map((it, idx) => `${idx + 1}. ${it.name} (${it.sku}) — ₹${it.price.toLocaleString()}`).join('\n') + `\n\n` +
+        `*Total Individual MRP:* ₹${totalMRP.toLocaleString()}\n` +
+        `*Showroom Suite Combo Savings:* -₹${comboSavings.toLocaleString()}\n` +
+        (proposalData.exchangeCredit ? `*Old Furniture Exchange Credit:* -₹${proposalData.exchangeCredit.toLocaleString()}\n` : '') +
+        `*Net Proposal Price (GST 18% Incl.):* ₹${finalAmount.toLocaleString()}\n` +
+        `*50% SafeLock Advance Token:* ₹${advance50Pct.toLocaleString()}\n\n` +
+        `👉 *Click to Pay 50% Token via UPI (GPay/PhonePe/Paytm):*\n${upiLink}\n\n` +
+        `*Flagship Store:* Near New Bus Stand, Rayagada | 📞 9390553301`;
+    }
 
     const cleanPhone = customerPhone.replace(/[^0-9]/g, '');
     const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
@@ -79,11 +125,12 @@ export function WhatsAppProposalModal({ isOpen, onClose, proposalData = {} }) {
       phone: customerPhone,
       total_amount: finalAmount,
       advance_token: advance50Pct,
-      valid_until: validUntil
+      valid_until: validUntil,
+      language: proposalLang
     });
 
     window.open(whatsappUrl, '_blank');
-    showToast(`📲 Luxury Proposal #${proposalNumber} sent to WhatsApp (${customerPhone})!`, true);
+    showToast(`📲 Luxury Proposal #${proposalNumber} sent in ${proposalLang === 'OR' ? 'ଓଡ଼ିଆ' : proposalLang === 'TE' ? 'తెలుగు' : proposalLang === 'HI' ? 'हिंदी' : 'English'} to WhatsApp (${customerPhone})!`, true);
   };
 
   const handlePrint = () => {
@@ -103,8 +150,36 @@ export function WhatsAppProposalModal({ isOpen, onClose, proposalData = {} }) {
             </h3>
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            
+            {/* Regional Language Switcher */}
+            <div style={{ display: 'flex', gap: '4px', background: '#030712', padding: '3px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
+              {[
+                { id: 'EN', label: '🇬🇧 EN' },
+                { id: 'OR', label: '🇮🇳 ଓଡ଼ିଆ' },
+                { id: 'TE', label: '🇮🇳 తెలుగు' },
+                { id: 'HI', label: '🇮🇳 HI' }
+              ].map(l => (
+                <button
+                  key={l.id}
+                  onClick={() => setProposalLang(l.id)}
+                  style={{
+                    padding: '4px 8px',
+                    fontSize: '11px',
+                    fontWeight: '800',
+                    borderRadius: '6px',
+                    background: proposalLang === l.id ? 'var(--accent-emerald)' : 'transparent',
+                    color: proposalLang === l.id ? '#000000' : '#94A3B8',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+
             <button className="btn-luxury-gold" onClick={handleSendWhatsApp}>
-              <Send size={14} /> 📲 Send on Customer WhatsApp
+              <Send size={14} /> 📲 Send WhatsApp ({proposalLang})
             </button>
             <button className="btn-ghost-edit" onClick={handlePrint}>
               <Printer size={14} /> Print PDF

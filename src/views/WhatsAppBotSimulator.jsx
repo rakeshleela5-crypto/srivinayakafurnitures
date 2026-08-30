@@ -295,6 +295,9 @@ export function WhatsAppBotSimulator() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className="badge badge-emerald">💬 WHATSAPP & 20 APPSHEET AUTOMATION BOTS</span>
           <span className="badge badge-purple">{bots.filter(b => b.status !== 'PAUSED').length}/{bots.length} ACTIVE</span>
+          <button className="btn-luxury-gold" onClick={() => openModal('bulk_bot_broadcast')}>
+            📢 Bulk 500-Customer Bot Broadcast
+          </button>
         </div>
 
         {/* View Mode Switcher */}

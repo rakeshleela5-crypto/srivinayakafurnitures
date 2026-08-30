@@ -1545,6 +1545,109 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
       result.message = "Carton Barcode " + sku + " (" + productName + ") received and recorded in Google Sheets! Current Stock: " + newStockLevel + " units.";
     }
 
+    
+    // ==========================================================================================
+    // 🚚 STAFF MOBILE OUTWARD TRUCK DISPATCH & 5-BOX STAGING SYNC
+    // ==========================================================================================
+    else if (action === "OUTWARD_DISPATCH_SCAN" || action === "OUTWARD_TRUCK_DISPATCH" || action === "RELEASE_VEHICLE") {
+      var orderId = params.order_id || "ORD-2026-8921";
+      var driverName = params.driver || params.driver_name || "Tophan Gouda";
+      var vehiclePlate = params.vehicle || params.vehicle_plate || "Tata Ace (OD-18-A-1234)";
+      var customerName = params.customer_name || "Dr. Subhashish Jena";
+      var customerPhone = (params.customer_phone || "9437188291").toString().replace(/[^0-9]/g, "");
+      var deliveryAddress = params.delivery_address || params.address || "Gayatri Nagar Villa, Rayagada";
+      var loadedBoxes = params.loaded_boxes || "A, B, C, D, E";
+      var totalPayload = Number(params.total_payload_kg) || 128.5;
+      var balanceDue = Number(params.balance_due) || 78247;
+      var paymentMode = params.payment_mode || "DYNAMIC_UPI_QR";
+      var carpenterName = params.carpenter || "Narayana Mistri";
+      var carpenterPayout = Number(params.carpenter_payout) || 500;
+
+      // 1. Update Orders_SafeLock (Col H: Status, Col I: SmartKit Staging, Col J: Driver)
+      var ordSheet = getSheetByNameFlexible(ss, ["Orders_SafeLock", "05_Orders_SafeLock", "Orders SafeLock"]);
+      if (ordSheet) {
+        var ordData = ordSheet.getDataRange().getValues();
+        for (var o = 1; o < ordData.length; o++) {
+          if (String(ordData[o][0]).toUpperCase() === orderId.toUpperCase() || String(ordData[o][1]).toLowerCase() === customerName.toLowerCase()) {
+            ordSheet.getRange(o + 1, 8).setValue("DISPATCHED (IN TRANSIT)");
+            ordSheet.getRange(o + 1, 9).setValue("5/5 Boxes Loaded ✓");
+            ordSheet.getRange(o + 1, 10).setValue(driverName + " (" + vehiclePlate + ")");
+            ordSheet.getRange(o + 1, 12).setValue(carpenterName);
+            ordSheet.getRange(o + 1, 13).setValue(carpenterPayout);
+            break;
+          }
+        }
+      }
+
+      // 2. Log in Delivery_Log (Sheet 7)
+      var delSheet = getOrCreateSheet(ss, "Delivery_Log", [
+        "Challan_No", "Delivered_Date_Time", "Order_ID", "Customer_Name", "Customer_Phone", 
+        "Driver_Name", "Vehicle", "OTP_Verified", "GPS_Geotag", "CSAT_Score", "Amount_Collected", "Payment_Mode", "Delivery_Status", "Photo_Proof_URL"
+      ], "#065F46");
+      
+      var challanNo = "DC-" + orderId.replace("ORD-", "") + "-" + Date.now().toString().slice(-4);
+      if (delSheet) {
+        delSheet.appendRow([
+          challanNo,
+          currentDateTimeStr,
+          orderId,
+          customerName,
+          Number(customerPhone) || 9437188291,
+          driverName,
+          vehiclePlate,
+          "OTP #8921 (Dispatched)",
+          "19.1724° N, 83.4163° E",
+          "5/5 ⭐ (Pending)",
+          balanceDue,
+          paymentMode,
+          "OUT_FOR_DELIVERY (5/5 BOXES LOADED)",
+          "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=500"
+        ]);
+        applyStandardFormat(delSheet);
+      }
+
+      // 3. Update SmartKit_Components Staging Status
+      var kitSheet = getSheetByNameFlexible(ss, ["SmartKit_Components", "03_SmartKit_Components"]);
+      if (kitSheet) {
+        var kitData = kitSheet.getDataRange().getValues();
+        for (var k = 1; k < kitData.length; k++) {
+          if (String(kitData[k][1]).indexOf("BED") !== -1 || String(kitData[k][0]).indexOf("ORD") !== -1) {
+            kitSheet.getRange(k + 1, 4).setValue("LOADED IN VEHICLE ✓ (" + driverName + ")");
+          }
+        }
+      }
+
+      // 4. Log in Executive_Briefings_Log
+      var brfSheet = getOrCreateSheet(ss, "Executive_Briefings_Log", [
+        "Briefing_ID", "Briefing_Date", "Owner_Phone", "Gross_Revenue_INR", "Active_Orders_Count",
+        "Footfall_Count", "Fleet_Drops_Count", "Custom_Directive", "Dispatched_Date_Time"
+      ], "#7C3AED");
+
+      if (brfSheet) {
+        brfSheet.appendRow([
+          "DISP-" + Date.now().toString().slice(-6),
+          currentDateStr,
+          "+91 93905 53301",
+          balanceDue,
+          1,
+          0,
+          1,
+          "Truck Dispatched: " + orderId + " (" + customerName + ") with " + driverName + " (" + vehiclePlate + "). Boxes: " + loadedBoxes + ". Balance: Rs. " + balanceDue.toLocaleString('en-IN'),
+          currentDateTimeStr
+        ]);
+        applyStandardFormat(brfSheet);
+      }
+
+      result.order_id = orderId;
+      result.challan_no = challanNo;
+      result.driver = driverName;
+      result.vehicle = vehiclePlate;
+      result.loaded_boxes = loadedBoxes;
+      result.balance_due = balanceDue;
+      result.message = "Order #" + orderId + " successfully dispatched with " + driverName + "! 5/5 boxes marked loaded in Google Sheets.";
+    }
+
+
     else if (action === "INWARD_TRUCK_COMPLETE") {
       var poNumber = params.po_number || "PO-2026-891";
       var truckPlate = params.truck_plate || "OD-18-A-9921";

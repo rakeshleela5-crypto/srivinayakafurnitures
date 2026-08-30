@@ -555,31 +555,21 @@ export function WhatsAppBotSimulator() {
                 </div>
 
                 {/* Bottom Action Buttons */}
-                <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '10px', marginTop: '4px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '8px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '10px', marginTop: '4px' }}>
                   <button 
                     className="btn-ghost-edit" 
                     onClick={() => openModal('edit_bot_config', { bot: b })}
                     style={{ flex: 1, justifyContent: 'center', fontSize: '11.5px', padding: '8px 12px', color: 'var(--accent-gold-light)' }}
                   >
-                    <Settings size={13} /> ⚙️ Config
+                    <Settings size={13} /> ⚙️ Configure Bot
                   </button>
-
-                  {['BOT-16', 'BOT-07', 'BOT-11'].includes(b.botId) && (
-                    <button 
-                      className="btn-luxury-gold" 
-                      onClick={() => openModal('furniture_followup')}
-                      style={{ flex: 1, justifyContent: 'center', fontSize: '11px', padding: '8px 10px' }}
-                    >
-                      ⏳ 48h Drip Manager
-                    </button>
-                  )}
 
                   <button 
                     className="btn-emerald" 
                     onClick={() => handleTestBot(b)}
                     style={{ flex: 1, justifyContent: 'center', fontSize: '11.5px', padding: '8px 12px' }}
                   >
-                    <Play size={13} /> ▶ Test
+                    <Play size={13} /> ▶ Test Trigger
                   </button>
                 </div>
               </div>
@@ -824,29 +814,18 @@ export function WhatsAppBotSimulator() {
                   <button 
                     className="btn-ghost-edit" 
                     onClick={() => openModal('edit_bot_config', { bot: b })}
-                    style={{ fontSize: '10.5px', padding: '6px 8px' }}
+                    style={{ fontSize: '10.5px', padding: '6px 10px', color: 'var(--accent-gold-light)' }}
                     title="Configure Bot"
                   >
-                    <Settings size={12} /> ⚙️
+                    <Settings size={12} /> ⚙️ Config
                   </button>
-
-                  {['BOT-16', 'BOT-07', 'BOT-11'].includes(b.botId) && (
-                    <button 
-                      className="btn-luxury-gold" 
-                      onClick={() => openModal('furniture_followup')}
-                      style={{ fontSize: '10.5px', padding: '6px 8px' }}
-                      title="48-Hour Smart Drip Manager"
-                    >
-                      ⏳ Drip
-                    </button>
-                  )}
 
                   <button 
                     className="btn-emerald" 
                     onClick={() => handleTestBot(b)}
                     style={{ fontSize: '10.5px', padding: '6px 10px' }}
                   >
-                    <Play size={12} /> Test
+                    <Play size={12} /> ▶ Test
                   </button>
                 </div>
               </div>

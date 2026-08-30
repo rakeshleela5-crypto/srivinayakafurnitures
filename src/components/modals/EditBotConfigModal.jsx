@@ -39,18 +39,17 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
 
   const [botName, setBotName] = useState('');
   const [status, setStatus] = useState('ACTIVE');
-  const [trigger, setTrigger] = useState('');
-  const [schedule, setSchedule] = useState('');
-  const [targetChannel, setTargetChannel] = useState('');
-  const [threshold, setThreshold] = useState('');
+  const [trigger, setTrigger] = useState('On New Order');
+  const [schedule, setSchedule] = useState('Instant Real-Time');
+  const [targetChannel, setTargetChannel] = useState('WhatsApp Cloud + Google Sheets');
+  const [threshold, setThreshold] = useState('Buffer <= 2 Units');
   const [language, setLanguage] = useState('EN');
 
-  // Domain states
+  // Domain-specific state variables
   const [vehiclePlate, setVehiclePlate] = useState('Tata Ace (OD-18-A-1234)');
   const [driverAssign, setDriverAssign] = useState('Tophan Gouda (+91 94371 88291)');
   const [loadingBay, setLoadingBay] = useState('Bay 1 (Heavy Solid Teak Dock)');
   const [rainShield, setRainShield] = useState(true);
-  const [otpProtection, setOtpProtection] = useState(true);
   const [geotagRadiusKm, setGeotagRadiusKm] = useState(3);
 
   const [tokenPercent, setTokenPercent] = useState(50);
@@ -90,10 +89,10 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
     if (isOpen && bot) {
       setBotName(bot.name || '');
       setStatus(bot.status || 'ACTIVE');
-      setTrigger(bot.trigger || 'On Event');
+      setTrigger(bot.trigger || 'On New Order');
       setSchedule(bot.schedule || 'Instant Real-Time Webhook');
-      setTargetChannel(bot.target || 'WhatsApp Business API + Google Sheets');
-      setThreshold(bot.threshold || 'Default Standard Rule');
+      setTargetChannel(bot.target || 'WhatsApp Business Cloud + Google Sheets');
+      setThreshold(bot.threshold || 'Buffer <= 2 Units');
     }
   }, [isOpen, bot]);
 
@@ -111,7 +110,7 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
     }
   };
 
-  // Generate localized WhatsApp message preview
+  // Localized WhatsApp message generator
   const getLocalizedBotPreview = (lang) => {
     switch (currentBotId) {
       case 'BOT-01':
@@ -231,7 +230,7 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
       timestamp: new Date().toISOString()
     });
 
-    showToast(`⚙️ Successfully updated and synchronized Domain Controls for ${currentBotId} (${botName})!`, true);
+    showToast(`⚙️ Successfully updated and synchronized Master Bot Configuration for ${currentBotId} (${botName})!`, true);
     onClose();
   };
 
@@ -248,7 +247,7 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
       <div 
         className="modal-card glass-panel" 
         style={{ 
-          maxWidth: '780px', 
+          maxWidth: '820px', 
           width: '95%', 
           maxHeight: '92vh', 
           overflowY: 'auto', 
@@ -271,8 +270,8 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
                   {botName || bot.name}
                 </h2>
               </div>
-              <p style={{ fontSize: '11px', color: 'var(--accent-cyan)', margin: '4px 0 0 0' }}>
-                ⚡ <b>Trigger:</b> {trigger} • ⏱️ <b>Schedule:</b> {schedule}
+              <p style={{ fontSize: '11.5px', color: 'var(--accent-cyan)', margin: '4px 0 0 0' }}>
+                Unified Master Configuration • Trigger Rules, Timings, Thresholds & Domain Controls
               </p>
             </div>
           </div>
@@ -280,10 +279,10 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
         </div>
 
         {/* Master Status Switcher */}
-        <div style={{ background: '#030712', borderRadius: '12px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <div style={{ background: '#030712', borderRadius: '12px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
           <div>
-            <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#FFFFFF' }}>Bot Operational Status</div>
-            <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>Toggle this bot active or pause automation temporarily</div>
+            <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#FFFFFF' }}>Bot Operational State</div>
+            <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>Toggle this bot active or pause automation execution</div>
           </div>
           <div style={{ display: 'flex', gap: '6px' }}>
             <button
@@ -306,11 +305,70 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
         </div>
 
         {/* ========================================================================= */}
-        {/* EXACT, NON-DUPLICATING DOMAIN CONTROLS PANEL (ONE PANEL PER BOT ID)         */}
+        {/* SECTION 1: CORE AUTOMATION ENGINE RULES (RESTORED & COMPLETE)              */}
         {/* ========================================================================= */}
-        <div style={{ background: '#030712', borderRadius: '12px', padding: '16px', border: '1px solid rgba(212,175,55,0.3)', marginBottom: '14px' }}>
+        <div style={{ background: '#030712', borderRadius: '12px', padding: '16px', border: '1px solid rgba(56,189,248,0.25)', marginBottom: '16px' }}>
+          <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-cyan)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+            <Zap size={14} /> 1. Core Trigger, Timing & Channel Automation Rules:
+          </label>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+              <label>Bot Display Name</label>
+              <input value={botName} onChange={e => setBotName(e.target.value)} />
+            </div>
+
+            <div className="form-field">
+              <label>⚡ Execution Trigger Condition</label>
+              <select value={trigger} onChange={e => setTrigger(e.target.value)}>
+                <option value="On New Order">On New SafeLock Order Reservation</option>
+                <option value="On SafeLock Lock">On Inventory Stock Lock</option>
+                <option value="On Staging Complete">On 5-Box Staging Bay Complete</option>
+                <option value="On Dispatch">On Outward Dock Dispatch</option>
+                <option value="On Customer Signature">On Customer Digital ePOD Signature</option>
+                <option value="On Buffer Deficit">On Low Stock Buffer Deficit</option>
+                <option value="Daily 21:00 IST">Daily 9 PM Showroom Cash Lock</option>
+                <option value="Hourly Cron">Hourly Universal Deduplication</option>
+                <option value="Manual / Scheduled">Manual / Scheduled Trigger</option>
+              </select>
+            </div>
+
+            <div className="form-field">
+              <label>⏱️ Execution Frequency / Schedule</label>
+              <select value={schedule} onChange={e => setSchedule(e.target.value)}>
+                <option value="Instant Real-Time">Instant Real-Time Webhook (Sub-100ms)</option>
+                <option value="Scheduled Daily at 21:00">Scheduled Daily at 21:00 IST</option>
+                <option value="Scheduled Hourly">Scheduled Hourly</option>
+                <option value="T+24 Hours Delay">T+24 Hours Delay</option>
+                <option value="T+48 Hours Delay">T+48 Hours Delay</option>
+                <option value="Manual Dispatch Only">Manual Staff Trigger Only</option>
+              </select>
+            </div>
+
+            <div className="form-field">
+              <label>🎯 Target Channel & Route</label>
+              <select value={targetChannel} onChange={e => setTargetChannel(e.target.value)}>
+                <option value="WhatsApp Cloud + Google Sheets">WhatsApp Business Cloud + Google Sheets</option>
+                <option value="Customer SMS OTP Gateway">Customer SMS OTP Gateway</option>
+                <option value="Owner Telegram / Email Slip">Owner Telegram / Email Slip</option>
+                <option value="Fleet Driver Mobile App">Fleet Driver Mobile App Route</option>
+                <option value="Supplier WhatsApp PO">Factory Supplier WhatsApp PO</option>
+              </select>
+            </div>
+
+            <div className="form-field">
+              <label>⚙️ Safety Threshold / Condition Rule</label>
+              <input value={threshold} onChange={e => setThreshold(e.target.value)} placeholder="e.g. Buffer <= 2 Units / Intent >= 85%" />
+            </div>
+          </div>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* SECTION 2: SPECIALIZED FURNITURE DOMAIN CONTROLS PANEL                     */}
+        {/* ========================================================================= */}
+        <div style={{ background: '#030712', borderRadius: '12px', padding: '16px', border: '1px solid rgba(212,175,55,0.3)', marginBottom: '16px' }}>
           <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-gold-light)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
-            <Sliders size={14} /> Specialized Furniture Domain Controls ({currentBotId}):
+            <Sliders size={14} /> 2. Specialized Furniture Domain Controls ({currentBotId}):
           </label>
 
           {/* BOT-01: SafeLock Order Confirmation */}
@@ -655,11 +713,11 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
         </div>
 
         {/* ========================================================================= */}
-        {/* 4-LANGUAGE SWITCHER & DYNAMIC WHATSAPP PREVIEW                            */}
+        {/* SECTION 3: 4-LANGUAGE SWITCHER & DYNAMIC WHATSAPP PREVIEW                  */}
         {/* ========================================================================= */}
         <div style={{ margin: '14px 0' }}>
           <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-emerald)', textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>
-            🌐 Customer Regional Language Preview (Odia / Telugu / Hindi / English):
+            🌐 3. Customer Regional Language Preview (Odia / Telugu / Hindi / English):
           </label>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
             {[

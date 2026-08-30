@@ -147,11 +147,47 @@ export function StaffInwardScannerView() {
     }
   }, [isCameraActive]);
 
+  // Global Bluetooth & USB Laser Barcode Scanner Keyboard Wedge Listener
   useEffect(() => {
+    let buffer = '';
+    let lastKeyTime = Date.now();
+
+    const handleGlobalKeyDown = (e) => {
+      const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+      const isInputFocused = activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select';
+
+      const currentTime = Date.now();
+      const charDiff = currentTime - lastKeyTime;
+      lastKeyTime = currentTime;
+
+      if (e.key === 'Enter') {
+        if (buffer.length >= 2) {
+          e.preventDefault();
+          const scannedCode = buffer.trim();
+          buffer = '';
+          handleProcessBarcodeScan(scannedCode);
+        }
+      } else if (e.key.length === 1) {
+        if (charDiff < 80 || !isInputFocused) {
+          buffer += e.key;
+        } else {
+          buffer = e.key;
+        }
+
+        setTimeout(() => {
+          if (Date.now() - lastKeyTime > 350 && buffer.length > 0) {
+            buffer = '';
+          }
+        }, 400);
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
     return () => {
+      window.removeEventListener('keydown', handleGlobalKeyDown);
       stopCamera();
     };
-  }, []);
+  }, [customBoxes, verifiedBoxes, selectedPoSku]);
 
   const startCamera = async (facing = cameraFacing) => {
     try {

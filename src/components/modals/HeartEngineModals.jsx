@@ -706,7 +706,7 @@ export function AgingStockModal({ isOpen, onClose }) {
               📉 Aging Stock Clearance & Liquidity Radar
             </h3>
             <div style={{ fontSize: '11px', color: '#FDA4AF' }}>
-              {agingItems.length} Models Aging > 90 Days (₹3.4L Working Capital Locked)
+              {agingItems.length} Models Aging 90+ Days (₹3.4L Working Capital Locked)
             </div>
           </div>
           <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>

@@ -76,7 +76,7 @@ export function InventorySafeLockView() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className="badge badge-emerald">🔒 SAFELOCK™ REAL-TIME INVENTORY</span>
           <button className="btn-luxury-gold" onClick={() => openModal('aging_stock')}>
-            📉 Aging Stock Radar (>90d)
+            📉 Aging Stock Radar (90+ Days)
           </button>
           <button className="btn-cyan" onClick={() => setShowConfigModal(true)}>
             ⏳ Token Hold: {tokenHoldHours / 24} Days

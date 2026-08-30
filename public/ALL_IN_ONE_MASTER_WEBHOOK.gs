@@ -1417,7 +1417,7 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
     // ==========================================================================================
     // 📦 STAFF MOBILE INWARD & FACTORY UNLOADING SCANNER ENGINE
     // ==========================================================================================
-    else if (action === "INWARD_STOCK_SCAN") {
+    else if (action === "INWARD_STOCK_SCAN" || action === "INWARD_SCAN" || action === "RECEIVE_INWARD_PO_QC" || action === "INWARD_STOCK" || action === "FACTORY_INWARD_RECEIVING") {
       var sku = params.sku || "BED-MOD-001";
       var productName = params.product_name || "Godrej Royal Teak King Bed";
       var category = params.category || "Bedroom";

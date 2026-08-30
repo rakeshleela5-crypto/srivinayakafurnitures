@@ -29,7 +29,13 @@ import {
   Calendar,
   AlertTriangle,
   Database,
-  Target
+  Target,
+  Moon,
+  ShieldAlert,
+  Camera,
+  Compass,
+  TrendingUp,
+  UserCheck
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../../utils/audioUtils';
 import { dispatchWebhookAction } from '../../services/webhookService';
@@ -45,7 +51,23 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
   const [threshold, setThreshold] = useState('Buffer <= 2 Units');
   const [language, setLanguage] = useState('EN');
 
-  // Domain-specific state variables
+  // Enterprise Guard Controls
+  const [quietHoursEnabled, setQuietHoursEnabled] = useState(true);
+  const [dndWindow, setDndWindow] = useState('09:30 PM to 08:30 AM');
+  const [antiSpamCap, setAntiSpamCap] = useState(1); // 1 msg per 24h
+  const [authRoleLevel, setAuthRoleLevel] = useState('DIRECTOR_PIN');
+  const [smsFallback, setSmsFallback] = useState(true);
+  const [minOrderValue, setMinOrderValue] = useState(25000);
+  const [twoWayAiEnabled, setTwoWayAiEnabled] = useState(true);
+  const [ewayBillGuard, setEwayBillGuard] = useState(true);
+  const [monsoonCareGuide, setMonsoonCareGuide] = useState(true);
+  const [anniversaryVoucher, setAnniversaryVoucher] = useState(true);
+  const [arPlacementLink, setArPlacementLink] = useState(true);
+  const [staffIncentivePct, setStaffIncentivePct] = useState(1.5);
+  const [pdiPhotoProof, setPdiPhotoProof] = useState(true);
+  const [b2bTdsSection51, setB2bTdsSection51] = useState(false);
+
+  // Domain states
   const [vehiclePlate, setVehiclePlate] = useState('Tata Ace (OD-18-A-1234)');
   const [driverAssign, setDriverAssign] = useState('Tophan Gouda (+91 94371 88291)');
   const [loadingBay, setLoadingBay] = useState('Bay 1 (Heavy Solid Teak Dock)');
@@ -78,7 +100,6 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
 
   const [promoCode, setPromoCode] = useState('RAYAGADA5000');
   const [audienceSegment, setAudienceSegment] = useState('HOT_LEADS');
-  const [freePillowsSweetener, setFreePillowsSweetener] = useState(true);
   const [directorPin, setDirectorPin] = useState('8899');
   const [pinVerified, setPinVerified] = useState(false);
   const [hesitationReason, setHesitationReason] = useState('FAMILY_CONSULT');
@@ -115,14 +136,14 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
     switch (currentBotId) {
       case 'BOT-01':
         return lang === 'OR'
-          ? `🔒 *ଗୋଦ୍ରେଜ୍ ଇଣ୍ଟେରିଓ ରାୟଗଡ଼ା — ଅର୍ଡର ସୁରକ୍ଷିତ ବୁକିଂ*\nଅର୍ଡର #ORD-101 (Solid Teak King Bed) ସଫଳତାର ସହ SafeLock ହୋଇଛି। ଅଗ୍ରିମ ଟୋକନ୍: ₹୪୫,୦୦୦ (${tokenPercent}%)। ଡେଲିଭରୀ ତାରିଖ: ଆଜି ସନ୍ଧ୍ୟା ୦୪:୩୦।`
-          : `🔒 *GODREJ INTERIO RAYAGADA — SAFELOCK ORDER CONFIRMED*\nOrder #ORD-101 (Solid Teak King Bed) is SAFELOCKED. Advance Token: ₹45,000 (${tokenPercent}%). Est Delivery: Today 04:30 PM. Helpline: +91 93905 53301.`;
+          ? `🔒 *ଗୋଦ୍ରେଜ୍ ଇଣ୍ଟେରିଓ ରାୟଗଡ଼ା — ଅର୍ଡର ସୁରକ୍ଷିତ ବୁକିଂ*\nଅର୍ଡର #ORD-101 (Solid Teak King Bed) ସଫଳତାର ସହ SafeLock ହୋଇଛି। ଅଗ୍ରିମ ଟୋକନ୍: ₹୪୫,୦୦୦ (${tokenPercent}%)। ଡେଲିଭରୀ ତାରିଖ: ଆଜି ସନ୍ଧ୍ୟା ୦୪:୩୦। E-Way Bill: EWB-2198421098 ✓।`
+          : `🔒 *GODREJ INTERIO RAYAGADA — SAFELOCK ORDER CONFIRMED*\nOrder #ORD-101 (Solid Teak King Bed) is SAFELOCKED. Advance Token: ₹45,000 (${tokenPercent}%). E-Way Bill: EWB-2198421098 ✓. Est Delivery: Today 04:30 PM. Helpline: +91 93905 53301.`;
 
       case 'BOT-02':
         return `🛡️ *ATOMIC INVENTORY STOCK HOLD ACTIVE*\nSKU: BED-MOD-001 locked for Order #ORD-101. Available Stock decremented to 2 Units. Minimum Buffer: ${bufferUnits} Units.`;
 
       case 'BOT-03':
-        return `📦 *SMARTKIT 5-BOX STAGING GATEPASS*\nLoading Bay: ${loadingBay} | 5/5 Boxes Staged ✓. Monsoon Weather Seal: ${rainShield ? 'ACTIVE ✓' : 'OFF'}. Gatepass Generated.`;
+        return `📦 *SMARTKIT 5-BOX STAGING GATEPASS*\nLoading Bay: ${loadingBay} | 5/5 Boxes Staged ✓. Monsoon Weather Seal: ${rainShield ? 'ACTIVE ✓' : 'OFF'}. PDI Zero-Defect Photo Verified ✓.`;
 
       case 'BOT-04':
         return `🚚 *DELIVERY DRIVER ASSIGNMENT & OTP DISPATCH*\nVehicle: ${vehiclePlate} | Driver: ${driverAssign}\nCustomer Delivery OTP: 8892 | SafeLock Dispatch Validated ✓.`;
@@ -149,23 +170,23 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
 
       case 'BOT-11':
         return lang === 'OR'
-          ? `✨ *ରାୟଗଡ଼ା ଗୋଦ୍ରେଜ୍ ଫେଷ୍ଟିଭ୍ ଧମାକା!* ପ୍ରୋମୋ କୋଡ୍ ${promoCode} ବ୍ୟବହାର କରି ପାଆନ୍ତୁ ଫ୍ଲାଟ୍ ₹୫,୦୦୦ ରିହାତି + ୨ଟି ଅର୍ଥୋ ପିଲୋ ମାଗଣା!`
+          ? `✨ *ରାୟଗଡ଼ା ଗୋଦ୍ରେଜ୍ ଫେଷ୍ଟିଭ୍ ଧମାକା!* ପ୍ରୋମୋ କୋଡ୍ ${promoCode} ବ୍ୟବହାର କରି ପାଆନ୍ତୁ ଫ୍ଲାଟ୍ ₹୫,୦୦୦ ରିହାତି + ୨ଟି ଅର୍ଥୋ ପିଲୋ ମାଗଣା! (Quiet Hours DND Protected)`
           : `✨ *FESTIVE TEAK UTSAV — GODREJ INTERIO RAYAGADA*\nUse Promo Code *${promoCode}* for instant flat discount + 2x Free Ortho Memory Foam Pillows! Target: ${audienceSegment}.`;
 
       case 'BOT-12':
         return `🔒 *GODREJ INTERIO RAYAGADA — 9:00 PM DAILY CASH CLOSING SLIP*\nTotal Gross Sales: ₹1,69,000 | Cash in Safe: ₹45,000 | UPI Settled: ₹1,24,000 | Zero Discrepancy ✓ | Director PIN: 8899.`;
 
       case 'BOT-13':
-        return `📐 *ROOM FITMENT & STAIRWAY CLEARANCE PASS*\nDelivery Floor: ${staircaseFloor} | 100% Knockdown 5-Box Assembly Guarantee Verified by Master Mistri.`;
+        return `📐 *ROOM FITMENT & STAIRWAY CLEARANCE PASS*\nDelivery Floor: ${staircaseFloor} | 100% Knockdown 5-Box Assembly Guarantee | 3D AR Room Placement Link Active ✓.`;
 
       case 'BOT-14':
         return `💳 *0% NO-COST EMI FINANCING APPROVED*\nFinancier: ${emiFinancier} | Tenure: ${emiTenureMonths} Months | Zero Down Payment | Monthly EMI: ₹6,520.`;
 
       case 'BOT-15':
-        return `🛡️ *OFFICIAL ${warrantyYears}-YEAR GODREJ DIGITAL WARRANTY CERTIFICATE*\nHologram Serial: ${warrantyHologramSerial} | 5-Point Assembly QC Verified by Master Mistri ✓.`;
+        return `🛡️ *OFFICIAL ${warrantyYears}-YEAR GODREJ DIGITAL WARRANTY CERTIFICATE*\nHologram Serial: ${warrantyHologramSerial} | 5-Point Assembly QC & Seasonal Teak Care Guide Included ✓.`;
 
       case 'BOT-16':
-        return `🔥 *HOT LEAD 48-HOUR SMART FURNITURE DRIP*\nCustomer: Dr. Subhashish Jena | Hesitation Reason: ${hesitationReason} | Follow-Up Delay: ${delayDays} Days (48 Hours) | Auto-cancels on advance token.`;
+        return `🔥 *HOT LEAD 48-HOUR SMART FURNITURE DRIP*\nCustomer: Dr. Subhashish Jena | Hesitation Reason: ${hesitationReason} | Follow-Up Delay: ${delayDays} Days | Anti-Spam: Max 1 Msg/24h.`;
 
       case 'BOT-17':
         return `⚙️ *UNIVERSAL 21-TABLE DEDUPLICATION BOT*\nHourly Cron Active | Deduplicated Primary Keys across Orders_SafeLock, Inventory_Stock, Inquiries_Log. Zero collisions.`;
@@ -174,7 +195,7 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
         return `📦 *SUPPLIER SHIPMENT INWARD QC GATEPASS*\nInspection Result: ${inwardPassingGrade} ✓ | 50 Units Solid Teak Staged to Warehouse Inward Dock.`;
 
       case 'BOT-19':
-        return `📊 *SHOWROOM MONTHLY SALES PACER*\nTarget: ₹${(monthlyTargetINR / 100000).toFixed(1)} Lakhs | Achieved: ₹38.45 Lakhs (85.4% on track) | Projected: ₹46.2 Lakhs.`;
+        return `📊 *SHOWROOM MONTHLY SALES PACER*\nTarget: ₹${(monthlyTargetINR / 100000).toFixed(1)} Lakhs | Achieved: ₹38.45 Lakhs (85.4% on track) | Sales Spot Incentive: ${staffIncentivePct}%.`;
 
       case 'BOT-20':
         return `⚡ *MASTER GOOGLE APPS SCRIPT 2-WAY SYNC*\nStatus: HTTP 200 OK | Sub-100ms Push-Pull Synchronization active across all 22 Google Sheets tables.`;
@@ -193,6 +214,22 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
       schedule: schedule,
       targetChannel: targetChannel,
       threshold: threshold,
+      enterpriseGuards: {
+        quietHoursEnabled,
+        dndWindow,
+        antiSpamCap,
+        authRoleLevel,
+        smsFallback,
+        minOrderValue,
+        twoWayAiEnabled,
+        ewayBillGuard,
+        monsoonCareGuide,
+        anniversaryVoucher,
+        arPlacementLink,
+        staffIncentivePct,
+        pdiPhotoProof,
+        b2bTdsSection51
+      },
       domainConfig: {
         language,
         vehiclePlate,
@@ -225,12 +262,13 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
       schedule: schedule,
       channel: targetChannel,
       threshold: threshold,
+      enterprise_guards: updated.enterpriseGuards,
       preview_sample: getLocalizedBotPreview(language),
       updated_by: "Store Director (PIN 8899)",
       timestamp: new Date().toISOString()
     });
 
-    showToast(`⚙️ Successfully updated and synchronized Master Bot Configuration for ${currentBotId} (${botName})!`, true);
+    showToast(`⚙️ Master Enterprise Configuration saved & synced for ${currentBotId} (${botName})!`, true);
     onClose();
   };
 
@@ -247,7 +285,7 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
       <div 
         className="modal-card glass-panel" 
         style={{ 
-          maxWidth: '820px', 
+          maxWidth: '850px', 
           width: '95%', 
           maxHeight: '92vh', 
           overflowY: 'auto', 
@@ -271,7 +309,7 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
                 </h2>
               </div>
               <p style={{ fontSize: '11.5px', color: 'var(--accent-cyan)', margin: '4px 0 0 0' }}>
-                Unified Master Configuration • Trigger Rules, Timings, Thresholds & Domain Controls
+                Enterprise Operational Master Deck • Triggers, Timings, DND, RBAC & Furniture Domain Controls
               </p>
             </div>
           </div>
@@ -281,7 +319,7 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
         {/* Master Status Switcher */}
         <div style={{ background: '#030712', borderRadius: '12px', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
           <div>
-            <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#FFFFFF' }}>Bot Operational State</div>
+            <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#FFFFFF' }}>Bot Automation Operational Status</div>
             <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>Toggle this bot active or pause automation execution</div>
           </div>
           <div style={{ display: 'flex', gap: '6px' }}>
@@ -305,7 +343,7 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
         </div>
 
         {/* ========================================================================= */}
-        {/* SECTION 1: CORE AUTOMATION ENGINE RULES (RESTORED & COMPLETE)              */}
+        {/* SECTION 1: CORE TRIGGER, TIMING & CHANNEL AUTOMATION RULES                */}
         {/* ========================================================================= */}
         <div style={{ background: '#030712', borderRadius: '12px', padding: '16px', border: '1px solid rgba(56,189,248,0.25)', marginBottom: '16px' }}>
           <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-cyan)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
@@ -364,11 +402,107 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
         </div>
 
         {/* ========================================================================= */}
-        {/* SECTION 2: SPECIALIZED FURNITURE DOMAIN CONTROLS PANEL                     */}
+        {/* SECTION 2: 16 PERMANENT ENTERPRISE GUARDS & INTELLIGENCE CONTROLS          */}
+        {/* ========================================================================= */}
+        <div style={{ background: '#030712', borderRadius: '12px', padding: '16px', border: '1px solid rgba(16,185,129,0.3)', marginBottom: '16px' }}>
+          <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-emerald)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
+            <ShieldCheck size={14} /> 2. Permanent Enterprise Governance & AI Defense Controls:
+          </label>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+            
+            {/* 1. Quiet Hours DND */}
+            <div style={{ background: '#0B132B', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <span style={{ fontSize: '11.5px', fontWeight: '800', color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Moon size={13} color="#93C5FD" /> Quiet Hours DND Window
+                </span>
+                <input type="checkbox" checked={quietHoursEnabled} onChange={e => setQuietHoursEnabled(e.target.checked)} />
+              </div>
+              <input value={dndWindow} onChange={e => setDndWindow(e.target.value)} style={{ fontSize: '11px', padding: '4px 8px', marginTop: '4px' }} />
+              <div style={{ fontSize: '9.5px', color: '#64748B', marginTop: '2px' }}>Queues late night messages for 09:00 AM dispatch</div>
+            </div>
+
+            {/* 2. Anti-Spam Frequency Cap */}
+            <div style={{ background: '#0B132B', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ fontSize: '11.5px', fontWeight: '800', color: '#FFFFFF', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <ShieldAlert size={13} color="#F59E0B" /> Anti-Spam Frequency Cap
+              </div>
+              <select value={antiSpamCap} onChange={e => setAntiSpamCap(Number(e.target.value))} style={{ fontSize: '11px', padding: '4px 8px' }}>
+                <option value={1}>Max 1 Promo Msg / 24 Hours</option>
+                <option value={2}>Max 2 Msgs / 24 Hours</option>
+                <option value={0}>Unrestricted (Transactional Alerts)</option>
+              </select>
+              <div style={{ fontSize: '9.5px', color: '#64748B', marginTop: '2px' }}>Prevents customer notification fatigue</div>
+            </div>
+
+            {/* 3. Role Access Control */}
+            <div style={{ background: '#0B132B', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ fontSize: '11.5px', fontWeight: '800', color: '#FFFFFF', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <UserCheck size={13} color="var(--accent-gold)" /> Required Authorization Level
+              </div>
+              <select value={authRoleLevel} onChange={e => setAuthRoleLevel(e.target.value)} style={{ fontSize: '11px', padding: '4px 8px' }}>
+                <option value="DIRECTOR_PIN">Level 3: Director Only (PIN 8899)</option>
+                <option value="MANAGER">Level 2: Store Manager</option>
+                <option value="ALL_STAFF">Level 1: Public / All Staff</option>
+              </select>
+              <div style={{ fontSize: '9.5px', color: '#64748B', marginTop: '2px' }}>Protects margins and financial ledgers</div>
+            </div>
+
+            {/* 4. Minimum Order Value (MOV) Filter */}
+            <div style={{ background: '#0B132B', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ fontSize: '11.5px', fontWeight: '800', color: '#FFFFFF', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <DollarSign size={13} color="var(--accent-emerald)" /> Minimum Order Value (MOV) Perk
+              </div>
+              <input type="number" step="5000" value={minOrderValue} onChange={e => setMinOrderValue(Number(e.target.value))} style={{ fontSize: '11px', padding: '4px 8px' }} />
+              <div style={{ fontSize: '9.5px', color: '#64748B', marginTop: '2px' }}>Bill threshold required to trigger free gifts</div>
+            </div>
+
+            {/* 5. Two-Way AI Keyword Router */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#0B132B', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', fontSize: '11px' }}>
+              <input type="checkbox" checked={twoWayAiEnabled} onChange={e => setTwoWayAiEnabled(e.target.checked)} />
+              <span>💬 <b>Two-Way AI Keyword Router:</b> Auto-handles incoming replies (QR, Location, ETA)</span>
+            </label>
+
+            {/* 6. GST E-Way Bill Guard */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#0B132B', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', fontSize: '11px' }}>
+              <input type="checkbox" checked={ewayBillGuard} onChange={e => setEwayBillGuard(e.target.checked)} />
+              <span>🧾 <b>Mandatory E-Way Bill Guard:</b> Enforces 12-digit EWB for orders &gt; ₹50,000</span>
+            </label>
+
+            {/* 7. Seasonal Monsoon Care Guide */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#0B132B', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', fontSize: '11px' }}>
+              <input type="checkbox" checked={monsoonCareGuide} onChange={e => setMonsoonCareGuide(e.target.checked)} />
+              <span>🌧️ <b>Seasonal Teak Care Drip:</b> Dispatches humidity care guide 30 days post-delivery</span>
+            </label>
+
+            {/* 8. 3D AR Room Placement Link */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#0B132B', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', fontSize: '11px' }}>
+              <input type="checkbox" checked={arPlacementLink} onChange={e => setArPlacementLink(e.target.checked)} />
+              <span>🪞 <b>3D AR Placement Link:</b> Embeds camera room visualizer in proposal WhatsApp</span>
+            </label>
+
+            {/* 9. PDI Zero-Defect Photo Proof */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#0B132B', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', fontSize: '11px' }}>
+              <input type="checkbox" checked={pdiPhotoProof} onChange={e => setPdiPhotoProof(e.target.checked)} />
+              <span>📸 <b>PDI Zero-Defect Photo Vault:</b> Requires 2 dock photos before outward dispatch</span>
+            </label>
+
+            {/* 10. Smart SMS Fallback */}
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#0B132B', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', fontSize: '11px' }}>
+              <input type="checkbox" checked={smsFallback} onChange={e => setSmsFallback(e.target.checked)} />
+              <span>📴 <b>Smart SMS Fallback:</b> Reroutes to Fast2SMS if WhatsApp is undelivered after 5 mins</span>
+            </label>
+
+          </div>
+        </div>
+
+        {/* ========================================================================= */}
+        {/* SECTION 3: SPECIALIZED FURNITURE DOMAIN CONTROLS PANEL                     */}
         {/* ========================================================================= */}
         <div style={{ background: '#030712', borderRadius: '12px', padding: '16px', border: '1px solid rgba(212,175,55,0.3)', marginBottom: '16px' }}>
           <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-gold-light)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '12px' }}>
-            <Sliders size={14} /> 2. Specialized Furniture Domain Controls ({currentBotId}):
+            <Sliders size={14} /> 3. Specialized Furniture Retail Domain Controls ({currentBotId}):
           </label>
 
           {/* BOT-01: SafeLock Order Confirmation */}
@@ -692,8 +826,9 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
                 <label>Monthly Target (₹): <b>₹{(monthlyTargetINR / 100000).toFixed(1)} Lakhs</b></label>
                 <input type="number" step="100000" value={monthlyTargetINR} onChange={e => setMonthlyTargetINR(Number(e.target.value))} />
               </div>
-              <div className="form-field" style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '18px' }}>
-                <span className="badge badge-gold">Real-Time Pacer Gauge Active ✓</span>
+              <div className="form-field">
+                <label>Sales Spot Commission: <b>{staffIncentivePct}%</b></label>
+                <input type="range" min="0.5" max="5.0" step="0.5" value={staffIncentivePct} onChange={e => setStaffIncentivePct(Number(e.target.value))} />
               </div>
             </div>
           )}
@@ -713,11 +848,11 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
         </div>
 
         {/* ========================================================================= */}
-        {/* SECTION 3: 4-LANGUAGE SWITCHER & DYNAMIC WHATSAPP PREVIEW                  */}
+        {/* SECTION 4: 4-LANGUAGE SWITCHER & DYNAMIC WHATSAPP PREVIEW                  */}
         {/* ========================================================================= */}
         <div style={{ margin: '14px 0' }}>
           <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-emerald)', textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>
-            🌐 3. Customer Regional Language Preview (Odia / Telugu / Hindi / English):
+            🌐 4. Customer Regional Language Preview (Odia / Telugu / Hindi / English):
           </label>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
             {[

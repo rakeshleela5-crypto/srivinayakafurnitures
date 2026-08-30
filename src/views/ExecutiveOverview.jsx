@@ -224,11 +224,14 @@ export function ExecutiveOverview() {
                   <td style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>{order.Delivery_Schedule}</td>
                   <td>
                     <div style={{ display: 'flex', gap: '5px' }}>
-                      <button className="btn-ghost-edit" onClick={() => openModal('manage_order', { order })}>
-                        ✏️ Edit
+                      <button className="btn-cyan" style={{ fontSize: '10.5px', padding: '3px 8px' }} onClick={() => openModal('order_rescheduler', { order })}>
+                        📅 Reschedule
                       </button>
                       <button className="btn-ghost-edit" onClick={() => openModal('order_invoice', { order })}>
                         🧾 Invoice
+                      </button>
+                      <button className="btn-ghost-edit" onClick={() => openModal('manage_order', { order })}>
+                        ✏️
                       </button>
                     </div>
                   </td>

@@ -115,12 +115,15 @@ export function LogisticsEpodView() {
                     </span>
                   </td>
                   <td>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <button className="btn-luxury-gold" onClick={() => openModal('digital_epod', { stop })}>
+                    <div style={{ display: 'flex', gap: '5px' }}>
+                      <button className="btn-luxury-gold" style={{ fontSize: '10.5px', padding: '3px 8px' }} onClick={() => openModal('digital_epod', { stop })}>
                         ✍️ Sign ePOD
                       </button>
-                      <button className="btn-ghost-edit" onClick={() => openModal('sms_dispatch', { stop })}>
-                        <MessageSquare size={13} /> OTP
+                      <button className="btn-cyan" style={{ fontSize: '10.5px', padding: '3px 8px' }} onClick={() => openModal('order_rescheduler', { order: { Order_ID: stop.Order_ID, Customer_Name: stop.Customer_Name, Project_Address: stop.Address, Delivery_Schedule: stop.Time_Slot, Balance_Due_INR: stop.Amount_Due } })}>
+                        📅 Reschedule
+                      </button>
+                      <button className="btn-ghost-edit" style={{ fontSize: '10.5px', padding: '3px 6px' }} onClick={() => openModal('sms_dispatch', { stop })}>
+                        <MessageSquare size={12} />
                       </button>
                     </div>
                   </td>

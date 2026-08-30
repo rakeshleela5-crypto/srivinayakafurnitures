@@ -1649,6 +1649,136 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
 
 
     
+    
+    // ==========================================================================================
+    // ❤️ HEART ENGINE 1: 3-TIER PRICING & PROFIT MARGIN MATRIX ENGINE
+    // ==========================================================================================
+    else if (action === "SAVE_TIER_PRICING" || action === "UPDATE_3_TIER_PRICING") {
+      var sku = params.sku || "BED-MOD-001";
+      var prodName = params.product_name || "Solid Teak King Bed";
+      var mrp = Number(params.mrp) || 98000;
+      var festivePrice = Number(params.festive_price) || 78247;
+      var archRate = Number(params.architect_net_rate) || 71600;
+      var floorPrice = Number(params.floor_price) || 68000;
+      var factoryCost = Number(params.factory_cost) || 53900;
+      var grossMargin = festivePrice - factoryCost;
+      var marginPct = Math.round((grossMargin / festivePrice) * 100);
+      var updatedBy = params.updated_by || "Director Rakesh (PIN 8899)";
+
+      var tierSheet = getOrCreateSheet(ss, "Tier_Pricing_Matrix", [
+        "SKU", "Product_Name", "MRP_INR", "Festive_Price_INR", "Architect_Net_Rate_INR", 
+        "Floor_Price_INR", "Factory_Inward_Cost_INR", "Gross_Margin_INR", "Margin_Pct", "Last_Updated_By", "Timestamp"
+      ], "#F59E0B");
+
+      if (tierSheet) {
+        tierSheet.appendRow([
+          sku,
+          prodName,
+          mrp,
+          festivePrice,
+          archRate,
+          floorPrice,
+          factoryCost,
+          grossMargin,
+          marginPct + "%",
+          updatedBy,
+          currentDateTimeStr
+        ]);
+        applyStandardFormat(tierSheet);
+      }
+
+      result.sku = sku;
+      result.festive_price = festivePrice;
+      result.gross_margin = grossMargin;
+      result.margin_pct = marginPct;
+      result.message = "3-Tier Pricing Matrix saved for " + sku + "! Festive: Rs. " + festivePrice + " | Floor: Rs. " + floorPrice + " (Margin: " + marginPct + "%)";
+    }
+
+    // ==========================================================================================
+    // ❤️ HEART ENGINE 2: MASTER ORDER LIFECYCLE & DELIVERY RESCHEDULER ENGINE
+    // ==========================================================================================
+    else if (action === "RESCHEDULE_ORDER_DELIVERY" || action === "RESCHEDULE_ORDER") {
+      var orderId = params.order_id || "ORD-8921";
+      var customerName = params.customer_name || "Dr. Subhashish Jena";
+      var customerPhone = (params.customer_phone || "9437188291").toString().replace(/[^0-9]/g, "");
+      var deliveryAddress = params.delivery_address || params.address || "Gayatri Nagar Villa, Rayagada";
+      var deliverySchedule = params.delivery_schedule || params.schedule || "Sunday, 31-Aug 04:30 PM Express";
+      var assignedDriver = params.assigned_driver || params.driver || "Tophan Gouda (Tata Ace OD-18-A-1234)";
+      var assignedCarpenter = params.assigned_carpenter || params.carpenter || "Narayana Mistri";
+      var balanceDue = Number(params.balance_due_inr) || Number(params.balance_due) || 78247;
+      var landmarkNotes = params.landmark_notes || "Ground Floor Double Door Entry";
+      var reschedId = "RESCHED-" + Utilities.getUuid().substring(0, 6).toUpperCase();
+
+      var reschedSheet = getOrCreateSheet(ss, "Delivery_Reschedule_Log", [
+        "Reschedule_ID", "Order_ID", "Customer_Name", "Customer_Phone", "New_Delivery_Slot", 
+        "New_Address", "Assigned_Driver", "Assigned_Carpenter", "Balance_Due_INR", "Landmark_Notes", "Rescheduled_By", "Timestamp"
+      ], "#0284C7");
+
+      if (reschedSheet) {
+        reschedSheet.appendRow([
+          reschedId,
+          orderId,
+          customerName,
+          customerPhone,
+          deliverySchedule,
+          deliveryAddress,
+          assignedDriver,
+          assignedCarpenter,
+          balanceDue,
+          landmarkNotes,
+          "Store Manager (Rayagada)",
+          currentDateTimeStr
+        ]);
+        applyStandardFormat(reschedSheet);
+      }
+
+      result.reschedule_id = reschedId;
+      result.order_id = orderId;
+      result.delivery_schedule = deliverySchedule;
+      result.assigned_driver = assignedDriver;
+      result.assigned_carpenter = assignedCarpenter;
+      result.balance_due = balanceDue;
+      result.message = "Order #" + orderId + " rescheduled to " + deliverySchedule + " with Driver " + assignedDriver + " and Mistri " + assignedCarpenter + "!";
+    }
+
+    // ==========================================================================================
+    // ❤️ HEART ENGINE 3: STORE IDENTITY, GST & UPI VPA CONFIGURATOR ENGINE
+    // ==========================================================================================
+    else if (action === "SAVE_COMPANY_IDENTITY" || action === "UPDATE_STORE_SETTINGS") {
+      var storeName = params.store_name || "Godrej Interio Rayagada (Shree Ganesh Enterprises)";
+      var gstin = params.gstin || "21AAAAA0000A1Z5";
+      var pan = params.pan || "AAAAA0000A";
+      var address = params.showroom_address || "Main Road, Near Overbridge, Rayagada, Odisha 765001";
+      var phone = params.director_phone || "+91 93905 53301";
+      var upiVpa = params.merchant_upi_vpa || "9390553301@ybl";
+      var directorPin = params.director_pin || "8899";
+      var hours = params.showroom_hours || "09:30 AM to 09:00 PM IST";
+
+      var profSheet = getOrCreateSheet(ss, "Company_Profile", [
+        "Setting_Key", "Setting_Value", "Last_Updated"
+      ], "#10B981");
+
+      if (profSheet) {
+        profSheet.clearContents();
+        profSheet.appendRow(["Setting_Key", "Setting_Value", "Last_Updated"]);
+        profSheet.appendRow(["Store_Legal_Name", storeName, currentDateTimeStr]);
+        profSheet.appendRow(["GSTIN", gstin, currentDateTimeStr]);
+        profSheet.appendRow(["PAN", pan, currentDateTimeStr]);
+        profSheet.appendRow(["Showroom_Address", address, currentDateTimeStr]);
+        profSheet.appendRow(["Director_Phone", phone, currentDateTimeStr]);
+        profSheet.appendRow(["Merchant_UPI_VPA", upiVpa, currentDateTimeStr]);
+        profSheet.appendRow(["Director_Master_PIN", directorPin, currentDateTimeStr]);
+        profSheet.appendRow(["Showroom_Hours", hours, currentDateTimeStr]);
+        applyStandardFormat(profSheet);
+      }
+
+      result.store_name = storeName;
+      result.gstin = gstin;
+      result.merchant_upi_vpa = upiVpa;
+      result.message = "Company Profile and Merchant UPI VPA (" + upiVpa + ") updated successfully!";
+    }
+
+
     // ==========================================================================================
     // 🔨 1. MASTER CARPENTER (MISTRI) WORK ORDER & WAGE VOUCHER ENGINE
     // ==========================================================================================

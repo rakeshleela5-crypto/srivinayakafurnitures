@@ -9,6 +9,7 @@ import { DpdpComplianceModal } from './DpdpComplianceModal';
 import { CsvImportModal } from './CsvImportModal';
 import { EditArchitectModal, ArchitectPassModal, ArchitectCertificateModal, ArchitectLedgerStatementModal } from './ArchitectExtendedModals';
 import { EditBotConfigModal } from './EditBotConfigModal';
+import { TierPricingModal, OrderReschedulerModal, StoreSettingsModal } from './HeartEngineModals';
 
 export function ModalContainer() {
   const { activeModal, modalProps, closeModal } = useStore();
@@ -56,6 +57,11 @@ export function ModalContainer() {
 
       {/* Bot Configuration Modal */}
       <EditBotConfigModal isOpen={activeModal === 'edit_bot_config'} onClose={closeModal} bot={modalProps.bot} />
+
+      {/* ❤️ THE 3 HEART ENGINES */}
+      <TierPricingModal isOpen={activeModal === 'tier_pricing'} onClose={closeModal} sku={modalProps.sku} />
+      <OrderReschedulerModal isOpen={activeModal === 'order_rescheduler'} onClose={closeModal} order={modalProps.order} />
+      <StoreSettingsModal isOpen={activeModal === 'store_settings'} onClose={closeModal} />
     </>
   );
 }

@@ -77,14 +77,22 @@ export function AppHeader() {
         )}
         <button 
           className="btn-ghost-edit" 
+          onClick={() => openModal('store_settings')} 
+          style={{ fontSize: '11px', padding: '6px 12px', color: 'var(--accent-emerald)', border: '1px solid rgba(16,185,129,0.4)', background: 'rgba(16,185,129,0.08)' }} 
+          title="Configure Showroom Legal Entity, GSTIN, and Doorstep Merchant UPI VPA"
+        >
+          <span>⚙️ Identity & UPI</span>
+        </button>
+        <button 
+          className="btn-ghost-edit" 
           onClick={() => openModal('dpdp_compliance')} 
           style={{ fontSize: '11px', padding: '6px 12px', color: 'var(--accent-gold-light)', border: '1px solid rgba(212,175,55,0.4)', background: 'rgba(212,175,55,0.08)' }} 
           title="View Statutory DPDP 2023 Privacy Policy & Anti-Hacking Terms"
         >
-          <ShieldCheck size={13} /> <span>🛡️ DPDP 2023 Shield</span>
+          <ShieldCheck size={13} /> <span>🛡️ DPDP 2023</span>
         </button>
         <button className="btn-luxury-gold" onClick={() => setActiveTab('staff_qr')} style={{ padding: '6px 14px', fontSize: '11.5px' }}>
-          <span>📱 Staff QR Portals</span>
+          <span>📱 Staff QR</span>
         </button>
         <button className="btn-header-sync" onClick={syncWithGoogleSheets}>
           <RefreshCw size={13} className={isSyncing ? 'spin-anim' : ''} />

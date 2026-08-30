@@ -251,8 +251,11 @@ export function InventorySafeLockView() {
                   </td>
                   <td>
                     <div style={{ display: 'flex', gap: '4px' }}>
+                      <button className="btn-luxury-gold" style={{ fontSize: '10.5px', padding: '3px 6px' }} onClick={() => openModal('tier_pricing', { sku: item.SKU })}>
+                        🏷️ 3-Tier
+                      </button>
                       <button className="btn-ghost-edit" style={{ fontSize: '10.5px', padding: '3px 6px' }} onClick={() => toggleFloorDisplayTag(item.SKU)}>
-                        {floorDisplaySkus.includes(item.SKU) ? 'Clear Tag' : '🏷️ Floor Tag'}
+                        {floorDisplaySkus.includes(item.SKU) ? 'Clear Tag' : 'Floor Tag'}
                       </button>
                       <button className="btn-ghost-edit" style={{ fontSize: '10.5px', padding: '3px 6px' }} onClick={() => openModal('stock_override', { sku: item.SKU })}>
                         Override ➔

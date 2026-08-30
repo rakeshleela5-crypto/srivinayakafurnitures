@@ -21,6 +21,13 @@ export function AutoProcureView() {
   const [unitCost, setUnitCost] = useState(62000);
   const [poGenerated, setPoGenerated] = useState(false);
 
+  // Category Reorder Threshold & Lead Time State
+  const [bedLeadDays, setBedLeadDays] = useState(14);
+  const [bedReorderThreshold, setBedReorderThreshold] = useState(2);
+  const [sofaLeadDays, setSofaLeadDays] = useState(21);
+  const [sofaReorderThreshold, setSofaReorderThreshold] = useState(1);
+  const [showLeadTimeModal, setShowLeadTimeModal] = useState(false);
+
   const totalPoValue = poQty * unitCost;
 
   const lowStockItems = inventory.filter(i => i.Warehouse_Qty <= i.Buffer_Threshold);
@@ -38,13 +45,29 @@ export function AutoProcureView() {
     setPoGenerated(false);
   };
 
+  const handleSendWhatsAppPO = () => {
+    const text = `🏭 *OFFICIAL PURCHASE ORDER — GODREJ INTERIO RAYAGADA*\n` +
+      `*PO Ref:* #PO-2026-881 | Date: ${new Date().toLocaleDateString('en-IN')}\n` +
+      `*Manufacturer:* ${supplier}\n` +
+      `*Item:* ${poSku} (${catalog.find(c => c.SKU === poSku)?.Product_Name || 'Teak Bed'})\n` +
+      `*Quantity:* ${poQty} Sets | *Rate:* ₹${unitCost.toLocaleString()}/Set\n` +
+      `*Total PO Value:* ₹${totalPoValue.toLocaleString()}\n` +
+      `*Delivery Hub:* Central Warehouse Dock, Main Road, Rayagada (OD 765001)\n\n` +
+      `*Authorized Signatory:* Rakesh (Store Director)`;
+    window.open(`https://wa.me/919390553301?text=${encodeURIComponent(text)}`, '_blank');
+    showToast("📲 Factory Purchase Order sent to Manufacturer WhatsApp!", true);
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
       {/* Top Action Ribbon */}
       <div className="tab-action-ribbon">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className="badge badge-amber">🏭 AUTOPROCURE™ PREDICTIVE FACTORY PO</span>
+          <button className="btn-luxury-gold" onClick={() => setShowLeadTimeModal(true)}>
+            ⚙️ Lead-Time & Buffer Sliders
+          </button>
           <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Automated Buffer Stock Reordering Engine</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -171,8 +194,8 @@ export function AutoProcureView() {
 
           {/* Action buttons */}
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button className="btn-emerald" onClick={() => showToast(`💬 PO dispatched to ${supplier} via WhatsApp!`, true)} style={{ flex: 1, justifyContent: 'center' }}>
-              <Send size={14} /> Send WhatsApp to Factory
+            <button className="btn-emerald" onClick={handleSendWhatsAppPO} style={{ flex: 1, justifyContent: 'center' }}>
+              <Send size={14} /> Send WhatsApp PO to Factory
             </button>
             <button className="btn-purple" onClick={handleReceiveShipment} style={{ flex: 1, justifyContent: 'center' }}>
               <Check size={14} /> 1-Click Receive Inward Truck (+{poQty})
@@ -181,6 +204,63 @@ export function AutoProcureView() {
         </div>
 
       </div>
+
+      {/* ⚙️ REORDER THRESHOLD & LEAD TIME CONFIG MODAL */}
+      {showLeadTimeModal && (
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
+          <div className="modal-card" style={{ maxWidth: '500px', background: '#0B132B', border: '2px solid var(--accent-gold)' }}>
+            <div className="modal-header">
+              <h3 style={{ color: 'var(--accent-gold-light)' }}>⚙️ Predictive Reorder & Factory Lead Times</h3>
+              <button className="btn-close-modal" onClick={() => setShowLeadTimeModal(false)}>✕</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', margin: '14px 0' }}>
+              <p style={{ fontSize: '12px', color: '#CBD5E1' }}>
+                Tune automatic factory buffer reorder triggers based on transport transit days from manufacturing hubs:
+              </p>
+              
+              {/* Bedroom Category */}
+              <div style={{ background: '#030712', borderRadius: '10px', padding: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '800', color: 'var(--accent-cyan)' }}>
+                  <span>🛏️ Solid Teak Beds & Wardrobes (Shirwal Hub)</span>
+                  <span>Lead: {bedLeadDays} Days</span>
+                </div>
+                <div style={{ display: 'flex', gap: '14px', marginTop: '8px' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '10.5px', color: '#94A3B8' }}>Reorder Buffer Qty</label>
+                    <input type="number" value={bedReorderThreshold} onChange={e => setBedReorderThreshold(Number(e.target.value))} style={{ width: '100%', marginTop: '2px' }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '10.5px', color: '#94A3B8' }}>Transit Lead Days</label>
+                    <input type="number" value={bedLeadDays} onChange={e => setBedLeadDays(Number(e.target.value))} style={{ width: '100%', marginTop: '2px' }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Living Room Category */}
+              <div style={{ background: '#030712', borderRadius: '10px', padding: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '800', color: 'var(--accent-gold-light)' }}>
+                  <span>🛋️ Velvet Sofas & Recliners (Chennai Hub)</span>
+                  <span>Lead: {sofaLeadDays} Days</span>
+                </div>
+                <div style={{ display: 'flex', gap: '14px', marginTop: '8px' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '10.5px', color: '#94A3B8' }}>Reorder Buffer Qty</label>
+                    <input type="number" value={sofaReorderThreshold} onChange={e => setSofaReorderThreshold(Number(e.target.value))} style={{ width: '100%', marginTop: '2px' }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '10.5px', color: '#94A3B8' }}>Transit Lead Days</label>
+                    <input type="number" value={sofaLeadDays} onChange={e => setSofaLeadDays(Number(e.target.value))} style={{ width: '100%', marginTop: '2px' }} />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+            <button className="btn-luxury-gold" onClick={() => { setShowLeadTimeModal(false); showToast("⚙️ Factory Lead Times and Reorder Thresholds saved!"); }} style={{ width: '100%', justifyContent: 'center' }}>
+              <Check size={16} /> Save Lead Time Policies
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

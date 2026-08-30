@@ -116,6 +116,19 @@ export function ExecutiveOverview() {
             <button className="btn-cyan" onClick={() => setActiveTab('voice_pos')}>
               🎙️ Showroom POS Co-Pilot
             </button>
+            <button className="btn-emerald" onClick={() => {
+              const text = `🎉 *DIWALI UTSAV 2026 — EXCLUSIVE SHOWROOM PREVIEW*\n` +
+                `*Godrej Interio Rayagada (Shree Ganesh Enterprises)*\n\n` +
+                `Dear Valued Customer, upgrade your home this festive season with:\n` +
+                `✨ Flat 10% Suite Savings on Solid Teak Beds & Sectional Sofas\n` +
+                `✨ Free Ortho Memory Foam Pillows (₹3,600 Value)\n` +
+                `✨ Free Master Carpenter Fitting & Doorstep Delivery\n\n` +
+                `👉 *Explore 115-Model Digital Catalog:* https://shreeganesh-godrej.web.app/#concierge\n` +
+                `📞 *Showroom Desk:* +91 9390553301 | Main Road, Rayagada`;
+              window.open(`https://wa.me/919390553301?text=${encodeURIComponent(text)}`, '_blank');
+            }}>
+              📢 1-Click Festive Broadcast
+            </button>
             <button className="btn-purple" onClick={() => openModal('carpenter_dispatch')}>
               🪚 Carpenter Dispatch (₹500)
             </button>

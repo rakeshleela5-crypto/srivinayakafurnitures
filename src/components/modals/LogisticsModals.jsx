@@ -79,8 +79,29 @@ export function DigitalEpodModal({ isOpen, onClose, stop = {} }) {
             <input type="text" value={otpCode} onChange={e => setOtpCode(e.target.value)} style={{ textAlign: 'center', fontFamily: 'JetBrains Mono', fontSize: '16px', letterSpacing: '4px' }} />
           </div>
           <div className="form-field">
-            <label>Balance Collected (₹)</label>
+            <label>Balance Due at Doorstep (₹)</label>
             <input type="number" value={amountCollected} onChange={e => setAmountCollected(Number(e.target.value))} />
+          </div>
+        </div>
+
+        {/* 📱 1-Tap Doorstep Dynamic UPI QR Code */}
+        <div style={{ background: '#030712', border: '1.5px solid rgba(56,189,248,0.3)', borderRadius: '12px', padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px' }}>
+          <div>
+            <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-cyan)', textTransform: 'uppercase' }}>
+              📱 Doorstep Dynamic UPI Collection
+            </div>
+            <div style={{ fontSize: '15px', fontWeight: '900', color: 'var(--accent-gold-light)', marginTop: '2px' }}>
+              ₹{Number(amountCollected).toLocaleString()}
+            </div>
+            <div style={{ fontSize: '10.5px', color: '#94A3B8', marginTop: '2px' }}>
+              Scan with GPay / PhonePe / Paytm to settle balance instantly.
+            </div>
+          </div>
+          <div style={{ background: '#FFFFFF', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <DynamicQrCode 
+              value={`upi://pay?pa=9390553301@ybl&pn=Godrej%20Interio%20Rayagada&am=${amountCollected}&cu=INR&tn=Doorstep%20Balance%20${stop.Order_ID || 'ORD-8921'}`}
+              size={64}
+            />
           </div>
         </div>
 
@@ -92,7 +113,7 @@ export function DigitalEpodModal({ isOpen, onClose, stop = {} }) {
             {[1, 2, 3, 4, 5].map(star => (
               <button 
                 key={star} 
-                type="button"
+                type="button" 
                 onClick={() => setCsat(star)}
                 style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '22px' }}
               >
@@ -129,7 +150,7 @@ export function DigitalEpodModal({ isOpen, onClose, stop = {} }) {
         </div>
 
         <button className="btn-emerald" onClick={handleSubmit} style={{ width: '100%', justifyContent: 'center', padding: '12px' }}>
-          <Check size={16} /> Submit Verified ePOD & Release Goods (₹{amountCollected.toLocaleString()})
+          <Check size={16} /> Submit Verified ePOD & Release Goods (₹{Number(amountCollected).toLocaleString()})
         </button>
       </div>
     </div>

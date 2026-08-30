@@ -39,6 +39,10 @@ export function RoomMatcherStudio() {
   const [clearance, setClearance] = useState("38 in (Knock-down 5-Box Safe ✓)");
   const [designerNotes, setDesignerNotes] = useState("Client requested 3 ft clearance along east wall for sliding almirah doors.");
 
+  // Interactive Doorway & Custom Combo Sliders
+  const [doorwayWidth, setDoorwayWidth] = useState(38); // 28" to 48"
+  const [comboDiscountPct, setComboDiscountPct] = useState(8); // 5% to 20%
+
   // Customer Details
   const [customerName, setCustomerName] = useState("Dr. Subhashish Jena");
   const [customerPhone, setCustomerPhone] = useState("9437188291");
@@ -109,7 +113,7 @@ export function RoomMatcherStudio() {
   const piece3 = catalog.find(c => c.SKU === item3Sku) || catalog[2] || catalog[0];
 
   const totalMRP = piece1.MRP_INR + piece2.MRP_INR + piece3.MRP_INR;
-  const comboSavings = Math.round(totalMRP * 0.08); // 8% Suite Bundle Discount
+  const comboSavings = Math.round(totalMRP * (comboDiscountPct / 100)); // Dynamic Suite Bundle Discount
   const suiteFinalPrice = totalMRP - comboSavings;
   const tokenAdvance50Pct = Math.round(suiteFinalPrice * 0.5);
 
@@ -380,6 +384,39 @@ export function RoomMatcherStudio() {
               <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-emerald)' }}>98% Match</div>
             </div>
           </div>
+
+          {/* 📐 Interactive Doorway & Staircase Clearance Slider */}
+          <div style={{ marginTop: '14px', background: '#030712', borderRadius: '10px', padding: '12px 14px', border: doorwayWidth >= 36 ? '1.5px solid #10B981' : '1.5px solid #F59E0B' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-gold-light)', textTransform: 'uppercase' }}>
+                🚪 Doorway & Staircase Clearance Tester:
+              </span>
+              <span className={`badge ${doorwayWidth >= 36 ? 'badge-emerald' : 'badge-amber'}`} style={{ fontSize: '11px' }}>
+                {doorwayWidth}" CLEARANCE
+              </span>
+            </div>
+            <input 
+              type="range" 
+              min={28} 
+              max={48} 
+              value={doorwayWidth} 
+              onChange={e => setDoorwayWidth(Number(e.target.value))}
+              style={{ width: '100%', accentColor: doorwayWidth >= 36 ? '#10B981' : '#F59E0B', cursor: 'pointer' }}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#64748B', marginTop: '2px' }}>
+              <span>28" Narrow Apartment</span>
+              <span>36" Standard Door</span>
+              <span>48" Villa Double Door</span>
+            </div>
+            <div style={{ marginTop: '8px', fontSize: '11.5px', color: doorwayWidth >= 36 ? '#34D399' : '#FBBF24', fontWeight: '700' }}>
+              {doorwayWidth >= 36 ? (
+                <span>🟢 <b>100% SAFE ENTRY:</b> King Bed & 4-Door Wardrobe flat-packs pass easily through {doorwayWidth}" door.</span>
+              ) : (
+                <span>⚠️ <b>NARROW ENTRY ({doorwayWidth}"):</b> Unpack Box A headboard outside and carry frame vertically.</span>
+              )}
+            </div>
+          </div>
+
         </div>
 
         {/* Right Column: 3-Piece Suite Combo Deal Customizer */}
@@ -389,7 +426,7 @@ export function RoomMatcherStudio() {
               <span className="badge badge-gold">AI RECOMMENDATION: 3-PIECE MASTER SUITE</span>
               <h3 style={{ fontSize: '17px', fontWeight: '900', marginTop: '4px' }}>Customizable Suite Deal</h3>
             </div>
-            <span className="badge badge-rose">8% COMBO SAVINGS</span>
+            <span className="badge badge-rose">{comboDiscountPct}% COMBO SAVINGS</span>
           </div>
 
           {/* 3 Selectable Suite Pieces */}
@@ -514,8 +551,29 @@ export function RoomMatcherStudio() {
               <span style={{ textDecoration: 'line-through' }}>₹{totalMRP.toLocaleString()}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--accent-emerald)', marginBottom: '6px' }}>
-              <span>Showroom 3-Item Combo Savings (8%):</span>
+              <span>Showroom 3-Item Combo Savings ({comboDiscountPct}%):</span>
               <span>- ₹{comboSavings.toLocaleString()} Saved</span>
+            </div>
+
+            {/* Custom Combo Discount Slider */}
+            <div style={{ margin: '8px 0', background: 'rgba(212,175,55,0.08)', borderRadius: '8px', padding: '8px 12px', border: '1px solid rgba(212,175,55,0.25)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: '800', color: 'var(--accent-gold-light)' }}>
+                <span>🎁 Custom Suite Bundle Discount:</span>
+                <span>{comboDiscountPct}% OFF</span>
+              </div>
+              <input 
+                type="range" 
+                min={5} 
+                max={20} 
+                value={comboDiscountPct} 
+                onChange={e => setComboDiscountPct(Number(e.target.value))}
+                style={{ width: '100%', accentColor: 'var(--accent-gold)', marginTop: '4px', cursor: 'pointer' }}
+              />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9.5px', color: '#94A3B8' }}>
+                <span>5% (Standard)</span>
+                <span>10% (Festive)</span>
+                <span>20% (VIP Architect)</span>
+              </div>
             </div>
             {exchangeCredit > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--accent-cyan)', marginBottom: '4px' }}>

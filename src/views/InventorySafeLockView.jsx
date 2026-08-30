@@ -30,6 +30,21 @@ export function InventorySafeLockView() {
   const [filterCategory, setFilterCategory] = useState('ALL');
   const [isLaserSweeping, setIsLaserSweeping] = useState(false);
 
+  // Token Hold Expiry & Display Piece Tagging State
+  const [tokenHoldHours, setTokenHoldHours] = useState(72); // 48h, 72h, 168h (7 days)
+  const [floorDisplaySkus, setFloorDisplaySkus] = useState(['BED-MOD-001']);
+  const [showConfigModal, setShowConfigModal] = useState(false);
+
+  const toggleFloorDisplayTag = (sku) => {
+    if (floorDisplaySkus.includes(sku)) {
+      setFloorDisplaySkus(prev => prev.filter(s => s !== sku));
+      showToast(`🏷️ Removed Floor Display tag from ${sku}. Marked as Fresh Godown Stock.`);
+    } else {
+      setFloorDisplaySkus(prev => [...prev, sku]);
+      showToast(`✨ Re-tagged ${sku} as Showroom Floor Display Piece (15% Clearance Tag)!`, true);
+    }
+  };
+
   const filteredInventory = inventory.filter(item => {
     const matchesSearch = item.Product_Name.toLowerCase().includes(searchQuery.toLowerCase()) || item.SKU.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCat = filterCategory === 'ALL' || item.Category === filterCategory;
@@ -60,10 +75,13 @@ export function InventorySafeLockView() {
       <div className="tab-action-ribbon">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className="badge badge-emerald">🔒 SAFELOCK™ REAL-TIME INVENTORY</span>
+          <button className="btn-luxury-gold" onClick={() => setShowConfigModal(true)}>
+            ⏳ Token Hold Expiry: {tokenHoldHours / 24} Days ({tokenHoldHours}h)
+          </button>
           <button className="btn-cyan" onClick={() => openModal('csv_import')} style={{ fontWeight: '800' }}>
             📥 Import CSV / Excel
           </button>
-          <button className="btn-luxury-gold" onClick={() => openModal('stock_override', { sku: selectedSku })}>
+          <button className="btn-ghost-edit" onClick={() => openModal('stock_override', { sku: selectedSku })}>
             ✏️ Emergency Stock Override
           </button>
           <button className="btn-ghost-edit" onClick={() => openModal('barcode_studio')}>
@@ -192,7 +210,14 @@ export function InventorySafeLockView() {
                 <tr key={item.SKU}>
                   <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-cyan)' }}>{item.SKU}</td>
                   <td>
-                    <div style={{ fontWeight: '800', color: '#FFFFFF' }}>{item.Product_Name}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontWeight: '800', color: '#FFFFFF' }}>{item.Product_Name}</span>
+                      {floorDisplaySkus.includes(item.SKU) && (
+                        <span className="badge badge-gold" style={{ fontSize: '9px', padding: '2px 6px' }}>
+                          🏷️ FLOOR DISPLAY (-15%)
+                        </span>
+                      )}
+                    </div>
                     <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>Unit Cost: ₹{item.Unit_Cost_INR?.toLocaleString()}</div>
                   </td>
                   <td>
@@ -225,9 +250,14 @@ export function InventorySafeLockView() {
                     </div>
                   </td>
                   <td>
-                    <button className="btn-ghost-edit" onClick={() => openModal('stock_override', { sku: item.SKU })}>
-                      Override ➔
-                    </button>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      <button className="btn-ghost-edit" style={{ fontSize: '10.5px', padding: '3px 6px' }} onClick={() => toggleFloorDisplayTag(item.SKU)}>
+                        {floorDisplaySkus.includes(item.SKU) ? 'Clear Tag' : '🏷️ Floor Tag'}
+                      </button>
+                      <button className="btn-ghost-edit" style={{ fontSize: '10.5px', padding: '3px 6px' }} onClick={() => openModal('stock_override', { sku: item.SKU })}>
+                        Override ➔
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -235,6 +265,35 @@ export function InventorySafeLockView() {
           </table>
         </div>
       </div>
+
+      {/* ⏳ TOKEN HOLD EXPIRY & POLICY CONFIG MODAL */}
+      {showConfigModal && (
+        <div className="modal-overlay" style={{ zIndex: 9999 }}>
+          <div className="modal-card" style={{ maxWidth: '440px', background: '#0B132B', border: '2px solid var(--accent-gold)' }}>
+            <div className="modal-header">
+              <h3 style={{ color: 'var(--accent-gold-light)' }}>⏳ Token Hold Expiry Policy</h3>
+              <button className="btn-close-modal" onClick={() => setShowConfigModal(false)}>✕</button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', margin: '14px 0' }}>
+              <p style={{ fontSize: '12.5px', color: '#CBD5E1' }}>
+                Set automatic stock release timeframe if customer fails to pay remaining 50% doorstep balance:
+              </p>
+              <div className="form-field">
+                <label>Select Holding Period</label>
+                <select value={tokenHoldHours} onChange={e => setTokenHoldHours(Number(e.target.value))}>
+                  <option value={48}>48 Hours (2 Days) - Strict Festive Policy</option>
+                  <option value={72}>72 Hours (3 Days) - Standard Showroom Policy</option>
+                  <option value={120}>120 Hours (5 Days) - VIP Architect Referral</option>
+                  <option value={168}>168 Hours (7 Days) - Maximum Wedding Suite Lock</option>
+                </select>
+              </div>
+            </div>
+            <button className="btn-luxury-gold" onClick={() => { setShowConfigModal(false); showToast(`⏳ Token Hold Expiry updated to ${tokenHoldHours} hours (${tokenHoldHours / 24} days)!`); }} style={{ width: '100%', justifyContent: 'center' }}>
+              <Check size={16} /> Save Token Policy
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

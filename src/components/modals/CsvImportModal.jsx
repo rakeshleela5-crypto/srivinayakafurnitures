@@ -316,6 +316,8 @@ export function CsvImportModal({ isOpen, onClose }) {
       file_name: fileName || "uploaded_catalog.csv",
       imported_by: "Store Owner / Administrator (Rayagada)",
       sample_skus: parsedRows.slice(0, 5).map(r => r.SKU).join(', '),
+      rows: parsedRows,
+      items: parsedRows,
       items_json: JSON.stringify(parsedRows)
     });
 

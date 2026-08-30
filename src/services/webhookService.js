@@ -35,13 +35,29 @@ export async function dispatchWebhookAction(actionName, payload = {}, customWebh
   console.log(`[HTTP ➔ GOOGLE APPS SCRIPT WEBHOOK] Action: ${actionName}`, fullPayload);
 
   try {
-    const params = new URLSearchParams(fullPayload).toString();
-    const targetUrl = `${webhookUrl}?${params}`;
-    
-    // We attempt fetch in no-cors mode for Google Apps Script redirects
-    fetch(targetUrl, { mode: 'no-cors' }).catch(err => {
-      console.warn("Background webhook dispatch notice:", err.message);
+    // 1. Primary: POST request with complete JSON payload (supports unlimited batch rows)
+    fetch(webhookUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(fullPayload)
+    }).catch(err => {
+      console.warn("Background POST webhook notice:", err.message);
     });
+
+    // 2. Secondary: Fallback GET request with key summary params
+    try {
+      const getParams = new URLSearchParams({
+        action: actionName,
+        client_timestamp: currentTimestamp,
+        ...(payload.total_rows ? { total_rows: payload.total_rows } : {}),
+        ...(payload.sample_skus ? { sample_skus: payload.sample_skus } : {}),
+        ...(payload.import_mode ? { import_mode: payload.import_mode } : {}),
+        ...(payload.sku ? { sku: payload.sku } : {}),
+        ...(payload.order_id ? { order_id: payload.order_id } : {})
+      }).toString();
+      fetch(`${webhookUrl}?${getParams}`, { mode: 'no-cors' }).catch(() => {});
+    } catch(e) {}
 
     return {
       success: true,

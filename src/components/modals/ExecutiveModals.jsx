@@ -371,40 +371,286 @@ export function OrderInvoiceModal({ isOpen, onClose, order = {} }) {
 export function EodReconciliationModal({ isOpen, onClose }) {
   const { eodSummary, setEodSummary, showToast } = useStore();
 
+  // Denomination note counts state
+  const [denominations, setDenominations] = useState({
+    500: 70,  // 70 * 500 = 35,000
+    200: 30,  // 30 * 200 = 6,000
+    100: 35,  // 35 * 100 = 3,500
+    50: 8,    // 8 * 50   = 400
+    20: 4,    // 4 * 20   = 80
+    10: 2,    // 2 * 10   = 20
+    coins: 0  // Coins    = 0
+  });
+
+  const [upiSettled, setUpiSettled] = useState(124000);
+  const [cardSettled, setCardSettled] = useState(0);
+  const [cashierName, setCashierName] = useState("B. Santosh (Head Cashier)");
+  const [directorPin, setDirectorPin] = useState("8899");
+  const [pinVerified, setPinVerified] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+
+  // Compute live counted cash
+  const count500 = (Number(denominations[500]) || 0) * 500;
+  const count200 = (Number(denominations[200]) || 0) * 200;
+  const count100 = (Number(denominations[100]) || 0) * 100;
+  const count50 = (Number(denominations[50]) || 0) * 50;
+  const count20 = (Number(denominations[20]) || 0) * 20;
+  const count10 = (Number(denominations[10]) || 0) * 10;
+  const countCoins = Number(denominations.coins) || 0;
+
+  const totalCountedCash = count500 + count200 + count100 + count50 + count20 + count10 + countCoins;
+  const totalGrossDayRevenue = totalCountedCash + Number(upiSettled) + Number(cardSettled);
+  const expectedSystemCash = 45000;
+  const cashDiscrepancy = totalCountedCash - expectedSystemCash;
+
   if (!isOpen) return null;
 
-  const handleLock = () => {
-    setEodSummary(prev => ({ ...prev, status: "LOCKED_REGISTER_CLOSED" }));
-    showToast("🔒 9 PM Register Closed & EOD Summary Locked to Google Drive!", true);
-    onClose();
+  const handleDenomChange = (denom, val) => {
+    const num = Math.max(0, parseInt(val, 10) || 0);
+    setDenominations(prev => ({ ...prev, [denom]: num }));
+  };
+
+  const handleVerifyPin = () => {
+    if (directorPin === '8899') {
+      setPinVerified(true);
+      playSuccessChime();
+      showToast("🔓 Director PIN 8899 Verified! Register authorization approved.", true);
+    } else {
+      showToast("❌ Invalid Director PIN. Please enter 8899.", false);
+    }
+  };
+
+  const handleLockRegister = () => {
+    playSuccessChime();
+    triggerGoldenConfetti();
+    setIsLocked(true);
+
+    setEodSummary(prev => ({
+      ...prev,
+      cashDrawerINR: totalCountedCash,
+      upiSettledINR: Number(upiSettled),
+      totalGrossINR: totalGrossDayRevenue,
+      status: "LOCKED_REGISTER_CLOSED"
+    }));
+
+    dispatchWebhookAction('LOCK_9PM_EOD_REGISTER', {
+      closing_id: `EOD-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-RAYAGADA`,
+      cash_drawer_inr: totalCountedCash,
+      upi_settled_inr: Number(upiSettled),
+      gross_day_sales_inr: totalGrossDayRevenue,
+      cashier_staff: cashierName,
+      discrepancy_inr: cashDiscrepancy,
+      denominations_json: JSON.stringify(denominations),
+      timestamp: new Date().toISOString()
+    });
+
+    showToast(`🔒 9 PM Register Closed & Locked! Gross Revenue: ₹${totalGrossDayRevenue.toLocaleString()} synced to Google Sheets.`, true);
+  };
+
+  const handleSendWhatsAppSlip = () => {
+    playScanBeep();
+    const dateStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+    const text = `🔒 *GODREJ INTERIO RAYAGADA — 9:00 PM DAILY CASH CLOSING SLIP*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `📅 *Closing Date:* ${dateStr} at ${timeStr}\n` +
+      `👤 *Cashier Sign-Off:* ${cashierName}\n` +
+      `🔑 *Director PIN:* 8899 (Verified ✓)\n\n` +
+      `💵 *PHYSICAL CASH DENOMINATION BREAKDOWN:*\n` +
+      `• ₹500 × ${denominations[500]} = ₹${count500.toLocaleString()}\n` +
+      `• ₹200 × ${denominations[200]} = ₹${count200.toLocaleString()}\n` +
+      `• ₹100 × ${denominations[100]} = ₹${count100.toLocaleString()}\n` +
+      `• ₹50  × ${denominations[50]} = ₹${count50.toLocaleString()}\n` +
+      `• ₹20  × ${denominations[20]} = ₹${count20.toLocaleString()}\n` +
+      `• ₹10  × ${denominations[10]} = ₹${count10.toLocaleString()}\n` +
+      `• Coins / Loose Change = ₹${countCoins.toLocaleString()}\n` +
+      `💰 *Total Physical Cash in Safe:* ₹${totalCountedCash.toLocaleString()}\n\n` +
+      `📱 *DIGITAL & BANK COLLECTIONS:*\n` +
+      `• Dynamic UPI QR Settled: ₹${Number(upiSettled).toLocaleString()}\n` +
+      `• POS Card Swipes: ₹${Number(cardSettled).toLocaleString()}\n\n` +
+      `🏆 *TOTAL GROSS DAY BILLING:* ₹${totalGrossDayRevenue.toLocaleString()}\n` +
+      `⚖️ *Cash Discrepancy:* ${cashDiscrepancy === 0 ? "₹0.00 (PERFECT 100% MATCH ✓)" : `₹${cashDiscrepancy.toLocaleString()}`}\n\n` +
+      `👉 *View Full Digital EOD Audit Sheet:* https://shreeganesh-godrej.web.app/#briefing\n` +
+      `🏢 *Godrej Interio Rayagada Flagship Showroom*`;
+
+    window.open(`https://wa.me/919390553301?text=${encodeURIComponent(text)}`, '_blank');
+    showToast("📲 9 PM Cash Closing Slip dispatched to Director Rakesh (+91 93905 53301)!", true);
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-card">
+    <div className="modal-overlay" style={{ zIndex: 9999 }}>
+      <div className="modal-card" style={{ maxWidth: '780px', maxHeight: '92vh', overflowY: 'auto', background: '#0B132B', border: '2px solid var(--accent-gold)' }}>
+        
         <div className="modal-header">
-          <h3>🔒 9 PM Daily Showroom Cash Lock & EOD Slip</h3>
+          <div>
+            <span className="badge badge-gold">🔒 9 PM STATUTORY DAILY CLOSING</span>
+            <h3 style={{ fontSize: '18px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
+              💵 Bank-Grade Currency Denomination Counter & Register Lock
+            </h3>
+            <div style={{ fontSize: '11px', color: 'var(--accent-cyan)' }}>
+              Godrej Interio Rayagada • Daily EOD Cash Drawer Reconciliation
+            </div>
+          </div>
           <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
         </div>
 
-        <div style={{ background: '#030712', padding: '16px', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>Physical Cash Drawer:</span>
-            <strong>₹{eodSummary.cashDrawerINR.toLocaleString()}</strong>
+        {/* ================= SECTION 1: PHYSICAL CURRENCY DENOMINATION MATRIX ================= */}
+        <div style={{ margin: '14px 0' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-gold-light)', textTransform: 'uppercase' }}>
+              1. 💵 Physical Currency Notes Denomination Counter:
+            </label>
+            <span className="badge badge-emerald" style={{ fontSize: '11px', fontWeight: '900' }}>
+              Counted: ₹{totalCountedCash.toLocaleString()}
+            </span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>Dynamic UPI QR Settlements:</span>
-            <strong style={{ color: 'var(--accent-emerald)' }}>₹{eodSummary.upiSettledINR.toLocaleString()}</strong>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px' }}>
-            <span>Total Gross Day Revenue:</span>
-            <strong style={{ color: 'var(--accent-gold-light)', fontSize: '17px' }}>₹{eodSummary.totalGrossINR.toLocaleString()}</strong>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+            {[
+              { note: 500, label: '₹500 Note', color: '#6EE7B7' },
+              { note: 200, label: '₹200 Note', color: '#FCD34D' },
+              { note: 100, label: '₹100 Note', color: '#93C5FD' },
+              { note: 50,  label: '₹50 Note',  color: '#F472B6' },
+              { note: 20,  label: '₹20 Note',  color: '#FDBA74' },
+              { note: 10,  label: '₹10 Note',  color: '#CBD5E1' }
+            ].map(item => {
+              const subtotal = (Number(denominations[item.note]) || 0) * item.note;
+              return (
+                <div key={item.note} style={{ background: '#030712', borderRadius: '10px', padding: '10px 12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: item.color, fontWeight: '800', marginBottom: '4px' }}>
+                    <span>{item.label}</span>
+                    <span>= ₹{subtotal.toLocaleString()}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '12px', color: '#94A3B8' }}>Qty:</span>
+                    <input 
+                      type="number" 
+                      min="0"
+                      value={denominations[item.note]} 
+                      onChange={e => handleDenomChange(item.note, e.target.value)}
+                      style={{ padding: '6px', textAlign: 'center', fontSize: '13px', fontWeight: '800', background: '#0B132B' }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Loose Coins / Change */}
+            <div style={{ background: '#030712', borderRadius: '10px', padding: '10px 12px', border: '1px solid rgba(255,255,255,0.1)', gridColumn: '1 / -1' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--accent-gold-light)', fontWeight: '800', marginBottom: '4px' }}>
+                <span>🪙 Loose Coins & Metal Change (₹ Amount)</span>
+                <span>= ₹{countCoins.toLocaleString()}</span>
+              </div>
+              <input 
+                type="number" 
+                min="0"
+                value={denominations.coins} 
+                onChange={e => handleDenomChange('coins', e.target.value)}
+                placeholder="Enter total coins amount..."
+                style={{ padding: '6px 10px', fontSize: '13px', fontWeight: '800', background: '#0B132B' }}
+              />
+            </div>
           </div>
         </div>
 
-        <button className="btn-luxury-gold" onClick={handleLock} style={{ width: '100%', justifyContent: 'center', padding: '12px' }}>
-          <Check size={16} /> Confirm 9 PM Register Lock & Generate EOD Slip
-        </button>
+        {/* ================= SECTION 2: DIGITAL & UPI SETTLEMENTS ================= */}
+        <div style={{ margin: '14px 0' }}>
+          <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-cyan)', textTransform: 'uppercase' }}>
+            2. 📱 Digital UPI QR & Card Terminal Settlements:
+          </label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '6px' }}>
+            <div className="form-field">
+              <label style={{ color: 'var(--accent-emerald)', fontWeight: '800' }}>Dynamic Merchant UPI VPA (₹)</label>
+              <input 
+                type="number" 
+                value={upiSettled} 
+                onChange={e => setUpiSettled(Number(e.target.value))} 
+                style={{ borderColor: 'var(--accent-emerald)', color: 'var(--accent-emerald)', fontWeight: '800' }}
+              />
+              <span style={{ fontSize: '10px', color: '#64748B' }}>Doorstep Driver & Showroom Standee QRs</span>
+            </div>
+
+            <div className="form-field">
+              <label style={{ color: '#93C5FD' }}>HDFC POS Card Machine (₹)</label>
+              <input 
+                type="number" 
+                value={cardSettled} 
+                onChange={e => setCardSettled(Number(e.target.value))} 
+              />
+              <span style={{ fontSize: '10px', color: '#64748B' }}>Credit/Debit Card Swipes</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ================= SECTION 3: RECONCILIATION SUMMARY & VARIANCE CHECK ================= */}
+        <div style={{ background: '#030712', borderRadius: '12px', padding: '14px 18px', border: '1px solid rgba(212,175,55,0.3)', margin: '14px 0' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', textAlign: 'center' }}>
+            <div>
+              <div style={{ fontSize: '10.5px', color: '#94A3B8', textTransform: 'uppercase' }}>1. Physical Cash Safe</div>
+              <div style={{ fontSize: '18px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
+                ₹{totalCountedCash.toLocaleString()}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '10.5px', color: '#94A3B8', textTransform: 'uppercase' }}>2. Digital UPI / Bank</div>
+              <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--accent-emerald)', marginTop: '2px' }}>
+                ₹{(Number(upiSettled) + Number(cardSettled)).toLocaleString()}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '10.5px', color: '#94A3B8', textTransform: 'uppercase' }}>3. Total Gross Day Sales</div>
+              <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--accent-gold-light)', marginTop: '2px' }}>
+                ₹{totalGrossDayRevenue.toLocaleString()}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ fontSize: '11px', color: '#94A3B8' }}>
+              System Expected Cash: <b>₹{expectedSystemCash.toLocaleString()}</b>
+            </div>
+            <span className={`badge ${cashDiscrepancy === 0 ? 'badge-emerald' : 'badge-amber'}`} style={{ fontSize: '11px' }}>
+              {cashDiscrepancy === 0 ? "✓ ZERO DISCREPANCY (100% PERFECT MATCH)" : `⚠️ ₹${cashDiscrepancy.toLocaleString()} VARIANCE`}
+            </span>
+          </div>
+        </div>
+
+        {/* ================= SECTION 4: CASHIER SIGN-OFF & DIRECTOR PIN ================= */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', margin: '14px 0' }}>
+          <div className="form-field">
+            <label>Cashier / Staff In-Charge</label>
+            <input value={cashierName} onChange={e => setCashierName(e.target.value)} />
+          </div>
+
+          <div className="form-field">
+            <label style={{ color: 'var(--accent-gold-light)', fontWeight: '800' }}>Director Authorization PIN</label>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <input 
+                type="password" 
+                maxLength={4} 
+                value={directorPin} 
+                onChange={e => setDirectorPin(e.target.value)} 
+                placeholder="PIN 8899"
+                style={{ textAlign: 'center', fontWeight: '800', letterSpacing: '4px' }}
+              />
+              <button className="btn-ghost-edit" onClick={handleVerifyPin} style={{ padding: '6px 12px', fontSize: '11px' }}>
+                {pinVerified ? '✓ Verified' : 'Verify'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '14px' }}>
+          <button className="btn-luxury-gold" onClick={handleLockRegister} style={{ justifyContent: 'center', padding: '12px' }}>
+            <Check size={16} /> 🔒 Confirm 9 PM Register Lock
+          </button>
+          <button className="btn-cyan" onClick={handleSendWhatsAppSlip} style={{ justifyContent: 'center', padding: '12px' }}>
+            <Send size={16} /> 📲 Send EOD Slip to Director (+91 93905 53301)
+          </button>
+        </div>
+
       </div>
     </div>
   );

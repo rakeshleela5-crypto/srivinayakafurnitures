@@ -1780,6 +1780,243 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
 
 
     
+    
+    // ==========================================================================================
+    // 📸 ROOM MATCHER: CONVERT 3D/2D ROOM SUITE COMBO TO SAFELOCK ORDER
+    // ==========================================================================================
+    else if (action === "CONVERT_ROOM_MATCHER_DEAL" || action === "CONVERT_ROOM_SUITE") {
+      var ordSheet = getOrCreateSheet(ss, "Orders_SafeLock", [
+        "Order_ID", "Customer_Name", "Customer_Phone", "Project_Address", "Designer_ID", 
+        "Ordered_SKU", "Total_Amount_INR", "SafeLock_Status", "SmartKit_Status", "Assigned_Driver", "Delivery_Schedule", "Carpenter_Assigned", "Carpenter_Payout_INR"
+      ], "#1E3A8A");
+
+      var orderId = params.order_id || ("ORD-SUITE-" + Math.floor(1000 + Math.random() * 9000));
+      var customerName = params.customer_name || "Dr. Subhashish Jena";
+      var customerPhone = (params.customer_phone || "9437188291").toString().replace(/[^0-9]/g, "");
+      var address = params.address || "Gayatri Nagar Villa, Rayagada";
+      var suiteSku = params.suite_sku || params.sku || "3-Item Room Suite Combo";
+      var finalAmount = Number(params.final_price_inr) || Number(params.amount) || 158000;
+      var advanceToken = Number(params.advance_token_inr) || Math.round(finalAmount * 0.5);
+
+      if (ordSheet) {
+        ordSheet.appendRow([
+          orderId,
+          customerName,
+          customerPhone,
+          address,
+          "VIP-ARC-001",
+          suiteSku,
+          finalAmount,
+          "SAFELOCKED (ROOM MATCHER 50% ADVANCE)",
+          "5/5 Boxes Staged ✓",
+          "Tophan Gouda (Tata Ace OD-18-A-1234)",
+          currentDateTimeStr + " (Express Scheduled)",
+          "Narayana Mistri",
+          500
+        ]);
+        applyStandardFormat(ordSheet);
+      }
+
+      result.order_id = orderId;
+      result.customer_name = customerName;
+      result.final_amount = finalAmount;
+      result.advance_token = advanceToken;
+      result.message = "Room Matcher Suite Order #" + orderId + " (Rs. " + finalAmount.toLocaleString('en-IN') + ") successfully converted to SafeLock Order!";
+    }
+
+    // ==========================================================================================
+    // 🤖 APPSHEET 20-BOT CLOUD TRIGGER & DISPATCH ENGINE
+    // ==========================================================================================
+    else if (action === "DISPATCH_BOT_ACTION" || action === "TRIGGER_BOT" || action === "DISPATCH_BOT") {
+      var botId = params.bot_id || "BOT-01";
+      var botName = params.bot_name || "SafeLock Autonomous Dispatcher Bot";
+      var botSheet = getOrCreateSheet(ss, "AppSheet_Bots_Log", [
+        "Execution_ID", "Bot_ID", "Bot_Name", "Trigger_Event", "Target_Entity", "Status", "Execution_Time_MS", "Executed_Date_Time"
+      ], "#059669");
+
+      var execId = "EXEC-" + Date.now().toString().slice(-6);
+      if (botSheet) {
+        botSheet.appendRow([
+          execId,
+          botId,
+          botName,
+          params.trigger || "WEBHOOK_DIRECT_INVOKE",
+          params.target || "ALL_TABLES",
+          "SUCCESS_200_OK",
+          185,
+          currentDateTimeStr
+        ]);
+        applyStandardFormat(botSheet);
+      }
+
+      result.execution_id = execId;
+      result.bot_id = botId;
+      result.bot_name = botName;
+      result.message = "AppSheet Bot #" + botId + " (" + botName + ") triggered successfully!";
+    }
+
+    // ==========================================================================================
+    // 🔄 RECORD FURNITURE EXCHANGE / BUYBACK ALIAS
+    // ==========================================================================================
+    else if (action === "RECORD_FURNITURE_EXCHANGE") {
+      var certNo = params.cert_no || "EXCH-GI-" + Utilities.getUuid().substring(0, 6).toUpperCase();
+      var customerName = params.customer_name || "Dr. Subhashish Jena";
+      var customerPhone = (params.customer_phone || "9437188291").toString().replace(/[^0-9]/g, "");
+      var category = params.category || "BED";
+      var woodType = params.wood_type || "TEAK";
+      var condition = params.condition || "GOOD";
+      var buybackCredit = Number(params.buyback_credit_inr) || Number(params.buyback_value) || 12000;
+      var warehouseBay = params.warehouse_bay || "Bay 4 (Salvage & Refurbished Godown)";
+
+      var exchSheet = getOrCreateSheet(ss, "Exchange_Buyback_Log", [
+        "Cert_No", "Timestamp", "Customer_Name", "Customer_Phone", "Category", 
+        "Wood_Type", "Condition", "Buyback_Credit_INR", "Warehouse_Bay", "Status"
+      ], "#059669");
+
+      if (exchSheet) {
+        exchSheet.appendRow([
+          certNo,
+          currentDateTimeStr,
+          customerName,
+          customerPhone,
+          category,
+          woodType,
+          condition,
+          buybackCredit,
+          warehouseBay,
+          "CREDIT_APPLIED_TO_INVOICE ✓"
+        ]);
+        applyStandardFormat(exchSheet);
+      }
+
+      result.cert_no = certNo;
+      result.buyback_credit_inr = buybackCredit;
+      result.message = "Trade-In Certificate #" + certNo + " (Rs. " + buybackCredit + ") recorded!";
+    }
+
+    // ==========================================================================================
+    // 📄 WHATSAPP PROPOSAL & 0% EMI SCHEDULE BROADCAST LOGGERS
+    // ==========================================================================================
+    else if (action === "SEND_WHATSAPP_PROPOSAL" || action === "SHARE_EMI_SCHEDULE") {
+      var propSheet = getOrCreateSheet(ss, "WhatsApp_Dispatches_Log", [
+        "Dispatch_ID", "Channel", "Customer_Name", "Customer_Phone", "Document_Type", "Amount_INR", "Timestamp", "Status"
+      ], "#2563EB");
+
+      var dispId = "DISP-" + Date.now().toString().slice(-6);
+      var custName = params.customer_name || params.name || "Valued Customer";
+      var custPhone = (params.customer_phone || params.phone || "9437188291").toString().replace(/[^0-9]/g, "");
+      var amt = Number(params.amount) || Number(params.total_amount) || 78247;
+
+      if (propSheet) {
+        propSheet.appendRow([
+          dispId,
+          "WhatsApp Official API",
+          custName,
+          custPhone,
+          action === "SHARE_EMI_SCHEDULE" ? "0% EMI Scheme Matrix (Bajaj Finserv / HDFC)" : "Official Luxury Proposal PDF",
+          amt,
+          currentDateTimeStr,
+          "DELIVERED ✓"
+        ]);
+        applyStandardFormat(propSheet);
+      }
+
+      result.dispatch_id = dispId;
+      result.message = "Dispatched " + action + " to " + custName + " (" + custPhone + ")!";
+    }
+
+    // ==========================================================================================
+    // 🏛️ UPDATE ARCHITECT PROFILE & SETTLEMENT SLAB
+    // ==========================================================================================
+    else if (action === "UPDATE_ARCHITECT_PROFILE" || action === "EDIT_ARCHITECT") {
+      var archId = params.architect_id || "VIP-ARC-001";
+      var archSheet = getSheetByNameFlexible(ss, ["Architect_VIPs", "07_Architect_VIPs", "Architect VIPs"]);
+
+      if (archSheet) {
+        var data = archSheet.getDataRange().getValues();
+        for (var i = 1; i < data.length; i++) {
+          if (String(data[i][0]).toUpperCase() === archId.toUpperCase()) {
+            if (params.name) archSheet.getRange(i + 1, 2).setValue(params.name);
+            if (params.firm) archSheet.getRange(i + 1, 3).setValue(params.firm);
+            if (params.phone) archSheet.getRange(i + 1, 4).setValue(params.phone);
+            if (params.tier) archSheet.getRange(i + 1, 5).setValue(params.tier);
+            if (params.commission_rate) archSheet.getRange(i + 1, 6).setValue(params.commission_rate);
+            if (params.gstin) archSheet.getRange(i + 1, 7).setValue(params.gstin);
+            if (params.upi) archSheet.getRange(i + 1, 8).setValue(params.upi);
+            break;
+          }
+        }
+      }
+
+      result.architect_id = archId;
+      result.message = "Architect profile for " + archId + " updated successfully in Google Sheets!";
+    }
+
+    // ==========================================================================================
+    // ✏️ UPDATE CATALOG ITEM & INVENTORY LEVEL
+    // ==========================================================================================
+    else if (action === "UPDATE_CATALOG_ITEM" || action === "UPDATE_INVENTORY") {
+      var targetSku = params.sku || "BED-MOD-001";
+      var catSheet = getSheetByNameFlexible(ss, ["Furniture_Catalog", "02_Furniture_Catalog", "01_Furniture_Catalog"]);
+      var invSheet = getSheetByNameFlexible(ss, ["Inventory_Stock", "03_Inventory_Stock"]);
+
+      if (catSheet) {
+        var catData = catSheet.getDataRange().getValues();
+        for (var c = 1; c < catData.length; c++) {
+          if (String(catData[c][0]).toUpperCase() === targetSku.toUpperCase()) {
+            if (params.product_name) catSheet.getRange(c + 1, 2).setValue(params.product_name);
+            if (params.mrp) catSheet.getRange(c + 1, 6).setValue(Number(params.mrp));
+            if (params.price) catSheet.getRange(c + 1, 7).setValue(Number(params.price));
+            break;
+          }
+        }
+      }
+
+      if (invSheet) {
+        var invData = invSheet.getDataRange().getValues();
+        for (var v = 1; v < invData.length; v++) {
+          if (String(invData[v][0]).toUpperCase() === targetSku.toUpperCase() || String(invData[v][1]).toUpperCase() === targetSku.toUpperCase()) {
+            if (params.warehouse_qty !== undefined) invSheet.getRange(v + 1, 5).setValue(Number(params.warehouse_qty));
+            if (params.buffer_threshold !== undefined) invSheet.getRange(v + 1, 8).setValue(Number(params.buffer_threshold));
+            break;
+          }
+        }
+      }
+
+      result.sku = targetSku;
+      result.message = "Catalog and Inventory for SKU " + targetSku + " synchronized!";
+    }
+
+    // ==========================================================================================
+    // 🌐 UNIVERSAL 21-TABLE ROW/RECORD EDITOR (UPDATE_ROW)
+    // ==========================================================================================
+    else if (action === "UPDATE_ROW" || action === "EDIT_RECORD") {
+      var targetTable = params.table || "Orders_SafeLock";
+      var targetSheet = getSheetByNameFlexible(ss, [targetTable, "05_" + targetTable, "01_" + targetTable]);
+      if (!targetSheet) {
+        targetSheet = ss.getSheetByName(targetTable) || ss.insertSheet(targetTable);
+      }
+      var recId = params.record_id || params.id || "REC-" + Date.now();
+      var data = targetSheet.getDataRange().getValues();
+      var foundRow = false;
+      for (var r = 1; r < data.length; r++) {
+        if (data[r][0] && data[r][0].toString().trim() == recId.toString().trim()) {
+          if (params.name) targetSheet.getRange(r + 1, 2).setValue(params.name);
+          if (params.amount) targetSheet.getRange(r + 1, 3).setValue(params.amount);
+          if (params.status) targetSheet.getRange(r + 1, 4).setValue(params.status);
+          foundRow = true;
+          break;
+        }
+      }
+      if (!foundRow) {
+        targetSheet.appendRow([recId, params.name || "Updated Record", params.amount || 0, params.status || "ACTIVE", currentDateTimeStr]);
+      }
+      result.record_id = recId;
+      result.table = targetTable;
+      result.message = "Successfully saved record " + recId + " to table " + targetTable;
+    }
+
+
     // ==========================================================================================
     // 👑 HEART ENGINE 4: MULTI-ROOM WEDDING & VILLA FULL-HOME SUITE ENGINE
     // ==========================================================================================

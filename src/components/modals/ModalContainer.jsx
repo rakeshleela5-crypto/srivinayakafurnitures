@@ -22,6 +22,7 @@ import {
   B2bTurnkeyModal
 } from './HeartEngineModals';
 import { BulkBotBroadcastModal } from './BulkBotBroadcastModal';
+import { FurnitureFollowUpModal } from './FurnitureFollowUpModal';
 
 export function ModalContainer() {
   const { activeModal, modalProps, closeModal } = useStore();
@@ -72,6 +73,9 @@ export function ModalContainer() {
 
       {/* Bulk Bot Broadcast Modal */}
       <BulkBotBroadcastModal isOpen={activeModal === 'bulk_bot_broadcast'} onClose={closeModal} />
+
+      {/* 🛋️ Smart Furniture Follow-Up & Festive Drip Modal */}
+      <FurnitureFollowUpModal isOpen={activeModal === 'furniture_followup'} onClose={closeModal} lead={modalProps.lead} />
 
       {/* ❤️ THE 11 HEART ENGINES */}
       <TierPricingModal isOpen={activeModal === 'tier_pricing'} onClose={closeModal} sku={modalProps.sku} />

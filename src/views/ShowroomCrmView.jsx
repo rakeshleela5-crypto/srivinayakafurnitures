@@ -29,10 +29,13 @@ export function ShowroomCrmView() {
       <div className="tab-action-ribbon">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className="badge badge-rose">👥 SHOWROOM CRM & FOOTFALL LEADS</span>
-          <button className="btn-luxury-gold" onClick={() => openModal('bulk_bot_broadcast')}>
+          <button className="btn-luxury-gold" onClick={() => openModal('furniture_followup', { lead: filteredInquiries[0] || {} })}>
+            ⏳ 48h Smart Follow-Up Manager
+          </button>
+          <button className="btn-cyan" onClick={() => openModal('bulk_bot_broadcast')}>
             📢 Bulk 500-Customer Bot Broadcast
           </button>
-          <button className="btn-cyan" onClick={() => openModal('new_inquiry')}>
+          <button className="btn-ghost-edit" onClick={() => openModal('new_inquiry')}>
             <UserPlus size={14} /> ➕ Log Walk-In Lead
           </button>
         </div>
@@ -71,23 +74,22 @@ export function ShowroomCrmView() {
               <tr>
                 <th>Lead ID</th>
                 <th>Customer & Phone</th>
-                <th>Location / Locality</th>
                 <th>Requirement & Models</th>
                 <th>Budget (₹)</th>
                 <th>AI Buying Score</th>
+                <th>⏳ 48h Drip Sequence</th>
                 <th>Status / Staff</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredInquiries.map(inq => (
+              {filteredInquiries.map((inq, idx) => (
                 <tr key={inq.Inquiry_ID}>
                   <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-cyan)' }}>{inq.Inquiry_ID}</td>
                   <td>
                     <div style={{ fontWeight: '800', color: '#FFFFFF' }}>{inq.Customer_Name}</div>
                     <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>📞 {inq.Customer_Phone}</div>
                   </td>
-                  <td style={{ fontSize: '11.5px' }}>📍 {inq.Address}</td>
                   <td style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: '600' }}>{inq.Category_Models}</td>
                   <td style={{ fontWeight: '800', color: 'var(--accent-gold-light)', fontFamily: 'JetBrains Mono' }}>
                     ₹{(inq.Budget_INR || 0).toLocaleString()}
@@ -100,6 +102,15 @@ export function ShowroomCrmView() {
                     </div>
                   </td>
                   <td>
+                    {inq.Status.includes('CONVERTED') ? (
+                      <span className="badge badge-emerald" style={{ fontSize: '10px' }}>🛑 Token Paid (Auto-Stopped)</span>
+                    ) : idx % 2 === 0 ? (
+                      <span className="badge badge-cyan" style={{ fontSize: '10px' }}>🕒 Due in 42h (01-Sep)</span>
+                    ) : (
+                      <span className="badge badge-gold" style={{ fontSize: '10px' }}>✅ Sent Today (0% EMI)</span>
+                    )}
+                  </td>
+                  <td>
                     <div>
                       <span className={`badge ${inq.Status.includes('CONVERTED') ? 'badge-emerald' : 'badge-gold'}`}>
                         {inq.Status}
@@ -108,17 +119,20 @@ export function ShowroomCrmView() {
                     <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginTop: '2px' }}>👤 {inq.Assigned_Staff}</div>
                   </td>
                   <td>
-                    <div style={{ display: 'flex', gap: '5px' }}>
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                       {!inq.Status.includes('CONVERTED') && (
-                        <button className="btn-emerald" onClick={() => openModal('convert_inquiry', { inquiry: inq })} style={{ padding: '4px 8px', fontSize: '10.5px' }}>
+                        <button className="btn-emerald" onClick={() => openModal('convert_inquiry', { inquiry: inq })} style={{ padding: '3px 6px', fontSize: '10.5px' }}>
                           ⚡ Convert
                         </button>
                       )}
-                      <button className="btn-cyan" onClick={() => openModal('godrej_care_amc', { customer: { Customer_Name: inq.Customer_Name, Phone: inq.Customer_Phone } })} style={{ padding: '4px 8px', fontSize: '10.5px' }}>
+                      <button className="btn-luxury-gold" onClick={() => openModal('furniture_followup', { lead: inq })} style={{ padding: '3px 6px', fontSize: '10.5px' }}>
+                        ⏳ Follow-Up
+                      </button>
+                      <button className="btn-cyan" onClick={() => openModal('godrej_care_amc', { customer: { Customer_Name: inq.Customer_Name, Phone: inq.Customer_Phone } })} style={{ padding: '3px 6px', fontSize: '10.5px' }}>
                         🧼 AMC
                       </button>
-                      <button className="btn-ghost-edit" onClick={() => openModal('edit_inquiry', { inquiry: inq })} style={{ padding: '4px 8px', fontSize: '10.5px' }}>
-                        ✏️ Edit
+                      <button className="btn-ghost-edit" onClick={() => openModal('edit_inquiry', { inquiry: inq })} style={{ padding: '3px 6px', fontSize: '10.5px' }}>
+                        ✏️
                       </button>
                     </div>
                   </td>

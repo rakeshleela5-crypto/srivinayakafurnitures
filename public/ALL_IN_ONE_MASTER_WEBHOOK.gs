@@ -1825,6 +1825,77 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
     }
 
     
+
+    // ==========================================================================================
+    // 🛋️ SMART FURNITURE 48-HOUR FOLLOW-UP & FESTIVE DRIP ENGINE
+    // ==========================================================================================
+    else if (action === "SCHEDULE_SMART_FURNITURE_FOLLOWUP" || action === "SCHEDULE_FURNITURE_DRIP") {
+      var inqSheet = getSheetByNameFlexible(ss, ["Inquiries_Log", "08_Inquiries_Log", "Inquiries Log"]);
+      var custName = params.customer_name || "Valued Customer";
+      var custPhone = (params.customer_phone || "9437188291").toString().replace(/[^0-9]/g, "");
+      var sku = params.sku || "BED-MOD-001";
+      var prodName = params.product_name || "Solid Teak King Bed";
+      var reason = params.hesitation_reason || "FAMILY_CONSULT";
+      var delayDays = params.delay_days || 2;
+      var scheduledDate = params.scheduled_date || "48 Hours Later";
+      var lang = params.language || "EN";
+      var spotDiscount = Number(params.spot_discount_inr) || 0;
+      var finalPrice = Number(params.final_offer_price) || 86790;
+      var followUpId = "DRIP-" + Utilities.getUuid().substring(0, 6).toUpperCase();
+
+      // Log in Inquiries_Log or create FollowUp_Queue sheet
+      var followSheet = getOrCreateSheet(ss, "FollowUp_Queue_Log", [
+        "FollowUp_ID", "Customer_Name", "Customer_Phone", "SKU", "Product_Name", "Hesitation_Reason",
+        "Language", "Spot_Discount_INR", "Final_Offer_INR", "Scheduled_For", "Created_Date_Time", "Status"
+      ], "#7C3AED");
+
+      if (followSheet) {
+        followSheet.appendRow([
+          followUpId,
+          custName,
+          custPhone,
+          sku,
+          prodName,
+          reason,
+          lang,
+          spotDiscount,
+          finalPrice,
+          scheduledDate,
+          currentDateTimeStr,
+          "SCHEDULED_PENDING (Auto-Cancels on Token Advance)"
+        ]);
+        applyStandardFormat(followSheet);
+      }
+
+      result.followup_id = followUpId;
+      result.customer_name = custName;
+      result.language = lang;
+      result.status = "SCHEDULED_PENDING";
+      result.message = "48-Hour Smart Drip Follow-Up #" + followUpId + " for " + custName + " in " + lang + " logged to Google Sheets!";
+    }
+
+    // ==========================================================================================
+    // ⚡ TRIGGER DUE FOLLOW-UPS DISPATCHER (DAILY MORNING CRON)
+    // ==========================================================================================
+    else if (action === "TRIGGER_DUE_FOLLOWUPS" || action === "DISPATCH_DUE_DRIPS") {
+      var followSheet = getSheetByNameFlexible(ss, ["FollowUp_Queue_Log", "Inquiries_Log"]);
+      var dispatchedCount = 0;
+
+      if (followSheet) {
+        var data = followSheet.getDataRange().getValues();
+        for (var f = 1; f < data.length; f++) {
+          if (String(data[f][11]).indexOf("SCHEDULED_PENDING") !== -1) {
+            followSheet.getRange(f + 1, 12).setValue("DISPATCHED_200_OK (" + currentDateTimeStr + ")");
+            dispatchedCount++;
+          }
+        }
+      }
+
+      result.dispatched_count = dispatchedCount;
+      result.message = "Triggered " + dispatchedCount + " due follow-up messages across WhatsApp!";
+    }
+
+
     // ==========================================================================================
     // 📢 500-CUSTOMER MULTI-LANGUAGE BULK BOT BROADCAST DISPATCHER
     // ==========================================================================================

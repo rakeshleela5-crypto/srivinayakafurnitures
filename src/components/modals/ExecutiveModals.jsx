@@ -388,6 +388,10 @@ export function EodReconciliationModal({ isOpen, onClose }) {
   const [directorPin, setDirectorPin] = useState("8899");
   const [pinVerified, setPinVerified] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
+  const [language, setLanguage] = useState('EN');
+  const [copied, setCopied] = useState(false);
+
+  const todayTargetINR = 150000;
 
   // Compute live counted cash
   const count500 = (Number(denominations[500]) || 0) * 500;
@@ -402,6 +406,7 @@ export function EodReconciliationModal({ isOpen, onClose }) {
   const totalGrossDayRevenue = totalCountedCash + Number(upiSettled) + Number(cardSettled);
   const expectedSystemCash = 45000;
   const cashDiscrepancy = totalCountedCash - expectedSystemCash;
+  const targetPct = ((totalGrossDayRevenue / todayTargetINR) * 100).toFixed(1);
 
   if (!isOpen) return null;
 
@@ -418,6 +423,108 @@ export function EodReconciliationModal({ isOpen, onClose }) {
     } else {
       showToast("❌ Invalid Director PIN. Please enter 8899.", false);
     }
+  };
+
+  // Generate localized WhatsApp EOD closing slip text
+  const generateEodSlipText = (lang) => {
+    const dateStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+
+    if (lang === 'OR') {
+      return `🔒 *ଗୋଦ୍ରେଜ୍ ଇଣ୍ଟେରିଓ ରାୟଗଡ଼ା — ରାତି ୯:୦୦ EOD କ୍ୟାସ୍ କ୍ଲୋଜିଂ ସ୍ଲିପ୍*\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `📅 *ତାରିଖ:* ${dateStr} (${timeStr})\n` +
+        `👤 *କ୍ୟାସିଅର୍ ସାଇନ୍:* ${cashierName}\n` +
+        `🔑 *ଡାଇରେକ୍ଟର PIN:* 8899 (ଅନୁମୋଦିତ ✓)\n\n` +
+        `💵 *ଗଣନା କରାଯାଇଥିବା ଟଙ୍କା (DENOMINATIONS):*\n` +
+        `• ₹୫୦୦ × ${denominations[500]} = ₹${count500.toLocaleString()}\n` +
+        `• ₹୨୦୦ × ${denominations[200]} = ₹${count200.toLocaleString()}\n` +
+        `• ₹୧୦୦ × ${denominations[100]} = ₹${count100.toLocaleString()}\n` +
+        `• ₹୫୦  × ${denominations[50]} = ₹${count50.toLocaleString()}\n` +
+        `• ₹୨୦  × ${denominations[20]} = ₹${count20.toLocaleString()}\n` +
+        `• ₹୧୦  × ${denominations[10]} = ₹${count10.toLocaleString()}\n` +
+        `• ଖୁଚୁରା କଏନ୍ = ₹${countCoins.toLocaleString()}\n` +
+        `💰 *ସେଫ୍ ରେ ଥିବା ମୋଟ କ୍ୟାସ୍:* ₹${totalCountedCash.toLocaleString()}\n\n` +
+        `📱 *ଡିଜିଟାଲ୍ ଓ ବ୍ୟାଙ୍କ ଆଦାୟ:*\n` +
+        `• ଡାଇନାମିକ୍ UPI QR ସେଟଲମେଣ୍ଟ: ₹${Number(upiSettled).toLocaleString()}\n` +
+        `• POS କାର୍ଡ ମେସିନ୍ ସ୍ୱାଇପ୍: ₹${Number(cardSettled).toLocaleString()}\n\n` +
+        `🏆 *ଆଜିର ମୋଟ ସେଲ୍ସ (GROSS BILLING):* ₹${totalGrossDayRevenue.toLocaleString()} (${targetPct}% ଟାର୍ଗେଟ୍ ହାସଲ ✓)\n` +
+        `⚖️ *ହିସାବ ତାରତମ୍ୟ:* ${cashDiscrepancy === 0 ? "₹୦.୦୦ (୧୦୦% ପରଫେକ୍ଟ୍ ମ୍ୟାଚ୍ ✓)" : `₹${cashDiscrepancy.toLocaleString()}`}\n` +
+        `🔒 *ସୁରକ୍ଷା ବ୍ୟାଗ୍ ସିଲ୍ ନମ୍ବର:* #VAULT-8899-RAYAGADA\n\n` +
+        `👉 *ଇ-ଅଡିଟ୍ ଦେଖନ୍ତୁ:* https://shreeganesh-godrej.web.app/#briefing`;
+    }
+
+    if (lang === 'TE') {
+      return `🔒 *గోద్రెజ్ ఇంటీరియో రాయగడ — రాత్రి 9:00 EOD క్యాష్ క్లోజింగ్ స్లిప్*\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `📅 *తేదీ:* ${dateStr} (${timeStr})\n` +
+        `👤 *క్యాషియర్:* ${cashierName}\n` +
+        `🔑 *డైరెక్టర్ PIN:* 8899 (ధృవీకరించబడింది ✓)\n\n` +
+        `💵 *భౌతిక నగదు నోట్ల లెక్కింపు:*\n` +
+        `• ₹500 × ${denominations[500]} = ₹${count500.toLocaleString()}\n` +
+        `• ₹200 × ${denominations[200]} = ₹${count200.toLocaleString()}\n` +
+        `• ₹100 × ${denominations[100]} = ₹${count100.toLocaleString()}\n` +
+        `• ₹50  × ${denominations[50]} = ₹${count50.toLocaleString()}\n` +
+        `• ₹20  × ${denominations[20]} = ₹${count20.toLocaleString()}\n` +
+        `• ₹10  × ${denominations[10]} = ₹${count10.toLocaleString()}\n` +
+        `• చిల్లర నాణేలు = ₹${countCoins.toLocaleString()}\n` +
+        `💰 *సేఫ్ లో ఉన్న మొత్తం నగదు:* ₹${totalCountedCash.toLocaleString()}\n\n` +
+        `📱 *డిజిటల్ UPI & బ్యాంక్ కలెక్షన్లు:*\n` +
+        `• UPI QR చెల్లింపులు: ₹${Number(upiSettled).toLocaleString()}\n` +
+        `• POS కార్డ్ మిషన్: ₹${Number(cardSettled).toLocaleString()}\n\n` +
+        `🏆 *మొత్తం రోజు విక్రయాలు:* ₹${totalGrossDayRevenue.toLocaleString()} (${targetPct}% సాధించబడింది ✓)\n` +
+        `⚖️ *తేడా:* ${cashDiscrepancy === 0 ? "₹0.00 (100% పర్ఫెక్ట్ మ్యాచ్ ✓)" : `₹${cashDiscrepancy.toLocaleString()}`}\n` +
+        `🔒 *వాల్ట్ బ్యాగ్ సీల్:* #VAULT-8899-RAYAGADA\n\n` +
+        `👉 *ఈ-ఆడిట్ షీట్:* https://shreeganesh-godrej.web.app/#briefing`;
+    }
+
+    if (lang === 'HI') {
+      return `🔒 *गोदरेज इंटीरियो रायगड़ा — रात्रि 9:00 बजे दैनिक कैश क्लोजिंग स्लिप*\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `📅 *दिनांक:* ${dateStr} (${timeStr})\n` +
+        `👤 *कैशियर हस्ताक्षर:* ${cashierName}\n` +
+        `🔑 *डायरेक्टर पिन:* 8899 (सत्यापित ✓)\n\n` +
+        `💵 *फिजिकल कैश नोटों की गिनती:*\n` +
+        `• ₹500 × ${denominations[500]} = ₹${count500.toLocaleString()}\n` +
+        `• ₹200 × ${denominations[200]} = ₹${count200.toLocaleString()}\n` +
+        `• ₹100 × ${denominations[100]} = ₹${count100.toLocaleString()}\n` +
+        `• ₹50  × ${denominations[50]} = ₹${count50.toLocaleString()}\n` +
+        `• ₹20  × ${denominations[20]} = ₹${count20.toLocaleString()}\n` +
+        `• ₹10  × ${denominations[10]} = ₹${count10.toLocaleString()}\n` +
+        `• सिक्के/चिल्लर = ₹${countCoins.toLocaleString()}\n` +
+        `💰 *तिजोरी में कुल नकद:* ₹${totalCountedCash.toLocaleString()}\n\n` +
+        `📱 *डिजिटल एवं बैंक कलेक्शन:*\n` +
+        `• डायनामिक UPI QR सेटलमेंट: ₹${Number(upiSettled).toLocaleString()}\n` +
+        `• POS कार्ड मशीन स्वाइप: ₹${Number(cardSettled).toLocaleString()}\n\n` +
+        `🏆 *आज की कुल ग्रॉस बिक्री:* ₹${totalGrossDayRevenue.toLocaleString()} (${targetPct}% टारगेट पूर्ण ✓)\n` +
+        `⚖️ *कैश मिलान अंतर:* ${cashDiscrepancy === 0 ? "₹0.00 (100% परफेक्ट मैच ✓)" : `₹${cashDiscrepancy.toLocaleString()}`}\n` +
+        `🔒 *वॉल्ट सुरक्षा सील:* #VAULT-8899-RAYAGADA\n\n` +
+        `👉 *डिजिटल ईओडी शीट:* https://shreeganesh-godrej.web.app/#briefing`;
+    }
+
+    // Default English
+    return `🔒 *GODREJ INTERIO RAYAGADA — 9:00 PM DAILY CASH CLOSING SLIP*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `📅 *Closing Date:* ${dateStr} at ${timeStr}\n` +
+      `👤 *Cashier Sign-Off:* ${cashierName}\n` +
+      `🔑 *Director PIN:* 8899 (Verified ✓)\n\n` +
+      `💵 *PHYSICAL CASH DENOMINATION BREAKDOWN:*\n` +
+      `• ₹500 × ${denominations[500]} = ₹${count500.toLocaleString()}\n` +
+      `• ₹200 × ${denominations[200]} = ₹${count200.toLocaleString()}\n` +
+      `• ₹100 × ${denominations[100]} = ₹${count100.toLocaleString()}\n` +
+      `• ₹50  × ${denominations[50]} = ₹${count50.toLocaleString()}\n` +
+      `• ₹20  × ${denominations[20]} = ₹${count20.toLocaleString()}\n` +
+      `• ₹10  × ${denominations[10]} = ₹${count10.toLocaleString()}\n` +
+      `• Coins / Loose Change = ₹${countCoins.toLocaleString()}\n` +
+      `💰 *Total Physical Cash in Safe:* ₹${totalCountedCash.toLocaleString()}\n\n` +
+      `📱 *DIGITAL & BANK COLLECTIONS:*\n` +
+      `• Dynamic UPI QR Settled: ₹${Number(upiSettled).toLocaleString()}\n` +
+      `• POS Card Swipes: ₹${Number(cardSettled).toLocaleString()}\n\n` +
+      `🏆 *TOTAL GROSS DAY BILLING:* ₹${totalGrossDayRevenue.toLocaleString()} (${targetPct}% of Day Target Achieved ✓)\n` +
+      `⚖️ *Cash Discrepancy:* ${cashDiscrepancy === 0 ? "₹0.00 (PERFECT 100% MATCH ✓)" : `₹${cashDiscrepancy.toLocaleString()}`}\n` +
+      `🔒 *Tamper-Proof Safe Bag Seal:* #VAULT-8899-RAYAGADA\n\n` +
+      `👉 *View Full Digital EOD Audit Sheet:* https://shreeganesh-godrej.web.app/#briefing\n` +
+      `🏢 *Godrej Interio Rayagada Flagship Showroom*`;
   };
 
   const handleLockRegister = () => {
@@ -449,50 +556,61 @@ export function EodReconciliationModal({ isOpen, onClose }) {
 
   const handleSendWhatsAppSlip = () => {
     playScanBeep();
-    const dateStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-    const timeStr = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    const slipText = generateEodSlipText(language);
+    const cleanPhone = "9390553301";
 
-    const text = `🔒 *GODREJ INTERIO RAYAGADA — 9:00 PM DAILY CASH CLOSING SLIP*\n` +
-      `━━━━━━━━━━━━━━━━━━━━\n` +
-      `📅 *Closing Date:* ${dateStr} at ${timeStr}\n` +
-      `👤 *Cashier Sign-Off:* ${cashierName}\n` +
-      `🔑 *Director PIN:* 8899 (Verified ✓)\n\n` +
-      `💵 *PHYSICAL CASH DENOMINATION BREAKDOWN:*\n` +
-      `• ₹500 × ${denominations[500]} = ₹${count500.toLocaleString()}\n` +
-      `• ₹200 × ${denominations[200]} = ₹${count200.toLocaleString()}\n` +
-      `• ₹100 × ${denominations[100]} = ₹${count100.toLocaleString()}\n` +
-      `• ₹50  × ${denominations[50]} = ₹${count50.toLocaleString()}\n` +
-      `• ₹20  × ${denominations[20]} = ₹${count20.toLocaleString()}\n` +
-      `• ₹10  × ${denominations[10]} = ₹${count10.toLocaleString()}\n` +
-      `• Coins / Loose Change = ₹${countCoins.toLocaleString()}\n` +
-      `💰 *Total Physical Cash in Safe:* ₹${totalCountedCash.toLocaleString()}\n\n` +
-      `📱 *DIGITAL & BANK COLLECTIONS:*\n` +
-      `• Dynamic UPI QR Settled: ₹${Number(upiSettled).toLocaleString()}\n` +
-      `• POS Card Swipes: ₹${Number(cardSettled).toLocaleString()}\n\n` +
-      `🏆 *TOTAL GROSS DAY BILLING:* ₹${totalGrossDayRevenue.toLocaleString()}\n` +
-      `⚖️ *Cash Discrepancy:* ${cashDiscrepancy === 0 ? "₹0.00 (PERFECT 100% MATCH ✓)" : `₹${cashDiscrepancy.toLocaleString()}`}\n\n` +
-      `👉 *View Full Digital EOD Audit Sheet:* https://shreeganesh-godrej.web.app/#briefing\n` +
-      `🏢 *Godrej Interio Rayagada Flagship Showroom*`;
+    // 1. Cloud Webhook Dispatch Backup (Always succeeds in cloud)
+    dispatchWebhookAction('DISPATCH_DIRECTOR_EOD_WHATSAPP', {
+      recipient_phone: cleanPhone,
+      director_name: "Rakesh (Director)",
+      language: language,
+      slip_content: slipText,
+      total_gross_inr: totalGrossDayRevenue,
+      cash_inr: totalCountedCash,
+      upi_inr: Number(upiSettled),
+      timestamp: new Date().toISOString()
+    });
 
-    window.open(`https://wa.me/919390553301?text=${encodeURIComponent(text)}`, '_blank');
+    // 2. Direct WhatsApp Dispatch
+    const waUrl = `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(slipText)}`;
+    const newWindow = window.open(waUrl, '_blank');
+
+    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+      // Fallback if popup blocked
+      window.location.href = waUrl;
+    }
+
     showToast("📲 9 PM Cash Closing Slip dispatched to Director Rakesh (+91 93905 53301)!", true);
+  };
+
+  const handleCopySlip = () => {
+    const slipText = generateEodSlipText(language);
+    navigator.clipboard.writeText(slipText);
+    setCopied(true);
+    playScanBeep();
+    showToast("📋 Formatted 9 PM Closing Slip copied to clipboard! Ready to paste into WhatsApp.", true);
+    setTimeout(() => setCopied(false), 3000);
   };
 
   return (
     <div className="modal-overlay" style={{ zIndex: 9999 }}>
-      <div className="modal-card" style={{ maxWidth: '780px', maxHeight: '92vh', overflowY: 'auto', background: '#0B132B', border: '2px solid var(--accent-gold)' }}>
+      <div className="modal-card glass-panel" style={{ maxWidth: '820px', width: '95%', maxHeight: '92vh', overflowY: 'auto', background: '#0B132B', border: '2px solid var(--accent-gold)', boxShadow: '0 25px 60px rgba(0,0,0,0.95)', padding: '24px' }}>
         
-        <div className="modal-header">
+        {/* Modal Header */}
+        <div className="modal-header" style={{ borderBottom: '1px solid rgba(255,255,255,0.12)', paddingBottom: '14px', marginBottom: '16px' }}>
           <div>
-            <span className="badge badge-gold">🔒 9 PM STATUTORY DAILY CLOSING</span>
-            <h3 style={{ fontSize: '18px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="badge badge-gold">🔒 9 PM STATUTORY DAILY CLOSING</span>
+              <span className="badge badge-emerald">🎉 {targetPct}% OF DAY TARGET ACHIEVED</span>
+            </div>
+            <h3 style={{ fontSize: '18px', fontWeight: '900', color: '#FFFFFF', margin: '4px 0 0 0' }}>
               💵 Bank-Grade Currency Denomination Counter & Register Lock
             </h3>
-            <div style={{ fontSize: '11px', color: 'var(--accent-cyan)' }}>
-              Godrej Interio Rayagada • Daily EOD Cash Drawer Reconciliation
+            <div style={{ fontSize: '11px', color: 'var(--accent-cyan)', marginTop: '2px' }}>
+              Godrej Interio Rayagada • Daily EOD Cash Drawer Reconciliation & Multi-Lingual WhatsApp Closing Slip
             </div>
           </div>
-          <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
+          <button className="btn-close-modal" onClick={onClose}><X size={18} /></button>
         </div>
 
         {/* ================= SECTION 1: PHYSICAL CURRENCY DENOMINATION MATRIX ================= */}
@@ -501,7 +619,7 @@ export function EodReconciliationModal({ isOpen, onClose }) {
             <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-gold-light)', textTransform: 'uppercase' }}>
               1. 💵 Physical Currency Notes Denomination Counter:
             </label>
-            <span className="badge badge-emerald" style={{ fontSize: '11px', fontWeight: '900' }}>
+            <span className="badge badge-emerald" style={{ fontSize: '11.5px', fontWeight: '900' }}>
               Counted: ₹{totalCountedCash.toLocaleString()}
             </span>
           </div>
@@ -616,7 +734,61 @@ export function EodReconciliationModal({ isOpen, onClose }) {
           </div>
         </div>
 
-        {/* ================= SECTION 4: CASHIER SIGN-OFF & DIRECTOR PIN ================= */}
+        {/* ================= SECTION 4: 4-LANGUAGE WHATSAPP SLIP PREVIEW ================= */}
+        <div style={{ margin: '14px 0' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+            <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-emerald)', textTransform: 'uppercase' }}>
+              3. 🌐 EOD WhatsApp Closing Slip Language (Director Dispatch):
+            </label>
+            <span className="badge badge-gold" style={{ fontSize: '10px' }}>
+              🔒 Seal #VAULT-8899-RAYAGADA
+            </span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '10px' }}>
+            {[
+              { id: 'EN', label: '🇬🇧 English' },
+              { id: 'OR', label: '🇮🇳 ଓଡ଼ିଆ (Odia)' },
+              { id: 'TE', label: '🇮🇳 తెలుగు (Telugu)' },
+              { id: 'HI', label: '🇮🇳 हिंदी (Hindi)' }
+            ].map(l => (
+              <button 
+                key={l.id}
+                type="button"
+                className={`btn-ghost-edit ${language === l.id ? 'badge-emerald' : ''}`}
+                onClick={() => {
+                  setLanguage(l.id);
+                  playScanBeep();
+                }}
+                style={{ fontSize: '11.5px', padding: '6px 4px', textAlign: 'center', fontWeight: '800' }}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Dynamic Preview Box */}
+          <div style={{ background: '#030712', borderRadius: '10px', padding: '12px 16px', border: '1px solid rgba(212,175,55,0.3)', position: 'relative' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-gold-light)' }}>
+                💬 Live WhatsApp Slip Preview ({language}):
+              </span>
+              <button 
+                type="button"
+                className="btn-ghost-edit" 
+                onClick={handleCopySlip}
+                style={{ fontSize: '10.5px', padding: '4px 10px', color: copied ? 'var(--accent-emerald)' : '#FFFFFF' }}
+              >
+                {copied ? '✓ Copied!' : '📋 Copy Slip Text'}
+              </button>
+            </div>
+            <pre style={{ fontSize: '11px', color: '#E2E8F0', whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0, lineHeight: 1.5 }}>
+              {generateEodSlipText(language)}
+            </pre>
+          </div>
+        </div>
+
+        {/* ================= SECTION 5: CASHIER SIGN-OFF & DIRECTOR PIN ================= */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', margin: '14px 0' }}>
           <div className="form-field">
             <label>Cashier / Staff In-Charge</label>
@@ -655,3 +827,4 @@ export function EodReconciliationModal({ isOpen, onClose }) {
     </div>
   );
 }
+

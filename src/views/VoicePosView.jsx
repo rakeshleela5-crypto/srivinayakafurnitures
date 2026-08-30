@@ -529,25 +529,32 @@ export function VoicePosView() {
             </div>
           </div>
 
-          {/* Action Closing Tools: EMI Matrix, Exchange Appraiser, WhatsApp PDF */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+          {/* Action Closing Tools: EMI Matrix, Custom Finish, Exchange Appraiser, WhatsApp PDF */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+            <button 
+              className="btn-purple" 
+              style={{ fontSize: '10.5px', padding: '8px 4px', justifyContent: 'center' }}
+              onClick={() => openModal('custom_finish', { sku: cartItems[0]?.SKU || 'BED-MOD-001' })}
+            >
+              🧵 Custom Finish
+            </button>
             <button 
               className="btn-ghost-edit" 
-              style={{ fontSize: '11px', padding: '8px 4px', justifyContent: 'center' }}
+              style={{ fontSize: '10.5px', padding: '8px 4px', justifyContent: 'center' }}
               onClick={() => openModal('emi_scheme', { amount: finalPayable, customerPhone: custPhone })}
             >
               💳 0% EMI Matrix
             </button>
             <button 
               className="btn-ghost-edit" 
-              style={{ fontSize: '11px', padding: '8px 4px', justifyContent: 'center' }}
+              style={{ fontSize: '10.5px', padding: '8px 4px', justifyContent: 'center' }}
               onClick={() => openModal('furniture_exchange', { onApplyDiscount: (val) => setExchangeCredit(val) })}
             >
-              🔄 Exchange Buyback
+              🔄 Exchange
             </button>
             <button 
               className="btn-ghost-edit" 
-              style={{ fontSize: '11px', padding: '8px 4px', justifyContent: 'center', color: 'var(--accent-gold-light)' }}
+              style={{ fontSize: '10.5px', padding: '8px 4px', justifyContent: 'center', color: 'var(--accent-gold-light)' }}
               onClick={() => openModal('whatsapp_proposal', { 
                 customerName: custName, 
                 customerPhone: custPhone, 

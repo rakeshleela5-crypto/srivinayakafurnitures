@@ -75,10 +75,13 @@ export function InventorySafeLockView() {
       <div className="tab-action-ribbon">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className="badge badge-emerald">🔒 SAFELOCK™ REAL-TIME INVENTORY</span>
-          <button className="btn-luxury-gold" onClick={() => setShowConfigModal(true)}>
-            ⏳ Token Hold Expiry: {tokenHoldHours / 24} Days ({tokenHoldHours}h)
+          <button className="btn-luxury-gold" onClick={() => openModal('aging_stock')}>
+            📉 Aging Stock Radar (>90d)
           </button>
-          <button className="btn-cyan" onClick={() => openModal('csv_import')} style={{ fontWeight: '800' }}>
+          <button className="btn-cyan" onClick={() => setShowConfigModal(true)}>
+            ⏳ Token Hold: {tokenHoldHours / 24} Days
+          </button>
+          <button className="btn-ghost-edit" onClick={() => openModal('csv_import')} style={{ fontWeight: '800' }}>
             📥 Import CSV / Excel
           </button>
           <button className="btn-ghost-edit" onClick={() => openModal('stock_override', { sku: selectedSku })}>

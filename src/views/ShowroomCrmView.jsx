@@ -105,13 +105,16 @@ export function ShowroomCrmView() {
                     <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginTop: '2px' }}>👤 {inq.Assigned_Staff}</div>
                   </td>
                   <td>
-                    <div style={{ display: 'flex', gap: '6px' }}>
+                    <div style={{ display: 'flex', gap: '5px' }}>
                       {!inq.Status.includes('CONVERTED') && (
-                        <button className="btn-emerald" onClick={() => openModal('convert_inquiry', { inquiry: inq })} style={{ padding: '6px 10px', fontSize: '11px' }}>
+                        <button className="btn-emerald" onClick={() => openModal('convert_inquiry', { inquiry: inq })} style={{ padding: '4px 8px', fontSize: '10.5px' }}>
                           ⚡ Convert
                         </button>
                       )}
-                      <button className="btn-ghost-edit" onClick={() => openModal('edit_inquiry', { inquiry: inq })} style={{ padding: '6px 10px', fontSize: '11px' }}>
+                      <button className="btn-cyan" onClick={() => openModal('godrej_care_amc', { customer: { Customer_Name: inq.Customer_Name, Phone: inq.Customer_Phone } })} style={{ padding: '4px 8px', fontSize: '10.5px' }}>
+                        🧼 AMC
+                      </button>
+                      <button className="btn-ghost-edit" onClick={() => openModal('edit_inquiry', { inquiry: inq })} style={{ padding: '4px 8px', fontSize: '10.5px' }}>
                         ✏️ Edit
                       </button>
                     </div>

@@ -229,7 +229,11 @@ export function RoomMatcherStudio() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className="badge badge-gold">2D MULTIMODAL AI ROOM MATCHER STUDIO</span>
           
-          <button className="btn-luxury-gold" onClick={() => fileInputRef.current?.click()}>
+          <button className="btn-luxury-gold" onClick={() => openModal('wedding_suite')}>
+            👑 5-Room Wedding Suite Packages
+          </button>
+
+          <button className="btn-cyan" onClick={() => fileInputRef.current?.click()}>
             <Upload size={14} /> 📤 Upload Customer Room Photo
           </button>
 

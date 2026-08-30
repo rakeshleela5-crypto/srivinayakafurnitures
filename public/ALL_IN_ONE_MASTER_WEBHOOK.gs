@@ -1779,6 +1779,247 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
     }
 
 
+    
+    // ==========================================================================================
+    // 👑 HEART ENGINE 4: MULTI-ROOM WEDDING & VILLA FULL-HOME SUITE ENGINE
+    // ==========================================================================================
+    else if (action === "GENERATE_WEDDING_SUITE_PACKAGE" || action === "WEDDING_SUITE_ORDER") {
+      var tier = params.tier || "GOLD";
+      var coupleName = params.couple_name || "Priyanka & Rahul";
+      var phone = (params.phone || "9437188291").toString().replace(/[^0-9]/g, "");
+      var weddingDate = params.wedding_date || "25-Nov-2026";
+      var pkgPrice = Number(params.package_price_inr) || 489000;
+      var suiteId = "WED-SUITE-" + Utilities.getUuid().substring(0, 6).toUpperCase();
+
+      var wedSheet = getOrCreateSheet(ss, "Wedding_Suites_Log", [
+        "Suite_ID", "Couple_Name", "Phone", "Wedding_Date", "Package_Tier", 
+        "Package_Price_INR", "Status", "Dispatched_Date_Time"
+      ], "#D97706");
+
+      if (wedSheet) {
+        wedSheet.appendRow([
+          suiteId,
+          coupleName,
+          phone,
+          weddingDate,
+          tier + " Grand Suite",
+          pkgPrice,
+          "PROPOSAL_DISPATCHED (ACTIVE VIP DEAL)",
+          currentDateTimeStr
+        ]);
+        applyStandardFormat(wedSheet);
+      }
+
+      result.suite_id = suiteId;
+      result.package_price = pkgPrice;
+      result.message = "Wedding Suite #" + suiteId + " (Rs. " + pkgPrice.toLocaleString('en-IN') + ") logged for " + coupleName + "!";
+    }
+
+    // ==========================================================================================
+    // 🛡️ HEART ENGINE 5: POST-ASSEMBLY QC & 5-YEAR DIGITAL WARRANTY ENGINE
+    // ==========================================================================================
+    else if (action === "ISSUE_DIGITAL_WARRANTY_QC" || action === "REGISTER_WARRANTY") {
+      var orderId = params.order_id || "ORD-8921";
+      var customerName = params.customer_name || "Dr. Subhashish Jena";
+      var customerPhone = (params.customer_phone || "9437188291").toString().replace(/[^0-9]/g, "");
+      var certNo = params.warranty_cert_no || "WAR-GI-" + Utilities.getUuid().substring(0, 6).toUpperCase();
+
+      var warSheet = getOrCreateSheet(ss, "Warranty_Registry", [
+        "Cert_No", "Order_ID", "Customer_Name", "Phone", "Coverage_Period", 
+        "QC_Inspection_Status", "Next_Annual_Service_Due", "Registered_Date_Time"
+      ], "#059669");
+
+      if (warSheet) {
+        warSheet.appendRow([
+          certNo,
+          orderId,
+          customerName,
+          customerPhone,
+          "5 Full Years (2026–2031 Comprehensive)",
+          "100% PASSED (Hydraulic + Alignment + Polish ✓)",
+          "28-Aug-2027 (Annual Free Polish & Tune-Up)",
+          currentDateTimeStr
+        ]);
+        applyStandardFormat(warSheet);
+      }
+
+      result.cert_no = certNo;
+      result.order_id = orderId;
+      result.message = "Godrej 5-Year Digital Warranty #" + certNo + " successfully registered in Google Sheets!";
+    }
+
+    // ==========================================================================================
+    // 📉 HEART ENGINE 6: AGING STOCK CLEARANCE & LIQUIDITY RADAR
+    // ==========================================================================================
+    else if (action === "LAUNCH_AGING_STOCK_FLASH_SALE" || action === "AGING_STOCK_CLEARANCE") {
+      var discountPct = Number(params.discount_pct) || 20;
+      var itemsCount = Number(params.items_count) || 3;
+      var eventId = "FLASH-CLEAR-" + Utilities.getUuid().substring(0, 4).toUpperCase();
+
+      var clrSheet = getOrCreateSheet(ss, "Clearance_Sales_Log", [
+        "Event_ID", "Discount_Pct", "Items_Liquidated_Count", "Channel", "Dispatched_Date_Time", "Status"
+      ], "#DC2626");
+
+      if (clrSheet) {
+        clrSheet.appendRow([
+          eventId,
+          discountPct + "% Markdown",
+          itemsCount + " High-Value Floor Models",
+          "WhatsApp VIP Broadcast + Walk-in Flyers",
+          currentDateTimeStr,
+          "48-HOUR FLASH PROMO ACTIVE"
+        ]);
+        applyStandardFormat(clrSheet);
+      }
+
+      result.event_id = eventId;
+      result.discount_pct = discountPct;
+      result.message = "48-Hour Flash Markdown Event #" + eventId + " (" + discountPct + "% Off) logged!";
+    }
+
+    // ==========================================================================================
+    // 🧵 HEART ENGINE 8: FABRIC SWATCH, WOOD POLISH & CUSTOM FINISH ENGINE
+    // ==========================================================================================
+    else if (action === "SAVE_CUSTOM_FINISH_SPEC" || action === "CUSTOM_FURNITURE_FINISH") {
+      var sku = params.sku || "SOF-MOD-015";
+      var fabric = params.fabric || "Royal Navy Velvet (Pantone 19-4052)";
+      var polish = params.polish || "Dark Walnut PU Matte";
+      var hardware = params.hardware || "Brushed Gold Brass Accents";
+      var notes = params.notes || "Custom headboard cushion stitching";
+      var jobCardId = "JOB-CUSTOM-" + Utilities.getUuid().substring(0, 6).toUpperCase();
+
+      var jobSheet = getOrCreateSheet(ss, "Custom_Finishes_Log", [
+        "Job_Card_ID", "SKU", "Fabric_Swatch", "Wood_Polish_Finish", "Hardware_Accents", "Factory_Notes", "Timestamp"
+      ], "#8B5CF6");
+
+      if (jobSheet) {
+        jobSheet.appendRow([
+          jobCardId,
+          sku,
+          fabric,
+          polish,
+          hardware,
+          notes,
+          currentDateTimeStr
+        ]);
+        applyStandardFormat(jobSheet);
+      }
+
+      result.job_card_id = jobCardId;
+      result.sku = sku;
+      result.message = "Factory Production Job Card #" + jobCardId + " logged with custom swatches!";
+    }
+
+    // ==========================================================================================
+    // 📦 HEART ENGINE 9: 1-BOX RAPID REPLACEMENT & DAMAGE SHIELD
+    // ==========================================================================================
+    else if (action === "FILE_TRANSIT_DAMAGE_CLAIM" || action === "BOX_DAMAGE_CLAIM") {
+      var claimId = params.claim_id || "CLM-BOX-" + Utilities.getUuid().substring(0, 6).toUpperCase();
+      var orderId = params.order_id || "ORD-8921";
+      var customerName = params.customer_name || "Dr. Subhashish Jena";
+      var damagedBox = params.damaged_box || "Box A: Headboard (42 KG)";
+      var damageType = params.damage_type || "Corner Dented in Transport Transit";
+      var actionChoice = params.action_choice || "SWAP_FROM_BUFFER";
+
+      var clmSheet = getOrCreateSheet(ss, "Transit_Claims_Log", [
+        "Claim_ID", "Order_ID", "Customer_Name", "Damaged_Component_Box", 
+        "Damage_Severity", "Resolution_Action", "Warehouse_Bay_Drawn", "Dispatched_Date_Time", "Insurance_Status"
+      ], "#EF4444");
+
+      if (clmSheet) {
+        clmSheet.appendRow([
+          claimId,
+          orderId,
+          customerName,
+          damagedBox,
+          damageType,
+          "EMERGENCY SINGLE-BOX DISPATCH (24h SLA)",
+          "Warehouse Bay 1 (Safety Buffer Stock)",
+          currentDateTimeStr,
+          "TRANSIT_INSURANCE_CLAIM_FILED ✓"
+        ]);
+        applyStandardFormat(clmSheet);
+      }
+
+      result.claim_id = claimId;
+      result.order_id = orderId;
+      result.damaged_box = damagedBox;
+      result.message = "Transit Claim #" + claimId + " filed! Emergency buffer box drawn from Bay 1.";
+    }
+
+    // ==========================================================================================
+    // 🧼 HEART ENGINE 10: GODREJ CARE™ ANNUAL AMC & DEEP-CLEANING SUBSCRIPTION
+    // ==========================================================================================
+    else if (action === "ENROLL_AMC_SUBSCRIPTION" || action === "AMC_MEMBERSHIP") {
+      var amcId = params.amc_id || "AMC-" + Utilities.getUuid().substring(0, 6).toUpperCase();
+      var customerName = params.customer_name || "Dr. Subhashish Jena";
+      var phone = (params.phone || "9437188291").toString().replace(/[^0-9]/g, "");
+      var plan = params.plan || "GOLD_AMC";
+      var price = Number(params.price) || 2999;
+
+      var amcSheet = getOrCreateSheet(ss, "AMC_Subscriptions_Log", [
+        "AMC_ID", "Customer_Name", "Phone", "Plan_Type", "Subscription_Fee_INR", 
+        "Services_Included", "Next_Service_Date", "Auto_Alert_Status", "Registered_Date_Time"
+      ], "#0284C7");
+
+      if (amcSheet) {
+        amcSheet.appendRow([
+          amcId,
+          customerName,
+          phone,
+          plan === "GOLD_AMC" ? "Gold Home Care (₹2,999/yr)" : "Platinum Villa Care (₹4,999/yr)",
+          price,
+          "2x Sofa Deep Foam Clean + 1x Teak Polish + 1x Hydraulic Lubrication",
+          "28-Feb-2027",
+          "ACTIVE (6-Month WhatsApp Reminder Scheduled)",
+          currentDateTimeStr
+        ]);
+        applyStandardFormat(amcSheet);
+      }
+
+      result.amc_id = amcId;
+      result.customer_name = customerName;
+      result.price = price;
+      result.message = "Godrej Care AMC Membership #" + amcId + " (Rs. " + price + "/yr) registered!";
+    }
+
+    // ==========================================================================================
+    // 🏢 HEART ENGINE 11: INSTITUTIONAL B2B COMMERCIAL & OFFICE TURNKEY QUOTATOR
+    // ==========================================================================================
+    else if (action === "GENERATE_B2B_TURNKEY_TENDER" || action === "B2B_TURNKEY_PROPOSAL") {
+      var tenderNo = params.tender_no || "TND-GI-" + Utilities.getUuid().substring(0, 6).toUpperCase();
+      var orgName = params.org_name || "Odisha Mineral Development Corp (OMDC)";
+      var contactPerson = params.contact_person || "Shri B. K. Mohapatra (GM Admin)";
+      var pkgTitle = params.package_title || "50-Seater Modern Corporate Office Fitout";
+      var totalInr = Number(params.total_inr) || 1480000;
+
+      var tndSheet = getOrCreateSheet(ss, "B2B_Commercial_Tenders_Log", [
+        "Tender_Ref_No", "Institution_Name", "Contact_Person", "Project_Scope", 
+        "Contract_Value_INR", "BIFMA_Certification", "Payment_Milestones", "Dispatched_Date_Time", "Status"
+      ], "#1E3A8A");
+
+      if (tndSheet) {
+        tndSheet.appendRow([
+          tenderNo,
+          orgName,
+          contactPerson,
+          pkgTitle,
+          totalInr,
+          "100% BIFMA Ergonomics & CRCA Steel Certified ✓",
+          "40% Advance • 40% on Dispatch • 20% Post-Installation",
+          currentDateTimeStr,
+          "FORMAL_COMMERCIAL_PROPOSAL_DISPATCHED"
+        ]);
+        applyStandardFormat(tndSheet);
+      }
+
+      result.tender_no = tenderNo;
+      result.org_name = orgName;
+      result.contract_value_inr = totalInr;
+      result.message = "B2B Turnkey Tender Proposal #" + tenderNo + " (Rs. " + totalInr.toLocaleString('en-IN') + ") dispatched to " + orgName + "!";
+    }
+
+
     // ==========================================================================================
     // 🔨 1. MASTER CARPENTER (MISTRI) WORK ORDER & WAGE VOUCHER ENGINE
     // ==========================================================================================

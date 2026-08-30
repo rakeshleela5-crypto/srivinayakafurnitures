@@ -19,7 +19,18 @@ import {
   Percent, 
   Sliders,
   Sparkles,
-  AlertCircle
+  AlertCircle,
+  Award,
+  Crown,
+  Heart,
+  Palette,
+  Camera,
+  Layers,
+  Wrench,
+  FileText,
+  Printer,
+  ShoppingBag,
+  Zap
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../../utils/audioUtils';
 import { dispatchWebhookAction } from '../../services/webhookService';
@@ -33,7 +44,7 @@ export function TierPricingModal({ isOpen, onClose, sku = 'BED-MOD-001' }) {
 
   const [mrp, setMrp] = useState(item?.MRP_INR || 98000);
   const [festivePrice, setFestivePrice] = useState(item?.Selling_Price_INR || 78247);
-  const [architectRate, setArchitectRate] = useState(Math.round((item?.Selling_Price_INR || 78247) * 0.915)); // 8.5% discount
+  const [architectRate, setArchitectRate] = useState(Math.round((item?.Selling_Price_INR || 78247) * 0.915));
   const [floorPrice, setFloorPrice] = useState(Math.round((item?.Selling_Price_INR || 78247) * 0.88));
   const [factoryCost, setFactoryCost] = useState(Math.round((item?.MRP_INR || 98000) * 0.55));
   const [managerPin, setManagerPin] = useState('');
@@ -102,29 +113,24 @@ export function TierPricingModal({ isOpen, onClose, sku = 'BED-MOD-001' }) {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', margin: '14px 0' }}>
-          
-          {/* Tier 1: Showroom MRP */}
           <div className="form-field">
             <label style={{ color: '#94A3B8' }}>1. Showroom List MRP (₹)</label>
             <input type="number" value={mrp} onChange={e => setMrp(Number(e.target.value))} />
             <span style={{ fontSize: '10px', color: '#64748B' }}>Printed on Catalog & Carton Labels</span>
           </div>
 
-          {/* Tier 2: Festive Walk-in Price */}
           <div className="form-field">
             <label style={{ color: 'var(--accent-emerald)', fontWeight: '800' }}>2. 🏬 Showroom Festive Price (₹)</label>
             <input type="number" value={festivePrice} onChange={e => setFestivePrice(Number(e.target.value))} style={{ borderColor: 'var(--accent-emerald)', color: 'var(--accent-emerald)', fontWeight: '800' }} />
             <span style={{ fontSize: '10px', color: 'var(--accent-emerald)' }}>Displayed on Standee QR & POS</span>
           </div>
 
-          {/* Tier 3: VIP Architect Net Price */}
           <div className="form-field">
             <label style={{ color: 'var(--accent-cyan)', fontWeight: '800' }}>3. 🏛️ VIP Architect Net Price (₹)</label>
             <input type="number" value={architectRate} onChange={e => setArchitectRate(Number(e.target.value))} />
             <span style={{ fontSize: '10px', color: '#64748B' }}>8.5% Commission Slashed / Payout</span>
           </div>
 
-          {/* Tier 4: Bottom Floor Price */}
           <div className="form-field">
             <label style={{ color: '#F43F5E', fontWeight: '800' }}>4. 🛡️ Absolute Bottom Floor Price (₹)</label>
             <input 
@@ -153,15 +159,12 @@ export function TierPricingModal({ isOpen, onClose, sku = 'BED-MOD-001' }) {
             )}
           </div>
 
-          {/* Internal Hidden Cost */}
           <div className="form-field" style={{ gridColumn: '1 / -1' }}>
             <label style={{ color: '#64748B' }}>🏭 Factory Inward Cost + Transport Freight (₹ Hidden from Staff & Customer)</label>
             <input type="number" value={factoryCost} onChange={e => setFactoryCost(Number(e.target.value))} style={{ background: '#030712' }} />
           </div>
-
         </div>
 
-        {/* Live Profit Margin Telemetry Strip */}
         <div style={{ background: '#030712', borderRadius: '12px', padding: '12px 16px', border: '1px solid rgba(212,175,55,0.3)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: '11px', color: '#94A3B8' }}>Showroom Net Profit Margin:</div>
@@ -218,10 +221,8 @@ export function OrderReschedulerModal({ isOpen, onClose, order = {} }) {
     playSuccessChime();
     triggerGoldenConfetti();
 
-    // 1. Update central state
     updateOrderStatus(orderId, `RESCHEDULED (${schedule})`);
 
-    // 2. Dispatch Webhook to Google Sheets
     dispatchWebhookAction('RESCHEDULE_ORDER_DELIVERY', {
       order_id: orderId,
       customer_name: customerName,
@@ -236,7 +237,6 @@ export function OrderReschedulerModal({ isOpen, onClose, order = {} }) {
       timestamp: new Date().toISOString()
     });
 
-    // 3. 1-Click WhatsApp Trigger to Customer
     const cleanPhone = customerPhone.replace(/[^0-9]/g, '');
     const text = `🚚 *GODREJ INTERIO RAYAGADA — DELIVERY & ASSEMBLY UPDATE*\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
@@ -273,7 +273,6 @@ export function OrderReschedulerModal({ isOpen, onClose, order = {} }) {
         </div>
 
         <div className="form-grid" style={{ margin: '14px 0' }}>
-          
           <div className="form-field">
             <label>Customer Full Name</label>
             <input value={customerName} onChange={e => setCustomerName(e.target.value)} />
@@ -321,7 +320,6 @@ export function OrderReschedulerModal({ isOpen, onClose, order = {} }) {
             <label>Driver Landmark / Unloading Instructions</label>
             <input value={landmarkNotes} onChange={e => setLandmarkNotes(e.target.value)} />
           </div>
-
         </div>
 
         <button className="btn-cyan" onClick={handleSaveAndNotify} style={{ width: '100%', justifyContent: 'center', padding: '12px' }}>
@@ -373,7 +371,6 @@ export function StoreSettingsModal({ isOpen, onClose }) {
   return (
     <div className="modal-overlay" style={{ zIndex: 9999 }}>
       <div className="modal-card" style={{ maxWidth: '640px', background: '#0B132B', border: '2px solid var(--accent-emerald)' }}>
-        
         <div className="modal-header">
           <div>
             <span className="badge badge-emerald">❤️ COMMERCIAL IDENTITY HEART ENGINE 3</span>
@@ -388,7 +385,6 @@ export function StoreSettingsModal({ isOpen, onClose }) {
         </div>
 
         <div className="form-grid" style={{ margin: '14px 0' }}>
-          
           <div className="form-field" style={{ gridColumn: '1 / -1' }}>
             <label>Showroom Legal Name & Entity</label>
             <input value={storeName} onChange={e => setStoreName(e.target.value)} />
@@ -428,13 +424,680 @@ export function StoreSettingsModal({ isOpen, onClose }) {
             <label>Showroom Operating Hours</label>
             <input value={hours} onChange={e => setHours(e.target.value)} />
           </div>
-
         </div>
 
         <button className="btn-emerald" onClick={handleSave} style={{ width: '100%', justifyContent: 'center', padding: '12px' }}>
           <Save size={16} /> Save Showroom Configuration & Apply Everywhere
         </button>
+      </div>
+    </div>
+  );
+}
 
+// ==============================================================================================
+// 👑 HEART ENGINE 4: MULTI-ROOM WEDDING & VILLA FULL-HOME SUITE BUILDER
+// ==============================================================================================
+export function WeddingSuiteModal({ isOpen, onClose }) {
+  const { showToast } = useStore();
+  const [tier, setTier] = useState('GOLD');
+  const [coupleName, setCoupleName] = useState('Priyanka & Rahul');
+  const [phone, setPhone] = useState('9437188291');
+  const [weddingDate, setWeddingDate] = useState('25-Nov-2026');
+  const [freeGifts, setFreeGifts] = useState(true);
+
+  if (!isOpen) return null;
+
+  const packages = {
+    SILVER: { price: 249000, rooms: '3 Rooms (8 Items)', discount: '15% Off (Save ₹44,000)' },
+    GOLD: { price: 489000, rooms: '4 Rooms (14 Items)', discount: '20% Off (Save ₹1,22,000)' },
+    DIAMOND: { price: 849000, rooms: '5 Rooms Villa (21 Items)', discount: '25% Off (Save ₹2,83,000)' }
+  };
+
+  const currentPkg = packages[tier];
+
+  const handleGenerateBrochure = () => {
+    playSuccessChime();
+    triggerGoldenConfetti();
+
+    dispatchWebhookAction('GENERATE_WEDDING_SUITE_PACKAGE', {
+      tier,
+      couple_name: coupleName,
+      phone,
+      wedding_date: weddingDate,
+      package_price_inr: currentPkg.price,
+      timestamp: new Date().toISOString()
+    });
+
+    const text = `👑 *ROYAL WEDDING SUITE PROPOSAL — GODREJ INTERIO RAYAGADA*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `Warmest Congratulations to *${coupleName}* on your upcoming wedding on ${weddingDate}!\n\n` +
+      `✨ *Selected Package:* ${tier} Grand Suite (${currentPkg.rooms})\n` +
+      `💰 *Special Wedding Package Price:* ₹${currentPkg.price.toLocaleString()} (${currentPkg.discount})\n` +
+      `🎁 *Complimentary Festive Inclusions:* 2x Ortho Memory Foam Pillows + Mattress Protector + Free Master Fitting\n\n` +
+      `👉 *View Full 3D Room Suite Renders:* https://shreeganesh-godrej.web.app/#concierge\n` +
+      `📞 *Director VIP Desk:* +91 9390553301 | Main Road, Rayagada`;
+
+    window.open(`https://wa.me/91${phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
+    showToast(`👑 ${tier} Wedding Suite Brochure dispatched to ${coupleName}!`, true);
+    onClose();
+  };
+
+  return (
+    <div className="modal-overlay" style={{ zIndex: 9999 }}>
+      <div className="modal-card" style={{ maxWidth: '680px', background: '#0B132B', border: '2px solid var(--accent-gold)' }}>
+        <div className="modal-header">
+          <div>
+            <span className="badge badge-gold">👑 HIGH-TICKET HEART ENGINE 4</span>
+            <h3 style={{ fontSize: '17px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
+              👑 Multi-Room Wedding & Villa Suite Builder
+            </h3>
+            <div style={{ fontSize: '11px', color: 'var(--accent-gold-light)' }}>
+              High-Ticket Multi-Room Suite Bundler (₹2.5L to ₹8.5L Packages)
+            </div>
+          </div>
+          <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
+        </div>
+
+        {/* Tier Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', margin: '14px 0' }}>
+          {[
+            { id: 'SILVER', title: '🥉 Silver Starter', price: '₹2.49 Lakh', subtitle: '3 Rooms • 8 Items' },
+            { id: 'GOLD', title: '🥈 Gold Royal Teak', price: '₹4.89 Lakh', subtitle: '4 Rooms • 14 Items' },
+            { id: 'DIAMOND', title: '👑 Diamond Villa', price: '₹8.49 Lakh', subtitle: '5 Rooms • 21 Items' }
+          ].map(p => (
+            <div 
+              key={p.id}
+              onClick={() => setTier(p.id)}
+              style={{
+                background: tier === p.id ? 'rgba(212,175,55,0.15)' : '#030712',
+                border: tier === p.id ? '2px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '12px',
+                padding: '12px',
+                cursor: 'pointer',
+                textAlign: 'center'
+              }}
+            >
+              <div style={{ fontSize: '12.5px', fontWeight: '800', color: tier === p.id ? 'var(--accent-gold-light)' : '#FFFFFF' }}>{p.title}</div>
+              <div style={{ fontSize: '17px', fontWeight: '900', color: '#FFFFFF', margin: '4px 0' }}>{p.price}</div>
+              <div style={{ fontSize: '10px', color: '#94A3B8' }}>{p.subtitle}</div>
+            </div>
+          ))}
+        </div>
+
+        <div className="form-grid">
+          <div className="form-field">
+            <label>Bride & Groom / Family Name</label>
+            <input value={coupleName} onChange={e => setCoupleName(e.target.value)} />
+          </div>
+          <div className="form-field">
+            <label>Customer WhatsApp Contact</label>
+            <input value={phone} onChange={e => setPhone(e.target.value)} />
+          </div>
+          <div className="form-field">
+            <label>Wedding / Griha Pravesh Date</label>
+            <input value={weddingDate} onChange={e => setWeddingDate(e.target.value)} />
+          </div>
+          <div className="form-field">
+            <label>Phased Delivery Phasing</label>
+            <select>
+              <option>Phase 1: Master Bed + Wardrobe (Pre-Wedding)</option>
+              <option>Phase 2: Full Home Complete (Post-Wedding)</option>
+            </select>
+          </div>
+        </div>
+
+        <button className="btn-luxury-gold" onClick={handleGenerateBrochure} style={{ width: '100%', justifyContent: 'center', padding: '12px', marginTop: '14px' }}>
+          <Sparkles size={16} /> 👑 Generate Luxury Wedding Brochure & WhatsApp PDF (₹{currentPkg.price.toLocaleString()})
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ==============================================================================================
+// 🛡️ HEART ENGINE 5: POST-ASSEMBLY QC & 5-YEAR DIGITAL WARRANTY ENGINE
+// ==============================================================================================
+export function MistriQcWarrantyModal({ isOpen, onClose, stop = {} }) {
+  const { showToast } = useStore();
+  const [checks, setChecks] = useState({
+    hydraulic: true,
+    hinges: true,
+    polish: true,
+    glass: true,
+    csat: true
+  });
+  const [customerPhone, setCustomerPhone] = useState(stop.Customer_Phone || '9437188291');
+
+  if (!isOpen) return null;
+
+  const toggleCheck = (k) => setChecks(prev => ({ ...prev, [k]: !prev[k] }));
+
+  const handleIssueWarranty = () => {
+    playSuccessChime();
+    triggerGoldenConfetti();
+
+    const certId = "WAR-GODREJ-" + Utilities?.getUuid ? Utilities.getUuid().substring(0, 6).toUpperCase() : Math.floor(100000 + Math.random() * 900000);
+
+    dispatchWebhookAction('ISSUE_DIGITAL_WARRANTY_QC', {
+      order_id: stop.Order_ID || 'ORD-8921',
+      customer_name: stop.Customer_Name || 'Dr. Subhashish Jena',
+      customer_phone: customerPhone,
+      warranty_cert_no: certId,
+      qc_passed: true,
+      timestamp: new Date().toISOString()
+    });
+
+    const text = `🛡️ *OFFICIAL GODREJ INTERIO 5-YEAR WARRANTY CERTIFICATE*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `Dear ${stop.Customer_Name || 'Customer'}, your solid furniture assembly has passed our 5-Point Quality Control (QC) inspection!\n\n` +
+      `📜 *Warranty Certificate #:* ${certId}\n` +
+      `🗓️ *Coverage Period:* 2026 to 2031 (5 Full Years Comprehensive)\n` +
+      `🪚 *Master Fitter:* Narayana Mistri (Sign-Off Verified ✓)\n` +
+      `🎁 *Bonus Service:* Includes 2x Free Annual Polish & Hydraulic Tune-Up Reminders\n\n` +
+      `👉 *Download Certificate PDF:* https://shreeganesh-godrej.web.app/#documents\n` +
+      `📞 *Customer Care Desk:* +91 9390553301`;
+
+    window.open(`https://wa.me/91${customerPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
+    showToast(`🛡️ 5-Year Warranty Certificate #${certId} dispatched to ${stop.Customer_Name || 'Customer'}!`, true);
+    onClose();
+  };
+
+  return (
+    <div className="modal-overlay" style={{ zIndex: 9999 }}>
+      <div className="modal-card" style={{ maxWidth: '580px', background: '#0B132B', border: '2px solid var(--accent-emerald)' }}>
+        <div className="modal-header">
+          <div>
+            <span className="badge badge-emerald">🛡️ QUALITY HEART ENGINE 5</span>
+            <h3 style={{ fontSize: '17px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
+              🛡️ Post-Assembly QC & 5-Year Digital Warranty
+            </h3>
+            <div style={{ fontSize: '11px', color: 'var(--accent-cyan)' }}>
+              Order #{stop.Order_ID || 'ORD-8921'} — {stop.Customer_Name || 'Dr. Subhashish Jena'}
+            </div>
+          </div>
+          <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
+        </div>
+
+        {/* 5-Point QC Checklist */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', margin: '14px 0' }}>
+          {[
+            { id: 'hydraulic', label: '1. Hydraulic Shock Absorbers & Lift-Up Test (Passed Smoothly ✓)' },
+            { id: 'hinges', label: '2. Wardrobe Soft-Close Hinges & Drawer Channels (100% Aligned ✓)' },
+            { id: 'polish', label: '3. Solid Teak Polish & Edge-Banding (Zero Scratches Verified ✓)' },
+            { id: 'glass', label: '4. Toughened Glass Top & Leveling Buffers (Firmly Sealed ✓)' },
+            { id: 'csat', label: '5. Customer 5-Star Experience & Clean Workspace Handover ✓' }
+          ].map(item => (
+            <label 
+              key={item.id}
+              onClick={() => toggleCheck(item.id)}
+              style={{
+                background: checks[item.id] ? 'rgba(16,185,129,0.12)' : '#030712',
+                border: checks[item.id] ? '1px solid var(--accent-emerald)' : '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '8px',
+                padding: '10px 14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                color: checks[item.id] ? '#34D399' : '#94A3B8'
+              }}
+            >
+              <input type="checkbox" checked={checks[item.id]} onChange={() => {}} />
+              <span>{item.label}</span>
+            </label>
+          ))}
+        </div>
+
+        <button className="btn-emerald" onClick={handleIssueWarranty} style={{ width: '100%', justifyContent: 'center', padding: '12px' }}>
+          <Check size={16} /> 🛡️ Issue Official Godrej 5-Year Digital Warranty Card
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ==============================================================================================
+// 📉 HEART ENGINE 6: AGING STOCK CLEARANCE & LIQUIDITY RADAR MODAL
+// ==============================================================================================
+export function AgingStockModal({ isOpen, onClose }) {
+  const { inventory, showToast } = useStore();
+  const [discountPct, setDiscountPct] = useState(20);
+
+  if (!isOpen) return null;
+
+  const agingItems = [
+    { sku: 'BED-MOD-001', name: 'Solid King Bed (Hydraulic)', days: 112, bay: 'Bay 3', stock: 3, mrp: 98000, price: 78247 },
+    { sku: 'SOF-MOD-015', name: 'Royal Velvet 3+1+1 Sofa', days: 104, bay: 'Bay 2', stock: 2, mrp: 85000, price: 68000 },
+    { sku: 'DIN-MOD-004', name: 'Solid Teak 6-Seater Dining Table', days: 96, bay: 'Bay 4', stock: 1, mrp: 62000, price: 49500 }
+  ];
+
+  const handleLaunchFlashSale = () => {
+    playSuccessChime();
+    triggerGoldenConfetti();
+
+    dispatchWebhookAction('LAUNCH_AGING_STOCK_FLASH_SALE', {
+      discount_pct: discountPct,
+      items_count: agingItems.length,
+      timestamp: new Date().toISOString()
+    });
+
+    const text = `⚡ *GODREJ INTERIO RAYAGADA — 48-HOUR FLASH FLOOR CLEARANCE*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `Exclusive VIP Preview: Clear space for fresh factory arrivals with *Flat ${discountPct}% Clearance Markdowns*!\n\n` +
+      `🛏️ *Solid King Bed (Hydraulic):* ₹${Math.round(78247 * (1 - discountPct/100)).toLocaleString()} (Save ₹${Math.round(78247 * (discountPct/100)).toLocaleString()})\n` +
+      `🛋️ *Royal Velvet Sofa Set:* ₹${Math.round(68000 * (1 - discountPct/100)).toLocaleString()}\n` +
+      `🪑 *Teak 6-Seater Dining:* ₹${Math.round(49500 * (1 - discountPct/100)).toLocaleString()}\n\n` +
+      `👉 *Claim Clearance Piece:* https://shreeganesh-godrej.web.app/#safelock\n` +
+      `📞 *Showroom Desk:* +91 9390553301 | Main Road, Rayagada`;
+
+    window.open(`https://wa.me/919390553301?text=${encodeURIComponent(text)}`, '_blank');
+    showToast(`⚡ 48-Hour Flash Clearance Flyer dispatched to past leads!`, true);
+    onClose();
+  };
+
+  return (
+    <div className="modal-overlay" style={{ zIndex: 9999 }}>
+      <div className="modal-card" style={{ maxWidth: '640px', background: '#0B132B', border: '2px solid #F43F5E' }}>
+        <div className="modal-header">
+          <div>
+            <span className="badge badge-rose">📉 LIQUIDITY HEART ENGINE 6</span>
+            <h3 style={{ fontSize: '17px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
+              📉 Aging Stock Clearance & Liquidity Radar
+            </h3>
+            <div style={{ fontSize: '11px', color: '#FDA4AF' }}>
+              {agingItems.length} Models Aging > 90 Days (₹3.4L Working Capital Locked)
+            </div>
+          </div>
+          <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', margin: '14px 0' }}>
+          {agingItems.map(item => (
+            <div key={item.sku} style={{ background: '#030712', borderRadius: '10px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(244,63,94,0.3)' }}>
+              <div>
+                <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#FFFFFF' }}>{item.name}</div>
+                <div style={{ fontSize: '11px', color: '#94A3B8' }}>{item.sku} • {item.bay} • <b>{item.stock} Units left</b></div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <span className="badge badge-rose" style={{ fontSize: '10px' }}>{item.days} DAYS IN STORE</span>
+                <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-gold-light)', marginTop: '2px' }}>₹{item.price.toLocaleString()}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="form-field" style={{ marginBottom: '14px' }}>
+          <label>Clearance Markdown Discount ({discountPct}%)</label>
+          <input type="range" min={10} max={35} step={5} value={discountPct} onChange={e => setDiscountPct(Number(e.target.value))} />
+        </div>
+
+        <button className="btn-luxury-gold" onClick={handleLaunchFlashSale} style={{ width: '100%', justifyContent: 'center', padding: '12px' }}>
+          <Zap size={16} /> ⚡ Launch 48-Hour Flash Markdown & WhatsApp Flyer
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ==============================================================================================
+// 🧵 HEART ENGINE 8: FABRIC SWATCH, WOOD POLISH & CUSTOM FINISH ENGINE
+// ==============================================================================================
+export function CustomFinishModal({ isOpen, onClose, sku = 'SOF-MOD-015' }) {
+  const { showToast } = useStore();
+  const [fabric, setFabric] = useState('Royal Navy Velvet (Pantone 19-4052)');
+  const [polish, setPolish] = useState('Dark Walnut PU Matte');
+  const [hardware, setHardware] = useState('Brushed Gold Brass Accents');
+  const [notes, setNotes] = useState('Double stitching on headboard cushions • 4-inch extra foam padding');
+
+  if (!isOpen) return null;
+
+  const handleSaveFinish = () => {
+    playSuccessChime();
+    triggerGoldenConfetti();
+
+    dispatchWebhookAction('SAVE_CUSTOM_FINISH_SPEC', {
+      sku,
+      fabric,
+      polish,
+      hardware,
+      notes,
+      timestamp: new Date().toISOString()
+    });
+
+    showToast(`🧵 Custom Finishes attached to ${sku}! Factory Job Card updated.`, true);
+    onClose();
+  };
+
+  return (
+    <div className="modal-overlay" style={{ zIndex: 9999 }}>
+      <div className="modal-card" style={{ maxWidth: '580px', background: '#0B132B', border: '2px solid var(--accent-purple)' }}>
+        <div className="modal-header">
+          <div>
+            <span className="badge badge-purple">🧵 CUSTOMIZATION HEART ENGINE 8</span>
+            <h3 style={{ fontSize: '17px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
+              🧵 Fabric Swatch, Wood Polish & Custom Finish
+            </h3>
+            <div style={{ fontSize: '11px', color: '#C084FC' }}>
+              Target Model: {sku}
+            </div>
+          </div>
+          <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
+        </div>
+
+        <div className="form-grid" style={{ margin: '14px 0' }}>
+          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+            <label>🧵 Fabric Swatch & Shade</label>
+            <select value={fabric} onChange={e => setFabric(e.target.value)}>
+              <option value="Royal Navy Velvet (Pantone 19-4052)">Royal Navy Velvet (Pantone 19-4052)</option>
+              <option value="Emerald Green Velvet (Pantone 18-5642)">Emerald Green Velvet (Pantone 18-5642)</option>
+              <option value="Beige Textured Bouclé (High Durability)">Beige Textured Bouclé (High Durability)</option>
+              <option value="Italian Tan Leatherette (Waterproof)">Italian Tan Leatherette (Waterproof)</option>
+            </select>
+          </div>
+
+          <div className="form-field">
+            <label>🪵 Wood Polish Finish</label>
+            <select value={polish} onChange={e => setPolish(e.target.value)}>
+              <option value="Dark Walnut PU Matte">Dark Walnut PU Matte</option>
+              <option value="Natural Teak High Gloss">Natural Teak High Gloss</option>
+              <option value="Smoked Oak Rustic Finish">Smoked Oak Rustic Finish</option>
+              <option value="PU High-Gloss Deco White">PU High-Gloss Deco White</option>
+            </select>
+          </div>
+
+          <div className="form-field">
+            <label>✨ Hardware Accents</label>
+            <select value={hardware} onChange={e => setHardware(e.target.value)}>
+              <option value="Brushed Gold Brass Accents">Brushed Gold Brass Accents</option>
+              <option value="Rose Gold Luxury Metallic">Rose Gold Luxury Metallic</option>
+              <option value="Matte Black Industrial">Matte Black Industrial</option>
+              <option value="Stainless Steel Chrome">Stainless Steel Chrome</option>
+            </select>
+          </div>
+
+          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+            <label>Factory Customization Instructions</label>
+            <input value={notes} onChange={e => setNotes(e.target.value)} />
+          </div>
+        </div>
+
+        <button className="btn-purple" onClick={handleSaveFinish} style={{ width: '100%', justifyContent: 'center', padding: '12px' }}>
+          <Check size={16} /> 🧵 Attach Custom Swatches & Generate Factory Job Card
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ==============================================================================================
+// 📦 HEART ENGINE 9: 1-BOX RAPID REPLACEMENT & DAMAGE SHIELD MODAL
+// ==============================================================================================
+export function BoxDamageClaimModal({ isOpen, onClose, stop = {} }) {
+  const { showToast } = useStore();
+  const [damagedBox, setDamagedBox] = useState('Box A: Headboard & Lift Frame (42 KG)');
+  const [damageType, setDamageType] = useState('Corner Dented in Transport Transit');
+  const [actionChoice, setActionChoice] = useState('SWAP_FROM_BUFFER');
+
+  if (!isOpen) return null;
+
+  const handleFileClaim = () => {
+    playSuccessChime();
+    triggerGoldenConfetti();
+
+    const claimId = "CLM-BOX-" + Math.floor(100000 + Math.random() * 900000);
+
+    dispatchWebhookAction('FILE_TRANSIT_DAMAGE_CLAIM', {
+      claim_id: claimId,
+      order_id: stop.Order_ID || 'ORD-8921',
+      customer_name: stop.Customer_Name || 'Dr. Subhashish Jena',
+      damaged_box: damagedBox,
+      damage_type: damageType,
+      action_choice: actionChoice,
+      timestamp: new Date().toISOString()
+    });
+
+    showToast(`📦 Claim #${claimId} logged! Emergency single-box replacement dispatched from Warehouse Bay 1.`, true);
+    onClose();
+  };
+
+  return (
+    <div className="modal-overlay" style={{ zIndex: 9999 }}>
+      <div className="modal-card" style={{ maxWidth: '580px', background: '#0B132B', border: '2px solid #F43F5E' }}>
+        <div className="modal-header">
+          <div>
+            <span className="badge badge-rose">📦 TRANSIT SHIELD HEART ENGINE 9</span>
+            <h3 style={{ fontSize: '17px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
+              📦 1-Box Rapid Replacement & Damage Shield
+            </h3>
+            <div style={{ fontSize: '11px', color: '#FDA4AF' }}>
+              Order #{stop.Order_ID || 'ORD-8921'} — {stop.Customer_Name || 'Dr. Subhashish Jena'}
+            </div>
+          </div>
+          <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
+        </div>
+
+        <div className="form-grid" style={{ margin: '14px 0' }}>
+          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+            <label>Damaged Component Box (5-Box Knockdown)</label>
+            <select value={damagedBox} onChange={e => setDamagedBox(e.target.value)}>
+              <option value="Box A: Headboard & Lift Frame (42 KG)">Box A: Headboard & Lift Frame (42 KG)</option>
+              <option value="Box B: Solid Teak Side Rails & Footboard (28 KG)">Box B: Solid Teak Side Rails & Footboard (28 KG)</option>
+              <option value="Box C: Heavy Metal Slats & Frame Grid (24.5 KG)">Box C: Heavy Metal Slats & Frame Grid (24.5 KG)</option>
+              <option value="Box D: Gas-Lift Shock Absorbers & Hardware (18 KG)">Box D: Gas-Lift Shock Absorbers & Hardware (18 KG)</option>
+              <option value="Box E: Assembly Screws & Brackets (16 KG)">Box E: Assembly Screws & Brackets (16 KG)</option>
+            </select>
+          </div>
+
+          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+            <label>Damage Severity & Inspection Notes</label>
+            <input value={damageType} onChange={e => setDamageType(e.target.value)} />
+          </div>
+
+          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+            <label>Emergency Resolution Action</label>
+            <select value={actionChoice} onChange={e => setActionChoice(e.target.value)}>
+              <option value="SWAP_FROM_BUFFER">⚡ 24-Hour Buffer Swap (Dispatch ONLY Damaged Box)</option>
+              <option value="FACTORY_AIR_EXPRESS">✈️ Factory Emergency Air Courier</option>
+              <option value="LOCAL_POLISH_RETOUCH">🪚 On-Site Carpenter Polish Re-Touch</option>
+            </select>
+          </div>
+        </div>
+
+        <button className="btn-rose" onClick={handleFileClaim} style={{ width: '100%', justifyContent: 'center', padding: '12px' }}>
+          <AlertCircle size={16} /> File Insurance Claim & Dispatch Replacement Box
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ==============================================================================================
+// 🧼 HEART ENGINE 10: GODREJ CARE™ ANNUAL AMC & DEEP-CLEANING SUBSCRIPTION
+// ==============================================================================================
+export function GodrejCareAmcModal({ isOpen, onClose, customer = {} }) {
+  const { showToast } = useStore();
+  const [plan, setPlan] = useState('GOLD_AMC');
+  const [customerName, setCustomerName] = useState(customer.Customer_Name || 'Dr. Subhashish Jena');
+  const [phone, setPhone] = useState(customer.Phone || '9437188291');
+
+  if (!isOpen) return null;
+
+  const handleEnrollAmc = () => {
+    playSuccessChime();
+    triggerGoldenConfetti();
+
+    const amcId = "AMC-" + Math.floor(100000 + Math.random() * 900000);
+
+    dispatchWebhookAction('ENROLL_AMC_SUBSCRIPTION', {
+      amc_id: amcId,
+      customer_name: customerName,
+      phone,
+      plan,
+      price: plan === 'GOLD_AMC' ? 2999 : 4999,
+      timestamp: new Date().toISOString()
+    });
+
+    const text = `🧼 *GODREJ CARE™ ANNUAL AMC MEMBERSHIP ACTIVATED*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `Dear ${customerName}, welcome to Godrej Care™ AMC Protection for your home furniture!\n\n` +
+      `📜 *Membership ID:* ${amcId}\n` +
+      `✨ *Annual Inclusions:*\n` +
+      `• 2x Foam Deep Vacuum Cleaning for Velvet/Leather Sofas\n` +
+      `• 1x Solid Teak Beeswax Polish Re-touch\n` +
+      `• 1x Hydraulic Bed & Wardrobe Soft-Close Hinge Lubrication\n\n` +
+      `📅 *First Service Due:* 28-Feb-2027 (Auto-Booking Alert will be sent)\n` +
+      `📞 *VIP Service Desk:* +91 9390553301`;
+
+    window.open(`https://wa.me/91${phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
+    showToast(`🧼 AMC Membership #${amcId} activated for ${customerName}!`, true);
+    onClose();
+  };
+
+  return (
+    <div className="modal-overlay" style={{ zIndex: 9999 }}>
+      <div className="modal-card" style={{ maxWidth: '580px', background: '#0B132B', border: '2px solid #38BDF8' }}>
+        <div className="modal-header">
+          <div>
+            <span className="badge badge-cyan">🧼 RECURRING LTV HEART ENGINE 10</span>
+            <h3 style={{ fontSize: '17px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
+              🧼 Godrej Care™ Annual AMC Subscription
+            </h3>
+            <div style={{ fontSize: '11px', color: '#7DD3FC' }}>
+              Generates ₹2,999 to ₹4,999/year in recurring lifetime service revenue
+            </div>
+          </div>
+          <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
+        </div>
+
+        <div className="form-grid" style={{ margin: '14px 0' }}>
+          <div className="form-field">
+            <label>Customer Name</label>
+            <input value={customerName} onChange={e => setCustomerName(e.target.value)} />
+          </div>
+          <div className="form-field">
+            <label>WhatsApp Contact</label>
+            <input value={phone} onChange={e => setPhone(e.target.value)} />
+          </div>
+          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+            <label>Select AMC Protection Plan</label>
+            <select value={plan} onChange={e => setPlan(e.target.value)}>
+              <option value="GOLD_AMC">Gold Plan (₹2,999/yr) — 2x Sofa Deep Clean + 1x Teak Polish</option>
+              <option value="PLATINUM_AMC">Platinum Villa Plan (₹4,999/yr) — 4x Sofa Clean + Full Villa Polish</option>
+            </select>
+          </div>
+        </div>
+
+        <button className="btn-cyan" onClick={handleEnrollAmc} style={{ width: '100%', justifyContent: 'center', padding: '12px' }}>
+          <Check size={16} /> 🧼 Activate AMC Membership & Send WhatsApp Welcome Kit
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ==============================================================================================
+// 🏢 HEART ENGINE 11: INSTITUTIONAL B2B COMMERCIAL & OFFICE TURNKEY QUOTATOR
+// ==============================================================================================
+export function B2bTurnkeyModal({ isOpen, onClose }) {
+  const { showToast } = useStore();
+  const [pkg, setPkg] = useState('OFFICE_50');
+  const [orgName, setOrgName] = useState('Odisha Mineral Development Corp (OMDC)');
+  const [contactPerson, setContactPerson] = useState('Shri B. K. Mohapatra (GM Admin)');
+  const [phone, setPhone] = useState('9437188291');
+
+  if (!isOpen) return null;
+
+  const packages = {
+    OFFICE_50: { title: '50-Seater Modern Corporate Office Fitout', price: 1480000, desc: '50 Ergonomic Mesh Chairs + 12 Workstation Pods + 1 Boardroom Table + 2 Executive Cabins' },
+    BANK_BRANCH: { title: 'Commercial Bank Branch Turnkey Package', price: 1850000, desc: 'Manager Cabin + 4 Cashier Enclosures + 3 Customer Lounge Sofas + 10 Heavy Steel Cupboards' },
+    HOSPITAL_SUITE: { title: 'Hospital & Clinic Turnkey Package', price: 1120000, desc: 'Doctor Consultation Desks + 30 Waiting Room Chairs + Reception Counter + Medical Lockers' }
+  };
+
+  const current = packages[pkg];
+
+  const handleGenerateTender = () => {
+    playSuccessChime();
+    triggerGoldenConfetti();
+
+    const tenderNo = "TND-GI-" + Math.floor(100000 + Math.random() * 900000);
+
+    dispatchWebhookAction('GENERATE_B2B_TURNKEY_TENDER', {
+      tender_no: tenderNo,
+      org_name: orgName,
+      contact_person: contactPerson,
+      package_title: current.title,
+      total_inr: current.price,
+      timestamp: new Date().toISOString()
+    });
+
+    const text = `🏢 *OFFICIAL B2B COMMERCIAL TURNKEY PROPOSAL — GODREJ INTERIO RAYAGADA*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `*To:* ${orgName} (Attn: ${contactPerson})\n` +
+      `*Proposal Ref:* #${tenderNo} | Date: ${new Date().toLocaleDateString('en-IN')}\n\n` +
+      `📋 *Project Scope:* ${current.title}\n` +
+      `📦 *Specifications:* ${current.desc}\n` +
+      `📜 *Compliance:* 100% BIFMA Certified Ergonomics • Heavy-Gauge CRCA Steel • ISO 9001/14001\n` +
+      `💰 *Total Project Value:* ₹${current.price.toLocaleString()} + 18% GST\n` +
+      `💳 *Milestone Terms:* 40% Advance • 40% on Dispatch • 20% Post-Installation Sign-off\n\n` +
+      `👉 *Download Formal Tender Proposal PDF:* https://shreeganesh-godrej.web.app/#documents\n` +
+      `📞 *Institutional Project Desk:* +91 9390553301 | Main Road, Rayagada`;
+
+    window.open(`https://wa.me/91${phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
+    showToast(`🏢 B2B Commercial Tender Proposal #${tenderNo} dispatched to ${orgName}!`, true);
+    onClose();
+  };
+
+  return (
+    <div className="modal-overlay" style={{ zIndex: 9999 }}>
+      <div className="modal-card" style={{ maxWidth: '680px', background: '#0B132B', border: '2px solid var(--accent-gold)' }}>
+        <div className="modal-header">
+          <div>
+            <span className="badge badge-gold">🏢 COMMERCIAL HEART ENGINE 11</span>
+            <h3 style={{ fontSize: '17px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
+              🏢 Institutional B2B Turnkey Proposal Generator
+            </h3>
+            <div style={{ fontSize: '11px', color: 'var(--accent-cyan)' }}>
+              Generates formal ₹15L to ₹50L B2B Tender Proposals with BIFMA Specs
+            </div>
+          </div>
+          <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
+        </div>
+
+        <div className="form-grid" style={{ margin: '14px 0' }}>
+          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+            <label>Institution / Corporate Enterprise Name</label>
+            <input value={orgName} onChange={e => setOrgName(e.target.value)} />
+          </div>
+          <div className="form-field">
+            <label>Contact Person & Designation</label>
+            <input value={contactPerson} onChange={e => setContactPerson(e.target.value)} />
+          </div>
+          <div className="form-field">
+            <label>WhatsApp Contact</label>
+            <input value={phone} onChange={e => setPhone(e.target.value)} />
+          </div>
+          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+            <label>Turnkey Fitout Package</label>
+            <select value={pkg} onChange={e => setPkg(e.target.value)}>
+              <option value="OFFICE_50">🏢 50-Seater Modern Corporate Office Fitout (₹14.80 Lakh)</option>
+              <option value="BANK_BRANCH">🏦 Commercial Bank Branch Turnkey Package (₹18.50 Lakh)</option>
+              <option value="HOSPITAL_SUITE">🏥 Hospital & Clinic Turnkey Package (₹11.20 Lakh)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style={{ background: '#030712', borderRadius: '10px', padding: '12px 16px', border: '1px solid rgba(212,175,55,0.3)', margin: '10px 0' }}>
+          <div style={{ fontSize: '11px', color: '#94A3B8' }}>Scope & Specifications:</div>
+          <div style={{ fontSize: '12px', color: '#FFFFFF', marginTop: '2px' }}>{current.desc}</div>
+          <div style={{ fontSize: '16px', fontWeight: '900', color: 'var(--accent-gold-light)', marginTop: '6px' }}>
+            Total Value: ₹{current.price.toLocaleString()} + 18% GST
+          </div>
+        </div>
+
+        <button className="btn-luxury-gold" onClick={handleGenerateTender} style={{ width: '100%', justifyContent: 'center', padding: '12px' }}>
+          <FileText size={16} /> 🏢 Generate Formal B2B Tender Proposal & WhatsApp Mandate
+        </button>
       </div>
     </div>
   );

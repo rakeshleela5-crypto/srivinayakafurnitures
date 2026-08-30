@@ -25,7 +25,10 @@ export function DocumentStudio() {
       <div className="tab-action-ribbon">
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className="badge badge-cyan">🧾 CENTRAL DOCUMENT & PRINT STUDIO</span>
-          <button className="btn-luxury-gold no-print" onClick={() => window.print()}>
+          <button className="btn-luxury-gold no-print" onClick={() => openModal('b2b_turnkey')}>
+            🏢 Generate B2B Turnkey Proposal (₹15L–₹50L)
+          </button>
+          <button className="btn-ghost-edit no-print" onClick={() => window.print()}>
             <Printer size={14} /> Print Active Legal Document (A4)
           </button>
         </div>

@@ -115,15 +115,18 @@ export function LogisticsEpodView() {
                     </span>
                   </td>
                   <td>
-                    <div style={{ display: 'flex', gap: '5px' }}>
-                      <button className="btn-luxury-gold" style={{ fontSize: '10.5px', padding: '3px 8px' }} onClick={() => openModal('digital_epod', { stop })}>
-                        ✍️ Sign ePOD
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                      <button className="btn-luxury-gold" style={{ fontSize: '10.5px', padding: '3px 6px' }} onClick={() => openModal('digital_epod', { stop })}>
+                        ✍️ ePOD
                       </button>
-                      <button className="btn-cyan" style={{ fontSize: '10.5px', padding: '3px 8px' }} onClick={() => openModal('order_rescheduler', { order: { Order_ID: stop.Order_ID, Customer_Name: stop.Customer_Name, Project_Address: stop.Address, Delivery_Schedule: stop.Time_Slot, Balance_Due_INR: stop.Amount_Due } })}>
+                      <button className="btn-emerald" style={{ fontSize: '10.5px', padding: '3px 6px' }} onClick={() => openModal('mistri_qc_warranty', { stop })}>
+                        🛡️ QC Warranty
+                      </button>
+                      <button className="btn-cyan" style={{ fontSize: '10.5px', padding: '3px 6px' }} onClick={() => openModal('order_rescheduler', { order: { Order_ID: stop.Order_ID, Customer_Name: stop.Customer_Name, Project_Address: stop.Address, Delivery_Schedule: stop.Time_Slot, Balance_Due_INR: stop.Amount_Due } })}>
                         📅 Reschedule
                       </button>
-                      <button className="btn-ghost-edit" style={{ fontSize: '10.5px', padding: '3px 6px' }} onClick={() => openModal('sms_dispatch', { stop })}>
-                        <MessageSquare size={12} />
+                      <button className="btn-ghost-edit" style={{ fontSize: '10.5px', padding: '3px 6px', color: '#F43F5E' }} onClick={() => openModal('box_damage_claim', { stop })}>
+                        📦 Damage
                       </button>
                     </div>
                   </td>

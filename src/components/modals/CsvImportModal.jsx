@@ -161,28 +161,92 @@ export function CsvImportModal({ isOpen, onClose }) {
     }
   };
 
-  // Download Pre-Formatted Sample CSV Template
-  const handleDownloadSampleCsv = () => {
-    const sampleHeader = "SKU,Product_Name,Main_Category,Material_Spec,Dimensions,MRP_INR,Selling_Price_INR,Warranty_Years,Total_Component_Boxes,Default_Supplier\n";
-    const sampleRows = [
-      'BED-ROYAL-01,Royal Teak Wood Hydraulic King Bed,Bedroom,Solid Burma Teak + Gas-Lift,82" L x 76" W x 48" H,115000,92000,10,5,Saharanpur Crafts',
-      'SOFA-L-LUX-02,Italian Velvet 7-Seater Corner Sectional,Living Room,Solid Sal Frame + High Density Foam,120" L x 88" D x 34" H,148000,118400,7,3,Godrej Upholstery Works',
-      'DIN-MARBLE-03,Statuario Italian White Marble 6-Seater Dining,Dining & Study,Genuine Imported Marble + Brass Base,72" L x 42" W x 30" H,135000,108000,10,4,Makrana Stone Works',
-      'ALM-SLIDE-04,Titan 3-Door Toughened Mirror Sliding Wardrobe,Storage & Wardrobes,CRCA Steel + Toughened Mirror,78" H x 66" W x 24" D,85000,68000,10,4,Godrej Interio Shirwal Hub',
-      'DESK-BOSS-05,Presidential Veneer Executive Office Suite,Commercial Office,High-Gloss Teak Veneer + Cable Hub,84" L x 42" W x 30" H,95000,76000,5,3,Bangalore Modular Plant'
-    ].join('\n');
+  // 10-Product Curated Demo CSV Packs
+  const DEMO_PACKS = {
+    bedroom: {
+      name: "10_Festive_Luxury_Bedroom_SKUs.csv",
+      rows: [
+        { SKU: "BED-CSV-01", Product_Name: "Royal Burma Teak Hydraulic King Bed", Main_Category: "Bedroom", Material_Spec: "100% Solid Burma Teak Wood", Dimensions: "82x76x48 in", MRP_INR: 115000, Selling_Price_INR: 92000, Warranty_Years: 10, Total_Component_Boxes: 5, Default_Supplier: "Royal Teak Crafts, Saharanpur" },
+        { SKU: "BED-CSV-02", Product_Name: "Empress 4-Door Toughened Mirror Wardrobe", Main_Category: "Storage & Wardrobes", Material_Spec: "CRCA Steel + Toughened Mirror", Dimensions: "84x72x24 in", MRP_INR: 88000, Selling_Price_INR: 70400, Warranty_Years: 10, Total_Component_Boxes: 4, Default_Supplier: "Godrej Interio Shirwal Hub" },
+        { SKU: "BED-CSV-03", Product_Name: "Milano Floating Bedside Nightstand (Set of 2)", Main_Category: "Bedroom", Material_Spec: "Kiln-Dried CP Teak", Dimensions: "20x18x22 in", MRP_INR: 24000, Selling_Price_INR: 19200, Warranty_Years: 10, Total_Component_Boxes: 2, Default_Supplier: "Royal Teak Crafts, Saharanpur" },
+        { SKU: "BED-CSV-04", Product_Name: "Heritage Hand-Carved Teak Dresser with Mirror", Main_Category: "Bedroom", Material_Spec: "Solid Teak + 5mm Beveled Mirror", Dimensions: "48x20x72 in", MRP_INR: 48000, Selling_Price_INR: 38400, Warranty_Years: 10, Total_Component_Boxes: 2, Default_Supplier: "Jodhpur Artisan Guild" },
+        { SKU: "BED-CSV-05", Product_Name: "OrthoComfort 10-Inch Memory Foam King Mattress", Main_Category: "Bedroom", Material_Spec: "High-Resilience Aerocell Foam", Dimensions: "78x72x10 in", MRP_INR: 38000, Selling_Price_INR: 30400, Warranty_Years: 10, Total_Component_Boxes: 1, Default_Supplier: "Godrej Sleep Solutions" },
+        { SKU: "BED-CSV-06", Product_Name: "Velvet Upholstered Luxury Queen Bed", Main_Category: "Bedroom", Material_Spec: "Sal Wood Frame + Velvet Cushioning", Dimensions: "78x66x52 in", MRP_INR: 78000, Selling_Price_INR: 62400, Warranty_Years: 7, Total_Component_Boxes: 4, Default_Supplier: "Bangalore Modular Plant" },
+        { SKU: "BED-CSV-07", Product_Name: "Solid Rosewood Storage Bed End Ottoman", Main_Category: "Bedroom", Material_Spec: "Solid Sheesham + Tufted Leatherette", Dimensions: "54x18x18 in", MRP_INR: 22000, Selling_Price_INR: 17600, Warranty_Years: 10, Total_Component_Boxes: 1, Default_Supplier: "Jodhpur Artisan Guild" },
+        { SKU: "BED-CSV-08", Product_Name: "6-Drawer Tallboy Teak Chest of Drawers", Main_Category: "Storage & Wardrobes", Material_Spec: "Kiln-Dried CP Teak + Telescopic Rails", Dimensions: "36x20x52 in", MRP_INR: 42000, Selling_Price_INR: 33600, Warranty_Years: 10, Total_Component_Boxes: 2, Default_Supplier: "Royal Teak Crafts, Saharanpur" },
+        { SKU: "BED-CSV-09", Product_Name: "Imperial Four-Poster Teak Canopy Bed", Main_Category: "Bedroom", Material_Spec: "100% Solid Heavy Teak", Dimensions: "84x78x84 in", MRP_INR: 135000, Selling_Price_INR: 108000, Warranty_Years: 10, Total_Component_Boxes: 5, Default_Supplier: "Royal Teak Crafts, Saharanpur" },
+        { SKU: "BED-CSV-10", Product_Name: "Solid Sheesham Queen Storage Box Bed", Main_Category: "Bedroom", Material_Spec: "Solid Seasoned Sheesham Wood", Dimensions: "78x60x42 in", MRP_INR: 59000, Selling_Price_INR: 47200, Warranty_Years: 10, Total_Component_Boxes: 4, Default_Supplier: "Jodhpur Artisan Guild" }
+      ]
+    },
+    living: {
+      name: "10_Luxury_Living_Room_Sectionals.csv",
+      rows: [
+        { SKU: "SOFA-CSV-01", Product_Name: "Italian Leatherette 7-Seater L-Shape Sectional", Main_Category: "Living Room", Material_Spec: "Solid Sal Frame + High Density 40D Foam", Dimensions: "120x88x34 in", MRP_INR: 148000, Selling_Price_INR: 118400, Warranty_Years: 7, Total_Component_Boxes: 3, Default_Supplier: "Godrej Upholstery Works" },
+        { SKU: "SOFA-CSV-02", Product_Name: "Motorized Dual-Cup Power Recliner (Cinema)", Main_Category: "Living Room", Material_Spec: "German OKIN Motor + Napa Leatherette", Dimensions: "74x38x42 in", MRP_INR: 92000, Selling_Price_INR: 73600, Warranty_Years: 5, Total_Component_Boxes: 2, Default_Supplier: "Godrej Upholstery Works" },
+        { SKU: "SOFA-CSV-03", Product_Name: "Statuario Gold Brass Center Coffee Table", Main_Category: "Living Room", Material_Spec: "Imported Quartz Marble + PVD Gold Brass", Dimensions: "48x28x18 in", MRP_INR: 36000, Selling_Price_INR: 28800, Warranty_Years: 10, Total_Component_Boxes: 2, Default_Supplier: "Makrana Stone Works" },
+        { SKU: "SOFA-CSV-04", Product_Name: "Scandinavian 3-Seater Fabric Sofa (Ocean Teal)", Main_Category: "Living Room", Material_Spec: "Anti-Stain Linen + Solid Oak Legs", Dimensions: "84x36x32 in", MRP_INR: 52000, Selling_Price_INR: 41600, Warranty_Years: 5, Total_Component_Boxes: 2, Default_Supplier: "Bangalore Modular Plant" },
+        { SKU: "SOFA-CSV-05", Product_Name: "Chesterfield Tufted 2-Seater Loveseat (Cognac)", Main_Category: "Living Room", Material_Spec: "Full Grain Leatherette + Deep Diamond Tufting", Dimensions: "66x36x31 in", MRP_INR: 64000, Selling_Price_INR: 51200, Warranty_Years: 7, Total_Component_Boxes: 1, Default_Supplier: "Godrej Upholstery Works" },
+        { SKU: "SOFA-CSV-06", Product_Name: "Walnut Veneer 72\" Floating TV Media Unit", Main_Category: "Living Room", Material_Spec: "High-Gloss American Walnut Veneer", Dimensions: "72x16x18 in", MRP_INR: 38000, Selling_Price_INR: 30400, Warranty_Years: 10, Total_Component_Boxes: 2, Default_Supplier: "Bangalore Modular Plant" },
+        { SKU: "SOFA-CSV-07", Product_Name: "Ergonomic Swivel Accent Lounge Armchair", Main_Category: "Living Room", Material_Spec: "Molded Foam + 360° Brushed Steel Base", Dimensions: "32x34x38 in", MRP_INR: 28000, Selling_Price_INR: 22400, Warranty_Years: 5, Total_Component_Boxes: 1, Default_Supplier: "Featherlite Seating, Hyderabad" },
+        { SKU: "SOFA-CSV-08", Product_Name: "Solid Sheesham Nesting End Tables (Set of 3)", Main_Category: "Living Room", Material_Spec: "Solid Sheesham Honey Teak Finish", Dimensions: "22x22x20 in", MRP_INR: 18000, Selling_Price_INR: 14400, Warranty_Years: 10, Total_Component_Boxes: 1, Default_Supplier: "Jodhpur Artisan Guild" },
+        { SKU: "SOFA-CSV-09", Product_Name: "Royal Velvet Chaise Lounge (Emerald Gold)", Main_Category: "Living Room", Material_Spec: "Sal Wood + Gold Electroplated Steel", Dimensions: "64x30x32 in", MRP_INR: 42000, Selling_Price_INR: 33600, Warranty_Years: 7, Total_Component_Boxes: 1, Default_Supplier: "Godrej Upholstery Works" },
+        { SKU: "SOFA-CSV-10", Product_Name: "Modular 8-Seater Reversible U-Shape Sectional", Main_Category: "Living Room", Material_Spec: "Pocket Spring Core + Textured Fabric", Dimensions: "140x96x34 in", MRP_INR: 165000, Selling_Price_INR: 132000, Warranty_Years: 7, Total_Component_Boxes: 4, Default_Supplier: "Godrej Upholstery Works" }
+      ]
+    },
+    office: {
+      name: "10_Commercial_Office_Workstations.csv",
+      rows: [
+        { SKU: "OFFICE-CSV-01", Product_Name: "Presidential 84\" Teak Executive Director Desk", Main_Category: "Office & Institutional", Material_Spec: "High-Gloss Teak Veneer + Integrated Cable Hub", Dimensions: "84x42x30 in", MRP_INR: 95000, Selling_Price_INR: 76000, Warranty_Years: 5, Total_Component_Boxes: 3, Default_Supplier: "Godrej Workspaces, Vizag" },
+        { SKU: "OFFICE-CSV-02", Product_Name: "AeroMesh High-Back Executive Task Chair", Main_Category: "Office & Institutional", Material_Spec: "Korean Mesh + Synchronized Tilt Mechanism", Dimensions: "26x26x48 in", MRP_INR: 28000, Selling_Price_INR: 22400, Warranty_Years: 5, Total_Component_Boxes: 1, Default_Supplier: "Featherlite Seating, Hyderabad" },
+        { SKU: "OFFICE-CSV-03", Product_Name: "12-Seater Boardroom Conference Table (14 Ft)", Main_Category: "Office & Institutional", Material_Spec: "Heavy CRCA Steel + 36mm Prelam Top", Dimensions: "168x48x30 in", MRP_INR: 125000, Selling_Price_INR: 100000, Warranty_Years: 5, Total_Component_Boxes: 4, Default_Supplier: "Godrej Workspaces, Vizag" },
+        { SKU: "OFFICE-CSV-04", Product_Name: "4-Person Modular Workstation Cluster with Privacy Screens", Main_Category: "Office & Institutional", Material_Spec: "CRCA Powder-Coated Steel + Acoustic Fabric", Dimensions: "96x48x42 in", MRP_INR: 72000, Selling_Price_INR: 57600, Warranty_Years: 5, Total_Component_Boxes: 4, Default_Supplier: "Godrej Workspaces, Vizag" },
+        { SKU: "OFFICE-CSV-05", Product_Name: "Fire-Resistant 4-Drawer Steel Filing Cabinet", Main_Category: "Office & Institutional", Material_Spec: "Heavy 1.2mm CRCA Steel + Digital Keypad", Dimensions: "20x24x54 in", MRP_INR: 34000, Selling_Price_INR: 27200, Warranty_Years: 10, Total_Component_Boxes: 1, Default_Supplier: "Godrej Security Hub" },
+        { SKU: "OFFICE-CSV-06", Product_Name: "ErgoLift Dual-Motor Electric Standing Desk", Main_Category: "Office & Institutional", Material_Spec: "Dual Heavy Motors + Anti-Collision Sensor", Dimensions: "60x30x28-48 in", MRP_INR: 46000, Selling_Price_INR: 36800, Warranty_Years: 5, Total_Component_Boxes: 2, Default_Supplier: "Featherlite Seating, Hyderabad" },
+        { SKU: "OFFICE-CSV-07", Product_Name: "Semi-Fowler Manual Hospital Bed with ABS Panels", Main_Category: "Office & Institutional", Material_Spec: "Epoxy Coated Steel + Collapsible Side Rails", Dimensions: "82x38x24 in", MRP_INR: 58000, Selling_Price_INR: 46400, Warranty_Years: 5, Total_Component_Boxes: 2, Default_Supplier: "Godrej MedTech Works" },
+        { SKU: "OFFICE-CSV-08", Product_Name: "Dual School Classroom Bench & Desk Combo", Main_Category: "Office & Institutional", Material_Spec: "Heavy Gauge Tubular Steel + Melamine Board", Dimensions: "42x32x30 in", MRP_INR: 16000, Selling_Price_INR: 12800, Warranty_Years: 5, Total_Component_Boxes: 1, Default_Supplier: "Featherlite Seating, Hyderabad" },
+        { SKU: "OFFICE-CSV-09", Product_Name: "High-Density Heavy Steel Mobile Compactor Rack", Main_Category: "Office & Institutional", Material_Spec: "Mechanical Gear Driven + Anti-Rust Primer", Dimensions: "120x36x84 in", MRP_INR: 145000, Selling_Price_INR: 116000, Warranty_Years: 10, Total_Component_Boxes: 6, Default_Supplier: "Godrej Storage Solutions" },
+        { SKU: "OFFICE-CSV-10", Product_Name: "WorkSmart Mid-Back Mesh Task Chair", Main_Category: "Office & Institutional", Material_Spec: "Breathable Nylon Mesh + Pneumatic Lift", Dimensions: "24x24x40 in", MRP_INR: 14000, Selling_Price_INR: 11200, Warranty_Years: 5, Total_Component_Boxes: 1, Default_Supplier: "Featherlite Seating, Hyderabad" }
+      ]
+    }
+  };
 
-    const blob = new Blob([sampleHeader + sampleRows], { type: 'text/csv;charset=utf-8;' });
+  // Helper to download any CSV pack
+  const downloadPackCsv = (packKey) => {
+    const pack = DEMO_PACKS[packKey];
+    if (!pack) return;
+
+    const header = "SKU,Product_Name,Main_Category,Material_Spec,Dimensions,MRP_INR,Selling_Price_INR,Warranty_Years,Total_Component_Boxes,Default_Supplier\n";
+    const rows = pack.rows.map(r => 
+      `"${r.SKU}","${r.Product_Name}","${r.Main_Category}","${r.Material_Spec}","${r.Dimensions}",${r.MRP_INR},${r.Selling_Price_INR},${r.Warranty_Years},${r.Total_Component_Boxes},"${r.Default_Supplier}"`
+    ).join('\n');
+
+    const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', 'Godrej_Catalog_Sample_Template.csv');
+    link.setAttribute('download', pack.name);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 
     playSuccessChime();
-    showToast("📥 Sample Furniture Catalog Template downloaded!");
+    showToast(`📥 Downloaded ${pack.name} (${pack.rows.length} SKUs)!`, true);
+  };
+
+  // Helper to load demo pack directly into parser with 1 click
+  const loadDemoPackDirect = (packKey) => {
+    const pack = DEMO_PACKS[packKey];
+    if (!pack) return;
+
+    setFileName(pack.name);
+    setParsedRows(pack.rows);
+    playScanBeep();
+    showToast(`⚡ Loaded ${pack.rows.length} SKUs from ${pack.name}! Ready to import.`, true);
+  };
+
+  // Download General Pre-Formatted Sample CSV Template
+  const handleDownloadSampleCsv = () => {
+    downloadPackCsv('bedroom');
   };
 
   // Commit Import & Sync to Google Sheets
@@ -264,14 +328,110 @@ export function CsvImportModal({ isOpen, onClose }) {
           <button className="btn-close-modal" onClick={onClose}><X size={18} /></button>
         </div>
 
-        {/* Top Action Bar: Sample Download */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#030712', padding: '10px 14px', borderRadius: '10px', marginBottom: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-            Need the correct column structure? Download our ready-to-use template:
+        {/* 1-Click Live Demo Packs Banner */}
+        <div style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.12), rgba(15,23,42,0.9))', padding: '14px 16px', borderRadius: '12px', marginBottom: '16px', border: '1.5px solid var(--accent-gold)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="badge badge-gold" style={{ fontSize: '10.5px', fontWeight: '900' }}>
+                ⚡ 1-CLICK DEMO BATCHES (10 SKUs EACH)
+              </span>
+              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                Click below to instantly populate 10 real furniture products for Monday's live demo:
+              </span>
+            </div>
+            <div style={{ fontSize: '10.5px', color: 'var(--accent-gold-light)', fontWeight: '800' }}>
+              Instant Demo Ready ✓
+            </div>
           </div>
-          <button className="btn-ghost-edit" onClick={handleDownloadSampleCsv} style={{ fontSize: '11px', color: 'var(--accent-cyan)' }}>
-            <Download size={13} /> 📥 Download Sample Template (.csv)
-          </button>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+            <button
+              type="button"
+              onClick={() => loadDemoPackDirect('bedroom')}
+              style={{
+                background: 'rgba(212,175,55,0.2)',
+                color: '#FCD34D',
+                border: '1px solid #D4AF37',
+                borderRadius: '8px',
+                padding: '8px 10px',
+                fontSize: '11px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                textAlign: 'center',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              🛌 1-Click: 10 Luxury Bedroom SKUs
+            </button>
+
+            <button
+              type="button"
+              onClick={() => loadDemoPackDirect('living')}
+              style={{
+                background: 'rgba(56,189,248,0.2)',
+                color: '#7DD3FC',
+                border: '1px solid #38BDF8',
+                borderRadius: '8px',
+                padding: '8px 10px',
+                fontSize: '11px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                textAlign: 'center',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              🛋️ 1-Click: 10 Living Room Sectionals
+            </button>
+
+            <button
+              type="button"
+              onClick={() => loadDemoPackDirect('office')}
+              style={{
+                background: 'rgba(16,185,129,0.2)',
+                color: '#6EE7B7',
+                border: '1px solid #10B981',
+                borderRadius: '8px',
+                padding: '8px 10px',
+                fontSize: '11px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                textAlign: 'center',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              🏢 1-Click: 10 Office Workstations
+            </button>
+          </div>
+
+          {/* Download Physical CSV Files Strip */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '8px', flexWrap: 'wrap', gap: '8px' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+              📥 Download pre-formatted sample files to test drag-and-drop:
+            </span>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button 
+                type="button"
+                onClick={() => downloadPackCsv('bedroom')} 
+                style={{ background: 'rgba(255,255,255,0.06)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '4px 8px', fontSize: '10px', cursor: 'pointer' }}
+              >
+                <Download size={11} /> Bedroom .csv
+              </button>
+              <button 
+                type="button"
+                onClick={() => downloadPackCsv('living')} 
+                style={{ background: 'rgba(255,255,255,0.06)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '4px 8px', fontSize: '10px', cursor: 'pointer' }}
+              >
+                <Download size={11} /> Living .csv
+              </button>
+              <button 
+                type="button"
+                onClick={() => downloadPackCsv('office')} 
+                style={{ background: 'rgba(255,255,255,0.06)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '4px 8px', fontSize: '10px', cursor: 'pointer' }}
+              >
+                <Download size={11} /> Office .csv
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Drag & Drop Upload Zone */}

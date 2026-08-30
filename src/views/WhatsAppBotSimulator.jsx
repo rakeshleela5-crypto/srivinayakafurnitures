@@ -201,18 +201,64 @@ export function WhatsAppBotSimulator() {
 
   const handleTestBot = (b) => {
     triggerAppSheetBot(b.botId, b.name);
+
+    // Auto-switch to SPLIT view if in GRID mode so user sees the live phone response immediately!
+    if (viewMode === 'GRID') {
+      setViewMode('SPLIT');
+    }
+
+    // Default rich template mapping for all 20 bots
+    const defaultBotTemplates = {
+      'BOT-01': "Namaskar Dr. Subhashish Jena! 🙏\nYour Godrej Interio order ORD-8921 is SAFELOCKED.\n• Item: Solid King Bed (BED-MOD-001)\n• Advance Token: ₹78,247\n• Est Delivery: Today 04:30 PM\nShowroom Helpline: +91 93905 53301.",
+      'BOT-02': "⚡ ATOMIC INVENTORY HOLD:\nSKU BED-MOD-001 locked in Dock-A1.\nStock decremented across all 16 terminals in <50ms.",
+      'BOT-03': "📦 DOCK-A1 GATEPASS VERIFIED\nOrder: ORD-8921 (Dr. Jena)\nSKU: BED-MOD-001 (119.2 KG Total)\n• Box A (Headboard): VERIFIED ✓\n• Box B (Hydraulic): VERIFIED ✓\n• Box C (Rails): VERIFIED ✓\n• Box D (Hardware): VERIFIED ✓\nStatus: APPROVED FOR TRUCK LOADING.",
+      'BOT-04': "🚚 OUT FOR DELIVERY!\nNamaskar Dr. Jena, your order ORD-8921 is on route!\n• Driver: Tophan Gouda (+91 94371 55667)\n• Vehicle: Tata Ace (OD-18-A-1234)\n• 🔒 Your Secure Delivery OTP: 849201",
+      'BOT-05': "📍 DIGITAL ePOD PROOF LOCKED\nOrder: ORD-8921\nCustomer Signature: Verified (Dr. Subhashish Jena)\nGeotag: Lat 19.1672, Long 83.4156 (Rayagada)\nProof synced to Google Drive & Sheet 7 ✓",
+      'BOT-06': "💳 PAYMENT SETTLEMENT CONFIRMED\nOrder: ORD-8921 (Dr. Jena)\nBalance Amount Paid: ₹78,247 via Dynamic UPI\nTransaction: UPI-ORD-8921-SUCCESS\nOutstanding Due: ₹0.00 (Fully Settled ✓)",
+      'BOT-07': "🏛️ VIP ARCHITECT COMMISSION LEDGER\nPartner: Ar. Studio Design (Platinum Tier - 8.5%)\nReferred Order: ORD-8921 (Dr. Jena)\nCommission Earned: ₹6,651\nPayout Status: CREDITED TO UPI (partner@upi) ✓",
+      'BOT-08': "🏭 AUTOPROCURE REORDER PO #PO-2026-881\nTo: Royal Teak Crafts, Saharanpur (UP)\nItem: Solid King Bed (BED-MOD-001)\nQty: 5 Sets (5-Box Kits) | Factory Cost: ₹3,10,000\nPO Logged in Sheet 9 ➔ Supplier Notified ✓",
+      'BOT-09': "🔨 CARPENTER WORK ORDER DISPATCH\nCarpenter: Ramesh Mistri\nCustomer: Dr. Jena, Gayatri Nagar, Rayagada\nTask: Solid King Bed Hydraulic Assembly (5 Boxes)\nWage Voucher: ₹500 (Credited upon sign-off)",
+      'BOT-10': "🔄 FURNITURE EXCHANGE VALUATION\nCustomer: Smt. Minati Pradhan\nOld Furniture: Solid Wood Double Bed\nApproved Buyback Voucher: ₹6,500\nApplied against new King Bed booking ORD-8922 ✓",
+      'BOT-11': "✨ GODREJ INTERIO RAYAGADA FESTIVE EXCLUSIVE ✨\nNamaskar VIP Client! Upgrade your bedroom this season.\nGet up to ₹21,000 Showroom Savings + Free Hydraulic Installation on Solid Teak Suites!\nShowroom Helpline: +91 93905 53301.",
+      'BOT-12': "👑 9:00 PM SHOWROOM EXECUTIVE CLOSING SLIP\nStore: Godrej Interio Rayagada (Shree Ganesh Enterprises)\n• Total Today Billing: ₹4,82,500\n• Cash in Drawer: ₹1,15,000\n• UPI & Bank Collections: ₹3,67,500\n• Gross Profit Margin: 30.8% (₹1,48,610)\nSheet 11 (Daily_Sales_Summary) Locked ✓",
+      'BOT-13': "📐 CLEARANCE & FITMENT AUDIT\nOrder: ORD-8921 (Dr. Jena)\nDoorway Clearance: 38\" Verified Safe ✓\nPackaging: 5-Box Flatpack Knockdown Safe for Stairways.",
+      'BOT-14': "🎉 0% NO-COST EMI FINANCING OPTIONS\nOrder: ORD-8921 (₹89,790)\n• 3 Months: ₹29,930/mo\n• 6 Months: ₹14,965/mo\n• 9 Months: ₹9,976/mo\nZero Down-Payment with Bajaj Finserv at Rayagada Store!",
+      'BOT-15': "🛡️ OFFICIAL 10-YEAR WARRANTY CERTIFICATE\nDear Dr. Jena, congratulations on your new Solid King Bed!\n• Serial No: GI-RAY-2026-881\n• Coverage: 10 Years Comprehensive Godrej Warranty\nPDF Certificate: https://godrejinterio.com/warranty/ORD-8921",
+      'BOT-16': "🔥 WALK-IN HOT LEAD ALERT\nLead: Dr. Subhashish Jena (Gayatri Nagar)\nProduct Scanned: Solid King Bed (BED-MOD-001)\nAI Interest Score: 94% (Hot Buyer)\nFollow-up Task Assigned to Sales Desk ✓",
+      'BOT-17': "🛡️ DATABASE INTEGRITY & DEDUPLICATION\nScanned all 21 Google Sheets tables.\n0 duplicate rows found. Index integrity 100% verified.",
+      'BOT-18': "🏭 FACTORY SHIPMENT INWARD QC\nSupplier: Royal Teak Crafts (Saharanpur)\nPO: #PO-2026-881 | Cartons: 10/10 Verified\nZero Transit Damage ➔ Stock Added to Dock-A1 ✓",
+      'BOT-19': "📊 STORE TARGET PACING GAUGE\nToday Achieved: ₹1,69,000 (112% of Daily Target)\nMonthly Run-Rate: ₹38.45L / ₹45.00L (85.4% Achieved) ✓",
+      'BOT-20': "🔄 MASTER 2-WAY CLOUD WEBHOOK ENGINE\nLive Bi-Directional Webhook Active with Google Apps Script.\nAll 21 tables synchronized in real-time."
+    };
+
+    let formattedText = b.customTemplate || defaultBotTemplates[b.botId] || `⚡ Automated Cloud Trigger Executed: Target [${b.target}]. Status: EXECUTED_SUCCESS ✓`;
+
+    formattedText = formattedText
+      .replace(/{Customer_Name}/g, 'Dr. Subhashish Jena')
+      .replace(/{Order_ID}/g, 'ORD-8921')
+      .replace(/{Advance_Amount}/g, '78,247')
+      .replace(/{Amount}/g, '78,247')
+      .replace(/{Delivery_Date}/g, 'Today 04:30 PM')
+      .replace(/{Product_Name}/g, 'Solid King Bed (Hydraulic Storage)')
+      .replace(/{SKU}/g, 'BED-MOD-001')
+      .replace(/{Driver_Name}/g, 'Tophan Gouda')
+      .replace(/{Driver_Phone}/g, '+91 94371 55667')
+      .replace(/{Vehicle_Number}/g, 'Tata Ace (OD-18-A-1234)')
+      .replace(/{OTP}/g, '849201')
+      .replace(/{UPI_ID}/g, '9390553301@ybl');
+
     const newBotMsg = {
       id: Date.now(),
       sender: "bot",
       title: `${b.name} (${b.botId})`,
-      text: b.customTemplate 
-        ? b.customTemplate.replace('{Customer_Name}', 'Dr. Subhashish Jena').replace('{Order_ID}', 'ORD-8921').replace('{Advance_Amount}', '78,247').replace('{Delivery_Date}', 'Today 04:30 PM')
-        : `⚡ Automated Cloud Trigger Executed: Target [${b.target}]. Status: EXECUTED_SUCCESS ✓`,
-      time: "Just Now"
+      text: formattedText,
+      time: "Just Now",
+      isDirector: ['BOT-08', 'BOT-12', 'BOT-17', 'BOT-19', 'BOT-20'].includes(b.botId)
     };
+
     setChatMessages(prev => [...prev, newBotMsg]);
     playSuccessChime();
-    showToast(`⚡ Dispatched simulated webhook for ${b.botId}!`, true);
+    showToast(`⚡ Dispatched simulated webhook for ${b.botId} (${b.name})!`, true);
   };
 
   // Helper to categorize bots

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
 import { 
   TrendingUp, 
@@ -16,8 +16,22 @@ import {
   QrCode,
   Lock,
   Sun,
-  Award
+  Award,
+  Sliders,
+  Send,
+  Coffee,
+  MessageSquare,
+  MapPin,
+  CheckCircle,
+  AlertCircle,
+  Eye,
+  SlidersHorizontal,
+  Flame,
+  ChevronRight,
+  Calendar
 } from 'lucide-react';
+import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
+import { dispatchWebhookAction } from '../services/webhookService';
 
 export function ExecutiveOverview() {
   const { 
@@ -30,22 +44,101 @@ export function ExecutiveOverview() {
     openModal, 
     syncWithGoogleSheets, 
     isSyncing,
-    setActiveTab
+    setActiveTab,
+    updateOrderStatus,
+    showToast,
+    storeMeta
   } = useStore();
 
+  // Local Executive States
+  const [isCalibratorOpen, setIsCalibratorOpen] = useState(false);
+  const [editableTarget, setEditableTarget] = useState(targets.monthlyTargetINR || 1500000);
+  const [editableWalkInTarget, setEditableWalkInTarget] = useState(25);
+  const [festiveBoostPct, setFestiveBoostPct] = useState(10);
+  const [campaignLang, setCampaignLang] = useState('OR'); // Odia default
+  const [aiBriefingOpen, setAiBriefingOpen] = useState(false);
+
+  // Financial Computations
   const totalRevenue = orders.reduce((sum, o) => sum + (Number(o.Total_Amount_INR) || 0), 0);
   const totalAdvances = orders.reduce((sum, o) => sum + (Number(o.Advance_Paid_INR) || 0), 0);
   const activeSafeLocks = orders.filter(o => o.SafeLock_Status.includes('SAFELOCKED')).length;
   const pendingDeliveries = orders.filter(o => !o.SafeLock_Status.includes('DELIVERED')).length;
   const hotLeadsCount = inquiries.filter(i => i.Status === 'HOT_LEAD').length;
   const architectBalance = architects.reduce((sum, a) => sum + (a.Balance_Due_INR || 0), 0);
+  const estimatedGrossMarginINR = Math.round(totalRevenue * 0.324);
+  const carpenterLiabilityINR = orders.length * 500;
+  const netShowroomContributionINR = Math.max(0, estimatedGrossMarginINR - architectBalance - carpenterLiabilityINR);
 
-  const targetProgress = Math.min(100, Math.round((targets.currentAchievedINR / targets.monthlyTargetINR) * 100));
+  const targetProgress = Math.min(100, Math.round((targets.currentAchievedINR / editableTarget) * 100));
+
+  // Top 3 VIP Villa Turnkey Projects
+  const vipProjects = [
+    { id: 'VIP-001', name: 'Dr. Subhashish Jena (Rayagada Civil Surgeon)', location: 'Raniguda Farmhouse Villa', value: 156494, status: 'SAFELOCKED & STAGED', stage: '40% Balance on Delivery', phone: '+91 94371 88990' },
+    { id: 'VIP-002', name: 'Er. Pradeep Patnaik (JK Paper Executive)', location: 'Jaykaypur Officer Bungalow', value: 420000, status: 'PROPOSAL DELIVERED', stage: '50% Token Pending', phone: '+91 94370 12345' },
+    { id: 'VIP-003', name: 'M/s Koraput Health Clinic', location: 'Medical Road, Koraput', value: 285000, status: 'DISPATCH IN TRANSIT', stage: 'ePOD OTP Staged', phone: '+91 98610 99887' }
+  ];
+
+  // Floor Aging Stock Sentinel (Display Pieces >45 Days)
+  const floorAgingStock = [
+    { sku: 'ALM-MOD-001', name: '4-Door Solid Teak Wardrobe', floorDays: 52, bay: 'Bay 3', mrp: 78000, clearancePrice: 62400 },
+    { sku: 'DIN-MOD-001', name: '6-Seater Italian Carrara Marble Dining', floorDays: 48, bay: 'Bay 1', mrp: 92000, clearancePrice: 73600 },
+    { sku: 'SOF-MOD-002', name: '3-Seater Chesterfield Velvet Sofa', floorDays: 46, bay: 'Bay 4', mrp: 68000, clearancePrice: 54400 }
+  ];
+
+  // 1-Click Save Target Calibration
+  const handleSaveCalibration = () => {
+    playSuccessChime();
+    triggerGoldenConfetti();
+    setIsCalibratorOpen(false);
+    showToast(`🎯 Store Targets Calibrated: Monthly Goal ₹${editableTarget.toLocaleString()} (Walk-in Quota: ${editableWalkInTarget}/day)!`, true);
+    
+    dispatchWebhookAction('UPDATE_SALES_TARGETS', {
+      monthly_target: editableTarget,
+      walkin_quota: editableWalkInTarget,
+      festive_boost: festiveBoostPct
+    });
+  };
+
+  // Generate 1-Click Executive AI Evening Briefing for WhatsApp
+  const generateAiEveningBriefing = () => {
+    const text = `📊 *GODREJ INTERIO RAYAGADA — 9 PM EXECUTIVE AI BRIEFING*\n` +
+      `*Shree Ganesh Enterprises | Date: ${new Date().toLocaleDateString('en-GB')}*\n\n` +
+      `💰 *FINANCIAL & CASH POSITION:*\n` +
+      `• Gross Revenue Month-to-Date: ₹${totalRevenue.toLocaleString()}\n` +
+      `• Token Advances Collected: ₹${totalAdvances.toLocaleString()}\n` +
+      `• Estimated Net Showroom Margin: ₹${netShowroomContributionINR.toLocaleString()} (32.4% Margin)\n` +
+      `• 9 PM EOD Cash Drawer: ₹${eodSummary.cashDrawerINR.toLocaleString()} (Status: ${eodSummary.status})\n\n` +
+      `📦 *LOGISTICS & SAFELOCK STAGING:*\n` +
+      `• Active SafeLocks Reserved: ${activeSafeLocks} Suites\n` +
+      `• Fleet Dispatches Completed: ${orders.filter(o => o.SafeLock_Status.includes('DELIVERED')).length} Orders\n` +
+      `• Pending Deliveries in Transit: ${pendingDeliveries} Orders\n\n` +
+      `🔥 *VIP CLIENT PIPELINE & CRM:*\n` +
+      `• Showroom Hot Leads: ${hotLeadsCount} High-Probability Clients\n` +
+      `• Architect Commission Liability: ₹${architectBalance.toLocaleString()} (UPI Ready)\n\n` +
+      `🎯 *TARGET PACER:* ${targetProgress}% of ₹${editableTarget.toLocaleString()} Goal Achieved\n\n` +
+      `_Automated AI Briefing generated by OmniBuild OS™_`;
+
+    return text;
+  };
+
+  const handleSendWhatsAppBriefing = () => {
+    const briefing = generateAiEveningBriefing();
+    const phone = (storeMeta.whatsapp || '+919390553301').replace(/[^0-9]/g, '');
+    playSuccessChime();
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(briefing)}`, '_blank');
+    showToast("📲 Executive AI Briefing sent to Director WhatsApp!", true);
+  };
+
+  // Fast Inline Order Status Switcher
+  const handleFastStatusChange = (orderId, newStatus) => {
+    updateOrderStatus(orderId, newStatus);
+    playScanBeep();
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
-      {/* Real-time KPI Bar */}
+      {/* 1. Real-time KPI Bar */}
       <div className="kpi-grid">
         <div className="kpi-card">
           <div className="kpi-label"><DollarSign size={14} color="var(--accent-gold)" /> Gross Revenue (Aug 2026)</div>
@@ -80,54 +173,116 @@ export function ExecutiveOverview() {
         </div>
       </div>
 
-      {/* Main Grid: Target Dial + Quick Actions Ribbon */}
+      {/* 2. 💎 Net Margin & Financial Health Strip (Superpower 1) */}
+      <div style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(15,23,42,0.85))', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '14px', padding: '12px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '18px' }}>💎</span>
+          <div>
+            <div style={{ fontSize: '12.5px', fontWeight: '900', color: '#FFFFFF' }}>Showroom Net Financial Health</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Calculated after wholesale COGS, 8.5% architect referral slabs, and master carpenter payouts</div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Gross Profit (32.4%)</div>
+            <div style={{ fontSize: '13px', fontWeight: '800', color: '#FCD34D' }}>₹{estimatedGrossMarginINR.toLocaleString()}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Architect Liabilities</div>
+            <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--accent-rose)' }}>-₹{architectBalance.toLocaleString()}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Carpenter Pool</div>
+            <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--accent-purple)' }}>-₹{carpenterLiabilityINR.toLocaleString()}</div>
+          </div>
+          <div style={{ background: 'rgba(16,185,129,0.2)', padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--accent-emerald)' }}>
+            <div style={{ fontSize: '10px', color: 'var(--accent-emerald)', textTransform: 'uppercase', fontWeight: '900' }}>Net Contribution</div>
+            <div style={{ fontSize: '15px', fontWeight: '900', color: '#FFFFFF' }}>₹{netShowroomContributionINR.toLocaleString()}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Main Grid: Target Dial + Quick Actions Ribbon */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px' }}>
         
-        {/* Monthly Target Pace Card */}
+        {/* Monthly Target Pace Card with Calibrator Toggle */}
         <div className="glass-panel">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <span className="badge badge-gold">GODREJ INTERIO RAYAGADA TARGET PACER</span>
               <h3 style={{ fontSize: '17px', fontWeight: '800', marginTop: '4px' }}>Monthly Sales Pace: {targetProgress}% Achieved</h3>
             </div>
-            <button className="btn-ghost-edit" onClick={() => syncWithGoogleSheets()}>
-              <RefreshCw size={13} className={isSyncing ? 'spin-anim' : ''} /> 2-Way Sync
-            </button>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button className="btn-ghost-edit" style={{ fontSize: '11.5px', padding: '5px 8px' }} onClick={() => setIsCalibratorOpen(!isCalibratorOpen)}>
+                <Sliders size={13} /> {isCalibratorOpen ? 'Close Settings' : 'Calibrate'}
+              </button>
+              <button className="btn-ghost-edit" onClick={() => syncWithGoogleSheets()}>
+                <RefreshCw size={13} className={isSyncing ? 'spin-anim' : ''} /> 2-Way Sync
+              </button>
+            </div>
           </div>
+
+          {/* Inline Target Calibrator Drawer */}
+          {isCalibratorOpen && (
+            <div style={{ background: '#070D18', border: '1px solid rgba(212,175,55,0.4)', borderRadius: '12px', padding: '14px', margin: '12px 0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ fontSize: '12px', fontWeight: '900', color: 'var(--accent-gold-light)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <SlidersHorizontal size={14} /> Executive Target & Season Calibration Studio
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Monthly Target (₹):</label>
+                  <input 
+                    type="number"
+                    value={editableTarget}
+                    onChange={e => setEditableTarget(Number(e.target.value))}
+                    step="100000"
+                    style={{ width: '100%', background: '#0F172A', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', padding: '8px', color: '#FFFFFF', fontSize: '12px', marginTop: '4px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Daily Walk-In Customer Quota:</label>
+                  <input 
+                    type="number"
+                    value={editableWalkInTarget}
+                    onChange={e => setEditableWalkInTarget(Number(e.target.value))}
+                    style={{ width: '100%', background: '#0F172A', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', padding: '8px', color: '#FFFFFF', fontSize: '12px', marginTop: '4px' }}
+                  />
+                </div>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <button className="btn-ghost-edit" onClick={() => setIsCalibratorOpen(false)}>Cancel</button>
+                <button className="btn-luxury-gold" onClick={handleSaveCalibration}>
+                  <CheckCircle size={13} /> Save & Apply Targets
+                </button>
+              </div>
+            </div>
+          )}
 
           <div style={{ background: '#030712', borderRadius: '14px', padding: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px', marginBottom: '6px' }}>
               <span>Achieved: <strong style={{ color: 'var(--accent-gold-light)' }}>₹{targets.currentAchievedINR.toLocaleString()}</strong></span>
-              <span>Target: <strong style={{ color: '#FFFFFF' }}>₹{targets.monthlyTargetINR.toLocaleString()}</strong></span>
+              <span>Target: <strong style={{ color: '#FFFFFF' }}>₹{editableTarget.toLocaleString()}</strong></span>
             </div>
             <div style={{ width: '100%', height: '10px', background: 'rgba(255,255,255,0.1)', borderRadius: '6px', overflow: 'hidden' }}>
               <div style={{ width: `${targetProgress}%`, height: '100%', background: 'linear-gradient(90deg, var(--accent-gold), var(--accent-cyan))', borderRadius: '6px' }} />
             </div>
             <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '8px', display: 'flex', justifyContent: 'space-between' }}>
-              <span>Today's Showroom Walk-Ins: <b>14 Customers</b></span>
+              <span>Today's Walk-Ins: <b>14 / {editableWalkInTarget}</b></span>
               <span style={{ color: 'var(--accent-emerald)' }}>Today's Sales: <b>₹{targets.todayAchievedINR.toLocaleString()}</b> ✓</span>
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          {/* Quick Action Triggers */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px' }}>
             <button className="btn-luxury-gold" onClick={() => openModal('new_inquiry')}>
               ➕ Log Walk-In Lead
             </button>
             <button className="btn-cyan" onClick={() => setActiveTab('voice_pos')}>
               🎙️ Showroom POS Co-Pilot
             </button>
-            <button className="btn-emerald" onClick={() => {
-              const text = `🎉 *DIWALI UTSAV 2026 — EXCLUSIVE SHOWROOM PREVIEW*\n` +
-                `*Godrej Interio Rayagada (Shree Ganesh Enterprises)*\n\n` +
-                `Dear Valued Customer, upgrade your home this festive season with:\n` +
-                `✨ Flat 10% Suite Savings on Solid Teak Beds & Sectional Sofas\n` +
-                `✨ Free Ortho Memory Foam Pillows (₹3,600 Value)\n` +
-                `✨ Free Master Carpenter Fitting & Doorstep Delivery\n\n` +
-                `👉 *Explore 115-Model Digital Catalog:* https://shreeganesh-godrej.web.app/#concierge\n` +
-                `📞 *Showroom Desk:* +91 9390553301 | Main Road, Rayagada`;
-              window.open(`https://wa.me/919390553301?text=${encodeURIComponent(text)}`, '_blank');
-            }}>
-              📢 1-Click Festive Broadcast
+            <button className="btn-emerald" onClick={() => setAiBriefingOpen(!aiBriefingOpen)}>
+              <Zap size={14} /> ⚡ 9 PM AI Briefing
             </button>
             <button className="btn-purple" onClick={() => openModal('carpenter_dispatch')}>
               🪚 Carpenter Dispatch (₹500)
@@ -138,42 +293,191 @@ export function ExecutiveOverview() {
           </div>
         </div>
 
-        {/* Executive Quick Hub */}
+        {/* Executive Quick Hub & Multilingual Festive Broadcast Studio */}
         <div className="glass-panel">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: '800' }}>⚡ Executive Showroom Tools</h3>
-            <span className="badge badge-emerald">FLAGSHIP LIVE</span>
+            <h3 style={{ fontSize: '16px', fontWeight: '800' }}>📢 Multilingual Festive Campaign</h3>
+            <div style={{ display: 'flex', gap: '4px', background: '#030712', padding: '2px', borderRadius: '6px' }}>
+              {[
+                { id: 'OR', label: 'ଓଡ଼ିଆ' },
+                { id: 'TE', label: 'తెలుగు' },
+                { id: 'EN', label: 'EN' },
+                { id: 'HI', label: 'HI' }
+              ].map(l => (
+                <button
+                  key={l.id}
+                  onClick={() => setCampaignLang(l.id)}
+                  style={{
+                    background: campaignLang === l.id ? 'var(--accent-gold)' : 'transparent',
+                    color: campaignLang === l.id ? '#000' : '#888',
+                    border: 'none',
+                    borderRadius: '4px',
+                    padding: '2px 6px',
+                    fontSize: '10.5px',
+                    fontWeight: '900',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <button className="btn-ghost-edit" style={{ padding: '12px', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }} onClick={() => openModal('barcode_studio')}>
-              <span style={{ fontSize: '15px' }}>🏷️</span>
-              <strong style={{ color: '#FFFFFF', fontSize: '12px' }}>Barcode Studio</strong>
-              <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>Carton stickers & standees</span>
+          <div style={{ background: '#030712', borderRadius: '12px', padding: '12px', border: '1px solid rgba(255,255,255,0.08)', margin: '10px 0' }}>
+            <div style={{ fontSize: '11px', color: 'var(--accent-gold-light)', fontWeight: '800' }}>
+              {campaignLang === 'OR' ? '✨ ଗଣେଶ ପୂଜା ଓ ଦୀପାବଳି ସ୍ୱତନ୍ତ୍ର ରିହାତି (ଓଡ଼ିଆ)' : campaignLang === 'TE' ? '✨ వినాయక చవితి & దీపావళి ప్రత్యేక ఆఫర్లు (తెలుగు)' : '✨ Festive Season Suite Preview (English)'}
+            </div>
+            <p style={{ fontSize: '11.5px', color: '#CBD5E1', lineHeight: '1.4', margin: '4px 0 8px 0' }}>
+              {campaignLang === 'OR' 
+                ? 'ରାୟଗଡା ଗୋଦ୍ରେଜ ଇଣ୍ଟେରିଓ ତରଫରୁ ସଲିଡ଼ ଶାଗୁଆନ ଖଟ ଓ ସୋଫା ଉପରେ ୧୦% ରିହାତି ଏବଂ ମାଗଣା ଡେଲିଭରୀ!' 
+                : campaignLang === 'TE' 
+                ? 'రాయగడ గోద్రెజ్ ఇంటీరియో లో సాలిడ్ టేకు మంచాలు మరియు సోఫాలపై 10% తగ్గింపు మరియు ఉచిత డెలివరీ!' 
+                : 'Exclusive 10% Suite Savings on Solid Teak Beds & Sectional Sofas with free hydraulic fitting in Rayagada!'}
+            </p>
+            <button 
+              className="btn-luxury-gold" 
+              style={{ width: '100%', justifyContent: 'center', fontSize: '11px', padding: '6px 10px' }}
+              onClick={() => {
+                const text = campaignLang === 'OR'
+                  ? `🎉 *ଶ୍ରୀ ଗଣେଶ ଏଣ୍ଟରପ୍ରାଇଜେସ (ଗୋଦ୍ରେଜ ଇଣ୍ଟେରିଓ ରାୟଗଡା)*\n\nସମ୍ମାନିତ ଗ୍ରାହକ, ଏହି ପାର୍ବଣ ଋତୁରେ ଆପଣଙ୍କ ଘରକୁ ସଜାନ୍ତୁ:\n✨ ସଲିଡ଼ ଶାଗୁଆନ ଖଟ ଓ ସୋଫା ଉପରେ ସ୍ୱତନ୍ତ୍ର ୧୦% ରିହାତି\n✨ ମାଗଣା ଅର୍ଥୋପେଡିକ ତକିଆ ଏବଂ କାର୍ପେଣ୍ଟର ଫିଟିଂ\n\n👉 *କ୍ୟାଟାଲଗ ଦେଖନ୍ତୁ:* https://shreeganesh-godrej.web.app/#concierge\n📞 *ଫୋନ:* +91 9390553301 | ମୁଖ୍ୟ ରାସ୍ତା, ରାୟଗଡା`
+                  : campaignLang === 'TE'
+                  ? `🎉 *శ్రీ గణేష్ ఎంటర్‌ప్రైజెస్ (గోద్రెజ్ ఇంటీరియో రాయగడ)*\n\nగౌరవనీయ కస్టమర్, ఈ పండుగ సీజన్‌లో మీ ఇంటిని అలంకరించుకోండి:\n✨ సాలిడ్ టేకు మంచాలు & సోఫాలపై 10% తగ్గింపు\n✨ ఉచిత ఆర్థో పిల్లోస్ మరియు కార్పెంటర్ ఫిట్టింగ్\n\n👉 *కేటలాగ్ చూడండి:* https://shreeganesh-godrej.web.app/#concierge\n📞 *ఫోన్:* +91 9390553301 | మెయిన్ రోడ్, రాయగడ`
+                  : `🎉 *GODREJ INTERIO RAYAGADA — FESTIVE SUITE PREVIEW*\n\nDear Valued Customer, upgrade your home with:\n✨ Flat 10% Suite Savings on Solid Teak Beds & Sectional Sofas\n✨ Free Ortho Memory Foam Pillows & Master Fitting\n\n👉 *Explore Catalog:* https://shreeganesh-godrej.web.app/#concierge\n📞 *Desk:* +91 9390553301 | Main Road, Rayagada`;
+                window.open(`https://wa.me/919390553301?text=${encodeURIComponent(text)}`, '_blank');
+              }}
+            >
+              <Send size={12} /> Broadcast to Customer WhatsApp ({campaignLang})
+            </button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <button className="btn-ghost-edit" style={{ padding: '8px', flexDirection: 'column', alignItems: 'flex-start', gap: '2px' }} onClick={() => openModal('barcode_studio')}>
+              <strong style={{ color: '#FFFFFF', fontSize: '11px' }}>🏷️ Barcode Studio</strong>
+              <span style={{ fontSize: '9.5px', color: 'var(--text-secondary)' }}>ZPL thermal labels</span>
             </button>
 
-            <button className="btn-ghost-edit" style={{ padding: '12px', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }} onClick={() => openModal('warehouse_wall_poster')}>
-              <span style={{ fontSize: '15px' }}>🖨️</span>
-              <strong style={{ color: '#FFFFFF', fontSize: '12px' }}>Wall QR Poster</strong>
-              <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>Printable dock poster</span>
-            </button>
-
-            <button className="btn-ghost-edit" style={{ padding: '12px', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }} onClick={() => openModal('register_architect')}>
-              <span style={{ fontSize: '15px' }}>🏛️</span>
-              <strong style={{ color: '#FFFFFF', fontSize: '12px' }}>Register Architect</strong>
-              <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>Tiered 8.5% slab</span>
-            </button>
-
-            <button className="btn-ghost-edit" style={{ padding: '12px', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }} onClick={() => openModal('universal_payment', { amount: 78247, orderId: 'ORD-8921' })}>
-              <span style={{ fontSize: '15px' }}>💰</span>
-              <strong style={{ color: '#FFFFFF', fontSize: '12px' }}>UPI Dynamic QR</strong>
-              <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>POS counter scanner</span>
+            <button className="btn-ghost-edit" style={{ padding: '8px', flexDirection: 'column', alignItems: 'flex-start', gap: '2px' }} onClick={() => openModal('register_architect')}>
+              <strong style={{ color: '#FFFFFF', fontSize: '11px' }}>🏛️ Register Architect</strong>
+              <span style={{ fontSize: '9.5px', color: 'var(--text-secondary)' }}>Tiered 8.5% slab</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Active Orders SafeLock Table */}
+      {/* 4. 🤖 AI Evening Briefing Modal Drawer (Superpower 3) */}
+      {aiBriefingOpen && (
+        <div style={{ background: '#0B132B', border: '2px solid var(--accent-gold)', borderRadius: '16px', padding: '18px', boxShadow: '0 10px 30px rgba(0,0,0,0.8)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(212,175,55,0.3)', paddingBottom: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Zap size={16} color="var(--accent-gold)" />
+              <h3 style={{ fontSize: '15px', fontWeight: '900', color: '#FFFFFF' }}>AI 9:00 PM Executive Evening Briefing</h3>
+            </div>
+            <button className="btn-ghost-edit" onClick={() => setAiBriefingOpen(false)}>✕ Close</button>
+          </div>
+          <div style={{ background: '#030712', borderRadius: '10px', padding: '14px', margin: '12px 0', fontFamily: 'monospace', fontSize: '12px', color: '#E2E8F0', whiteSpace: 'pre-line', lineHeight: '1.5' }}>
+            {generateAiEveningBriefing()}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+            <button className="btn-ghost-edit" onClick={() => {
+              navigator.clipboard.writeText(generateAiEveningBriefing());
+              showToast("📋 Briefing copied to clipboard!");
+            }}>
+              Copy Text
+            </button>
+            <button className="btn-luxury-gold" onClick={handleSendWhatsAppBriefing}>
+              <Send size={14} /> 📲 Send WhatsApp to Director Rakesh
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 5. 👑 VIP Turnkey Villa Radar + ⏳ Floor Aging Stock Sentinel */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px' }}>
+        
+        {/* VIP Client Turnkey Villa Radar */}
+        <div className="glass-panel">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '16px' }}>👑</span>
+              <h3 style={{ fontSize: '15px', fontWeight: '800' }}>VIP Turnkey Villa Client Radar</h3>
+            </div>
+            <span className="badge badge-gold">HIGH-TICKET ACCOUNTS</span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {vipProjects.map(proj => (
+              <div key={proj.id} style={{ background: '#030712', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '12.5px', fontWeight: '900', color: '#FFFFFF' }}>{proj.name}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>📍 {proj.location} • <span style={{ color: 'var(--accent-cyan)' }}>₹{proj.value.toLocaleString()}</span></div>
+                  <span className="badge badge-purple" style={{ fontSize: '9px', marginTop: '4px' }}>{proj.status}</span>
+                </div>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button 
+                    className="btn-ghost-edit" 
+                    style={{ padding: '5px 8px', fontSize: '10.5px' }}
+                    onClick={() => {
+                      const msg = encodeURIComponent(`Namaskar ${proj.name}! It would be our pleasure to invite you to our Rayagada Flagship Showroom for a private preview of custom teak finishes. Please let us know a convenient time.`);
+                      window.open(`https://wa.me/${proj.phone.replace(/[^0-9]/g, '')}?text=${msg}`, '_blank');
+                    }}
+                    title="Send VIP Coffee Invite"
+                  >
+                    <Coffee size={12} /> Invite
+                  </button>
+                  <button 
+                    className="btn-cyan" 
+                    style={{ padding: '5px 8px', fontSize: '10.5px' }}
+                    onClick={() => openModal('customer_proposal', { customerName: proj.name, totalAmount: proj.value })}
+                  >
+                    <FileText size={12} /> Proposal
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Floor Aging Stock Sentinel */}
+        <div className="glass-panel">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Flame size={16} color="var(--accent-amber)" />
+              <h3 style={{ fontSize: '15px', fontWeight: '800' }}>Floor Aging Stock Sentinel</h3>
+            </div>
+            <span className="badge badge-amber">&gt; 45 DAYS ON DISPLAY</span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {floorAgingStock.map(item => (
+              <div key={item.sku} style={{ background: '#030712', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '12px', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '12px', fontWeight: '900', color: '#FFFFFF' }}>{item.name}</div>
+                  <div style={{ fontSize: '10.5px', color: 'var(--accent-amber)' }}>
+                    ⏱️ {item.floorDays} Days in {item.bay} • MRP ₹{item.mrp.toLocaleString()}
+                  </div>
+                  <div style={{ fontSize: '10.5px', color: 'var(--accent-emerald)', fontWeight: '800' }}>
+                    ⚡ Clearance Offer: ₹{item.clearancePrice.toLocaleString()} (-20%)
+                  </div>
+                </div>
+                <button 
+                  className="btn-amber"
+                  style={{ fontSize: '10.5px', padding: '4px 8px' }}
+                  onClick={() => {
+                    const text = `⚡ *GODREJ INTERIO RAYAGADA — EXCLUSIVE FLOOR CLEARANCE*\n\nGrab our showroom display piece *${item.name} (${item.sku})* in pristine condition with 10-Year Warranty!\n\n• Original MRP: ₹${item.mrp.toLocaleString()}\n• 🏷️ *Clearance Price: ₹${item.clearancePrice.toLocaleString()}*\n\n📞 Call Showroom: +91 9390553301 | Immediate Same-Day Dispatch!`;
+                    window.open(`https://wa.me/919390553301?text=${encodeURIComponent(text)}`, '_blank');
+                  }}
+                >
+                  ⚡ Flash Promo
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+
+      {/* 6. Active Orders SafeLock Table with Fast Inline Status Switcher */}
       <div className="glass-panel">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
@@ -193,7 +497,7 @@ export function ExecutiveOverview() {
                 <th>Customer & Address</th>
                 <th>Ordered Furniture Model</th>
                 <th>Total / Advance</th>
-                <th>SafeLock Status</th>
+                <th>SafeLock Status (Fast Inline)</th>
                 <th>Driver / Carpenter</th>
                 <th>Schedule</th>
                 <th>Actions</th>
@@ -213,9 +517,26 @@ export function ExecutiveOverview() {
                     <div style={{ fontSize: '10.5px', color: 'var(--accent-emerald)' }}>Adv: ₹{(order.Advance_Paid_INR || 0).toLocaleString()}</div>
                   </td>
                   <td>
-                    <span className={`badge ${order.SafeLock_Status.includes('DELIVERED') ? 'badge-emerald' : 'badge-gold'}`}>
-                      {order.SafeLock_Status}
-                    </span>
+                    {/* Fast Inline Status Dropdown (Superpower 2) */}
+                    <select
+                      value={order.SafeLock_Status}
+                      onChange={e => handleFastStatusChange(order.Order_ID, e.target.value)}
+                      style={{
+                        background: order.SafeLock_Status.includes('DELIVERED') ? '#064E3B' : order.SafeLock_Status.includes('TRANSIT') ? '#1E3A8A' : '#78350F',
+                        color: '#FFFFFF',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '6px',
+                        padding: '4px 6px',
+                        fontSize: '10.5px',
+                        fontWeight: '800',
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="SAFELOCKED (RESERVED)">🔒 SAFELOCKED (RESERVED)</option>
+                      <option value="DISPATCHED_IN_TRANSIT (Tata Ace OD-18-A-1234)">🚚 DISPATCHED IN TRANSIT</option>
+                      <option value="DELIVERED (ePOD VERIFIED ✓)">✅ DELIVERED (ePOD VERIFIED)</option>
+                    </select>
                   </td>
                   <td>
                     <div style={{ fontSize: '11.5px', color: '#FFFFFF' }}>🚚 {order.Assigned_Driver}</div>

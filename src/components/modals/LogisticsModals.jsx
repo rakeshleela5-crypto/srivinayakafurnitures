@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { DynamicQrCode } from '../../utils/qrcodeGenerator';
-import { X, Check, Truck, Navigation, Star, Camera, MessageSquare, AlertTriangle, QrCode, Printer } from 'lucide-react';
+import { X, Check, Truck, Navigation, Star, Camera, MessageSquare, AlertTriangle, QrCode, Printer, Copy, Send, Share2 } from 'lucide-react';
+import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../../utils/audioUtils';
+import { dispatchWebhookAction } from '../../services/webhookService';
 
 export function DigitalEpodModal({ isOpen, onClose, stop = {} }) {
   const { submitEpodDelivery, showToast } = useStore();
@@ -40,7 +42,9 @@ export function DigitalEpodModal({ isOpen, onClose, stop = {} }) {
     setSignatureDrawn(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (sendReceipt = false) => {
+    playSuccessChime();
+    triggerGoldenConfetti();
     submitEpodDelivery(stop.Order_ID || "ORD-8921", {
       customerName: stop.Customer_Name || "Customer",
       driverName: "Tophan Gouda",
@@ -49,6 +53,25 @@ export function DigitalEpodModal({ isOpen, onClose, stop = {} }) {
       geotag: "19.1724° N, 83.4163° E (Rayagada)",
       amountCollected: Number(amountCollected)
     });
+
+    if (sendReceipt && stop.Customer_Phone) {
+      const receiptText = `*🏛️ GODREJ INTERIO RAYAGADA — OFFICIAL ePOD DELIVERY RECEIPT*\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `Dear *${stop.Customer_Name || 'Valued Customer'}*,\n` +
+        `Your luxury furniture delivery for Order *#${stop.Order_ID || 'ORD-8921'}* is successfully completed and verified!\n\n` +
+        `📦 *Delivered Items:* ${stop.Items || 'Royal Teak Master Suite'}\n` +
+        `🚚 *Delivered By:* Tophan Gouda (Tata Ace OD-18-A-1234)\n` +
+        `💰 *Doorstep Settlement:* ₹${Number(amountCollected).toLocaleString()} (Settled ✓)\n` +
+        `⭐ *Your Rating:* ${csat}.0 / 5.0 Stars\n` +
+        `🛡️ *5-Year Digital Warranty:* #WAR-GI-${(stop.Order_ID || '8921').replace(/[^0-9]/g, '')}\n\n` +
+        `👉 *Download Digital Tax Invoice & Warranty Card:*\nhttps://shreeganesh-godrej.web.app/#documents\n\n` +
+        `_Thank you for choosing Godrej Interio Rayagada!_ | 📞 +91 93905 53301`;
+
+      const cleanPhone = stop.Customer_Phone.replace(/[^0-9]/g, '');
+      const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+      window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(receiptText)}`, '_blank');
+    }
+
     onClose();
   };
 
@@ -149,9 +172,14 @@ export function DigitalEpodModal({ isOpen, onClose, stop = {} }) {
           />
         </div>
 
-        <button className="btn-emerald" onClick={handleSubmit} style={{ width: '100%', justifyContent: 'center', padding: '12px' }}>
-          <Check size={16} /> Submit Verified ePOD & Release Goods (₹{Number(amountCollected).toLocaleString()})
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button className="btn-emerald" onClick={() => handleSubmit(false)} style={{ flex: 1, justifyContent: 'center', padding: '12px' }}>
+            <Check size={16} /> Complete ePOD
+          </button>
+          <button className="btn-luxury-gold" onClick={() => handleSubmit(true)} style={{ flex: 2, justifyContent: 'center', padding: '12px' }}>
+            <Send size={16} /> 📲 Submit ePOD & Send WhatsApp Receipt
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -161,51 +189,168 @@ export function SmsDispatchModal({ isOpen, onClose, stop = {} }) {
   const { showToast } = useStore();
   const [phone, setPhone] = useState(stop.Customer_Phone || "9437188291");
   const [otp, setOtp] = useState("8921");
-  const [driver, setDriver] = useState("Tophan Gouda (+91 94371 55667)");
+  const [driver, setDriver] = useState("Tophan Gouda (+91 94371 88291)");
+  const [vehicle, setVehicle] = useState("Tata Ace (OD-18-A-1234)");
+  const [lang, setLang] = useState('EN');
 
   if (!isOpen) return null;
 
-  const handleSend = (channel) => {
-    showToast(`📱 4-Digit Delivery OTP #${otp} dispatched via ${channel} to ${phone}!`, true);
+  const generateWhatsAppMessage = () => {
+    if (lang === 'OR') {
+      return `*🚚 ଗୋଦ୍ରେଜ୍ ଇଣ୍ଟେରିଓ ରାୟଗଡ଼ା — ଡେଲିଭରୀ ଟ୍ରାକର ଏବଂ OTP*\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `ନମସ୍କାର *${stop.Customer_Name || 'ମାନ୍ୟବର ଗ୍ରାହକ'}*!\n` +
+        `ଆପଣଙ୍କ ଗୋଦ୍ରେଜ୍ ଫର୍ନିଚର ଅର୍ଡର (#${stop.Order_ID || 'ORD-8921'}) ଆମ ଡ୍ରାଇଭରଙ୍କ ସହ ଡେଲିଭରୀ ପାଇଁ ବାହାରି ସାରିଛି।\n\n` +
+        `🚚 *ଡ୍ରାଇଭର:* ${driver}\n` +
+        `🚛 *ଗାଡ଼ି:* ${vehicle}\n` +
+        `📦 *ସାମଗ୍ରୀ:* ${stop.Items || 'Royal Teak Master Suite'}\n` +
+        `🔒 *ଆପଣଙ୍କ ୪-ଡିଜିଟ୍ ଡେଲିଭରୀ OTP:* *${otp}*\n\n` +
+        `⚠️ *ବାକ୍ସଗୁଡ଼ିକ ଠିକ୍ ଭାବରେ ଯାଞ୍ଚ କରିବା ପରେ ହିଁ ଡ୍ରାଇଭରଙ୍କ ସହ OTP ସେୟାର କରନ୍ତୁ।*\n\n` +
+        `📍 *ଲାଇଭ୍ ଟ୍ରାକିଂ:* https://shreeganesh-godrej.web.app/#logistics\n` +
+        `_ଶ୍ରୀ ଗଣେଶ ଏଣ୍ଟରପ୍ରାଇଜେସ୍ ରାୟଗଡ଼ା_ | 📞 9390553301`;
+    } else if (lang === 'TE') {
+      return `*🚚 గోద్రెజ్ ఇంటీరియో రాయగడ — డెలివరీ ట్రాకర్ & OTP*\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `నమస్కారం *${stop.Customer_Name || 'గౌరవనీయ కస్టమర్'}*!\n` +
+        `మీ గోద్రెజ్ ఫర్నిచర్ ఆర్డర్ (#${stop.Order_ID || 'ORD-8921'}) మా డ్రైవర్‌తో డెలివరీ కోసం బయలుదేరింది.\n\n` +
+        `🚚 *డ్రైవర్:* ${driver}\n` +
+        `🚛 *వాహనం:* ${vehicle}\n` +
+        `📦 *ఐటమ్స్:* ${stop.Items || 'Royal Teak Master Suite'}\n` +
+        `🔒 *మీ 4-అంకెల డెలివరీ OTP:* *${otp}*\n\n` +
+        `⚠️ *అన్ని బాక్స్‌లు సరిగ్గా ఉన్నాయని నిర్ధారించుకున్న తర్వాత మాత్రమే డ్రైవర్‌కు OTP చెప్పండి.*\n\n` +
+        `📍 *లైవ్ ట్రాకింగ్:* https://shreeganesh-godrej.web.app/#logistics\n` +
+        `_శ్రీ గణేష్ ఎంటర్‌ప్రైజెస్ రాయగడ_ | 📞 9390553301`;
+    } else if (lang === 'HI') {
+      return `*🚚 गोदरेज इंटीरियो रायगड़ा — डिलीवरी ट्रैकर और OTP*\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `नमस्ते *${stop.Customer_Name || 'आदरणीय ग्राहक'}*!\n` +
+        `आपका गोदरेज फर्नीचर ऑर्डर (#${stop.Order_ID || 'ORD-8921'}) हमारे ड्राइवर के साथ डिलीवरी के लिए निकल चुका है।\n\n` +
+        `🚚 *ड्राइवर:* ${driver}\n` +
+        `🚛 *गाड़ी:* ${vehicle}\n` +
+        `📦 *सामान:* ${stop.Items || 'Royal Teak Master Suite'}\n` +
+        `🔒 *आपका 4-अंकीय डिलीवरी OTP:* *${otp}*\n\n` +
+        `⚠️ *कृपया सभी कार्टन बॉक्स की जांच करने के बाद ही ड्राइवर को OTP बताएं।*\n\n` +
+        `📍 *लाइव ट्रैकिंग:* https://shreeganesh-godrej.web.app/#logistics\n` +
+        `_श्री गणेश एंटरप्राइजेज रायगड़ा_ | 📞 9390553301`;
+    }
+    return `*🚚 GODREJ INTERIO RAYAGADA — LIVE DELIVERY TRACKER & OTP*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `Namaste *${stop.Customer_Name || 'Valued Customer'}*!\n` +
+      `Your Godrej furniture order (#${stop.Order_ID || 'ORD-8921'}) is out for delivery with our fleet driver.\n\n` +
+      `🚚 *Driver:* ${driver}\n` +
+      `🚛 *Vehicle:* ${vehicle}\n` +
+      `📦 *Scheduled Items:* ${stop.Items || 'Royal Teak Master Suite'}\n` +
+      `🔒 *Your 4-Digit Delivery Verification OTP:* *${otp}*\n\n` +
+      `⚠️ *Please share this OTP with the driver ONLY after physically inspecting all carton boxes at your doorstep.*\n\n` +
+      `📍 *Live Delivery Status:* https://shreeganesh-godrej.web.app/#logistics\n` +
+      `_Shree Ganesh Enterprises (Godrej Interio Rayagada)_ | 📞 +91 93905 53301`;
+  };
+
+  const handleSendWhatsApp = () => {
+    playSuccessChime();
+    triggerGoldenConfetti();
+
+    const message = generateWhatsAppMessage();
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+
+    dispatchWebhookAction('DISPATCH_DELIVERY_OTP', {
+      order_id: stop.Order_ID || "ORD-8921",
+      customer_name: stop.Customer_Name || "Customer",
+      phone: phone,
+      otp_code: otp,
+      driver: driver,
+      vehicle: vehicle,
+      channel: 'WHATSAPP_LIVE',
+      language: lang
+    });
+
+    window.open(whatsappUrl, '_blank');
+    showToast(`📲 Dispatched Live WhatsApp Delivery OTP to ${phone}!`, true);
     onClose();
   };
 
+  const handleCopyText = () => {
+    playScanBeep();
+    navigator.clipboard.writeText(generateWhatsAppMessage());
+    showToast(`📋 Copied Delivery OTP Message to clipboard!`);
+  };
+
   return (
-    <div className="modal-overlay">
-      <div className="modal-card">
+    <div className="modal-overlay" style={{ zIndex: 9999 }}>
+      <div className="modal-card" style={{ maxWidth: '580px', background: '#0B132B', border: '2px solid #25D366' }}>
         <div className="modal-header">
-          <h3><MessageSquare size={18} color="var(--accent-cyan)" /> Dispatch Delivery OTP to Customer</h3>
+          <div>
+            <span className="badge badge-emerald">📲 WHATSAPP DELIVERY DISPATCH</span>
+            <h3 style={{ fontSize: '17px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
+              🚚 Dispatch Live Tracking & 4-Digit OTP
+            </h3>
+          </div>
           <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
+        </div>
+
+        {/* 4-Language Switcher */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#030712', padding: '6px 10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', margin: '10px 0' }}>
+          <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', fontWeight: '800' }}>🌐 WhatsApp Language:</span>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            {[
+              { id: 'EN', label: '🇬🇧 EN' },
+              { id: 'OR', label: '🇮🇳 ଓଡ଼ିଆ' },
+              { id: 'TE', label: '🇮🇳 తెలుగు' },
+              { id: 'HI', label: '🇮🇳 HI' }
+            ].map(l => (
+              <button 
+                key={l.id} 
+                className={`btn-ghost-edit ${lang === l.id ? 'badge-gold' : ''}`}
+                onClick={() => setLang(l.id)}
+                style={{ fontSize: '10.5px', padding: '3px 8px' }}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="form-grid">
           <div className="form-field">
-            <label>Customer Mobile / WhatsApp</label>
+            <label>Customer WhatsApp Phone</label>
             <input value={phone} onChange={e => setPhone(e.target.value)} />
           </div>
           <div className="form-field">
             <label>Secure 4-Digit Delivery OTP</label>
-            <input value={otp} onChange={e => setOtp(e.target.value)} style={{ fontFamily: 'JetBrains Mono', fontWeight: '900', textAlign: 'center', fontSize: '16px' }} />
+            <input value={otp} onChange={e => setOtp(e.target.value)} style={{ fontFamily: 'JetBrains Mono', fontWeight: '900', textAlign: 'center', fontSize: '16px', letterSpacing: '4px', color: 'var(--accent-gold-light)' }} />
+          </div>
+          <div className="form-field">
+            <label>Assigned Fleet Driver</label>
+            <input value={driver} onChange={e => setDriver(e.target.value)} />
+          </div>
+          <div className="form-field">
+            <label>Vehicle Plate No</label>
+            <input value={vehicle} onChange={e => setVehicle(e.target.value)} />
           </div>
         </div>
 
-        <div style={{ background: '#030712', padding: '14px', borderRadius: '10px', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
-          <strong style={{ color: '#25D366' }}>💬 WhatsApp Preview:</strong><br />
-          "Namaskar! Your Godrej Interio Rayagada furniture delivery is on the way with driver {driver}. Share OTP <b>{otp}</b> with the driver only after inspecting all carton boxes."
+        <div style={{ background: '#030712', padding: '12px 14px', borderRadius: '10px', fontSize: '11.5px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: '10px 0', border: '1px solid rgba(37,211,102,0.2)' }}>
+          <strong style={{ color: '#25D366' }}>💬 Live WhatsApp Message Preview:</strong>
+          <div style={{ marginTop: '4px', color: '#E2E8F0', whiteSpace: 'pre-line' }}>
+            {generateWhatsAppMessage().substring(0, 180)}...
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button className="btn-emerald" onClick={() => handleSend('WhatsApp Live')} style={{ flex: 1, justifyContent: 'center' }}>
-            Send WhatsApp OTP
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button className="btn-ghost-edit" onClick={handleCopyText} style={{ flex: 1, justifyContent: 'center' }}>
+            <Copy size={14} /> Copy
           </button>
-          <button className="btn-cyan" onClick={() => handleSend('SMS Gateway')} style={{ flex: 1, justifyContent: 'center' }}>
-            Send SMS OTP
+          <button className="btn-emerald" onClick={handleSendWhatsApp} style={{ flex: 2, justifyContent: 'center', padding: '12px' }}>
+            <Send size={16} /> 📲 Send WhatsApp Live OTP & Tracker
           </button>
         </div>
       </div>
     </div>
   );
 }
+
 
 export function EditFleetDriverModal({ isOpen, onClose, driver = {} }) {
   const { drivers, setDrivers, showToast } = useStore();

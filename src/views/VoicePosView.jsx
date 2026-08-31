@@ -529,32 +529,32 @@ export function VoicePosView() {
             </div>
           </div>
 
-          {/* Action Closing Tools: EMI Matrix, Custom Finish, Exchange Appraiser, WhatsApp PDF */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+          {/* Action Closing Tools: EMI Matrix, Custom Finish, Exchange Appraiser, WhatsApp PDF, Family Share */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
             <button 
               className="btn-purple" 
-              style={{ fontSize: '10.5px', padding: '8px 4px', justifyContent: 'center' }}
+              style={{ fontSize: '10px', padding: '8px 2px', justifyContent: 'center' }}
               onClick={() => openModal('custom_finish', { sku: cartItems[0]?.SKU || 'BED-MOD-001' })}
             >
-              🧵 Custom Finish
+              🧵 Finish
             </button>
             <button 
               className="btn-ghost-edit" 
-              style={{ fontSize: '10.5px', padding: '8px 4px', justifyContent: 'center' }}
+              style={{ fontSize: '10px', padding: '8px 2px', justifyContent: 'center' }}
               onClick={() => openModal('emi_scheme', { amount: finalPayable, customerPhone: custPhone })}
             >
-              💳 0% EMI Matrix
+              💳 0% EMI
             </button>
             <button 
               className="btn-ghost-edit" 
-              style={{ fontSize: '10.5px', padding: '8px 4px', justifyContent: 'center' }}
-              onClick={() => openModal('furniture_exchange', { onApplyDiscount: (val) => setExchangeCredit(val) })}
+              style={{ fontSize: '10px', padding: '8px 2px', justifyContent: 'center' }}
+              onClick={() => openModal('furniture_exchange', { onApplyDiscount: (val) => setExchangeCredit(val), customerPhone: custPhone, customerName: custName })}
             >
-              🔄 Exchange
+              🔄 Buyback
             </button>
             <button 
               className="btn-ghost-edit" 
-              style={{ fontSize: '10.5px', padding: '8px 4px', justifyContent: 'center', color: 'var(--accent-gold-light)' }}
+              style={{ fontSize: '10px', padding: '8px 2px', justifyContent: 'center', color: 'var(--accent-gold-light)' }}
               onClick={() => openModal('whatsapp_proposal', { 
                 customerName: custName, 
                 customerPhone: custPhone, 
@@ -563,7 +563,29 @@ export function VoicePosView() {
                 exchangeCredit: exchangeCredit
               })}
             >
-              📄 WhatsApp PDF
+              📄 Proposal
+            </button>
+            <button 
+              className="btn-emerald" 
+              style={{ fontSize: '10px', padding: '8px 2px', justifyContent: 'center' }}
+              onClick={() => {
+                const upiLink = `upi://pay?pa=9390553301@ybl&pn=Godrej%20Interio%20Rayagada&am=${advanceToken50}&cu=INR&tn=Token%20Advance%20${custName}`;
+                const familyText = `*👨‍👩‍👧 GODREJ INTERIO RAYAGADA — FAMILY CONSULTATION SUMMARY*\n` +
+                  `━━━━━━━━━━━━━━━━━━━━\n` +
+                  `Namaste! Here is the luxury furniture shortlisted today by *${custName}* at our Rayagada showroom:\n\n` +
+                  cartItems.map((it, idx) => `*${idx + 1}. ${it.Product_Name}* (${it.SKU})\n• Dimensions: ${it.Dimensions || 'Standard'}\n• Material: ${it.Material_Spec}\n• Warranty: ${it.Warranty_Years || 10} Full Years\n• Festive Price: ₹${(it.Selling_Price_INR * it.qty).toLocaleString()}`).join('\n\n') + `\n\n` +
+                  `💰 *Total Quotation Value:* ₹${finalPayable.toLocaleString()} (GST 18% Incl.)\n` +
+                  `🎁 *Festive Inclusions:* Free 2x Ortho Memory Foam Pillows + Free Delivery & Assembly\n` +
+                  `💳 *50% Token Advance to Lock Stock:* ₹${advanceToken50.toLocaleString()}\n\n` +
+                  `👉 *Pay 50% Token via UPI:* ${upiLink}\n\n` +
+                  `📍 *Showroom Location:* Near New Bus Stand, Main Road, Rayagada | 📞 +91 93905 53301`;
+                const cleanPhone = custPhone.replace(/[^0-9]/g, '');
+                const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+                window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(familyText)}`, '_blank');
+                showToast(`👨‍👩‍👧 Family Consultation summary dispatched to WhatsApp (${custPhone})!`, true);
+              }}
+            >
+              👨‍👩‍👧 Family
             </button>
           </div>
 
@@ -606,12 +628,12 @@ export function VoicePosView() {
           </div>
 
           {/* Submit SafeLock Order Button */}
-          <div style={{ display: 'flex', gap: '10px' }}>
-            <button className="btn-luxury-gold" onClick={handleConfirmOrder} style={{ flex: 1.5, justifyContent: 'center', padding: '12px' }}>
-              <Check size={16} /> 🔒 1-Click SafeLock Stock Reservation (₹{advanceToken50.toLocaleString()})
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="btn-luxury-gold" onClick={handleConfirmOrder} style={{ flex: 1.5, justifyContent: 'center', padding: '12px', fontSize: '12.5px', fontWeight: '900' }}>
+              <Check size={16} /> 🔒 1-Click SafeLock (₹{advanceToken50.toLocaleString()})
             </button>
-            <button className="btn-emerald" onClick={() => openModal('universal_payment', { amount: advanceToken50, orderId: 'ORD-POS-ADV' })} style={{ flex: 1, justifyContent: 'center' }}>
-              <CreditCard size={16} /> Show UPI QR
+            <button className="btn-cyan" onClick={() => openModal('universal_payment', { amount: advanceToken50, orderId: 'ORD-POS-ADV' })} style={{ padding: '12px 14px' }}>
+              <CreditCard size={16} /> UPI QR
             </button>
           </div>
         </div>

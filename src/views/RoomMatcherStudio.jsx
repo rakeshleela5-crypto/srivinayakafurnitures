@@ -544,7 +544,34 @@ export function RoomMatcherStudio() {
                 exchangeCredit: exchangeCredit
               })}
             >
-              📄 WhatsApp PDF
+              📄 Proposal
+            </button>
+            <button 
+              className="btn-emerald" 
+              style={{ fontSize: '11px', padding: '8px 4px', justifyContent: 'center' }}
+              onClick={() => {
+                const upiLink = `upi://pay?pa=9390553301@ybl&pn=Godrej%20Interio%20Rayagada&am=${Math.round(Math.max(0, suiteFinalPrice - exchangeCredit) * 0.5)}&cu=INR&tn=Token%20Advance%20${customerName}`;
+                const familyText = `*🪞 GODREJ INTERIO RAYAGADA — 3D ROOM MAKEOVER SUITE PROPOSAL*\n` +
+                  `━━━━━━━━━━━━━━━━━━━━\n` +
+                  `Namaste! Here is the AI-matched bedroom suite designed today for *${customerName}* (${roomTitle}):\n\n` +
+                  `*1. ${piece1.Product_Name}* (${piece1.SKU}) — ₹${piece1.Selling_Price_INR.toLocaleString()}\n` +
+                  `*2. ${piece2.Product_Name}* (${piece2.SKU}) — ₹${piece2.Selling_Price_INR.toLocaleString()}\n` +
+                  `*3. ${piece3.Product_Name}* (${piece3.SKU}) — ₹${piece3.Selling_Price_INR.toLocaleString()}\n\n` +
+                  `🏠 *Room Dimensions:* ${dimensions} • Multimodal Synergy: 96% Match ✓\n` +
+                  `💰 *Combined MRP:* ₹${totalMRP.toLocaleString()}\n` +
+                  `🎁 *3-Item Suite Combo Savings (${comboDiscountPct}%):* -₹${comboSavings.toLocaleString()}\n` +
+                  (exchangeCredit > 0 ? `🔄 *Old Furniture Exchange Credit:* -₹${exchangeCredit.toLocaleString()}\n` : '') +
+                  `✨ *Net Suite Price (GST 18% Incl.):* ₹${Math.max(0, suiteFinalPrice - exchangeCredit).toLocaleString()}\n` +
+                  `💳 *50% SafeLock Advance Token:* ₹${Math.round(Math.max(0, suiteFinalPrice - exchangeCredit) * 0.5).toLocaleString()}\n\n` +
+                  `👉 *Pay 50% Token via UPI:* ${upiLink}\n\n` +
+                  `📍 *Godrej Interio Rayagada:* Near New Bus Stand, Main Road | 📞 +91 93905 53301`;
+                const cleanPhone = customerPhone.replace(/[^0-9]/g, '');
+                const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+                window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(familyText)}`, '_blank');
+                showToast(`👨‍👩‍👧 3D Room Suite Proposal dispatched to WhatsApp (${customerPhone})!`, true);
+              }}
+            >
+              👨‍👩‍👧 Family Share
             </button>
           </div>
 

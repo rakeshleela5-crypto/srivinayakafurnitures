@@ -334,6 +334,7 @@ export function EmiSchemeModal({ isOpen, onClose, amount = 125000, customerPhone
   const { showToast } = useStore();
   const [selectedProvider, setSelectedProvider] = useState('BAJAJ'); // 'BAJAJ' | 'HDFC' | 'TVS'
   const [selectedTenure, setSelectedTenure] = useState(12);
+  const [lang, setLang] = useState('EN');
 
   if (!isOpen) return null;
 
@@ -348,21 +349,67 @@ export function EmiSchemeModal({ isOpen, onClose, amount = 125000, customerPhone
     { tenure: 24, label: '24 Months (Lowest Monthly)', monthly: Math.round((totalAmount * 1.08) / 24), interestRate: '8.0% Extended', processingFee: 999, downpayment: 0, popular: false }
   ];
 
-  const handleShareEmiWhatsApp = () => {
-    playScanBeep();
-    const activeScheme = emiSchemes.find(s => s.tenure === selectedTenure) || emiSchemes[3];
+  const activeScheme = emiSchemes.find(s => s.tenure === selectedTenure) || emiSchemes[3];
 
-    const message = `*💳 GODREJ INTERIO RAYAGADA — 0% NO-COST EMI QUOTE*\n` +
+  const generateEmiMessage = () => {
+    if (lang === 'OR') {
+      return `*💳 ଗୋଦ୍ରେଜ୍ ଇଣ୍ଟେରିଓ ରାୟଗଡ଼ା — ୦% ବିନା ସୁଧ EMI ଯୋଜନା*\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `*ମୋଟ ଫର୍ନିଚର ମୂଲ୍ୟ:* ₹${totalAmount.toLocaleString()}\n` +
+        `*ମନୋନୀତ ଫାଇନାନ୍ସ:* ${selectedProvider} Finance (${activeScheme.tenure} ମାସ)\n\n` +
+        `💰 *ମାସିକ କିସ୍ତି (EMI):* ₹${activeScheme.monthly.toLocaleString()} / ମାସ\n` +
+        `🏷️ *ସୁଧ ହାର:* ${activeScheme.interestRate}\n` +
+        `💵 *ଡାଉନ୍ ପେମେଣ୍ଟ:* ₹0 (ଜିରୋ ଅଗ୍ରିମ)\n` +
+        `📄 *ପ୍ରୋସେସିଂ ଫି:* ₹${activeScheme.processingFee}\n\n` +
+        `📋 *ଅନ୍ୟ ସମସ୍ତ EMI ବିକଳ୍ପ:*\n` +
+        emiSchemes.map(s => `• ${s.tenure} ମାସ: ₹${s.monthly.toLocaleString()}/ମାସ (${s.interestRate})`).join('\n') + `\n\n` +
+        `👉 *ଆଧାର କାର୍ଡ ଏବଂ PAN ସହିତ ଷ୍ଟୋରରେ ତୁରନ୍ତ ୫ ମିନିଟରେ ଅନୁମୋଦନ!*\n` +
+        `*ଶୋ'ରୁମ୍:* ନୂଆ ବସ୍ ଷ୍ଟାଣ୍ଡ ନିକଟ, ରାୟଗଡ଼ା | 📞 9390553301`;
+    } else if (lang === 'TE') {
+      return `*💳 గోద్రెజ్ ఇంటీరియో రాయగడ — 0% వడ్డీ లేని EMI కొటేషన్*\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `*మొత్తం ఫర్నిచర్ బిల్లు:* ₹${totalAmount.toLocaleString()}\n` +
+        `*ఎంచుకున్న ఫైనాన్స్:* ${selectedProvider} Finance (${activeScheme.tenure} నెలలు)\n\n` +
+        `💰 *నెలవారీ వాయిదా (EMI):* ₹${activeScheme.monthly.toLocaleString()} / నెలకు\n` +
+        `🏷️ *వడ్డీ రేటు:* ${activeScheme.interestRate}\n` +
+        `💵 *డౌన్‌పేమెంట్:* ₹0 (జీరో అడ్వాన్స్)\n` +
+        `📄 *ప్రాసెసింగ్ ఫీజు:* ₹${activeScheme.processingFee}\n\n` +
+        `📋 *అందుబాటులో ఉన్న EMI ప్లాన్స్:*\n` +
+        emiSchemes.map(s => `• ${s.tenure} నెలలు: ₹${s.monthly.toLocaleString()}/నెలకు (${s.interestRate})`).join('\n') + `\n\n` +
+        `👉 *ఆధార్ / పాన్ కార్డ్‌తో కేవలం 5 నిమిషాల్లో తక్షణ అనుమతి!*\n` +
+        `*షోరూమ్:* న్యూ బస్ స్టాండ్ దగ్గర, రాయగడ | 📞 9390553301`;
+    } else if (lang === 'HI') {
+      return `*💳 गोदरेज इंटीरियो रायगड़ा — 0% नो-कॉस्ट EMI कोटेशन*\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `*कुल फर्नीचर बिल:* ₹${totalAmount.toLocaleString()}\n` +
+        `*चयनित फाइनेंस:* ${selectedProvider} Finance (${activeScheme.tenure} महीने)\n\n` +
+        `💰 *मासिक किस्त (EMI):* ₹${activeScheme.monthly.toLocaleString()} / महीना\n` +
+        `🏷️ *ब्याज दर:* ${activeScheme.interestRate}\n` +
+        `💵 *डाउन पेमेंट:* ₹0 (जीरो एडवांस)\n` +
+        `📄 *प्रोसेसिंग फीस:* ₹${activeScheme.processingFee}\n\n` +
+        `📋 *उपलब्ध EMI विकल्प:*\n` +
+        emiSchemes.map(s => `• ${s.tenure} महीने: ₹${s.monthly.toLocaleString()}/माह (${s.interestRate})`).join('\n') + `\n\n` +
+        `👉 *आधार और पैन कार्ड के साथ स्टोर पर 5 मिनट में तुरंत अप्रूवल!*\n` +
+        `*शोरूम:* न्यू बस स्टैंड के पास, रायगड़ा | 📞 9390553301`;
+    }
+    return `*💳 GODREJ INTERIO RAYAGADA — 0% NO-COST EMI QUOTE*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
       `*Total Furniture Bill:* ₹${totalAmount.toLocaleString()}\n` +
       `*Selected Scheme:* ${selectedProvider} Finance (${activeScheme.tenure} Months)\n\n` +
-      `*Monthly Installment:* ₹${activeScheme.monthly.toLocaleString()} / month\n` +
-      `*Interest Rate:* ${activeScheme.interestRate}\n` +
-      `*Downpayment:* ₹0 (Zero Advance)\n` +
-      `*Processing Fee:* ₹${activeScheme.processingFee}\n\n` +
-      `*All EMI Options Available at Store:*\n` +
+      `💰 *Monthly Installment:* ₹${activeScheme.monthly.toLocaleString()} / month\n` +
+      `🏷️ *Interest Rate:* ${activeScheme.interestRate}\n` +
+      `💵 *Downpayment:* ₹0 (Zero Advance)\n` +
+      `📄 *Processing Fee:* ₹${activeScheme.processingFee}\n\n` +
+      `📋 *All EMI Options Available at Store:*\n` +
       emiSchemes.map(s => `• ${s.tenure} Months: ₹${s.monthly.toLocaleString()}/mo (${s.interestRate})`).join('\n') + `\n\n` +
-      `*Instant Approval with Aadhaar / PAN at Store:* Near New Bus Stand, Rayagada | 📞 9390553301`;
+      `👉 *Instant Approval with Aadhaar / PAN at Store (5-Min Paperless)*\n` +
+      `*Flagship Store:* Near New Bus Stand, Rayagada | 📞 +91 93905 53301`;
+  };
 
+  const handleShareEmiWhatsApp = () => {
+    playSuccessChime();
+    triggerGoldenConfetti();
+    const message = generateEmiMessage();
     const cleanPhone = customerPhone.replace(/[^0-9]/g, '');
     const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
     const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
@@ -371,11 +418,18 @@ export function EmiSchemeModal({ isOpen, onClose, amount = 125000, customerPhone
       total_amount: totalAmount,
       provider: selectedProvider,
       tenure: selectedTenure,
-      phone: customerPhone
+      phone: customerPhone,
+      language: lang
     });
 
     window.open(url, '_blank');
     showToast(`📲 0% EMI Breakdown shared to WhatsApp (${customerPhone})!`, true);
+  };
+
+  const handleCopyEmi = () => {
+    playScanBeep();
+    navigator.clipboard.writeText(generateEmiMessage());
+    showToast(`📋 Copied 0% EMI Breakdown to clipboard!`);
   };
 
   return (
@@ -392,8 +446,30 @@ export function EmiSchemeModal({ isOpen, onClose, amount = 125000, customerPhone
           <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
         </div>
 
+        {/* 4-Language Switcher */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#030712', padding: '6px 10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', margin: '10px 0' }}>
+          <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', fontWeight: '800' }}>🌐 WhatsApp Language:</span>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            {[
+              { id: 'EN', label: '🇬🇧 EN' },
+              { id: 'OR', label: '🇮🇳 ଓଡ଼ିଆ' },
+              { id: 'TE', label: '🇮🇳 తెలుగు' },
+              { id: 'HI', label: '🇮🇳 HI' }
+            ].map(l => (
+              <button 
+                key={l.id} 
+                className={`btn-ghost-edit ${lang === l.id ? 'badge-gold' : ''}`}
+                onClick={() => setLang(l.id)}
+                style={{ fontSize: '10.5px', padding: '3px 8px' }}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Provider Switcher Tabs */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', margin: '14px 0' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', margin: '10px 0' }}>
           {[
             { id: 'BAJAJ', name: 'Bajaj Finserv', tag: '0% Paperless' },
             { id: 'HDFC', name: 'HDFC PineLabs', tag: 'Debit/Credit Card' },
@@ -457,11 +533,11 @@ export function EmiSchemeModal({ isOpen, onClose, amount = 125000, customerPhone
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-          <button className="btn-luxury-gold" onClick={handleShareEmiWhatsApp} style={{ flex: 1, justifyContent: 'center', padding: '12px' }}>
-            <Send size={15} /> 📲 Send EMI Plan to Customer WhatsApp
+          <button className="btn-ghost-edit" onClick={handleCopyEmi} style={{ flex: 1, justifyContent: 'center' }}>
+            <Copy size={14} /> Copy
           </button>
-          <button className="btn-ghost-edit" onClick={onClose}>
-            Done
+          <button className="btn-luxury-gold" onClick={handleShareEmiWhatsApp} style={{ flex: 2, justifyContent: 'center', padding: '12px' }}>
+            <Send size={15} /> 📲 Send EMI Plan to Customer WhatsApp
           </button>
         </div>
 
@@ -473,13 +549,15 @@ export function EmiSchemeModal({ isOpen, onClose, amount = 125000, customerPhone
 // =========================================================================
 // 3. 🔄 OLD FURNITURE EXCHANGE & BUYBACK VALUATION ENGINE MODAL
 // =========================================================================
-export function FurnitureExchangeModal({ isOpen, onClose, onApplyDiscount }) {
+export function FurnitureExchangeModal({ isOpen, onClose, onApplyDiscount, customerPhone = "9437188291", customerName = "Dr. Subhashish Jena" }) {
   const { showToast } = useStore();
 
   const [category, setCategory] = useState('BED'); // 'BED' | 'SOFA' | 'DINING' | 'ALMIRAH'
   const [woodType, setWoodType] = useState('TEAK'); // 'TEAK' | 'SAL' | 'PLY' | 'STEEL'
   const [condition, setCondition] = useState('GOOD'); // 'MINT' | 'GOOD' | 'HEAVY_WEAR'
   const [customerNotes, setCustomerNotes] = useState('Old 6x6 King size wooden bed in good structural condition');
+  const [phone, setPhone] = useState(customerPhone);
+  const [lang, setLang] = useState('EN');
 
   if (!isOpen) return null;
 
@@ -508,7 +586,54 @@ export function FurnitureExchangeModal({ isOpen, onClose, onApplyDiscount }) {
   const buybackValue = calculateBuybackValue();
   const exchangeCertNo = `EXC-2026-${Math.floor(1000 + Math.random() * 9000)}`;
 
-  const handleApply = () => {
+  const generateBuybackMessage = () => {
+    if (lang === 'OR') {
+      return `*🔄 ଗୋଦ୍ରେଜ୍ ଇଣ୍ଟେରିଓ ରାୟଗଡ଼ା — ପୁରୁଣା ଫର୍ନିଚର ଏକ୍ସଚେଞ୍ଜ୍ ସାର୍ଟିଫିକେଟ୍*\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `*ମାନ୍ୟବର ${customerName}*,\n` +
+        `ଆପଣଙ୍କ ପୁରୁଣା ଫର୍ନିଚର ମୂଲ୍ୟାୟନ ସଫଳ ହୋଇଛି ଏବଂ ଆପଣଙ୍କୁ ନୂଆ ଗୋଦ୍ରେଜ୍ ଫର୍ନିଚର କ୍ରୟ ପାଇଁ ଏକ୍ସଚେଞ୍ଜ୍ କ୍ରେଡିଟ୍ ପ୍ରଦାନ କରାଗଲା।\n\n` +
+        `📜 *ସାର୍ଟିଫିକେଟ୍ ନଂ:* #${exchangeCertNo}\n` +
+        `🪵 *ପୁରୁଣା ସାମଗ୍ରୀ:* ${category === 'BED' ? 'Double Bed (Wooden)' : category === 'SOFA' ? 'Sofa Set' : category === 'DINING' ? 'Dining Table' : 'Almirah'} (${woodType})\n` +
+        `🔍 *କଣ୍ଡିସନ୍:* ${condition}\n` +
+        `💰 *ଏକ୍ସଚେଞ୍ଜ୍ ରିହାତି ମୂଲ୍ୟ:* *₹${buybackValue.toLocaleString()}*\n\n` +
+        `✨ *ଏହି ରିହାତି ଆପଣଙ୍କ ନୂଆ ଗୋଦ୍ରେଜ୍ ମାଷ୍ଟର ସୁଇଟ୍ ବିଲ୍ ରୁ ସିଧାସଳଖ କଟାଯିବ।*\n` +
+        `*ଶୋ'ରୁମ୍:* ନୂଆ ବସ୍ ଷ୍ଟାଣ୍ଡ ନିକଟ, ରାୟଗଡ଼ା | 📞 9390553301`;
+    } else if (lang === 'TE') {
+      return `*🔄 గోద్రెజ్ ఇంటీరియో రాయగడ — పాత ఫర్నిచర్ ఎక్స్ఛేంజ్ సర్టిఫికేట్*\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `*గౌరవనీయులైన ${customerName}*,\n` +
+        `మీ పాత ఫర్నిచర్ ఎక్స్ఛేంజ్ క్రెడిట్ విలువ విజయవంతంగా నిర్ధారించబడింది.\n\n` +
+        `📜 *సర్టిఫికేట్ నం:* #${exchangeCertNo}\n` +
+        `🪵 *పాత ఫర్నిచర్:* ${category} (${woodType})\n` +
+        `🔍 *కండిషన్:* ${condition}\n` +
+        `💰 *ఎక్స్ఛేంజ్ డిస్కౌంట్ విలువ:* *₹${buybackValue.toLocaleString()}*\n\n` +
+        `✨ *ఈ తగ్గింపు మీ కొత్త గోద్రెజ్ మాస్టర్ బెడ్‌రూమ్ సూట్ బిల్లుపై తక్షణమే వర్తిస్తుంది.*\n` +
+        `*షోరూమ్:* న్యూ బస్ స్టాండ్ దగ్గర, రాయగడ | 📞 9390553301`;
+    } else if (lang === 'HI') {
+      return `*🔄 गोदरेज इंटीरियो रायगड़ा — पुराना फर्नीचर एक्सचेंज सर्टिफिकेट*\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `*आदरणीय ${customerName}*,\n` +
+        `आपके पुराने फर्नीचर का मूल्यांकन सफलतापूर्वक हो गया है।\n\n` +
+        `📜 *सर्टिफिकेट संख्या:* #${exchangeCertNo}\n` +
+        `🪵 *पुराना फर्नीचर:* ${category} (${woodType})\n` +
+        `🔍 *कंडीशन:* ${condition}\n` +
+        `💰 *एक्सचेंज डिस्काउंट वैल्यू:* *₹${buybackValue.toLocaleString()}*\n\n` +
+        `✨ *यह छूट आपके नए गोदरेज मास्टर सुइट के बिल से तुरंत घटा दी जाएगी।*\n` +
+        `*शोरूम:* न्यू बस स्टैंड के पास, रायगड़ा | 📞 9390553301`;
+    }
+    return `*🔄 GODREJ INTERIO RAYAGADA — OLD FURNITURE BUYBACK CERTIFICATE*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `*Dear ${customerName}*,\n` +
+      `Your old furniture has been appraised and approved for instant trade-in credit.\n\n` +
+      `📜 *Certificate Ref:* #${exchangeCertNo}\n` +
+      `🪵 *Item Category:* ${category} (${woodType} Material)\n` +
+      `🔍 *Physical Condition:* ${condition}\n` +
+      `💰 *Instant Buyback Credit Value:* *₹${buybackValue.toLocaleString()}*\n\n` +
+      `✨ *This credit will be directly deducted from your new Godrej Master Bedroom Suite Invoice.*\n` +
+      `*Flagship Store:* Near New Bus Stand, Rayagada | 📞 +91 93905 53301`;
+  };
+
+  const handleApply = (sendWhatsApp = false) => {
     playSuccessChime();
     triggerGoldenConfetti();
     if (onApplyDiscount) {
@@ -526,8 +651,18 @@ export function FurnitureExchangeModal({ isOpen, onClose, onApplyDiscount }) {
       wood_type: woodType,
       condition,
       buyback_credit_inr: buybackValue,
-      notes: customerNotes
+      notes: customerNotes,
+      phone: phone,
+      language: lang
     });
+
+    if (sendWhatsApp) {
+      const message = generateBuybackMessage();
+      const cleanPhone = phone.replace(/[^0-9]/g, '');
+      const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+      window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, '_blank');
+    }
+
     showToast(`🎉 Applied ₹${buybackValue.toLocaleString()} Old Furniture Exchange Credit to Invoice!`, true);
     onClose();
   };
@@ -544,6 +679,28 @@ export function FurnitureExchangeModal({ isOpen, onClose, onApplyDiscount }) {
             </h3>
           </div>
           <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
+        </div>
+
+        {/* 4-Language Switcher */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#030712', padding: '6px 10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', margin: '10px 0' }}>
+          <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', fontWeight: '800' }}>🌐 WhatsApp Language:</span>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            {[
+              { id: 'EN', label: '🇬🇧 EN' },
+              { id: 'OR', label: '🇮🇳 ଓଡ଼ିଆ' },
+              { id: 'TE', label: '🇮🇳 తెలుగు' },
+              { id: 'HI', label: '🇮🇳 HI' }
+            ].map(l => (
+              <button 
+                key={l.id} 
+                className={`btn-ghost-edit ${lang === l.id ? 'badge-gold' : ''}`}
+                onClick={() => setLang(l.id)}
+                style={{ fontSize: '10.5px', padding: '3px 8px' }}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* 3-Question Rapid Appraiser Form */}
@@ -569,7 +726,12 @@ export function FurnitureExchangeModal({ isOpen, onClose, onApplyDiscount }) {
             </select>
           </div>
 
-          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+          <div className="form-field">
+            <label>Customer WhatsApp Phone</label>
+            <input value={phone} onChange={e => setPhone(e.target.value)} />
+          </div>
+
+          <div className="form-field">
             <label>3. Age & Physical Condition</label>
             <select value={condition} onChange={e => setCondition(e.target.value)}>
               <option value="MINT">1–3 Years Old (Mint Condition / Reusable)</option>
@@ -600,11 +762,11 @@ export function FurnitureExchangeModal({ isOpen, onClose, onApplyDiscount }) {
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn-luxury-gold" onClick={handleApply} style={{ flex: 1, justifyContent: 'center', padding: '12px', fontWeight: '900' }}>
-            <Check size={16} /> ✅ Apply ₹{buybackValue.toLocaleString()} Exchange Discount to Bill
+          <button className="btn-ghost-edit" onClick={() => handleApply(false)} style={{ flex: 1, justifyContent: 'center' }}>
+            Apply Discount
           </button>
-          <button className="btn-ghost-edit" onClick={onClose}>
-            Cancel
+          <button className="btn-luxury-gold" onClick={() => handleApply(true)} style={{ flex: 2, justifyContent: 'center', padding: '12px', fontWeight: '900' }}>
+            <Check size={16} /> 📲 Apply & Send WhatsApp Voucher
           </button>
         </div>
 

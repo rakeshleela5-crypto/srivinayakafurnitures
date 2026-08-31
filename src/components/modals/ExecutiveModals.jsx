@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
-import { X, Check, Landmark, DollarSign, Send, Award, QrCode, FileText, Printer, Barcode } from 'lucide-react';
+import { X, Check, Landmark, DollarSign, Send, Award, QrCode, FileText, Printer, Barcode, Copy, Share2, MapPin, Wrench } from 'lucide-react';
+import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../../utils/audioUtils';
+import { dispatchWebhookAction } from '../../services/webhookService';
 
 export function RegisterArchitectModal({ isOpen, onClose }) {
   const { architects, setArchitects, showToast } = useStore();
@@ -82,30 +84,144 @@ export function RegisterArchitectModal({ isOpen, onClose }) {
 }
 
 export function ArchitectPayoutModal({ isOpen, onClose, architect = {} }) {
-  const { disburseArchitectPayout } = useStore();
+  const { disburseArchitectPayout, showToast } = useStore();
   const [amount, setAmount] = useState(architect.Balance_Due_INR || 16825);
   const [rrn, setRrn] = useState(`UPI-DISB-${Math.floor(100000 + Math.random() * 900000)}`);
   const [mode, setMode] = useState("Instant Real-Time UPI");
+  const [lang, setLang] = useState('EN');
 
   if (!isOpen) return null;
 
+  const phone = architect.Phone_Number || "9437011223";
+  const archName = architect.Full_Name || "Ar. Sunita Patnaik";
+  const firmName = architect.Firm_Name || "Studio Vastu Design";
+  const tier = architect.Tier_Slab || "Platinum";
+  const rate = architect.Commission_Rate || "8.5%";
+
+  const generateWhatsAppMessage = () => {
+    if (lang === 'OR') {
+      return `*🏛️ ଗୋଦ୍ରେଜ୍ ଇଣ୍ଟେରିଓ ରାୟଗଡ଼ା — VIP ଆର୍କିଟେକ୍ଟ କମିଶନ୍ ପେମେଣ୍ଟ୍ ସ୍ଲିପ୍*\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `*ମାନ୍ୟବର ${archName} (${firmName})*,\n` +
+        `ଆପଣଙ୍କ VIP ସହଭାଗୀତା କମିଶନ୍ ସଫଳତାର ସହ ଆପଣଙ୍କ UPI VPA କୁ ପଠାଗଲା।\n\n` +
+        `💰 *ପ୍ରଦାନ ରାଶି:* ₹${Number(amount).toLocaleString()}\n` +
+        `🏦 *ପେମେଣ୍ଟ ମୋଡ୍:* ${mode}\n` +
+        `💳 *ହିତାଧିକାରୀ UPI:* ${architect.UPI_Bank || 'ar.sunita@okhdfcbank'}\n` +
+        `🔢 *ବ୍ୟାଙ୍କ UTR / RRN:* ${rrn}\n` +
+        `👑 *ଆପଣଙ୍କ ପାର୍ଟନର ସ୍ଲାବ:* ${tier} Tier (${rate})\n` +
+        `📅 *ତାରିଖ:* ${new Date().toLocaleDateString('en-IN')}\n\n` +
+        `📜 *ମାସିକ TDS ଷ୍ଟେଟମେଣ୍ଟ୍ (ଫର୍ମ 16A) ଡାଉନଲୋଡ୍ କରନ୍ତୁ:*\nhttps://shreeganesh-godrej.web.app/#architects\n\n` +
+        `_ଧନ୍ୟବାଦ! ଶ୍ରୀ ଗଣେଶ ଏଣ୍ଟରପ୍ରାଇଜେସ୍ (ଗୋଦ୍ରେଜ୍ ଇଣ୍ଟେରିଓ ରାୟଗଡ଼ା)_ | 📞 9390553301`;
+    } else if (lang === 'TE') {
+      return `*🏛️ గోద్రెజ్ ఇంటీరియో రాయగడ — VIP ఆర్కిటెక్ట్ కమిషన్ చెల్లింపు రశీదు*\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `*గౌరవనీయులైన ${archName} (${firmName})*,\n` +
+        `మీ VIP భాగస్వామ్య కమిషన్ విజయవంతంగా మీ UPI ఖాతాకు జమ చేయబడింది.\n\n` +
+        `💰 *చెల్లించిన మొత్తం:* ₹${Number(amount).toLocaleString()}\n` +
+        `🏦 *చెల్లింపు మోడ్:* ${mode}\n` +
+        `💳 *లబ్ధిదారుని UPI:* ${architect.UPI_Bank || 'ar.sunita@okhdfcbank'}\n` +
+        `🔢 *బ్యాంక్ UTR / RRN:* ${rrn}\n` +
+        `👑 *మీ భాగస్వామ్య శ్లాబ్:* ${tier} Tier (${rate})\n` +
+        `📅 *తేదీ:* ${new Date().toLocaleDateString('en-IN')}\n\n` +
+        `📜 *నెలవారీ TDS స్టేట్‌మెంట్ (Form 16A) ఇక్కడ చూడండి:*\nhttps://shreeganesh-godrej.web.app/#architects\n\n` +
+        `_ధన్యవాదాలు! శ్రీ గణేష్ ఎంటర్‌ప్రైజెస్ (గోద్రెజ్ ఇంటీరియో రాయగడ)_ | 📞 9390553301`;
+    } else if (lang === 'HI') {
+      return `*🏛️ गोदरेज इंटीरियो रायगड़ा — VIP आर्किटेक्ट कमीशन भुगतान रसीद*\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `*आदरणीय ${archName} (${firmName})*,\n` +
+        `आपका VIP पार्टनरशिप कमीशन सफलतापूर्वक आपके UPI खाते में स्थानांतरित कर दिया गया है।\n\n` +
+        `💰 *भुगतान राशि:* ₹${Number(amount).toLocaleString()}\n` +
+        `🏦 *भुगतान मोड:* ${mode}\n` +
+        `💳 *लाभार्थी UPI:* ${architect.UPI_Bank || 'ar.sunita@okhdfcbank'}\n` +
+        `🔢 *बैंक UTR / RRN:* ${rrn}\n` +
+        `👑 *आपकी पार्टनरशिप स्लैब:* ${tier} Tier (${rate})\n` +
+        `📅 *दिनांक:* ${new Date().toLocaleDateString('en-IN')}\n\n` +
+        `📜 *मासिक TDS स्टेटमेंट (Form 16A) डाउनलोड करें:*\nhttps://shreeganesh-godrej.web.app/#architects\n\n` +
+        `_धन्यवाद! श्री गणेश एंटरप्राइजेज (गोदरेज इंटीरियो रायगड़ा)_ | 📞 9390553301`;
+    }
+    return `*🏛️ GODREJ INTERIO RAYAGADA — VIP ARCHITECT COMMISSION VOUCHER*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `*Dear ${archName} (${firmName})*,\n` +
+      `Your VIP Trade Partnership Commission has been successfully disbursed.\n\n` +
+      `💰 *Disbursed Amount:* ₹${Number(amount).toLocaleString()}\n` +
+      `🏦 *Payment Mode:* ${mode}\n` +
+      `💳 *Beneficiary UPI:* ${architect.UPI_Bank || 'ar.sunita@okhdfcbank'}\n` +
+      `🔢 *Bank UTR / RRN:* ${rrn}\n` +
+      `👑 *Partnership Tier:* ${tier} Partner (${rate} Slab)\n` +
+      `📅 *Date:* ${new Date().toLocaleDateString('en-IN')}\n\n` +
+      `📜 *View Monthly Billed Ledger & Form 16A TDS Statement:*\nhttps://shreeganesh-godrej.web.app/#architects\n\n` +
+      `_Thank you for your valued partnership! Shree Ganesh Enterprises (Godrej Interio Rayagada)_ | 📞 +91 93905 53301`;
+  };
+
   const handleDisburse = () => {
+    playSuccessChime();
+    triggerGoldenConfetti();
     disburseArchitectPayout(architect.Architect_ID || "VIP-ARC-001", Number(amount), rrn);
+
+    const message = generateWhatsAppMessage();
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+
+    dispatchWebhookAction('SYSTEM_7_VIP_COMMISSION', {
+      architect_id: architect.Architect_ID || "VIP-ARC-001",
+      architect_name: archName,
+      payout_amount: Number(amount),
+      upi_rrn: rrn,
+      phone: phone,
+      language: lang
+    });
+
+    window.open(whatsappUrl, '_blank');
+    showToast(`💸 Disbursed ₹${Number(amount).toLocaleString()} to ${archName} & sent WhatsApp voucher!`, true);
     onClose();
   };
 
+  const handleCopyText = () => {
+    playScanBeep();
+    navigator.clipboard.writeText(generateWhatsAppMessage());
+    showToast(`📋 Copied Architect WhatsApp Payout Slip to clipboard!`);
+  };
+
   return (
-    <div className="modal-overlay">
-      <div className="modal-card">
+    <div className="modal-overlay" style={{ zIndex: 9999 }}>
+      <div className="modal-card" style={{ maxWidth: '640px', background: '#0B132B', border: '2px solid var(--accent-gold)' }}>
         <div className="modal-header">
-          <h3><DollarSign size={18} color="var(--accent-gold)" /> Instant UPI Commission Disbursement</h3>
+          <div>
+            <span className="badge badge-gold">🏛️ VIP ARCHITECT DISBURSEMENT</span>
+            <h3 style={{ fontSize: '17px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
+              💸 Instant UPI Commission Voucher
+            </h3>
+          </div>
           <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
         </div>
 
-        <div style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid var(--accent-gold)', borderRadius: '12px', padding: '14px' }}>
-          <div style={{ fontSize: '14px', fontWeight: '800', color: '#FFFFFF' }}>{architect.Full_Name} — {architect.Firm_Name}</div>
+        <div style={{ background: 'rgba(212,175,55,0.08)', border: '1px solid var(--accent-gold)', borderRadius: '12px', padding: '14px', margin: '10px 0' }}>
+          <div style={{ fontSize: '14px', fontWeight: '800', color: '#FFFFFF' }}>{archName} — {firmName}</div>
           <div style={{ fontSize: '12px', color: 'var(--accent-gold-light)', marginTop: '2px' }}>
-            {architect.Tier_Slab} Tier ({architect.Commission_Rate}) • Total Earned: ₹{(architect.Commission_Earned_INR || 0).toLocaleString()}
+            {tier} Tier ({rate}) • Lifetime Earnings: ₹{(architect.Commission_Earned_INR || 0).toLocaleString()}
+          </div>
+        </div>
+
+        {/* 4-Language Switcher */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#030712', padding: '6px 10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '12px' }}>
+          <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', fontWeight: '800' }}>🌐 WhatsApp Language:</span>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            {[
+              { id: 'EN', label: '🇬🇧 EN' },
+              { id: 'OR', label: '🇮🇳 ଓଡ଼ିଆ' },
+              { id: 'TE', label: '🇮🇳 తెలుగు' },
+              { id: 'HI', label: '🇮🇳 HI' }
+            ].map(l => (
+              <button 
+                key={l.id} 
+                className={`btn-ghost-edit ${lang === l.id ? 'badge-gold' : ''}`}
+                onClick={() => setLang(l.id)}
+                style={{ fontSize: '10.5px', padding: '3px 8px' }}
+              >
+                {l.label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -124,7 +240,7 @@ export function ArchitectPayoutModal({ isOpen, onClose, architect = {} }) {
           </div>
           <div className="form-field" style={{ gridColumn: '1 / -1' }}>
             <label>Target Beneficiary UPI VPA</label>
-            <input value={architect.UPI_Bank || 'ar.sunita@upi'} disabled style={{ opacity: 0.8 }} />
+            <input value={architect.UPI_Bank || 'ar.sunita@okhdfcbank'} disabled style={{ opacity: 0.8 }} />
           </div>
           <div className="form-field" style={{ gridColumn: '1 / -1' }}>
             <label>Bank Settlement Ref / RRN Number</label>
@@ -132,9 +248,14 @@ export function ArchitectPayoutModal({ isOpen, onClose, architect = {} }) {
           </div>
         </div>
 
-        <button className="btn-luxury-gold" onClick={handleDisburse} style={{ width: '100%', justifyContent: 'center', padding: '12px' }}>
-          <Send size={16} /> Disburse ₹{Number(amount).toLocaleString()} Instant UPI Settlement
-        </button>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+          <button className="btn-ghost-edit" onClick={handleCopyText} style={{ flex: 1, justifyContent: 'center' }}>
+            <Copy size={14} /> Copy Slip
+          </button>
+          <button className="btn-luxury-gold" onClick={handleDisburse} style={{ flex: 2, justifyContent: 'center', padding: '12px' }}>
+            <Send size={16} /> Disburse ₹{Number(amount).toLocaleString()} & Send WhatsApp Voucher
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -144,21 +265,155 @@ export function CarpenterDispatchModal({ isOpen, onClose }) {
   const { showToast } = useStore();
   const [carpenter, setCarpenter] = useState('Narayana Mistri');
   const [orderId, setOrderId] = useState('ORD-8921');
+  const [customerName, setCustomerName] = useState('Dr. Subhashish Jena');
+  const [customerPhone, setCustomerPhone] = useState('9437188291');
+  const [address, setAddress] = useState('Gayatri Nagar Villa, Lane 3, Rayagada');
+  const [items, setItems] = useState('1x Royal Teak King Bed (Hydraulic Storage) + 1x 4-Door Wardrobe');
   const [payout, setPayout] = useState(500);
+  const [lang, setLang] = useState('EN');
 
   if (!isOpen) return null;
 
+  const carpenterPhones = {
+    'Narayana Mistri': '9437188200',
+    'Kailash Mistri': '9437188201',
+    'Ramesh Fitter': '9437188202'
+  };
+
+  const targetPhone = carpenterPhones[carpenter] || '9437188200';
+
+  const generateWhatsAppMessage = () => {
+    if (lang === 'OR') {
+      return `*🪚 ଗୋଦ୍ରେଜ୍ ଇଣ୍ଟେରିଓ ରାୟଗଡ଼ା — ମିସ୍ତ୍ରୀ ଫିଟିଂ ୱାର୍କ ଅର୍ଡର*\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `*ମିସ୍ତ୍ରୀଙ୍କ ନାମ:* ${carpenter}\n` +
+        `*ଅର୍ଡର ନଂ:* #${orderId}\n\n` +
+        `👤 *ଗ୍ରାହକ:* ${customerName}\n` +
+        `📞 *ଗ୍ରାହକ ଫୋନ୍:* +91 ${customerPhone}\n` +
+        `📍 *ଠିକଣା:* ${address}\n` +
+        `🗺️ *ଗୁଗଲ୍ ମ୍ୟାପ୍ ଲୋକେସନ୍:* https://maps.google.com/?q=19.1724,83.4163\n\n` +
+        `📦 *ଫିଟିଂ ସାମଗ୍ରୀ:* ${items}\n` +
+        `💰 *ଫିଟିଂ ମଜୁରୀ (ନଗଦ/UPI):* ₹${payout} (ଗ୍ରାହକଙ୍କ ସନ୍ତୋଷଜନକ ଦସ୍ତଖତ ପରେ ତୁରନ୍ତ ପାଉଟ୍)\n\n` +
+        `⚠️ *ନିର୍ଦ୍ଦେଶାବଳୀ:*\n` +
+        `୧. ସମସ୍ତ ୫ଟି ବାକ୍ସ କାଟିବା ପୂର୍ବରୁ ଗ୍ରାହକଙ୍କୁ ଦେଖାନ୍ତୁ।\n` +
+        `୨. ହାଇଡ୍ରୋଲିକ୍ ଏବଂ ସଫ୍ଟ-କ୍ଲୋଜ୍ ହିଞ୍ଜ୍ ଭଲ ଭାବରେ ଯାଞ୍ଚ କରନ୍ତୁ।\n` +
+        `୩. ଫିଟିଂ ପରେ ଫଟୋ ଉଠାଇ ଆମକୁ ପଠାନ୍ତୁ।\n\n` +
+        `_ଶ୍ରୀ ଗଣେଶ ଏଣ୍ଟରପ୍ରାଇଜେସ୍ ରାୟଗଡ଼ା_ | 📞 9390553301`;
+    } else if (lang === 'TE') {
+      return `*🪚 గోద్రెజ్ ఇంటీరియో రాయగడ — కార్పెంటర్ వర్క్ ఆర్డర్*\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `*మేస్త్రీ పేరు:* ${carpenter}\n` +
+        `*ఆర్డర్ నం:* #${orderId}\n\n` +
+        `👤 *కస్టమర్:* ${customerName}\n` +
+        `📞 *ఫోన్ నంబర్:* +91 ${customerPhone}\n` +
+        `📍 *చిరునామా:* ${address}\n` +
+        `🗺️ *లొకేషన్ మ్యాప్:* https://maps.google.com/?q=19.1724,83.4163\n\n` +
+        `📦 *ఫిట్టింగ్ చేయవలసిన ఐటమ్స్:* ${items}\n` +
+        `💰 *ఫిట్టింగ్ కూలీ (UPI):* ₹${payout} (కస్టమర్ సైన్-ఆఫ్ తర్వాత వెంటనే చెల్లింపు)\n\n` +
+        `⚠️ *ముఖ్యమైన సూచనలు:*\n` +
+        `1. బాక్స్‌లు ఓపెన్ చేసేటప్పుడు కస్టమర్‌కు చూపించండి.\n` +
+        `2. హైడ్రాలిక్ లిఫ్ట్ మరియు కీళ్ళు సరిగ్గా అమర్చండి.\n` +
+        `3. పని పూర్తయిన తర్వాత క్లియర్ ఫోటో తీసి పంపండి.\n\n` +
+        `_శ్రీ గణేష్ ఎంటర్‌ప్రైజెస్ రాయగడ_ | 📞 9390553301`;
+    } else if (lang === 'HI') {
+      return `*🪚 गोदरेज इंटीरियो रायगड़ा — कारपेंटर वर्क ऑर्डर*\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n` +
+        `*कारीगर का नाम:* ${carpenter}\n` +
+        `*ऑर्डर संख्या:* #${orderId}\n\n` +
+        `👤 *ग्राहक:* ${customerName}\n` +
+        `📞 *ग्राहक फोन:* +91 ${customerPhone}\n` +
+        `📍 *साइट का पता:* ${address}\n` +
+        `🗺️ *गूगल मैप लोकेशन:* https://maps.google.com/?q=19.1724,83.4163\n\n` +
+        `📦 *फिटिंग आइटम:* ${items}\n` +
+        `💰 *फिटिंग मजदूरी:* ₹${payout} (काम पूरा होने पर तुरंत UPI द्वारा भुगतान)\n\n` +
+        `⚠️ *दिशा-निर्देश:*\n` +
+        `1. बॉक्स खोलने से पहले ग्राहक को दिखाएं।\n` +
+        `2. हाइड्रोलिक लिफ्ट और फिटिंग को ध्यान से चेक करें।\n` +
+        `3. फिटिंग पूरी होने के बाद साफ फोटो खींचकर भेजें।\n\n` +
+        `_श्री गणेश एंटरप्राइजेज रायगड़ा_ | 📞 9390553301`;
+    }
+    return `*🪚 GODREJ INTERIO RAYAGADA — MASTER CARPENTER WORK ORDER*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `*Carpenter / Mistri:* ${carpenter}\n` +
+      `*Work Order Ref:* #${orderId}\n\n` +
+      `👤 *Customer Name:* ${customerName}\n` +
+      `📞 *Customer Contact:* +91 ${customerPhone}\n` +
+      `📍 *Installation Address:* ${address}\n` +
+      `🗺️ *Google Maps Site Pin:* https://maps.google.com/?q=19.1724,83.4163\n\n` +
+      `📦 *Items to Assemble:* ${items}\n` +
+      `💰 *Fitting Wage Slip:* ₹${payout} (Instant UPI on Customer Sign-off)\n\n` +
+      `⚠️ *Quality Checklist:*\n` +
+      `1. Verify all 5 knockdown carton boxes before unboxing.\n` +
+      `2. Test hydraulic lift shock absorbers and soft-close wardrobe hinges.\n` +
+      `3. Capture photo proof of assembled bedroom set and send back on WhatsApp.\n\n` +
+      `_Shree Ganesh Enterprises (Godrej Interio Rayagada)_ | 📞 +91 93905 53301`;
+  };
+
   const handleDispatch = () => {
-    showToast(`🪚 Work order dispatched to ${carpenter} for Order #${orderId} with ₹${payout} wage voucher!`, true);
+    playSuccessChime();
+    triggerGoldenConfetti();
+
+    const message = generateWhatsAppMessage();
+    const cleanPhone = targetPhone.replace(/[^0-9]/g, '');
+    const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+
+    dispatchWebhookAction('DISPATCH_CARPENTER_WORK_ORDER', {
+      carpenter_name: carpenter,
+      carpenter_phone: targetPhone,
+      order_id: orderId,
+      customer_name: customerName,
+      customer_phone: customerPhone,
+      address: address,
+      items: items,
+      fitting_wage_inr: payout,
+      language: lang
+    });
+
+    window.open(whatsappUrl, '_blank');
+    showToast(`🪚 Work order & Google Maps pin dispatched to ${carpenter} (+91 ${targetPhone})!`, true);
     onClose();
   };
 
+  const handleCopyText = () => {
+    playScanBeep();
+    navigator.clipboard.writeText(generateWhatsAppMessage());
+    showToast(`📋 Copied Carpenter Work Order to clipboard!`);
+  };
+
   return (
-    <div className="modal-overlay">
-      <div className="modal-card">
+    <div className="modal-overlay" style={{ zIndex: 9999 }}>
+      <div className="modal-card" style={{ maxWidth: '640px', background: '#0B132B', border: '2px solid #8B5CF6' }}>
         <div className="modal-header">
-          <h3>🪚 Master Carpenter Dispatch & ₹500 Payout Voucher</h3>
+          <div>
+            <span className="badge badge-purple">🪚 MISTRI WORK ORDER DISPATCH</span>
+            <h3 style={{ fontSize: '17px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
+              🪚 Master Carpenter Dispatch & ₹500 Wage Voucher
+            </h3>
+          </div>
           <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
+        </div>
+
+        {/* 4-Language Switcher */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#030712', padding: '6px 10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', margin: '10px 0' }}>
+          <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', fontWeight: '800' }}>🌐 WhatsApp Language:</span>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            {[
+              { id: 'EN', label: '🇬🇧 EN' },
+              { id: 'OR', label: '🇮🇳 ଓଡ଼ିଆ' },
+              { id: 'TE', label: '🇮🇳 తెలుగు' },
+              { id: 'HI', label: '🇮🇳 HI' }
+            ].map(l => (
+              <button 
+                key={l.id} 
+                className={`btn-ghost-edit ${lang === l.id ? 'badge-gold' : ''}`}
+                onClick={() => setLang(l.id)}
+                style={{ fontSize: '10.5px', padding: '3px 8px' }}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="form-grid">
@@ -167,11 +422,28 @@ export function CarpenterDispatchModal({ isOpen, onClose }) {
             <select value={carpenter} onChange={e => setCarpenter(e.target.value)}>
               <option value="Narayana Mistri">Narayana Mistri (+91 94371 88200)</option>
               <option value="Kailash Mistri">Kailash Mistri (+91 94371 88201)</option>
+              <option value="Ramesh Fitter">Ramesh Fitter (+91 94371 88202)</option>
             </select>
           </div>
           <div className="form-field">
             <label>Linked SafeLock Order</label>
             <input value={orderId} onChange={e => setOrderId(e.target.value)} />
+          </div>
+          <div className="form-field">
+            <label>Customer Name</label>
+            <input value={customerName} onChange={e => setCustomerName(e.target.value)} />
+          </div>
+          <div className="form-field">
+            <label>Customer Phone</label>
+            <input value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} />
+          </div>
+          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+            <label>Installation Address & Site Details</label>
+            <input value={address} onChange={e => setAddress(e.target.value)} />
+          </div>
+          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+            <label>Items to Assemble</label>
+            <input value={items} onChange={e => setItems(e.target.value)} />
           </div>
           <div className="form-field" style={{ gridColumn: '1 / -1' }}>
             <label>Assembly Wage Payout (₹)</label>
@@ -179,9 +451,14 @@ export function CarpenterDispatchModal({ isOpen, onClose }) {
           </div>
         </div>
 
-        <button className="btn-purple" onClick={handleDispatch} style={{ width: '100%', justifyContent: 'center' }}>
-          <Check size={16} /> Dispatch WhatsApp Job Card & Lock Wage
-        </button>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+          <button className="btn-ghost-edit" onClick={handleCopyText} style={{ flex: 1, justifyContent: 'center' }}>
+            <Copy size={14} /> Copy Work Order
+          </button>
+          <button className="btn-purple" onClick={handleDispatch} style={{ flex: 2, justifyContent: 'center', padding: '12px' }}>
+            <Send size={16} /> 🪚 Dispatch WhatsApp Work Order & Map Pin
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -108,7 +108,7 @@ export function StaffQrHubView() {
       </div>
 
       {/* Main Printable Wall Poster Canvas */}
-      <div className="glass-panel" style={{ padding: '24px' }}>
+      <div className="glass-panel printable-area" style={{ padding: '24px' }}>
         
         {/* Poster Header */}
         <div style={{ textAlign: 'center', borderBottom: '2px solid rgba(212,175,55,0.3)', paddingBottom: '16px', marginBottom: '20px' }}>

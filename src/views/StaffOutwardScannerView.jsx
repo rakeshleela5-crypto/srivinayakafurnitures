@@ -117,6 +117,7 @@ export function StaffOutwardScannerView() {
   ]);
 
   const [editingBoxIndex, setEditingBoxIndex] = useState(null);
+  const [printingBox, setPrintingBox] = useState(null);
 
   const activeOrder = orders.find(o => o.Order_ID === selectedOrderId) || orders[0];
   const activeDriver = drivers.find(d => d.Driver_ID === selectedDriverId) || drivers[0];
@@ -532,9 +533,12 @@ export function StaffOutwardScannerView() {
   };
 
   const handlePrintBoxLabel = (box) => {
+    setPrintingBox(box);
     playScanBeep();
     showToast(`🖨️ Printing Delivery Label for Box ${box.letter}...`);
-    window.print();
+    setTimeout(() => {
+      window.print();
+    }, 120);
   };
 
   // Release Vehicle Action
@@ -1228,6 +1232,36 @@ export function StaffOutwardScannerView() {
 
       </div>
 
+      {/* 🖨️ Dedicated Printable Outward Dispatch Box Label */}
+      {printingBox && (
+        <div className="printable-area" style={{ background: '#FFFFFF', color: '#000000', padding: '24px', border: '2px solid #000000', borderRadius: '12px', margin: '20px auto', maxWidth: '500px', textAlign: 'center' }}>
+          <div style={{ fontSize: '18px', fontWeight: '900', borderBottom: '2px solid #000', paddingBottom: '8px', marginBottom: '12px' }}>
+            🚚 GODREJ INTERIO RAYAGADA — OUTWARD DISPATCH LABEL
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: '800', marginBottom: '8px' }}>
+            <span>ORDER: #{selectedOrderId}</span>
+            <span>CARTON: {printingBox.letter} OF {totalBoxesRequired}</span>
+          </div>
+          <div style={{ fontSize: '15px', fontWeight: '900', margin: '10px 0' }}>
+            {printingBox.name}
+          </div>
+          <div style={{ fontSize: '12px', color: '#333', marginBottom: '8px' }}>
+            Customer: <b>{editCustomerName}</b> ({editCustomerPhone})
+          </div>
+          <div style={{ fontSize: '11.5px', color: '#555', marginBottom: '12px' }}>
+            📍 {editAddress}
+          </div>
+          <div style={{ padding: '10px', border: '1px dashed #000', borderRadius: '8px', display: 'inline-block', margin: '6px 0' }}>
+            <div style={{ fontSize: '16px', fontWeight: '900', letterSpacing: '4px', fontFamily: 'monospace' }}>
+              *{selectedOrderId}-{printingBox.letter}*
+            </div>
+            <div style={{ fontSize: '10px', marginTop: '2px' }}>STAGING TRACKING QR / BARCODE</div>
+          </div>
+          <div style={{ fontSize: '11px', color: '#555', marginTop: '10px', borderTop: '1px solid #ccc', paddingTop: '6px' }}>
+            Driver: {activeDriver?.Name || 'Tophan Gouda'} ({activeDriver?.Vehicle || 'Tata Ace'}) • Carpenter: {editCarpenter}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -658,14 +658,17 @@ table.luxury-table tr:hover td {
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Standalone Print Styles */
+/* ============================================================================
+ * BULLETPROOF UNIVERSAL PRINT ENGINE (A4 / Thermal / Laser / PDF Export)
+ * ============================================================================ */
 @media print {
   @page {
     size: auto;
-    margin: 8mm;
+    margin: 10mm 8mm;
   }
 
-  html, body {
+  /* Reset Viewport & Body */
+  html, body, #root, .app-container {
     background: #FFFFFF !important;
     color: #000000 !important;
     margin: 0 !important;
@@ -673,16 +676,38 @@ table.luxury-table tr:hover td {
     height: auto !important;
     min-height: auto !important;
     overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
+  /* Hide everything by default */
   body * {
     visibility: hidden;
   }
 
+  /* Make target printable elements visible */
   .printable-area, .printable-area * {
     visibility: visible !important;
   }
 
+  /* Unclip all modals and parent containers */
+  .modal-overlay, .modal-card, .glass-panel {
+    position: static !important;
+    inset: auto !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: block !important;
+  }
+
+  /* Printable Area Container */
   .printable-area {
     position: static !important;
     width: 100% !important;
@@ -693,20 +718,57 @@ table.luxury-table tr:hover td {
     background: #FFFFFF !important;
     color: #000000 !important;
     padding: 0 !important;
-    margin: 0 !important;
+    margin: 0 auto !important;
     box-shadow: none !important;
     border: none !important;
     display: block !important;
   }
 
+  /* Force high-contrast crisp black text on white for readability */
+  .printable-area h1, .printable-area h2, .printable-area h3, 
+  .printable-area h4, .printable-area p, .printable-area span, 
+  .printable-area td, .printable-area th, .printable-area strong, 
+  .printable-area div, .printable-area b {
+    color: #000000 !important;
+    text-shadow: none !important;
+  }
+
+  /* Clean tables */
+  .printable-area table, .luxury-table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+    background: #FFFFFF !important;
+    color: #000000 !important;
+  }
+
+  .printable-area th, .printable-area td, .luxury-table th, .luxury-table td {
+    border: 1px solid #CBD5E1 !important;
+    color: #000000 !important;
+    padding: 6px 8px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .printable-area th, .luxury-table th {
+    background: #F1F5F9 !important;
+    font-weight: 900 !important;
+  }
+
+  /* Page break rules */
   .printable-area div, 
   .printable-area section,
   .printable-card,
-  .print-carton-item {
+  .print-carton-item,
+  .print-page-break-avoid {
     max-height: none !important;
     overflow: visible !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+  }
+
+  .print-page-break-after {
+    page-break-after: always !important;
+    break-after: page !important;
   }
 
   .print-carton-list {
@@ -727,7 +789,10 @@ table.luxury-table tr:hover td {
     overflow: visible !important;
   }
 
-  .no-print, header, .app-header, .top-ticker, .tabs-ribbon, .bottom-dock, .ambient-glow-1, .ambient-glow-2, button {
+  /* Hide all interactive and UI decorations */
+  .no-print, header, .app-header, .top-ticker, .tabs-ribbon, 
+  .bottom-dock, .ambient-glow-1, .ambient-glow-2, button, 
+  .btn-close-modal, input, textarea, select, .modal-header button {
     display: none !important;
     visibility: hidden !important;
   }

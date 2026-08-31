@@ -189,10 +189,10 @@ export function WhatsAppProposalModal({ isOpen, onClose, proposalData = {} }) {
         </div>
 
         {/* Printable 2-Page Luxury Document Container */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', margin: '16px 0' }}>
+        <div className="printable-area" style={{ display: 'flex', flexDirection: 'column', gap: '20px', margin: '16px 0' }}>
           
           {/* ================= PAGE 1: 3D / 2D ROOM VISUAL DESIGN ================= */}
-          <div style={{ background: '#030712', borderRadius: '16px', padding: '24px', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="print-page-break-avoid" style={{ background: '#030712', borderRadius: '16px', padding: '24px', border: '1px solid rgba(255,255,255,0.1)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px', marginBottom: '16px' }}>
               <div>
                 <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--accent-gold-light)' }}>
@@ -234,7 +234,7 @@ export function WhatsAppProposalModal({ isOpen, onClose, proposalData = {} }) {
           </div>
 
           {/* ================= PAGE 2: ITEMIZED COMMERCIALS & UPI QR ================= */}
-          <div style={{ background: '#030712', borderRadius: '16px', padding: '24px', border: '1px solid rgba(255,255,255,0.1)' }}>
+          <div className="print-page-break-avoid" style={{ background: '#030712', borderRadius: '16px', padding: '24px', border: '1px solid rgba(255,255,255,0.1)' }}>
             <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--accent-gold-light)', marginBottom: '12px' }}>
               📋 Itemized Suite Breakdown & Commercial Terms
             </div>

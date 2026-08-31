@@ -118,7 +118,8 @@ export function StaffInwardScannerView() {
 
   // Clean Zero State: Starts with 0 verified boxes for fresh shipment unloading
   const [verifiedBoxes, setVerifiedBoxes] = useState([]);
-  const [editingBoxIndex, setEditingBoxIndex] = useState(null); // Index of box currently being edited in modal/drawer
+  const [editingBoxIndex, setEditingBoxIndex] = useState(null);
+  const [printingBox, setPrintingBox] = useState(null); // Index of box currently being edited in modal/drawer
 
   const activeProduct = catalog.find(c => c.SKU === selectedPoSku) || catalog[0];
 
@@ -541,9 +542,12 @@ export function StaffInwardScannerView() {
 
   // 1-Click Print Single Box Label
   const handlePrintSingleBox = (box) => {
+    setPrintingBox(box);
     playScanBeep();
     showToast(`🖨️ Printing Barcode & QR Label for Box ${box.id} (${box.name})...`, true);
-    window.print();
+    setTimeout(() => {
+      window.print();
+    }, 120);
   };
 
   // Complete Inward Action
@@ -1206,6 +1210,33 @@ export function StaffInwardScannerView() {
 
       </div>
 
+      {/* 🖨️ Dedicated Printable Inward Box Label */}
+      {printingBox && (
+        <div className="printable-area" style={{ background: '#FFFFFF', color: '#000000', padding: '24px', border: '2px solid #000000', borderRadius: '12px', margin: '20px auto', maxWidth: '500px', textAlign: 'center' }}>
+          <div style={{ fontSize: '18px', fontWeight: '900', borderBottom: '2px solid #000', paddingBottom: '8px', marginBottom: '12px' }}>
+            🏛️ GODREJ INTERIO RAYAGADA — INWARD QC CARTON PASS
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: '800', marginBottom: '8px' }}>
+            <span>SKU: {selectedPoSku}</span>
+            <span>BOX: {printingBox.letter || printingBox.id} OF {customBoxes.length}</span>
+          </div>
+          <div style={{ fontSize: '15px', fontWeight: '900', margin: '10px 0' }}>
+            {printingBox.name}
+          </div>
+          <div style={{ fontSize: '12px', color: '#333', marginBottom: '12px' }}>
+            Weight: {printingBox.weight} KG • Assigned Bay: {storageBay} • Batch: {batchNo}
+          </div>
+          <div style={{ padding: '12px', border: '1px dashed #000', borderRadius: '8px', display: 'inline-block', margin: '10px 0' }}>
+            <div style={{ fontSize: '16px', fontWeight: '900', letterSpacing: '4px', fontFamily: 'monospace' }}>
+              *{selectedPoSku}-{printingBox.id}*
+            </div>
+            <div style={{ fontSize: '10px', marginTop: '4px' }}>GS1-128 BARCODE VALUE</div>
+          </div>
+          <div style={{ fontSize: '11px', color: '#555', marginTop: '12px', borderTop: '1px solid #ccc', paddingTop: '8px' }}>
+            Factory Truck: {truckNumber} • Bilty LR: {biltyNumber} • QC Status: PASSED ✓
+          </div>
+        </div>
+      )}
     </div>
   );
 }

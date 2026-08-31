@@ -26,6 +26,7 @@ export function VoicePosView() {
   const [transcript, setTranscript] = useState("Dr. Subhashish Jena from Gayatri Nagar Villa wants the Solid King Bed with Hydraulic Storage and 4-Door Wardrobe for 1 lakh 56 thousand rupees.");
   const [isEditingTranscript, setIsEditingTranscript] = useState(false);
   const [typedQuery, setTypedQuery] = useState('');
+  const [posStep, setPosStep] = useState(1);
 
   // Customer Profile State
   const [custName, setCustName] = useState("Dr. Subhashish Jena");
@@ -252,6 +253,43 @@ export function VoicePosView() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Auto-Syncing to Orders_SafeLock</span>
         </div>
+      </div>
+
+      {/* 🧭 3-Step Guided Voice POS Checkout Wizard Navigation */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', background: '#030712', padding: '6px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+        {[
+          { step: 1, label: '1. 🗣️ Voice Mic & Cart' },
+          { step: 2, label: '2. 👤 Customer & VIP Discounts' },
+          { step: 3, label: '3. 💳 Split Pay & WhatsApp Bill' }
+        ].map(s => {
+          const isActive = posStep === s.step;
+          const isDone = posStep > s.step;
+          return (
+            <button
+              key={s.step}
+              type="button"
+              onClick={() => {
+                setPosStep(s.step);
+                playScanBeep();
+              }}
+              style={{
+                padding: '10px 8px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: isActive ? '900' : '700',
+                background: isActive 
+                  ? 'linear-gradient(135deg, #0284C7 0%, #0369A1 100%)' 
+                  : isDone ? 'rgba(16,185,129,0.15)' : 'transparent',
+                color: isActive ? '#FFFFFF' : isDone ? 'var(--accent-emerald)' : '#94A3B8',
+                border: isActive ? '2px solid #FFFFFF' : isDone ? '1px solid rgba(16,185,129,0.4)' : '1px solid transparent',
+                cursor: 'pointer',
+                textAlign: 'center'
+              }}
+            >
+              {isDone ? '✓ ' : ''}{s.label}
+            </button>
+          );
+        })}
       </div>
 
       {/* Main Interactive Mic & Waveform Card */}

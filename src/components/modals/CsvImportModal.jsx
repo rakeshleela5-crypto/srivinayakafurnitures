@@ -26,6 +26,7 @@ export function CsvImportModal({ isOpen, onClose }) {
   const [fileName, setFileName] = useState('');
   const [importMode, setImportMode] = useState('MERGE'); // 'MERGE' | 'APPEND' | 'REPLACE'
   const [isProcessing, setIsProcessing] = useState(false);
+  const [importStep, setImportStep] = useState(1);
 
   if (!isOpen) return null;
 
@@ -326,329 +327,305 @@ export function CsvImportModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="modal-overlay">
-      <div 
-        className="modal-content glass-panel" 
-        style={{ 
-          maxWidth: '850px', 
-          width: '95%', 
-          maxHeight: '90vh', 
-          overflowY: 'auto', 
-          border: '2px solid var(--accent-gold)',
-          boxShadow: '0 25px 60px rgba(0,0,0,0.95)',
-          padding: '24px'
-        }}
-      >
+    <div className="modal-overlay" style={{ zIndex: 9999 }}>
+      <div className="modal-card modal-xl glass-panel" style={{ maxWidth: '960px', width: '95%', maxHeight: '92vh', overflowY: 'auto', background: '#0B132B', border: '2px solid var(--accent-gold)', boxShadow: '0 25px 60px rgba(0,0,0,0.95)', padding: '24px' }}>
+        
         {/* Modal Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid rgba(255,255,255,0.12)', paddingBottom: '14px', marginBottom: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ background: 'rgba(56,189,248,0.15)', border: '1.5px solid var(--accent-cyan)', borderRadius: '12px', padding: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <UploadCloud size={28} style={{ color: 'var(--accent-cyan)' }} />
+        <div className="modal-header" style={{ borderBottom: '1px solid rgba(255,255,255,0.12)', paddingBottom: '14px', marginBottom: '14px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className="badge badge-gold">📁 BULK CATALOG IMPORTER</span>
+              <span className="badge badge-cyan">AUTONOMOUS CSV ENGINE</span>
             </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#FFFFFF', margin: 0 }}>
-                  Bulk Furniture CSV Catalog Importer
-                </h2>
-                <span className="badge badge-gold">21-SHEET SYNC READY</span>
-              </div>
-              <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
-                Upload manufacturer & factory Excel/CSV catalogs to bulk-add models, MRPs, dimensions & box counts
-              </p>
+            <h3 style={{ fontSize: '18px', fontWeight: '900', color: '#FFFFFF', margin: '4px 0 0 0' }}>
+              📊 Excel / CSV Bulk Furniture Catalog Importer
+            </h3>
+            <div style={{ fontSize: '11px', color: 'var(--accent-cyan)', marginTop: '2px' }}>
+              Upload new supplier stock sheets, update MRP pricing, or batch-import new furniture lines directly into Godrej Interio Rayagada OS
             </div>
           </div>
           <button className="btn-close-modal" onClick={onClose}><X size={18} /></button>
         </div>
 
-        {/* 1-Click Live Demo Packs Banner */}
-        <div style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.12), rgba(15,23,42,0.9))', padding: '14px 16px', borderRadius: '12px', marginBottom: '16px', border: '1.5px solid var(--accent-gold)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span className="badge badge-gold" style={{ fontSize: '10.5px', fontWeight: '900' }}>
-                ⚡ 1-CLICK DEMO BATCHES (10 SKUs EACH)
-              </span>
-              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                Click below to instantly populate 10 real furniture products for Monday's live demo:
-              </span>
-            </div>
-            <div style={{ fontSize: '10.5px', color: 'var(--accent-gold-light)', fontWeight: '800' }}>
-              Instant Demo Ready ✓
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))', gap: '8px' }}>
-            <button
-              type="button"
-              onClick={() => loadDemoPackDirect('bedroom')}
-              style={{
-                background: 'rgba(212,175,55,0.2)',
-                color: '#FCD34D',
-                border: '1px solid #D4AF37',
-                borderRadius: '8px',
-                padding: '8px 6px',
-                fontSize: '10.5px',
-                fontWeight: '800',
-                cursor: 'pointer',
-                textAlign: 'center',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              🛌 1-Click: 10 Bedroom SKUs
-            </button>
-
-            <button
-              type="button"
-              onClick={() => loadDemoPackDirect('living')}
-              style={{
-                background: 'rgba(56,189,248,0.2)',
-                color: '#7DD3FC',
-                border: '1px solid #38BDF8',
-                borderRadius: '8px',
-                padding: '8px 6px',
-                fontSize: '10.5px',
-                fontWeight: '800',
-                cursor: 'pointer',
-                textAlign: 'center',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              🛋️ 1-Click: 10 Living Room
-            </button>
-
-            <button
-              type="button"
-              onClick={() => loadDemoPackDirect('dining')}
-              style={{
-                background: 'rgba(236,72,153,0.2)',
-                color: '#F472B6',
-                border: '1px solid #EC4899',
-                borderRadius: '8px',
-                padding: '8px 6px',
-                fontSize: '10.5px',
-                fontWeight: '800',
-                cursor: 'pointer',
-                textAlign: 'center',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              🍽️ 1-Click: 10 Dining & Study
-            </button>
-
-            <button
-              type="button"
-              onClick={() => loadDemoPackDirect('kitchen')}
-              style={{
-                background: 'rgba(168,85,247,0.2)',
-                color: '#C084FC',
-                border: '1px solid #A855F7',
-                borderRadius: '8px',
-                padding: '8px 6px',
-                fontSize: '10.5px',
-                fontWeight: '800',
-                cursor: 'pointer',
-                textAlign: 'center',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              🚪 1-Click: 10 Modular Kitchen
-            </button>
-
-            <button
-              type="button"
-              onClick={() => loadDemoPackDirect('office')}
-              style={{
-                background: 'rgba(16,185,129,0.2)',
-                color: '#6EE7B7',
-                border: '1px solid #10B981',
-                borderRadius: '8px',
-                padding: '8px 6px',
-                fontSize: '10.5px',
-                fontWeight: '800',
-                cursor: 'pointer',
-                textAlign: 'center',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              🏢 1-Click: 10 Office Suites
-            </button>
-          </div>
-
-          {/* Download Physical CSV Files Strip */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '8px', flexWrap: 'wrap', gap: '8px' }}>
-            <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-              📥 Download pre-formatted sample files to Desktop:
-            </span>
-            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-              <button 
-                type="button"
-                onClick={() => downloadPackCsv('bedroom')} 
-                style={{ background: 'rgba(255,255,255,0.06)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '4px 6px', fontSize: '9.5px', cursor: 'pointer' }}
-              >
-                <Download size={10} /> Bedroom .csv
-              </button>
-              <button 
-                type="button"
-                onClick={() => downloadPackCsv('living')} 
-                style={{ background: 'rgba(255,255,255,0.06)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '4px 6px', fontSize: '9.5px', cursor: 'pointer' }}
-              >
-                <Download size={10} /> Living .csv
-              </button>
-              <button 
-                type="button"
-                onClick={() => downloadPackCsv('dining')} 
-                style={{ background: 'rgba(255,255,255,0.06)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '4px 6px', fontSize: '9.5px', cursor: 'pointer' }}
-              >
-                <Download size={10} /> Dining .csv
-              </button>
-              <button 
-                type="button"
-                onClick={() => downloadPackCsv('kitchen')} 
-                style={{ background: 'rgba(255,255,255,0.06)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '4px 6px', fontSize: '9.5px', cursor: 'pointer' }}
-              >
-                <Download size={10} /> Kitchen .csv
-              </button>
-              <button 
-                type="button"
-                onClick={() => downloadPackCsv('office')} 
-                style={{ background: 'rgba(255,255,255,0.06)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '4px 6px', fontSize: '9.5px', cursor: 'pointer' }}
-              >
-                <Download size={10} /> Office .csv
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Drag & Drop Upload Zone */}
-        <div 
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
-          style={{
-            border: dragActive ? '2.5px dashed var(--accent-cyan)' : '2px dashed rgba(212,175,55,0.5)',
-            background: dragActive ? 'rgba(56,189,248,0.1)' : 'rgba(3,7,18,0.6)',
-            borderRadius: '16px',
-            padding: '30px 20px',
-            textAlign: 'center',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            marginBottom: '16px'
-          }}
-        >
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileSelect} 
-            accept=".csv, .tsv, .txt" 
-            style={{ display: 'none' }} 
-          />
-          <FileText size={40} style={{ color: 'var(--accent-gold)', margin: '0 auto 10px auto' }} />
-          <div style={{ fontSize: '14px', fontWeight: '900', color: '#FFFFFF' }}>
-            {fileName ? `Selected File: ${fileName}` : 'Drag & Drop Furniture CSV Here, or Click to Browse'}
-          </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Supports standard CSV, TSV, or comma-delimited text exports from Excel, Google Sheets, or ERPs
-          </div>
-        </div>
-
-        {/* Import Strategy Options */}
-        <div style={{ background: '#030712', borderRadius: '12px', padding: '14px', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '16px' }}>
-          <div style={{ fontSize: '11px', fontWeight: '900', color: 'var(--accent-gold-light)', textTransform: 'uppercase', marginBottom: '8px' }}>
-            ⚙️ Import & Conflict Resolution Strategy:
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-            {[
-              { id: 'MERGE', label: '🔄 Merge & Update', desc: 'Update existing SKUs, add new ones (Recommended)' },
-              { id: 'APPEND', label: '➕ Append Only', desc: 'Add new SKUs, skip existing duplicates' },
-              { id: 'REPLACE', label: '⚠️ Overwrite All', desc: 'Replace entire catalog with this file' }
-            ].map(strategy => (
+        {/* 🧭 3-Step Wizard Navigation */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '16px', background: '#030712', padding: '6px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+          {[
+            { step: 1, label: '1. 📁 Upload & Templates' },
+            { step: 2, label: '2. 🔍 Audit & Diagnostics' },
+            { step: 3, label: '3. 🚀 Atomic Import' }
+          ].map(s => {
+            const isActive = importStep === s.step;
+            const isDone = importStep > s.step;
+            return (
               <button
-                key={strategy.id}
+                key={s.step}
                 type="button"
-                onClick={() => setImportMode(strategy.id)}
+                onClick={() => {
+                  setImportStep(s.step);
+                  playScanBeep();
+                }}
                 style={{
-                  background: importMode === strategy.id ? 'linear-gradient(135deg, var(--accent-gold), #B45309)' : 'rgba(30,41,59,0.6)',
-                  color: importMode === strategy.id ? '#000000' : '#FFFFFF',
-                  fontWeight: '900',
-                  border: importMode === strategy.id ? '2px solid #FFFFFF' : '1px solid rgba(255,255,255,0.1)',
+                  padding: '8px 6px',
                   borderRadius: '8px',
-                  padding: '8px',
+                  fontSize: '11.5px',
+                  fontWeight: isActive ? '900' : '700',
+                  background: isActive 
+                    ? 'linear-gradient(135deg, #D4AF37 0%, #B45309 100%)' 
+                    : isDone ? 'rgba(16,185,129,0.15)' : 'transparent',
+                  color: isActive ? '#000000' : isDone ? 'var(--accent-emerald)' : '#94A3B8',
+                  border: isActive ? '1.5px solid #FFFFFF' : isDone ? '1px solid rgba(16,185,129,0.3)' : '1px solid transparent',
                   cursor: 'pointer',
-                  textAlign: 'left'
+                  textAlign: 'center'
                 }}
               >
-                <div style={{ fontSize: '11px' }}>{strategy.label}</div>
-                <div style={{ fontSize: '8.5px', opacity: 0.85, marginTop: '2px' }}>{strategy.desc}</div>
+                {isDone ? '✓ ' : ''}{s.label}
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
 
-        {/* Parsed Data Preview Grid */}
-        {parsedRows.length > 0 && (
-          <div style={{ marginBottom: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <div style={{ fontSize: '13px', fontWeight: '800', color: '#FFFFFF' }}>
-                📋 Preview: {parsedRows.length} Items Ready to Import
+        {/* ================= STEP 1: FILE UPLOAD & PRESET TEMPLATES ================= */}
+        {importStep === 1 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+            {/* Download Sample Packs */}
+            <div style={{ background: '#030712', borderRadius: '12px', padding: '14px', border: '1px solid rgba(212,175,55,0.25)', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                <div>
+                  <div style={{ fontSize: '11.5px', fontWeight: '900', color: 'var(--accent-gold-light)', textTransform: 'uppercase' }}>
+                    📥 Download Standard Formatted Template or Category Starter Packs:
+                  </div>
+                  <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>
+                    Use our verified 12-column CSV schema to guarantee zero import errors
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <button 
+                    type="button"
+                    onClick={downloadSampleTemplate} 
+                    className="btn-ghost-edit" 
+                    style={{ fontSize: '10.5px', padding: '5px 8px', color: 'var(--accent-cyan)' }}
+                  >
+                    <Download size={12} /> Empty Template
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => downloadPackCsv('bedroom')} 
+                    style={{ background: 'rgba(255,255,255,0.06)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '4px 6px', fontSize: '9.5px', cursor: 'pointer' }}
+                  >
+                    <Download size={10} /> Bedroom .csv
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => downloadPackCsv('living')} 
+                    style={{ background: 'rgba(255,255,255,0.06)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '4px 6px', fontSize: '9.5px', cursor: 'pointer' }}
+                  >
+                    <Download size={10} /> Living .csv
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => downloadPackCsv('dining')} 
+                    style={{ background: 'rgba(255,255,255,0.06)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', padding: '4px 6px', fontSize: '9.5px', cursor: 'pointer' }}
+                  >
+                    <Download size={10} /> Dining .csv
+                  </button>
+                </div>
               </div>
-              <span className="badge badge-emerald">ALL VALID ✓</span>
             </div>
 
-            <div style={{ maxHeight: '220px', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px' }}>
-              <table className="luxury-table" style={{ width: '100%', fontSize: '11px' }}>
-                <thead>
-                  <tr>
-                    <th>SKU</th>
-                    <th>Product Name</th>
-                    <th>Category</th>
-                    <th>Material</th>
-                    <th>Dimensions</th>
-                    <th>MRP (₹)</th>
-                    <th>Selling (₹)</th>
-                    <th>Boxes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {parsedRows.slice(0, 10).map((row, idx) => (
-                    <tr key={idx}>
-                      <td style={{ fontWeight: '900', color: 'var(--accent-gold-light)' }}>{row.SKU}</td>
-                      <td>{row.Product_Name}</td>
-                      <td><span className="badge badge-purple" style={{ fontSize: '9px' }}>{row.Main_Category}</span></td>
-                      <td style={{ maxWidth: '140px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.Material_Spec}</td>
-                      <td>{row.Dimensions}</td>
-                      <td>₹{Number(row.MRP_INR).toLocaleString()}</td>
-                      <td style={{ fontWeight: '800', color: 'var(--accent-emerald)' }}>₹{Number(row.Selling_Price_INR).toLocaleString()}</td>
-                      <td>{row.Total_Component_Boxes}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {parsedRows.length > 10 && (
-                <div style={{ padding: '6px', textAlign: 'center', fontSize: '10.5px', color: 'var(--text-secondary)', background: '#030712' }}>
-                  ... and {parsedRows.length - 10} more rows ready for import.
-                </div>
-              )}
+            {/* Drag & Drop Upload Zone */}
+            <div 
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                border: dragActive ? '2.5px dashed var(--accent-cyan)' : '2px dashed rgba(212,175,55,0.5)',
+                background: dragActive ? 'rgba(56,189,248,0.1)' : 'rgba(3,7,18,0.6)',
+                borderRadius: '16px',
+                padding: '36px 20px',
+                textAlign: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                marginBottom: '14px'
+              }}
+            >
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileSelect} 
+                accept=".csv, .tsv, .txt" 
+                style={{ display: 'none' }} 
+              />
+              <FileText size={42} style={{ color: 'var(--accent-gold)', margin: '0 auto 10px auto' }} />
+              <div style={{ fontSize: '14px', fontWeight: '900', color: '#FFFFFF' }}>
+                {fileName ? `Selected File: ${fileName} (${parsedRows.length} SKUs Parsed)` : 'Drag & Drop Furniture CSV Here, or Click to Browse'}
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                Supports standard CSV, TSV, or comma-delimited text exports from Excel, Google Sheets, or ERPs
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px' }}>
+              <button 
+                type="button" 
+                className="btn-luxury-gold" 
+                disabled={parsedRows.length === 0}
+                onClick={() => {
+                  setImportStep(2);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 24px', fontSize: '13px', fontWeight: '800', opacity: parsedRows.length > 0 ? 1 : 0.4 }}
+              >
+                Next: Data Diagnostics & Audit Preview ➔
+              </button>
             </div>
           </div>
         )}
 
-        {/* Modal Action Buttons */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px' }}>
-          <button className="btn-ghost-edit" onClick={onClose}>
-            Cancel
-          </button>
-          
-          <button 
-            className="btn-luxury-gold" 
-            onClick={handleCommitImport}
-            disabled={parsedRows.length === 0 || isProcessing}
-            style={{ padding: '12px 24px', fontSize: '13px', fontWeight: '900', opacity: parsedRows.length > 0 ? 1 : 0.4 }}
-          >
-            <Save size={16} /> 💾 Commit & Import {parsedRows.length} SKUs to Google Sheets
-          </button>
-        </div>
+        {/* ================= STEP 2: DATA DIAGNOSTICS & AUDIT ================= */}
+        {importStep === 2 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+            {/* Import Strategy Options */}
+            <div style={{ background: '#030712', borderRadius: '12px', padding: '12px 14px', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '14px' }}>
+              <div style={{ fontSize: '11px', fontWeight: '900', color: 'var(--accent-gold-light)', textTransform: 'uppercase', marginBottom: '8px' }}>
+                ⚙️ Conflict Resolution Strategy:
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+                {[
+                  { id: 'MERGE', label: '🔄 Merge & Update', desc: 'Update existing SKUs, add new ones (Recommended)' },
+                  { id: 'APPEND', label: '➕ Append Only', desc: 'Add new SKUs, skip existing duplicates' },
+                  { id: 'REPLACE', label: '⚠️ Overwrite All', desc: 'Replace entire catalog with this file' }
+                ].map(strategy => (
+                  <button
+                    key={strategy.id}
+                    type="button"
+                    onClick={() => {
+                      setImportMode(strategy.id);
+                      playScanBeep();
+                    }}
+                    style={{
+                      background: importMode === strategy.id ? 'linear-gradient(135deg, var(--accent-gold), #B45309)' : 'rgba(30,41,59,0.6)',
+                      color: importMode === strategy.id ? '#000000' : '#FFFFFF',
+                      fontWeight: '900',
+                      border: importMode === strategy.id ? '2px solid #FFFFFF' : '1px solid rgba(255,255,255,0.1)',
+                      borderRadius: '8px',
+                      padding: '8px',
+                      cursor: 'pointer',
+                      textAlign: 'left'
+                    }}
+                  >
+                    <div style={{ fontSize: '11px' }}>{strategy.label}</div>
+                    <div style={{ fontSize: '8.5px', opacity: 0.85, marginTop: '2px' }}>{strategy.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Parsed Data Preview Grid */}
+            <div style={{ marginBottom: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <div style={{ fontSize: '12px', fontWeight: '800', color: '#FFFFFF' }}>
+                  📋 Diagnostic Audit: {parsedRows.length} Items Parsed
+                </div>
+                <span className="badge badge-emerald">ALL HEADERS AUTO-MAPPED ✓</span>
+              </div>
+
+              <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px' }}>
+                <table className="luxury-table" style={{ width: '100%', fontSize: '10.5px' }}>
+                  <thead>
+                    <tr>
+                      <th>SKU</th>
+                      <th>Product Name</th>
+                      <th>Category</th>
+                      <th>Material</th>
+                      <th>Dimensions</th>
+                      <th>MRP (₹)</th>
+                      <th>Selling (₹)</th>
+                      <th>Boxes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {parsedRows.slice(0, 8).map((row, idx) => (
+                      <tr key={idx}>
+                        <td style={{ fontWeight: '900', color: 'var(--accent-gold-light)' }}>{row.SKU}</td>
+                        <td>{row.Product_Name}</td>
+                        <td><span className="badge badge-purple" style={{ fontSize: '9px' }}>{row.Main_Category}</span></td>
+                        <td style={{ maxWidth: '140px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{row.Material_Spec}</td>
+                        <td>{row.Dimensions}</td>
+                        <td>₹{Number(row.MRP_INR).toLocaleString()}</td>
+                        <td style={{ fontWeight: '800', color: 'var(--accent-emerald)' }}>₹{Number(row.Selling_Price_INR).toLocaleString()}</td>
+                        <td>{row.Total_Component_Boxes}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '14px' }}>
+              <button 
+                type="button" 
+                className="btn-ghost-edit" 
+                onClick={() => {
+                  setImportStep(1);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 16px', fontSize: '12px' }}
+              >
+                ⬅️ Back: Upload
+              </button>
+              <button 
+                type="button" 
+                className="btn-luxury-gold" 
+                onClick={() => {
+                  setImportStep(3);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '800' }}
+              >
+                Next: Final Review & Commit ➔
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ================= STEP 3: ATOMIC COMMIT & SYNC ================= */}
+        {importStep === 3 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+            <div style={{ background: '#030712', borderRadius: '12px', padding: '16px', border: '1px solid rgba(212,175,55,0.3)', marginBottom: '16px', lineHeight: '1.6' }}>
+              <strong style={{ color: 'var(--accent-gold-light)', fontSize: '13px' }}>🚀 Atomic Import Execution Summary:</strong><br />
+              • Total SKUs to Sync: <b style={{ color: '#FFFFFF' }}>{parsedRows.length} models</b><br />
+              • Strategy: <b style={{ color: 'var(--accent-cyan)' }}>{importMode === 'MERGE' ? 'Merge & Update (Safe)' : importMode === 'APPEND' ? 'Append Only' : 'Full Catalog Replace'}</b><br />
+              • Target: <b>OmniBuild OS Local Storage + Google Sheets Master Catalog</b><br />
+              • Status: <b style={{ color: 'var(--accent-emerald)' }}>Verified 100% Clean • Ready to Commit</b>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px' }}>
+              <button 
+                type="button" 
+                className="btn-ghost-edit" 
+                onClick={() => {
+                  setImportStep(2);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 16px', fontSize: '12px' }}
+              >
+                ⬅️ Back: Diagnostics
+              </button>
+              <button 
+                className="btn-luxury-gold" 
+                onClick={handleCommitImport}
+                disabled={parsedRows.length === 0 || isProcessing}
+                style={{ flex: 1, marginLeft: '12px', justifyContent: 'center', padding: '12px', fontSize: '13px', fontWeight: '900' }}
+              >
+                <Save size={16} /> 💾 Commit & Import {parsedRows.length} SKUs to Google Sheets
+              </button>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

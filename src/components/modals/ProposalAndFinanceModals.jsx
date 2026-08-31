@@ -551,6 +551,7 @@ export function EmiSchemeModal({ isOpen, onClose, amount = 125000, customerPhone
 // =========================================================================
 export function FurnitureExchangeModal({ isOpen, onClose, onApplyDiscount, customerPhone = "9437188291", customerName = "Dr. Subhashish Jena" }) {
   const { showToast } = useStore();
+  const [exchangeStep, setExchangeStep] = useState(1); // 1: Category & Wood, 2: Condition & Notes, 3: Valuation & Voucher
 
   const [category, setCategory] = useState('BED'); // 'BED' | 'SOFA' | 'DINING' | 'ALMIRAH'
   const [woodType, setWoodType] = useState('TEAK'); // 'TEAK' | 'SAL' | 'PLY' | 'STEEL'
@@ -669,108 +670,226 @@ export function FurnitureExchangeModal({ isOpen, onClose, onApplyDiscount, custo
 
   return (
     <div className="modal-overlay">
-      <div className="modal-card" style={{ maxWidth: '600px', background: '#0B132B', border: '2px solid var(--accent-gold)' }}>
+      <div className="modal-card" style={{ maxWidth: '580px', background: '#0B132B', border: '2px solid var(--accent-gold)' }}>
         
+        {/* Header */}
         <div className="modal-header">
           <div>
-            <span className="badge badge-gold">OLD FURNITURE BUYBACK & EXCHANGE APPRAISER</span>
-            <h3 style={{ fontSize: '17px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
-              🔄 Exchange Valuation Engine
+            <span className="badge badge-gold" style={{ fontSize: '10px' }}>TRADE-IN APPRAISAL WIZARD</span>
+            <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
+              🔄 Old Furniture Exchange Appraiser
             </h3>
           </div>
           <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
         </div>
 
-        {/* 4-Language Switcher */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#030712', padding: '6px 10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', margin: '10px 0' }}>
-          <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', fontWeight: '800' }}>🌐 WhatsApp Language:</span>
-          <div style={{ display: 'flex', gap: '4px' }}>
-            {[
-              { id: 'EN', label: '🇬🇧 EN' },
-              { id: 'OR', label: '🇮🇳 ଓଡ଼ିଆ' },
-              { id: 'TE', label: '🇮🇳 తెలుగు' },
-              { id: 'HI', label: '🇮🇳 HI' }
-            ].map(l => (
-              <button 
-                key={l.id} 
-                className={`btn-ghost-edit ${lang === l.id ? 'badge-gold' : ''}`}
-                onClick={() => setLang(l.id)}
-                style={{ fontSize: '10.5px', padding: '3px 8px' }}
+        {/* 🧭 LUXURY 3-STEP WIZARD PROGRESS BAR */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', margin: '12px 0 16px', background: '#030712', padding: '6px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+          {[
+            { step: 1, label: '1. 🪵 Type & Wood' },
+            { step: 2, label: '2. 🔍 Wear & Pick' },
+            { step: 3, label: '3. 💰 Certificate' }
+          ].map(s => {
+            const isActive = exchangeStep === s.step;
+            const isDone = exchangeStep > s.step;
+            return (
+              <button
+                key={s.step}
+                type="button"
+                onClick={() => {
+                  setExchangeStep(s.step);
+                  playScanBeep();
+                }}
+                style={{
+                  padding: '7px 4px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: isActive ? '900' : '700',
+                  background: isActive 
+                    ? 'linear-gradient(135deg, #D4AF37 0%, #B45309 100%)' 
+                    : isDone ? 'rgba(16,185,129,0.15)' : 'transparent',
+                  color: isActive ? '#000000' : isDone ? 'var(--accent-emerald)' : '#94A3B8',
+                  border: isActive ? '1px solid #FFFFFF' : isDone ? '1px solid rgba(16,185,129,0.3)' : '1px solid transparent',
+                  cursor: 'pointer',
+                  textAlign: 'center'
+                }}
               >
-                {l.label}
+                {isDone ? '✓ ' : ''}{s.label}
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
 
-        {/* 3-Question Rapid Appraiser Form */}
-        <div className="form-grid" style={{ margin: '14px 0' }}>
-          
-          <div className="form-field">
-            <label>1. Old Furniture Category</label>
-            <select value={category} onChange={e => setCategory(e.target.value)}>
-              <option value="BED">Double Bed / King Bed (Wooden)</option>
-              <option value="SOFA">Sofa Set (3+1+1 or L-Shape)</option>
-              <option value="DINING">Dining Table Set (4 or 6 Seater)</option>
-              <option value="ALMIRAH">Almirah / Wardrobe (Steel or Wood)</option>
-            </select>
-          </div>
+        {/* ========================================================================= */}
+        {/* 🪵 STEP 1: CATEGORY & MATERIAL SELECTION */}
+        {/* ========================================================================= */}
+        {exchangeStep === 1 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div className="form-field">
+              <label style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--accent-gold-light)' }}>
+                1. Select Old Furniture Category:
+              </label>
+              <select value={category} onChange={e => setCategory(e.target.value)} style={{ padding: '10px', fontSize: '13px' }}>
+                <option value="BED">Double Bed / King Bed (Wooden)</option>
+                <option value="SOFA">Sofa Set (3+1+1 or L-Shape)</option>
+                <option value="DINING">Dining Table Set (4 or 6 Seater)</option>
+                <option value="ALMIRAH">Almirah / Wardrobe (Steel or Wood)</option>
+              </select>
+            </div>
 
-          <div className="form-field">
-            <label>2. Primary Material / Wood</label>
-            <select value={woodType} onChange={e => setWoodType(e.target.value)}>
-              <option value="TEAK">Solid Teak / Sheesham (High Salvage)</option>
-              <option value="SAL">Sal Wood / Indian Hardwood</option>
-              <option value="PLY">Commercial Plywood / Particle Board</option>
-              <option value="STEEL">CRCA Heavy Steel Almirah</option>
-            </select>
-          </div>
+            <div className="form-field">
+              <label style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--accent-cyan)' }}>
+                2. Select Primary Wood / Core Material:
+              </label>
+              <select value={woodType} onChange={e => setWoodType(e.target.value)} style={{ padding: '10px', fontSize: '13px' }}>
+                <option value="TEAK">Solid Teak / Sheesham (High Scrap Salvage)</option>
+                <option value="SAL">Sal Wood / Indian Hardwood</option>
+                <option value="PLY">Commercial Plywood / Particle Board</option>
+                <option value="STEEL">CRCA Heavy Steel Almirah</option>
+              </select>
+            </div>
 
-          <div className="form-field">
-            <label>Customer WhatsApp Phone</label>
-            <input value={phone} onChange={e => setPhone(e.target.value)} />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+              <button 
+                type="button" 
+                className="btn-luxury-gold" 
+                onClick={() => {
+                  setExchangeStep(2);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '800' }}
+              >
+                Next: Condition & Pickup ➔
+              </button>
+            </div>
           </div>
+        )}
 
-          <div className="form-field">
-            <label>3. Age & Physical Condition</label>
-            <select value={condition} onChange={e => setCondition(e.target.value)}>
-              <option value="MINT">1–3 Years Old (Mint Condition / Reusable)</option>
-              <option value="GOOD">4–7 Years Old (Good Structural Shape / Minor Scratches)</option>
-              <option value="HEAVY_WEAR">8+ Years Old (Heavy Wear / Scrap Salvage)</option>
-            </select>
-          </div>
+        {/* ========================================================================= */}
+        {/* 🔍 STEP 2: WEAR CONDITION & PICKUP ADDRESS */}
+        {/* ========================================================================= */}
+        {exchangeStep === 2 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div className="form-field">
+              <label style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--accent-gold-light)' }}>
+                3. Age & Physical Wear Condition:
+              </label>
+              <select value={condition} onChange={e => setCondition(e.target.value)} style={{ padding: '10px', fontSize: '13px' }}>
+                <option value="MINT">1–3 Years Old (Mint Condition / Reusable)</option>
+                <option value="GOOD">4–7 Years Old (Good Structural Shape / Minor Scratches)</option>
+                <option value="HEAVY_WEAR">8+ Years Old (Heavy Wear / Scrap Salvage)</option>
+              </select>
+            </div>
 
-          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
-            <label>Pickup Location & Notes</label>
-            <input value={customerNotes} onChange={e => setCustomerNotes(e.target.value)} />
-          </div>
+            <div className="form-field">
+              <label style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--accent-cyan)' }}>
+                Customer WhatsApp Mobile Number:
+              </label>
+              <input value={phone} onChange={e => setPhone(e.target.value)} style={{ padding: '10px', fontSize: '13px' }} />
+            </div>
 
-        </div>
+            <div className="form-field">
+              <label style={{ fontSize: '11.5px', fontWeight: '800', color: '#CBD5E1' }}>
+                Old Furniture Pickup Location & Notes:
+              </label>
+              <input value={customerNotes} onChange={e => setCustomerNotes(e.target.value)} style={{ padding: '10px', fontSize: '13px' }} />
+            </div>
 
-        {/* Valuation Result Box */}
-        <div style={{ background: '#030712', borderRadius: '12px', padding: '16px', border: '1.5px solid var(--accent-gold)', textAlign: 'center', margin: '14px 0' }}>
-          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            Estimated Trade-In Buyback Value
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
+              <button 
+                type="button" 
+                className="btn-ghost-edit" 
+                onClick={() => {
+                  setExchangeStep(1);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 16px', fontSize: '12px' }}
+              >
+                ⬅️ Back: Type & Wood
+              </button>
+              <button 
+                type="button" 
+                className="btn-luxury-gold" 
+                onClick={() => {
+                  setExchangeStep(3);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '800' }}
+              >
+                Next: View Valuation & Certificate ➔
+              </button>
+            </div>
           </div>
-          <div style={{ fontSize: '32px', fontWeight: '900', color: 'var(--accent-gold-light)', margin: '4px 0' }}>
-            ₹{buybackValue.toLocaleString()}
-          </div>
-          <div style={{ fontSize: '11.5px', color: 'var(--accent-emerald)', fontWeight: '700' }}>
-            ✓ Certificate #{exchangeCertNo} • Valid for Instant Invoice Deduction
-          </div>
-        </div>
+        )}
 
-        {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn-ghost-edit" onClick={() => handleApply(false)} style={{ flex: 1, justifyContent: 'center' }}>
-            Apply Discount
-          </button>
-          <button className="btn-luxury-gold" onClick={() => handleApply(true)} style={{ flex: 2, justifyContent: 'center', padding: '12px', fontWeight: '900' }}>
-            <Check size={16} /> 📲 Apply & Send WhatsApp Voucher
-          </button>
-        </div>
+        {/* ========================================================================= */}
+        {/* 💰 STEP 3: VALUATION CERTIFICATE & WHATSAPP VOUCHER */}
+        {/* ========================================================================= */}
+        {exchangeStep === 3 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            
+            {/* 4-Language Switcher */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#030712', padding: '6px 10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', fontWeight: '800' }}>🌐 WhatsApp Language:</span>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                {[
+                  { id: 'EN', label: '🇬🇧 EN' },
+                  { id: 'OR', label: '🇮🇳 ଓଡ଼ିଆ' },
+                  { id: 'TE', label: '🇮🇳 తెలుగు' },
+                  { id: 'HI', label: '🇮🇳 HI' }
+                ].map(l => (
+                  <button 
+                    key={l.id} 
+                    type="button"
+                    className={`btn-ghost-edit ${lang === l.id ? 'badge-gold' : ''}`}
+                    onClick={() => setLang(l.id)}
+                    style={{ fontSize: '10.5px', padding: '3px 8px' }}
+                  >
+                    {l.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Valuation Result Box */}
+            <div style={{ background: '#030712', borderRadius: '12px', padding: '16px', border: '1.5px solid var(--accent-gold)', textAlign: 'center' }}>
+              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                Estimated Trade-In Buyback Credit Value
+              </div>
+              <div style={{ fontSize: '32px', fontWeight: '900', color: 'var(--accent-gold-light)', margin: '4px 0' }}>
+                ₹{buybackValue.toLocaleString()}
+              </div>
+              <div style={{ fontSize: '11.5px', color: 'var(--accent-emerald)', fontWeight: '700' }}>
+                ✓ Certified Certificate #{exchangeCertNo} • Instant Deduction Ready
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+              <button 
+                type="button"
+                className="btn-ghost-edit" 
+                onClick={() => {
+                  setExchangeStep(2);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 14px', fontSize: '12px' }}
+              >
+                ⬅️ Back
+              </button>
+              <button className="btn-ghost-edit" onClick={() => handleApply(false)} style={{ flex: 1, justifyContent: 'center' }}>
+                Apply Discount
+              </button>
+              <button className="btn-luxury-gold" onClick={() => handleApply(true)} style={{ flex: 1.8, justifyContent: 'center', padding: '10px', fontWeight: '900' }}>
+                <Check size={16} /> 📲 Apply & Send WhatsApp
+              </button>
+            </div>
+
+          </div>
+        )}
 
       </div>
     </div>
   );
 }
+

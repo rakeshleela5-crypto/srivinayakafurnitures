@@ -6,6 +6,7 @@ import { dispatchWebhookAction } from '../../services/webhookService';
 
 export function RegisterArchitectModal({ isOpen, onClose }) {
   const { architects, setArchitects, showToast } = useStore();
+  const [archStep, setArchStep] = useState(1);
   const [name, setName] = useState('');
   const [firm, setFirm] = useState('');
   const [phone, setPhone] = useState('');
@@ -38,46 +39,176 @@ export function RegisterArchitectModal({ isOpen, onClose }) {
 
   return (
     <div className="modal-overlay">
-      <div className="modal-card">
+      <div className="modal-card" style={{ maxWidth: '540px', background: '#0B132B', border: '2px solid var(--accent-gold)' }}>
+        
         <div className="modal-header">
-          <h3>🏛️ Register VIP Architect & Interior Designer</h3>
+          <div>
+            <span className="badge badge-gold" style={{ fontSize: '10px' }}>VIP PARTNER ENROLLMENT</span>
+            <h3 style={{ margin: '2px 0 0', color: '#FFFFFF', fontSize: '16px' }}>
+              🏛️ Register VIP Architect & Interior Designer
+            </h3>
+          </div>
           <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
         </div>
 
-        <div className="form-grid">
-          <div className="form-field">
-            <label>Architect Full Name</label>
-            <input placeholder="e.g. Ar. Sunita Patnaik" value={name} onChange={e => setName(e.target.value)} />
-          </div>
-          <div className="form-field">
-            <label>Design Studio / Firm</label>
-            <input placeholder="e.g. Studio Vastu Rayagada" value={firm} onChange={e => setFirm(e.target.value)} />
-          </div>
-          <div className="form-field">
-            <label>WhatsApp Contact</label>
-            <input placeholder="e.g. 9437011223" value={phone} onChange={e => setPhone(e.target.value)} />
-          </div>
-          <div className="form-field">
-            <label>Partnership Commission Slab</label>
-            <select value={tier} onChange={e => setTier(e.target.value)}>
-              <option value="Platinum">Platinum (8.5% Commission)</option>
-              <option value="Gold">Gold (6.5% Commission)</option>
-              <option value="Silver">Silver (5.0% Commission)</option>
-            </select>
-          </div>
-          <div className="form-field">
-            <label>GSTIN / PAN</label>
-            <input value={gstin} onChange={e => setGstin(e.target.value)} />
-          </div>
-          <div className="form-field">
-            <label>Instant Settlement UPI ID / Bank VPA</label>
-            <input placeholder="partner@upi" value={upi} onChange={e => setUpi(e.target.value)} />
-          </div>
+        {/* 3-Step Wizard Navigation */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', margin: '12px 0 16px', background: '#030712', padding: '6px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+          {[
+            { step: 1, label: '1. 🏛️ Profile' },
+            { step: 2, label: '2. 👑 Slabs & TDS' },
+            { step: 3, label: '3. 💳 UPI VPA' }
+          ].map(s => {
+            const isActive = archStep === s.step;
+            const isDone = archStep > s.step;
+            return (
+              <button
+                key={s.step}
+                type="button"
+                onClick={() => {
+                  setArchStep(s.step);
+                  playScanBeep();
+                }}
+                style={{
+                  padding: '7px 4px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: isActive ? '900' : '700',
+                  background: isActive 
+                    ? 'linear-gradient(135deg, #D4AF37 0%, #B45309 100%)' 
+                    : isDone ? 'rgba(16,185,129,0.15)' : 'transparent',
+                  color: isActive ? '#000000' : isDone ? 'var(--accent-emerald)' : '#94A3B8',
+                  border: isActive ? '1px solid #FFFFFF' : isDone ? '1px solid rgba(16,185,129,0.3)' : '1px solid transparent',
+                  cursor: 'pointer',
+                  textAlign: 'center'
+                }}
+              >
+                {isDone ? '✓ ' : ''}{s.label}
+              </button>
+            );
+          })}
         </div>
 
-        <button className="btn-luxury-gold" onClick={handleSave} style={{ width: '100%', justifyContent: 'center' }}>
-          <Check size={16} /> Save VIP Partner to Architect_VIPs Sheet
-        </button>
+        {archStep === 1 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="form-field">
+              <label style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--accent-gold-light)' }}>
+                1. Architect / Interior Designer Full Name:
+              </label>
+              <input placeholder="e.g. Ar. Sunita Patnaik" value={name} onChange={e => setName(e.target.value)} style={{ padding: '10px' }} />
+            </div>
+
+            <div className="form-field">
+              <label style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--accent-cyan)' }}>
+                2. Design Studio / Firm Name:
+              </label>
+              <input placeholder="e.g. Studio Vastu Rayagada" value={firm} onChange={e => setFirm(e.target.value)} style={{ padding: '10px' }} />
+            </div>
+
+            <div className="form-field">
+              <label style={{ fontSize: '11.5px', fontWeight: '800', color: '#CBD5E1' }}>
+                3. WhatsApp Mobile Contact:
+              </label>
+              <input placeholder="e.g. 9437011223" value={phone} onChange={e => setPhone(e.target.value)} style={{ padding: '10px' }} />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+              <button 
+                type="button" 
+                className="btn-luxury-gold" 
+                onClick={() => {
+                  setArchStep(2);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '800' }}
+              >
+                Next: Commission Slabs & TDS ➔
+              </button>
+            </div>
+          </div>
+        )}
+
+        {archStep === 2 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="form-field">
+              <label style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--accent-gold-light)' }}>
+                Partnership Commission Slab:
+              </label>
+              <select value={tier} onChange={e => setTier(e.target.value)} style={{ padding: '10px', fontSize: '13px' }}>
+                <option value="Platinum">Platinum Tier (8.5% Commission + Free 3D Catalogs)</option>
+                <option value="Gold">Gold Tier (6.5% Commission)</option>
+                <option value="Silver">Silver Tier (5.0% Commission)</option>
+              </select>
+            </div>
+
+            <div className="form-field">
+              <label style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--accent-cyan)' }}>
+                GSTIN / PAN (for Form 16A Statutory TDS):
+              </label>
+              <input value={gstin} onChange={e => setGstin(e.target.value)} style={{ padding: '10px', fontFamily: 'JetBrains Mono' }} />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+              <button 
+                type="button" 
+                className="btn-ghost-edit" 
+                onClick={() => {
+                  setArchStep(1);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 16px', fontSize: '12px' }}
+              >
+                ⬅️ Back: Profile
+              </button>
+              <button 
+                type="button" 
+                className="btn-luxury-gold" 
+                onClick={() => {
+                  setArchStep(3);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '800' }}
+              >
+                Next: Settlement UPI ID ➔
+              </button>
+            </div>
+          </div>
+        )}
+
+        {archStep === 3 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="form-field">
+              <label style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--accent-gold-light)' }}>
+                Instant Settlement UPI ID / Bank VPA:
+              </label>
+              <input placeholder="partner@okhdfcbank" value={upi} onChange={e => setUpi(e.target.value)} style={{ padding: '10px', fontFamily: 'JetBrains Mono', fontSize: '13px' }} />
+            </div>
+
+            <div style={{ background: '#030712', borderRadius: '10px', padding: '12px 14px', border: '1px solid rgba(212,175,55,0.25)', fontSize: '11px', color: '#CBD5E1', lineHeight: '1.5' }}>
+              <strong style={{ color: 'var(--accent-emerald)' }}>✓ Summary of VIP Enrollment:</strong><br />
+              • Partner: <b>{name || 'Ar. Partner'}</b> ({firm || 'Design Studio'})<br />
+              • Rate: <b>{tier === 'Platinum' ? '8.5%' : tier === 'Gold' ? '6.5%' : '5.0%'} Referral Fee</b><br />
+              • Settlement UPI: <b>{upi || `${phone}@upi`}</b>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+              <button 
+                type="button" 
+                className="btn-ghost-edit" 
+                onClick={() => {
+                  setArchStep(2);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 14px', fontSize: '12px' }}
+              >
+                ⬅️ Back
+              </button>
+              <button className="btn-luxury-gold" onClick={handleSave} style={{ flex: 1, marginLeft: '10px', justifyContent: 'center', padding: '12px', fontWeight: '900' }}>
+                <Check size={16} /> 🏛️ Save & Enroll to Architect_VIPs
+              </button>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
@@ -647,6 +778,7 @@ export function OrderInvoiceModal({ isOpen, onClose, order = {} }) {
 
 export function EodReconciliationModal({ isOpen, onClose }) {
   const { eodSummary, setEodSummary, showToast } = useStore();
+  const [eodStep, setEodStep] = useState(1);
 
   // Denomination note counts state
   const [denominations, setDenominations] = useState({
@@ -890,218 +1022,312 @@ export function EodReconciliationModal({ isOpen, onClose }) {
           <button className="btn-close-modal" onClick={onClose}><X size={18} /></button>
         </div>
 
-        {/* ================= SECTION 1: PHYSICAL CURRENCY DENOMINATION MATRIX ================= */}
-        <div style={{ margin: '14px 0' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-gold-light)', textTransform: 'uppercase' }}>
-              1. 💵 Physical Currency Notes Denomination Counter:
-            </label>
-            <span className="badge badge-emerald" style={{ fontSize: '11.5px', fontWeight: '900' }}>
-              Counted: ₹{totalCountedCash.toLocaleString()}
-            </span>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-            {[
-              { note: 500, label: '₹500 Note', color: '#6EE7B7' },
-              { note: 200, label: '₹200 Note', color: '#FCD34D' },
-              { note: 100, label: '₹100 Note', color: '#93C5FD' },
-              { note: 50,  label: '₹50 Note',  color: '#F472B6' },
-              { note: 20,  label: '₹20 Note',  color: '#FDBA74' },
-              { note: 10,  label: '₹10 Note',  color: '#CBD5E1' }
-            ].map(item => {
-              const subtotal = (Number(denominations[item.note]) || 0) * item.note;
-              return (
-                <div key={item.note} style={{ background: '#030712', borderRadius: '10px', padding: '10px 12px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: item.color, fontWeight: '800', marginBottom: '4px' }}>
-                    <span>{item.label}</span>
-                    <span>= ₹{subtotal.toLocaleString()}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '12px', color: '#94A3B8' }}>Qty:</span>
-                    <input 
-                      type="number" 
-                      min="0"
-                      value={denominations[item.note]} 
-                      onChange={e => handleDenomChange(item.note, e.target.value)}
-                      style={{ padding: '6px', textAlign: 'center', fontSize: '13px', fontWeight: '800', background: '#0B132B' }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Loose Coins / Change */}
-            <div style={{ background: '#030712', borderRadius: '10px', padding: '10px 12px', border: '1px solid rgba(255,255,255,0.1)', gridColumn: '1 / -1' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--accent-gold-light)', fontWeight: '800', marginBottom: '4px' }}>
-                <span>🪙 Loose Coins & Metal Change (₹ Amount)</span>
-                <span>= ₹{countCoins.toLocaleString()}</span>
-              </div>
-              <input 
-                type="number" 
-                min="0"
-                value={denominations.coins} 
-                onChange={e => handleDenomChange('coins', e.target.value)}
-                placeholder="Enter total coins amount..."
-                style={{ padding: '6px 10px', fontSize: '13px', fontWeight: '800', background: '#0B132B' }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* ================= SECTION 2: DIGITAL & UPI SETTLEMENTS ================= */}
-        <div style={{ margin: '14px 0' }}>
-          <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-cyan)', textTransform: 'uppercase' }}>
-            2. 📱 Digital UPI QR & Card Terminal Settlements:
-          </label>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '6px' }}>
-            <div className="form-field">
-              <label style={{ color: 'var(--accent-emerald)', fontWeight: '800' }}>Dynamic Merchant UPI VPA (₹)</label>
-              <input 
-                type="number" 
-                value={upiSettled} 
-                onChange={e => setUpiSettled(Number(e.target.value))} 
-                style={{ borderColor: 'var(--accent-emerald)', color: 'var(--accent-emerald)', fontWeight: '800' }}
-              />
-              <span style={{ fontSize: '10px', color: '#64748B' }}>Doorstep Driver & Showroom Standee QRs</span>
-            </div>
-
-            <div className="form-field">
-              <label style={{ color: '#93C5FD' }}>HDFC POS Card Machine (₹)</label>
-              <input 
-                type="number" 
-                value={cardSettled} 
-                onChange={e => setCardSettled(Number(e.target.value))} 
-              />
-              <span style={{ fontSize: '10px', color: '#64748B' }}>Credit/Debit Card Swipes</span>
-            </div>
-          </div>
-        </div>
-
-        {/* ================= SECTION 3: RECONCILIATION SUMMARY & VARIANCE CHECK ================= */}
-        <div style={{ background: '#030712', borderRadius: '12px', padding: '14px 18px', border: '1px solid rgba(212,175,55,0.3)', margin: '14px 0' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', textAlign: 'center' }}>
-            <div>
-              <div style={{ fontSize: '10.5px', color: '#94A3B8', textTransform: 'uppercase' }}>1. Physical Cash Safe</div>
-              <div style={{ fontSize: '18px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
-                ₹{totalCountedCash.toLocaleString()}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '10.5px', color: '#94A3B8', textTransform: 'uppercase' }}>2. Digital UPI / Bank</div>
-              <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--accent-emerald)', marginTop: '2px' }}>
-                ₹{(Number(upiSettled) + Number(cardSettled)).toLocaleString()}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '10.5px', color: '#94A3B8', textTransform: 'uppercase' }}>3. Total Gross Day Sales</div>
-              <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--accent-gold-light)', marginTop: '2px' }}>
-                ₹{totalGrossDayRevenue.toLocaleString()}
-              </div>
-            </div>
-          </div>
-
-          <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontSize: '11px', color: '#94A3B8' }}>
-              System Expected Cash: <b>₹{expectedSystemCash.toLocaleString()}</b>
-            </div>
-            <span className={`badge ${cashDiscrepancy === 0 ? 'badge-emerald' : 'badge-amber'}`} style={{ fontSize: '11px' }}>
-              {cashDiscrepancy === 0 ? "✓ ZERO DISCREPANCY (100% PERFECT MATCH)" : `⚠️ ₹${cashDiscrepancy.toLocaleString()} VARIANCE`}
-            </span>
-          </div>
-        </div>
-
-        {/* ================= SECTION 4: 4-LANGUAGE WHATSAPP SLIP PREVIEW ================= */}
-        <div style={{ margin: '14px 0' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-            <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-emerald)', textTransform: 'uppercase' }}>
-              3. 🌐 EOD WhatsApp Closing Slip Language (Director Dispatch):
-            </label>
-            <span className="badge badge-gold" style={{ fontSize: '10px' }}>
-              🔒 Seal #VAULT-8899-RAYAGADA
-            </span>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '10px' }}>
-            {[
-              { id: 'EN', label: '🇬🇧 English' },
-              { id: 'OR', label: '🇮🇳 ଓଡ଼ିଆ (Odia)' },
-              { id: 'TE', label: '🇮🇳 తెలుగు (Telugu)' },
-              { id: 'HI', label: '🇮🇳 हिंदी (Hindi)' }
-            ].map(l => (
-              <button 
-                key={l.id}
+        {/* 🧭 3-Step Wizard Navigation */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '16px', background: '#030712', padding: '6px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+          {[
+            { step: 1, label: '1. 💵 Cash Denominations' },
+            { step: 2, label: '2. 📱 UPI & Card Settlement' },
+            { step: 3, label: '3. 🔒 Director Lock & WhatsApp' }
+          ].map(s => {
+            const isActive = eodStep === s.step;
+            const isDone = eodStep > s.step;
+            return (
+              <button
+                key={s.step}
                 type="button"
-                className={`btn-ghost-edit ${language === l.id ? 'badge-emerald' : ''}`}
                 onClick={() => {
-                  setLanguage(l.id);
+                  setEodStep(s.step);
                   playScanBeep();
                 }}
-                style={{ fontSize: '11.5px', padding: '6px 4px', textAlign: 'center', fontWeight: '800' }}
+                style={{
+                  padding: '8px 6px',
+                  borderRadius: '8px',
+                  fontSize: '11.5px',
+                  fontWeight: isActive ? '900' : '700',
+                  background: isActive 
+                    ? 'linear-gradient(135deg, #D4AF37 0%, #B45309 100%)' 
+                    : isDone ? 'rgba(16,185,129,0.15)' : 'transparent',
+                  color: isActive ? '#000000' : isDone ? 'var(--accent-emerald)' : '#94A3B8',
+                  border: isActive ? '1.5px solid #FFFFFF' : isDone ? '1px solid rgba(16,185,129,0.3)' : '1px solid transparent',
+                  cursor: 'pointer',
+                  textAlign: 'center'
+                }}
               >
-                {l.label}
+                {isDone ? '✓ ' : ''}{s.label}
               </button>
-            ))}
-          </div>
+            );
+          })}
+        </div>
 
-          {/* Dynamic Preview Box */}
-          <div style={{ background: '#030712', borderRadius: '10px', padding: '12px 16px', border: '1px solid rgba(212,175,55,0.3)', position: 'relative' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-gold-light)' }}>
-                💬 Live WhatsApp Slip Preview ({language}):
+        {/* ================= STEP 1: PHYSICAL CURRENCY DENOMINATION MATRIX ================= */}
+        {eodStep === 1 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-gold-light)', textTransform: 'uppercase' }}>
+                1. 💵 Count Physical Currency Notes in Safe:
+              </label>
+              <span className="badge badge-emerald" style={{ fontSize: '12px', fontWeight: '900' }}>
+                Counted Total: ₹{totalCountedCash.toLocaleString()}
               </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+              {[
+                { note: 500, label: '₹500 Note', color: '#6EE7B7' },
+                { note: 200, label: '₹200 Note', color: '#FCD34D' },
+                { note: 100, label: '₹100 Note', color: '#93C5FD' },
+                { note: 50,  label: '₹50 Note',  color: '#F472B6' },
+                { note: 20,  label: '₹20 Note',  color: '#FDBA74' },
+                { note: 10,  label: '₹10 Note',  color: '#CBD5E1' }
+              ].map(item => {
+                const subtotal = (Number(denominations[item.note]) || 0) * item.note;
+                return (
+                  <div key={item.note} style={{ background: '#030712', borderRadius: '10px', padding: '10px 12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: item.color, fontWeight: '800', marginBottom: '4px' }}>
+                      <span>{item.label}</span>
+                      <span>= ₹{subtotal.toLocaleString()}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '12px', color: '#94A3B8' }}>Qty:</span>
+                      <input 
+                        type="number" 
+                        min="0"
+                        value={denominations[item.note]} 
+                        onChange={e => handleDenomChange(item.note, e.target.value)}
+                        style={{ padding: '6px', textAlign: 'center', fontSize: '13px', fontWeight: '800', background: '#0B132B' }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Loose Coins / Change */}
+              <div style={{ background: '#030712', borderRadius: '10px', padding: '10px 12px', border: '1px solid rgba(255,255,255,0.1)', gridColumn: '1 / -1' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--accent-gold-light)', fontWeight: '800', marginBottom: '4px' }}>
+                  <span>🪙 Loose Coins & Metal Change (₹ Amount)</span>
+                  <span>= ₹{countCoins.toLocaleString()}</span>
+                </div>
+                <input 
+                  type="number" 
+                  min="0"
+                  value={denominations.coins} 
+                  onChange={e => handleDenomChange('coins', e.target.value)}
+                  placeholder="Enter total coins amount..."
+                  style={{ padding: '6px 10px', fontSize: '13px', fontWeight: '800', background: '#0B132B' }}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
               <button 
-                type="button"
-                className="btn-ghost-edit" 
-                onClick={handleCopySlip}
-                style={{ fontSize: '10.5px', padding: '4px 10px', color: copied ? 'var(--accent-emerald)' : '#FFFFFF' }}
+                type="button" 
+                className="btn-luxury-gold" 
+                onClick={() => {
+                  setEodStep(2);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '800' }}
               >
-                {copied ? '✓ Copied!' : '📋 Copy Slip Text'}
-              </button>
-            </div>
-            <pre style={{ fontSize: '11px', color: '#E2E8F0', whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0, lineHeight: 1.5 }}>
-              {generateEodSlipText(language)}
-            </pre>
-          </div>
-        </div>
-
-        {/* ================= SECTION 5: CASHIER SIGN-OFF & DIRECTOR PIN ================= */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', margin: '14px 0' }}>
-          <div className="form-field">
-            <label>Cashier / Staff In-Charge</label>
-            <input value={cashierName} onChange={e => setCashierName(e.target.value)} />
-          </div>
-
-          <div className="form-field">
-            <label style={{ color: 'var(--accent-gold-light)', fontWeight: '800' }}>Director Authorization PIN</label>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <input 
-                type="password" 
-                maxLength={4} 
-                value={directorPin} 
-                onChange={e => setDirectorPin(e.target.value)} 
-                placeholder="PIN 8899"
-                style={{ textAlign: 'center', fontWeight: '800', letterSpacing: '4px' }}
-              />
-              <button className="btn-ghost-edit" onClick={handleVerifyPin} style={{ padding: '6px 12px', fontSize: '11px' }}>
-                {pinVerified ? '✓ Verified' : 'Verify'}
+                Next: Digital UPI & Card Settlements ➔
               </button>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Action Buttons */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '14px' }}>
-          <button className="btn-luxury-gold" onClick={handleLockRegister} style={{ justifyContent: 'center', padding: '12px' }}>
-            <Check size={16} /> 🔒 Confirm 9 PM Register Lock
-          </button>
-          <button className="btn-cyan" onClick={handleSendWhatsAppSlip} style={{ justifyContent: 'center', padding: '12px' }}>
-            <Send size={16} /> 📲 Send EOD Slip to Director (+91 93905 53301)
-          </button>
-        </div>
+        {/* ================= STEP 2: DIGITAL & UPI SETTLEMENTS ================= */}
+        {eodStep === 2 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+            <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-cyan)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
+              2. 📱 Digital UPI QR & Card Terminal Settlements:
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+              <div className="form-field">
+                <label style={{ color: 'var(--accent-emerald)', fontWeight: '800' }}>Dynamic Merchant UPI VPA (₹)</label>
+                <input 
+                  type="number" 
+                  value={upiSettled} 
+                  onChange={e => setUpiSettled(Number(e.target.value))} 
+                  style={{ borderColor: 'var(--accent-emerald)', color: 'var(--accent-emerald)', fontWeight: '800', padding: '10px' }}
+                />
+                <span style={{ fontSize: '10px', color: '#64748B' }}>Doorstep Driver & Showroom Standee QRs</span>
+              </div>
+
+              <div className="form-field">
+                <label style={{ color: '#93C5FD' }}>HDFC POS Card Machine (₹)</label>
+                <input 
+                  type="number" 
+                  value={cardSettled} 
+                  onChange={e => setCardSettled(Number(e.target.value))} 
+                  style={{ padding: '10px' }}
+                />
+                <span style={{ fontSize: '10px', color: '#64748B' }}>Credit/Debit Card Swipes</span>
+              </div>
+            </div>
+
+            {/* Reconciliation Comparison Matrix */}
+            <div style={{ background: '#030712', borderRadius: '12px', padding: '14px 18px', border: '1px solid rgba(212,175,55,0.3)', margin: '14px 0' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', textAlign: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '10.5px', color: '#94A3B8', textTransform: 'uppercase' }}>1. Physical Cash Safe</div>
+                  <div style={{ fontSize: '18px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
+                    ₹{totalCountedCash.toLocaleString()}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '10.5px', color: '#94A3B8', textTransform: 'uppercase' }}>2. Digital UPI / Bank</div>
+                  <div style={{ fontSize: '18px', fontWeight: '900', color: 'var(--accent-emerald)', marginTop: '2px' }}>
+                    ₹{(Number(upiSettled) + Number(cardSettled)).toLocaleString()}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '10.5px', color: '#94A3B8', textTransform: 'uppercase' }}>3. Total Gross Day Sales</div>
+                  <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--accent-gold-light)', marginTop: '2px' }}>
+                    ₹{totalGrossDayRevenue.toLocaleString()}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontSize: '11px', color: '#94A3B8' }}>
+                  System Expected Cash: <b>₹{expectedSystemCash.toLocaleString()}</b>
+                </div>
+                <span className={`badge ${cashDiscrepancy === 0 ? 'badge-emerald' : 'badge-amber'}`} style={{ fontSize: '11px' }}>
+                  {cashDiscrepancy === 0 ? "✓ ZERO DISCREPANCY (100% MATCH)" : `⚠️ ₹${cashDiscrepancy.toLocaleString()} VARIANCE`}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '16px' }}>
+              <button 
+                type="button" 
+                className="btn-ghost-edit" 
+                onClick={() => {
+                  setEodStep(1);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 16px', fontSize: '12px' }}
+              >
+                ⬅️ Back: Cash Notes
+              </button>
+              <button 
+                type="button" 
+                className="btn-luxury-gold" 
+                onClick={() => {
+                  setEodStep(3);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '800' }}
+              >
+                Next: Director Lock & WhatsApp ➔
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ================= STEP 3: 4-LANGUAGE WHATSAPP SLIP & DIRECTOR PIN ================= */}
+        {eodStep === 3 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-emerald)', textTransform: 'uppercase' }}>
+                3. EOD WhatsApp Closing Slip Language:
+              </label>
+              <span className="badge badge-gold" style={{ fontSize: '10px' }}>
+                🔒 Seal #VAULT-8899-RAYAGADA
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', marginBottom: '10px' }}>
+              {[
+                { id: 'EN', label: '🇬🇧 English' },
+                { id: 'OR', label: '🇮🇳 ଓଡ଼ିଆ (Odia)' },
+                { id: 'TE', label: '🇮🇳 తెలుగు (Telugu)' },
+                { id: 'HI', label: '🇮🇳 हिंदी (Hindi)' }
+              ].map(l => (
+                <button 
+                  key={l.id}
+                  type="button"
+                  className={`btn-ghost-edit ${language === l.id ? 'badge-emerald' : ''}`}
+                  onClick={() => {
+                    setLanguage(l.id);
+                    playScanBeep();
+                  }}
+                  style={{ fontSize: '11px', padding: '6px 4px', textAlign: 'center', fontWeight: '800' }}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Dynamic Preview Box */}
+            <div style={{ background: '#030712', borderRadius: '10px', padding: '10px 14px', border: '1px solid rgba(212,175,55,0.3)', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <span style={{ fontSize: '10.5px', fontWeight: '800', color: 'var(--accent-gold-light)' }}>
+                  💬 Live WhatsApp Slip Preview ({language}):
+                </span>
+                <button 
+                  type="button" 
+                  className="btn-ghost-edit" 
+                  onClick={handleCopySlip}
+                  style={{ fontSize: '10px', padding: '3px 8px', color: copied ? 'var(--accent-emerald)' : '#FFFFFF' }}
+                >
+                  {copied ? '✓ Copied!' : '📋 Copy Slip Text'}
+                </button>
+              </div>
+              <pre style={{ fontSize: '10.5px', color: '#E2E8F0', whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0, lineHeight: 1.4, maxHeight: '110px', overflowY: 'auto' }}>
+                {generateEodSlipText(language)}
+              </pre>
+            </div>
+
+            {/* Cashier & PIN */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '10px', marginBottom: '12px' }}>
+              <div className="form-field">
+                <label style={{ fontSize: '11px' }}>Cashier Sign-Off Name</label>
+                <input value={cashierName} onChange={e => setCashierName(e.target.value)} style={{ padding: '8px' }} />
+              </div>
+
+              <div className="form-field">
+                <label style={{ color: 'var(--accent-gold-light)', fontWeight: '800', fontSize: '11px' }}>Director Authorization PIN</label>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <input 
+                    type="password" 
+                    maxLength={4} 
+                    value={directorPin} 
+                    onChange={e => setDirectorPin(e.target.value)} 
+                    placeholder="PIN 8899"
+                    style={{ textAlign: 'center', fontWeight: '800', letterSpacing: '4px' }}
+                  />
+                  <button type="button" className="btn-ghost-edit" onClick={handleVerifyPin} style={{ padding: '6px 10px', fontSize: '11px' }}>
+                    {pinVerified ? '✓ Verified' : 'Verify'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button 
+                type="button" 
+                className="btn-ghost-edit" 
+                onClick={() => {
+                  setEodStep(2);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 14px', fontSize: '12px' }}
+              >
+                ⬅️ Back
+              </button>
+              <button className="btn-luxury-gold" onClick={handleLockRegister} style={{ flex: 1, justifyContent: 'center', padding: '10px', fontSize: '12px', fontWeight: '900' }}>
+                <Check size={14} /> 🔒 Confirm 9 PM Register Lock
+              </button>
+              <button className="btn-cyan" onClick={handleSendWhatsAppSlip} style={{ flex: 1.5, justifyContent: 'center', padding: '10px', fontSize: '12px', fontWeight: '800' }}>
+                <Send size={14} /> 📲 Send EOD Slip to Director
+              </button>
+            </div>
+
+          </div>
+        )}
 
       </div>
     </div>
   );
 }
-

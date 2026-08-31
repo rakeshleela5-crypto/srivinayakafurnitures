@@ -745,10 +745,11 @@ export function AgingStockModal({ isOpen, onClose }) {
 // ==============================================================================================
 export function CustomFinishModal({ isOpen, onClose, sku = 'SOF-MOD-015' }) {
   const { showToast } = useStore();
+  const [finishStep, setFinishStep] = useState(1);
   const [fabric, setFabric] = useState('Royal Navy Velvet (Pantone 19-4052)');
   const [polish, setPolish] = useState('Dark Walnut PU Matte');
   const [hardware, setHardware] = useState('Brushed Gold Brass Accents');
-  const [notes, setNotes] = useState('Double stitching on headboard cushions • 4-inch extra foam padding');
+  const [notes, setNotes] = useState('Double stitching on headboard cushions • 4-inch high-resilience foam padding');
 
   if (!isOpen) return null;
 
@@ -771,68 +772,195 @@ export function CustomFinishModal({ isOpen, onClose, sku = 'SOF-MOD-015' }) {
 
   return (
     <div className="modal-overlay" style={{ zIndex: 9999 }}>
-      <div className="modal-card" style={{ maxWidth: '580px', background: '#0B132B', border: '2px solid var(--accent-purple)' }}>
-        <div className="modal-header">
+      <div className="modal-card glass-panel" style={{ maxWidth: '580px', width: '95%', background: '#0B132B', border: '2px solid var(--accent-gold)', boxShadow: '0 25px 60px rgba(0,0,0,0.95)', padding: '24px' }}>
+        
+        {/* Modal Header */}
+        <div className="modal-header" style={{ borderBottom: '1px solid rgba(255,255,255,0.12)', paddingBottom: '12px', marginBottom: '14px' }}>
           <div>
-            <span className="badge badge-purple">🧵 CUSTOMIZATION HEART ENGINE 8</span>
-            <h3 style={{ fontSize: '17px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
-              🧵 Fabric Swatch, Wood Polish & Custom Finish
+            <span className="badge badge-gold" style={{ fontSize: '10px' }}>BESPOKE FACTORY JOB CARD</span>
+            <h3 style={{ fontSize: '17px', fontWeight: '900', color: '#FFFFFF', margin: '2px 0 0' }}>
+              🧵 Custom Fabric, Polish & Finish Spec Studio
             </h3>
-            <div style={{ fontSize: '11px', color: '#C084FC' }}>
-              Target Model: {sku}
+            <div style={{ fontSize: '11px', color: 'var(--accent-cyan)', marginTop: '2px' }}>
+              SKU: <b>{sku}</b> • Godrej Interio Rayagada Factory Order Card
             </div>
           </div>
           <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
         </div>
 
-        <div className="form-grid" style={{ margin: '14px 0' }}>
-          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
-            <label>🧵 Fabric Swatch & Shade</label>
-            <select value={fabric} onChange={e => setFabric(e.target.value)}>
-              <option value="Royal Navy Velvet (Pantone 19-4052)">Royal Navy Velvet (Pantone 19-4052)</option>
-              <option value="Emerald Green Velvet (Pantone 18-5642)">Emerald Green Velvet (Pantone 18-5642)</option>
-              <option value="Beige Textured Bouclé (High Durability)">Beige Textured Bouclé (High Durability)</option>
-              <option value="Italian Tan Leatherette (Waterproof)">Italian Tan Leatherette (Waterproof)</option>
-            </select>
-          </div>
-
-          <div className="form-field">
-            <label>🪵 Wood Polish Finish</label>
-            <select value={polish} onChange={e => setPolish(e.target.value)}>
-              <option value="Dark Walnut PU Matte">Dark Walnut PU Matte</option>
-              <option value="Natural Teak High Gloss">Natural Teak High Gloss</option>
-              <option value="Smoked Oak Rustic Finish">Smoked Oak Rustic Finish</option>
-              <option value="PU High-Gloss Deco White">PU High-Gloss Deco White</option>
-            </select>
-          </div>
-
-          <div className="form-field">
-            <label>✨ Hardware Accents</label>
-            <select value={hardware} onChange={e => setHardware(e.target.value)}>
-              <option value="Brushed Gold Brass Accents">Brushed Gold Brass Accents</option>
-              <option value="Rose Gold Luxury Metallic">Rose Gold Luxury Metallic</option>
-              <option value="Matte Black Industrial">Matte Black Industrial</option>
-              <option value="Stainless Steel Chrome">Stainless Steel Chrome</option>
-            </select>
-          </div>
-
-          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
-            <label>Factory Customization Instructions</label>
-            <input value={notes} onChange={e => setNotes(e.target.value)} />
-          </div>
+        {/* 3-Step Navigation */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '14px', background: '#030712', padding: '6px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+          {[
+            { step: 1, label: '1. 🧵 Fabric & Velvet' },
+            { step: 2, label: '2. 🪵 Polish & Metal' },
+            { step: 3, label: '3. 📋 Factory Job Card' }
+          ].map(s => {
+            const isActive = finishStep === s.step;
+            const isDone = finishStep > s.step;
+            return (
+              <button
+                key={s.step}
+                type="button"
+                onClick={() => {
+                  setFinishStep(s.step);
+                  playScanBeep();
+                }}
+                style={{
+                  padding: '7px 4px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: isActive ? '900' : '700',
+                  background: isActive 
+                    ? 'linear-gradient(135deg, #D4AF37 0%, #B45309 100%)' 
+                    : isDone ? 'rgba(16,185,129,0.15)' : 'transparent',
+                  color: isActive ? '#000000' : isDone ? 'var(--accent-emerald)' : '#94A3B8',
+                  border: isActive ? '1px solid #FFFFFF' : isDone ? '1px solid rgba(16,185,129,0.3)' : '1px solid transparent',
+                  cursor: 'pointer',
+                  textAlign: 'center'
+                }}
+              >
+                {isDone ? '✓ ' : ''}{s.label}
+              </button>
+            );
+          })}
         </div>
 
-        <button className="btn-purple" onClick={handleSaveFinish} style={{ width: '100%', justifyContent: 'center', padding: '12px' }}>
-          <Check size={16} /> 🧵 Attach Custom Swatches & Generate Factory Job Card
-        </button>
+        {/* STEP 1 */}
+        {finishStep === 1 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="form-field">
+              <label style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--accent-gold-light)' }}>
+                1. Upholstery Fabric / Leatherette Selection:
+              </label>
+              <select value={fabric} onChange={e => setFabric(e.target.value)} style={{ padding: '10px', fontSize: '13px' }}>
+                <option value="Royal Navy Velvet (Pantone 19-4052)">Royal Navy Velvet (Pantone 19-4052) • 450 GSM</option>
+                <option value="Emerald Green Velvet (Pantone 19-5420)">Emerald Green Velvet (Pantone 19-5420) • Luxury Suede</option>
+                <option value="Tan Italian Leatherette (Breathable Microfibre)">Tan Italian Leatherette (Breathable Microfibre)</option>
+                <option value="Tuscan Terracotta Textured Linen">Tuscan Terracotta Textured Linen (Water-Repellent)</option>
+                <option value="Slate Grey Poly-Viscose Chenille">Slate Grey Poly-Viscose Chenille (Anti-Stain)</option>
+              </select>
+            </div>
+
+            <div style={{ background: '#030712', borderRadius: '10px', padding: '12px', border: '1px solid rgba(255,255,255,0.08)', fontSize: '11px', color: '#94A3B8' }}>
+              ℹ️ All custom upholstery options are factory-treated with <b>Scotchgard™ Stain & Water Shield</b>.
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
+              <button 
+                type="button" 
+                className="btn-luxury-gold" 
+                onClick={() => {
+                  setFinishStep(2);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '800' }}
+              >
+                Next: Wood Polish & Hardware ➔
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 2 */}
+        {finishStep === 2 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="form-field">
+              <label style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--accent-gold-light)' }}>
+                2. Solid Wood Polish Tone & Finish:
+              </label>
+              <select value={polish} onChange={e => setPolish(e.target.value)} style={{ padding: '10px', fontSize: '13px' }}>
+                <option value="Dark Walnut PU Matte">Dark Walnut PU Matte (Scratch-Resistant Italian Coating)</option>
+                <option value="Natural Teak Satin Lustre">Natural Teak Satin Lustre (Golden Grain Highlight)</option>
+                <option value="Smoked Charcoal Oak">Smoked Charcoal Oak (Nordic Contemporary)</option>
+                <option value="Gloss Mahogany Polyurethane">Gloss Mahogany Polyurethane (Classic Heritage)</option>
+              </select>
+            </div>
+
+            <div className="form-field">
+              <label style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--accent-cyan)' }}>
+                3. Metal Hardware & Foot Caps Finish:
+              </label>
+              <select value={hardware} onChange={e => setHardware(e.target.value)} style={{ padding: '10px', fontSize: '13px' }}>
+                <option value="Brushed Gold Brass Accents">Brushed Gold Brass Accents (PVD Coated • Anti-Tarnish)</option>
+                <option value="Matte Black Anodized Aluminium">Matte Black Anodized Aluminium</option>
+                <option value="Antique Rose Gold Copper">Antique Rose Gold Copper</option>
+                <option value="Mirror Polished Chrome">Mirror Polished Chrome Stainless Steel 304</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
+              <button 
+                type="button" 
+                className="btn-ghost-edit" 
+                onClick={() => {
+                  setFinishStep(1);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 16px', fontSize: '12px' }}
+              >
+                ⬅️ Back: Fabric
+              </button>
+              <button 
+                type="button" 
+                className="btn-luxury-gold" 
+                onClick={() => {
+                  setFinishStep(3);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '800' }}
+              >
+                Next: Factory Production Card ➔
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3 */}
+        {finishStep === 3 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="form-field">
+              <label style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--accent-emerald)' }}>
+                Special Factory Carpenter Instructions:
+              </label>
+              <textarea 
+                value={notes} 
+                onChange={e => setNotes(e.target.value)} 
+                rows={3} 
+                style={{ padding: '10px', fontSize: '12px', lineHeight: '1.4' }}
+              />
+            </div>
+
+            <div style={{ background: '#030712', borderRadius: '10px', padding: '12px 14px', border: '1px solid rgba(212,175,55,0.3)', fontSize: '11px', color: '#CBD5E1', lineHeight: '1.5' }}>
+              <strong style={{ color: 'var(--accent-gold-light)' }}>📋 Production Job Card Summary:</strong><br />
+              • Fabric: <b>{fabric}</b><br />
+              • Polish: <b>{polish}</b><br />
+              • Hardware: <b>{hardware}</b>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
+              <button 
+                type="button" 
+                className="btn-ghost-edit" 
+                onClick={() => {
+                  setFinishStep(2);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 14px', fontSize: '12px' }}
+              >
+                ⬅️ Back
+              </button>
+              <button className="btn-luxury-gold" onClick={handleSaveFinish} style={{ flex: 1, marginLeft: '10px', justifyContent: 'center', padding: '12px', fontWeight: '900' }}>
+                <Check size={16} /> 🧵 Attach Custom Finishes to Job Card
+              </button>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
 }
 
-// ==============================================================================================
-// 📦 HEART ENGINE 9: 1-BOX RAPID REPLACEMENT & DAMAGE SHIELD MODAL
-// ==============================================================================================
 export function BoxDamageClaimModal({ isOpen, onClose, stop = {} }) {
   const { showToast } = useStore();
   const [damagedBox, setDamagedBox] = useState('Box A: Headboard & Lift Frame (42 KG)');
@@ -917,6 +1045,7 @@ export function BoxDamageClaimModal({ isOpen, onClose, stop = {} }) {
 // ==============================================================================================
 export function GodrejCareAmcModal({ isOpen, onClose, customer = {} }) {
   const { showToast } = useStore();
+  const [amcStep, setAmcStep] = useState(1);
   const [plan, setPlan] = useState('GOLD_AMC');
   const [customerName, setCustomerName] = useState(customer.Customer_Name || 'Dr. Subhashish Jena');
   const [phone, setPhone] = useState(customer.Phone || '9437188291');
@@ -941,163 +1070,440 @@ export function GodrejCareAmcModal({ isOpen, onClose, customer = {} }) {
     const text = `🧼 *GODREJ CARE™ ANNUAL AMC MEMBERSHIP ACTIVATED*\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
       `Dear ${customerName}, welcome to Godrej Care™ AMC Protection for your home furniture!\n\n` +
-      `📜 *Membership ID:* ${amcId}\n` +
-      `✨ *Annual Inclusions:*\n` +
-      `• 2x Foam Deep Vacuum Cleaning for Velvet/Leather Sofas\n` +
-      `• 1x Solid Teak Beeswax Polish Re-touch\n` +
-      `• 1x Hydraulic Bed & Wardrobe Soft-Close Hinge Lubrication\n\n` +
-      `📅 *First Service Due:* 28-Feb-2027 (Auto-Booking Alert will be sent)\n` +
-      `📞 *VIP Service Desk:* +91 9390553301`;
+      `📋 *Membership ID:* ${amcId}\n` +
+      `🛡️ *Plan Tier:* ${plan === 'GOLD_AMC' ? 'Gold Annual Protection (₹2,999/yr)' : 'Platinum Villa Complete (₹4,999/yr)'}\n` +
+      `✨ *Included Services:*\n` +
+      `• 2x Free Annual Deep Steam Foam Cleaning\n` +
+      `• 4x Mechanical Hardware & Hydraulic Tightening\n` +
+      `• Zero-Cost Replacement for Hinges & Drawer Channels\n` +
+      `• 24-Hour Priority Mistri Breakdown Visit\n\n` +
+      `📍 *Godrej Interio Rayagada Hotline:* +91 93905 53301`;
 
-    window.open(`https://wa.me/91${phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
-    showToast(`🧼 AMC Membership #${amcId} activated for ${customerName}!`, true);
+    const waUrl = `https://wa.me/91${phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
+    window.open(waUrl, '_blank');
+
+    showToast(`🧼 Godrej Care™ AMC Activated for ${customerName}! WhatsApp Welcome Kit dispatched.`, true);
     onClose();
   };
 
   return (
     <div className="modal-overlay" style={{ zIndex: 9999 }}>
-      <div className="modal-card" style={{ maxWidth: '580px', background: '#0B132B', border: '2px solid #38BDF8' }}>
-        <div className="modal-header">
+      <div className="modal-card glass-panel" style={{ maxWidth: '580px', width: '95%', background: '#0B132B', border: '2px solid var(--accent-cyan)', boxShadow: '0 25px 60px rgba(0,0,0,0.95)', padding: '24px' }}>
+        
+        {/* Modal Header */}
+        <div className="modal-header" style={{ borderBottom: '1px solid rgba(255,255,255,0.12)', paddingBottom: '12px', marginBottom: '14px' }}>
           <div>
-            <span className="badge badge-cyan">🧼 RECURRING LTV HEART ENGINE 10</span>
-            <h3 style={{ fontSize: '17px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
-              🧼 Godrej Care™ Annual AMC Subscription
+            <span className="badge badge-cyan" style={{ fontSize: '10px' }}>ANNUAL WARRANTY & CARE</span>
+            <h3 style={{ fontSize: '17px', fontWeight: '900', color: '#FFFFFF', margin: '2px 0 0' }}>
+              🧼 Godrej Care™ Annual Maintenance Contract (AMC)
             </h3>
-            <div style={{ fontSize: '11px', color: '#7DD3FC' }}>
-              Generates ₹2,999 to ₹4,999/year in recurring lifetime service revenue
+            <div style={{ fontSize: '11px', color: 'var(--accent-cyan)', marginTop: '2px' }}>
+              Keep high-ticket teak and hydraulic beds in 100% pristine showroom condition
             </div>
           </div>
           <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
         </div>
 
-        <div className="form-grid" style={{ margin: '14px 0' }}>
-          <div className="form-field">
-            <label>Customer Name</label>
-            <input value={customerName} onChange={e => setCustomerName(e.target.value)} />
-          </div>
-          <div className="form-field">
-            <label>WhatsApp Contact</label>
-            <input value={phone} onChange={e => setPhone(e.target.value)} />
-          </div>
-          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
-            <label>Select AMC Protection Plan</label>
-            <select value={plan} onChange={e => setPlan(e.target.value)}>
-              <option value="GOLD_AMC">Gold Plan (₹2,999/yr) — 2x Sofa Deep Clean + 1x Teak Polish</option>
-              <option value="PLATINUM_AMC">Platinum Villa Plan (₹4,999/yr) — 4x Sofa Clean + Full Villa Polish</option>
-            </select>
-          </div>
+        {/* 3-Step Navigation */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '14px', background: '#030712', padding: '6px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+          {[
+            { step: 1, label: '1. 👤 Customer' },
+            { step: 2, label: '2. 🛡️ Plan Tier' },
+            { step: 3, label: '3. 💳 WhatsApp Kit' }
+          ].map(s => {
+            const isActive = amcStep === s.step;
+            const isDone = amcStep > s.step;
+            return (
+              <button
+                key={s.step}
+                type="button"
+                onClick={() => {
+                  setAmcStep(s.step);
+                  playScanBeep();
+                }}
+                style={{
+                  padding: '7px 4px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: isActive ? '900' : '700',
+                  background: isActive 
+                    ? 'linear-gradient(135deg, #0284C7 0%, #0369A1 100%)' 
+                    : isDone ? 'rgba(16,185,129,0.15)' : 'transparent',
+                  color: isActive ? '#FFFFFF' : isDone ? 'var(--accent-emerald)' : '#94A3B8',
+                  border: isActive ? '1px solid #FFFFFF' : isDone ? '1px solid rgba(16,185,129,0.3)' : '1px solid transparent',
+                  cursor: 'pointer',
+                  textAlign: 'center'
+                }}
+              >
+                {isDone ? '✓ ' : ''}{s.label}
+              </button>
+            );
+          })}
         </div>
 
-        <button className="btn-cyan" onClick={handleEnrollAmc} style={{ width: '100%', justifyContent: 'center', padding: '12px' }}>
-          <Check size={16} /> 🧼 Activate AMC Membership & Send WhatsApp Welcome Kit
-        </button>
+        {/* STEP 1 */}
+        {amcStep === 1 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="form-field">
+              <label style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--accent-gold-light)' }}>
+                1. Customer Full Name:
+              </label>
+              <input value={customerName} onChange={e => setCustomerName(e.target.value)} style={{ padding: '10px' }} />
+            </div>
+
+            <div className="form-field">
+              <label style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--accent-cyan)' }}>
+                2. WhatsApp Mobile Number:
+              </label>
+              <input value={phone} onChange={e => setPhone(e.target.value)} style={{ padding: '10px' }} />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
+              <button 
+                type="button" 
+                className="btn-cyan" 
+                onClick={() => {
+                  setAmcStep(2);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '800' }}
+              >
+                Next: Select AMC Protection Tier ➔
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 2 */}
+        {amcStep === 2 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div 
+                onClick={() => setPlan('GOLD_AMC')} 
+                style={{
+                  background: plan === 'GOLD_AMC' ? 'rgba(212,175,55,0.18)' : '#030712',
+                  border: plan === 'GOLD_AMC' ? '2px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '10px',
+                  padding: '12px',
+                  cursor: 'pointer'
+                }}
+              >
+                <div style={{ fontSize: '13px', fontWeight: '900', color: 'var(--accent-gold-light)' }}>Gold Protection</div>
+                <div style={{ fontSize: '18px', fontWeight: '900', color: '#FFFFFF', margin: '4px 0' }}>₹2,999 <span style={{ fontSize: '11px', color: '#94A3B8' }}>/ year</span></div>
+                <div style={{ fontSize: '10.5px', color: '#CBD5E1', lineHeight: '1.4' }}>
+                  • 2x Steam Deep Clean<br />
+                  • 4x Hardware Check<br />
+                  • 24-hr Service Callout
+                </div>
+              </div>
+
+              <div 
+                onClick={() => setPlan('PLATINUM_VILLA_AMC')} 
+                style={{
+                  background: plan === 'PLATINUM_VILLA_AMC' ? 'rgba(56,189,248,0.18)' : '#030712',
+                  border: plan === 'PLATINUM_VILLA_AMC' ? '2px solid var(--accent-cyan)' : '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '10px',
+                  padding: '12px',
+                  cursor: 'pointer'
+                }}
+              >
+                <div style={{ fontSize: '13px', fontWeight: '900', color: 'var(--accent-cyan)' }}>Platinum Villa</div>
+                <div style={{ fontSize: '18px', fontWeight: '900', color: '#FFFFFF', margin: '4px 0' }}>₹4,999 <span style={{ fontSize: '11px', color: '#94A3B8' }}>/ year</span></div>
+                <div style={{ fontSize: '10.5px', color: '#CBD5E1', lineHeight: '1.4' }}>
+                  • Complete Home Furniture<br />
+                  • Unlimited Free Mistri Calls<br />
+                  • Zero-Cost Hinge Replacement
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+              <button 
+                type="button" 
+                className="btn-ghost-edit" 
+                onClick={() => {
+                  setAmcStep(1);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 16px', fontSize: '12px' }}
+              >
+                ⬅️ Back: Customer
+              </button>
+              <button 
+                type="button" 
+                className="btn-cyan" 
+                onClick={() => {
+                  setAmcStep(3);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '800' }}
+              >
+                Next: Payment & Activation ➔
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3 */}
+        {amcStep === 3 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ background: '#030712', borderRadius: '10px', padding: '12px 14px', border: '1px solid rgba(56,189,248,0.3)', fontSize: '11px', color: '#CBD5E1', lineHeight: '1.5' }}>
+              <strong style={{ color: 'var(--accent-cyan)' }}>✓ Subscription Summary:</strong><br />
+              • Member: <b>{customerName}</b> ({phone})<br />
+              • Plan: <b>{plan === 'GOLD_AMC' ? 'Gold Annual Protection' : 'Platinum Villa Complete'}</b><br />
+              • Fee: <b>₹{plan === 'GOLD_AMC' ? '2,999' : '4,999'} / year</b> (Auto-synced to Sheets)
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
+              <button 
+                type="button" 
+                className="btn-ghost-edit" 
+                onClick={() => {
+                  setAmcStep(2);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 14px', fontSize: '12px' }}
+              >
+                ⬅️ Back
+              </button>
+              <button className="btn-cyan" onClick={handleEnrollAmc} style={{ flex: 1, marginLeft: '10px', justifyContent: 'center', padding: '12px', fontWeight: '900' }}>
+                <Check size={16} /> 🧼 Activate AMC & Send WhatsApp Pass
+              </button>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
 }
 
-// ==============================================================================================
-// 🏢 HEART ENGINE 11: INSTITUTIONAL B2B COMMERCIAL & OFFICE TURNKEY QUOTATOR
-// ==============================================================================================
 export function B2bTurnkeyModal({ isOpen, onClose }) {
   const { showToast } = useStore();
+  const [b2bStep, setB2bStep] = useState(1);
   const [pkg, setPkg] = useState('OFFICE_50');
   const [orgName, setOrgName] = useState('Odisha Mineral Development Corp (OMDC)');
   const [contactPerson, setContactPerson] = useState('Shri B. K. Mohapatra (GM Admin)');
   const [phone, setPhone] = useState('9437188291');
+  const [gstin, setGstin] = useState('21AAAC0000A1Z5');
 
   if (!isOpen) return null;
 
   const packages = {
     OFFICE_50: { title: '50-Seater Modern Corporate Office Fitout', price: 1480000, desc: '50 Ergonomic Mesh Chairs + 12 Workstation Pods + 1 Boardroom Table + 2 Executive Cabins' },
     BANK_BRANCH: { title: 'Commercial Bank Branch Turnkey Package', price: 1850000, desc: 'Manager Cabin + 4 Cashier Enclosures + 3 Customer Lounge Sofas + 10 Heavy Steel Cupboards' },
-    HOSPITAL_SUITE: { title: 'Hospital & Clinic Turnkey Package', price: 1120000, desc: 'Doctor Consultation Desks + 30 Waiting Room Chairs + Reception Counter + Medical Lockers' }
+    HOSPITAL_SUITE: { title: 'Hospital & Clinic Turnkey Package', price: 1120000, desc: 'Doctor Consultation Desks + 30 Waiting Room Chairs + Reception Counter + 4 Examination Couches' }
   };
 
-  const current = packages[pkg];
+  const selected = packages[pkg];
 
-  const handleGenerateTender = () => {
+  const handleGenerateQuote = () => {
     playSuccessChime();
     triggerGoldenConfetti();
 
-    const tenderNo = "TND-GI-" + Math.floor(100000 + Math.random() * 900000);
+    const quoteId = "B2B-QUOTE-" + Math.floor(10000 + Math.random() * 90000);
 
-    dispatchWebhookAction('GENERATE_B2B_TURNKEY_TENDER', {
-      tender_no: tenderNo,
-      org_name: orgName,
-      contact_person: contactPerson,
-      package_title: current.title,
-      total_inr: current.price,
+    dispatchWebhookAction('GENERATE_B2B_TURNKEY_PROPOSAL', {
+      quote_id: quoteId,
+      organization: orgName,
+      contact: contactPerson,
+      phone,
+      gstin,
+      package_title: selected.title,
+      package_price: selected.price,
       timestamp: new Date().toISOString()
     });
 
-    const text = `🏢 *OFFICIAL B2B COMMERCIAL TURNKEY PROPOSAL — GODREJ INTERIO RAYAGADA*\n` +
+    const text = `🏛️ *GODREJ INTERIO B2B INSTITUTIONAL TURNKEY PROPOSAL*\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
-      `*To:* ${orgName} (Attn: ${contactPerson})\n` +
-      `*Proposal Ref:* #${tenderNo} | Date: ${new Date().toLocaleDateString('en-IN')}\n\n` +
-      `📋 *Project Scope:* ${current.title}\n` +
-      `📦 *Specifications:* ${current.desc}\n` +
-      `📜 *Compliance:* 100% BIFMA Certified Ergonomics • Heavy-Gauge CRCA Steel • ISO 9001/14001\n` +
-      `💰 *Total Project Value:* ₹${current.price.toLocaleString()} + 18% GST\n` +
-      `💳 *Milestone Terms:* 40% Advance • 40% on Dispatch • 20% Post-Installation Sign-off\n\n` +
-      `👉 *Download Formal Tender Proposal PDF:* https://shreeganesh-godrej.web.app/#documents\n` +
-      `📞 *Institutional Project Desk:* +91 9390553301 | Main Road, Rayagada`;
+      `Dear ${contactPerson} (${orgName}),\n\n` +
+      `We are pleased to submit the official turnkey commercial proposal:\n` +
+      `📄 *Proposal Ref:* ${quoteId}\n` +
+      `📦 *Project Scope:* ${selected.title}\n` +
+      `✨ *Included BIFMA Certified Items:* ${selected.desc}\n\n` +
+      `💰 *Institutional Commercial Value:* ₹${selected.price.toLocaleString()} + 18% GST\n` +
+      `💳 *Payment Milestones:* 40% Mobilization Advance • 40% On Delivery • 20% Sign-Off\n` +
+      `🛡️ *Warranty:* 5-Year Comprehensive On-Site Godrej Commercial Warranty\n\n` +
+      `🏢 *Godrej Interio Commercial Projects Division, Rayagada*\n` +
+      `📞 *Director Hotline:* +91 93905 53301`;
 
-    window.open(`https://wa.me/91${phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
-    showToast(`🏢 B2B Commercial Tender Proposal #${tenderNo} dispatched to ${orgName}!`, true);
+    const waUrl = `https://wa.me/91${phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
+    window.open(waUrl, '_blank');
+
+    showToast(`🏛️ B2B Proposal ${quoteId} generated & dispatched to ${orgName} on WhatsApp!`, true);
     onClose();
   };
 
   return (
     <div className="modal-overlay" style={{ zIndex: 9999 }}>
-      <div className="modal-card" style={{ maxWidth: '680px', background: '#0B132B', border: '2px solid var(--accent-gold)' }}>
-        <div className="modal-header">
+      <div className="modal-card glass-panel" style={{ maxWidth: '620px', width: '95%', background: '#0B132B', border: '2px solid var(--accent-gold)', boxShadow: '0 25px 60px rgba(0,0,0,0.95)', padding: '24px' }}>
+        
+        {/* Modal Header */}
+        <div className="modal-header" style={{ borderBottom: '1px solid rgba(255,255,255,0.12)', paddingBottom: '12px', marginBottom: '14px' }}>
           <div>
-            <span className="badge badge-gold">🏢 COMMERCIAL HEART ENGINE 11</span>
-            <h3 style={{ fontSize: '17px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
-              🏢 Institutional B2B Turnkey Proposal Generator
+            <span className="badge badge-gold" style={{ fontSize: '10px' }}>COMMERCIAL B2B TURNKEY</span>
+            <h3 style={{ fontSize: '17px', fontWeight: '900', color: '#FFFFFF', margin: '2px 0 0' }}>
+              🏛️ Institutional Tender & Turnkey Quote Generator
             </h3>
-            <div style={{ fontSize: '11px', color: 'var(--accent-cyan)' }}>
-              Generates formal ₹15L to ₹50L B2B Tender Proposals with BIFMA Specs
+            <div style={{ fontSize: '11px', color: 'var(--accent-cyan)', marginTop: '2px' }}>
+              OMDC • Vedanta • JK Paper • Banks • Hospitals & Govt Institutions
             </div>
           </div>
           <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
         </div>
 
-        <div className="form-grid" style={{ margin: '14px 0' }}>
-          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
-            <label>Institution / Corporate Enterprise Name</label>
-            <input value={orgName} onChange={e => setOrgName(e.target.value)} />
-          </div>
-          <div className="form-field">
-            <label>Contact Person & Designation</label>
-            <input value={contactPerson} onChange={e => setContactPerson(e.target.value)} />
-          </div>
-          <div className="form-field">
-            <label>WhatsApp Contact</label>
-            <input value={phone} onChange={e => setPhone(e.target.value)} />
-          </div>
-          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
-            <label>Turnkey Fitout Package</label>
-            <select value={pkg} onChange={e => setPkg(e.target.value)}>
-              <option value="OFFICE_50">🏢 50-Seater Modern Corporate Office Fitout (₹14.80 Lakh)</option>
-              <option value="BANK_BRANCH">🏦 Commercial Bank Branch Turnkey Package (₹18.50 Lakh)</option>
-              <option value="HOSPITAL_SUITE">🏥 Hospital & Clinic Turnkey Package (₹11.20 Lakh)</option>
-            </select>
-          </div>
+        {/* 3-Step Navigation */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '14px', background: '#030712', padding: '6px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+          {[
+            { step: 1, label: '1. 🏛️ Client Profile' },
+            { step: 2, label: '2. 📦 BIFMA Package' },
+            { step: 3, label: '3. 💳 Tender Mandate' }
+          ].map(s => {
+            const isActive = b2bStep === s.step;
+            const isDone = b2bStep > s.step;
+            return (
+              <button
+                key={s.step}
+                type="button"
+                onClick={() => {
+                  setB2bStep(s.step);
+                  playScanBeep();
+                }}
+                style={{
+                  padding: '7px 4px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: isActive ? '900' : '700',
+                  background: isActive 
+                    ? 'linear-gradient(135deg, #D4AF37 0%, #B45309 100%)' 
+                    : isDone ? 'rgba(16,185,129,0.15)' : 'transparent',
+                  color: isActive ? '#000000' : isDone ? 'var(--accent-emerald)' : '#94A3B8',
+                  border: isActive ? '1px solid #FFFFFF' : isDone ? '1px solid rgba(16,185,129,0.3)' : '1px solid transparent',
+                  cursor: 'pointer',
+                  textAlign: 'center'
+                }}
+              >
+                {isDone ? '✓ ' : ''}{s.label}
+              </button>
+            );
+          })}
         </div>
 
-        <div style={{ background: '#030712', borderRadius: '10px', padding: '12px 16px', border: '1px solid rgba(212,175,55,0.3)', margin: '10px 0' }}>
-          <div style={{ fontSize: '11px', color: '#94A3B8' }}>Scope & Specifications:</div>
-          <div style={{ fontSize: '12px', color: '#FFFFFF', marginTop: '2px' }}>{current.desc}</div>
-          <div style={{ fontSize: '16px', fontWeight: '900', color: 'var(--accent-gold-light)', marginTop: '6px' }}>
-            Total Value: ₹{current.price.toLocaleString()} + 18% GST
-          </div>
-        </div>
+        {/* STEP 1 */}
+        {b2bStep === 1 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div className="form-field">
+              <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-gold-light)' }}>Organization / Company Name</label>
+              <input value={orgName} onChange={e => setOrgName(e.target.value)} style={{ padding: '8px' }} />
+            </div>
 
-        <button className="btn-luxury-gold" onClick={handleGenerateTender} style={{ width: '100%', justifyContent: 'center', padding: '12px' }}>
-          <FileText size={16} /> 🏢 Generate Formal B2B Tender Proposal & WhatsApp Mandate
-        </button>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div className="form-field">
+                <label style={{ fontSize: '11px' }}>Officer / Contact Person</label>
+                <input value={contactPerson} onChange={e => setContactPerson(e.target.value)} style={{ padding: '8px' }} />
+              </div>
+              <div className="form-field">
+                <label style={{ fontSize: '11px' }}>WhatsApp Mobile</label>
+                <input value={phone} onChange={e => setPhone(e.target.value)} style={{ padding: '8px' }} />
+              </div>
+            </div>
+
+            <div className="form-field">
+              <label style={{ fontSize: '11px', color: 'var(--accent-cyan)' }}>Institutional GSTIN / PAN</label>
+              <input value={gstin} onChange={e => setGstin(e.target.value)} style={{ padding: '8px', fontFamily: 'JetBrains Mono' }} />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
+              <button 
+                type="button" 
+                className="btn-luxury-gold" 
+                onClick={() => {
+                  setB2bStep(2);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '800' }}
+              >
+                Next: Select Package & BIFMA Specs ➔
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 2 */}
+        {b2bStep === 2 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div className="form-field">
+              <label style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--accent-gold-light)' }}>Select Institutional Package:</label>
+              <select value={pkg} onChange={e => setPkg(e.target.value)} style={{ padding: '10px', fontSize: '13px' }}>
+                <option value="OFFICE_50">50-Seater Modern Corporate Office Fitout (₹14,80,000)</option>
+                <option value="BANK_BRANCH">Commercial Bank Branch Turnkey Package (₹18,50,000)</option>
+                <option value="HOSPITAL_SUITE">Hospital & Clinic Turnkey Package (₹11,20,000)</option>
+              </select>
+            </div>
+
+            <div style={{ background: '#030712', borderRadius: '10px', padding: '12px 14px', border: '1px solid rgba(212,175,55,0.25)', fontSize: '11px', color: '#CBD5E1', lineHeight: '1.5' }}>
+              <strong style={{ color: 'var(--accent-emerald)' }}>📦 Package Scope & BIFMA Level 3 Compliance:</strong><br />
+              {selected.desc}<br />
+              <strong style={{ color: 'var(--accent-gold-light)' }}>Base Cost: ₹{selected.price.toLocaleString()} (+ 18% GST)</strong>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
+              <button 
+                type="button" 
+                className="btn-ghost-edit" 
+                onClick={() => {
+                  setB2bStep(1);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 16px', fontSize: '12px' }}
+              >
+                ⬅️ Back: Client
+              </button>
+              <button 
+                type="button" 
+                className="btn-luxury-gold" 
+                onClick={() => {
+                  setB2bStep(3);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '800' }}
+              >
+                Next: Milestone Terms & WhatsApp ➔
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3 */}
+        {b2bStep === 3 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ background: '#030712', borderRadius: '10px', padding: '12px 14px', border: '1px solid rgba(212,175,55,0.3)', fontSize: '11px', color: '#CBD5E1', lineHeight: '1.5' }}>
+              <strong style={{ color: 'var(--accent-gold-light)' }}>📋 Institutional Proposal Mandate:</strong><br />
+              • Client: <b>{orgName}</b> ({contactPerson})<br />
+              • Package: <b>{selected.title}</b><br />
+              • Total: <b>₹{selected.price.toLocaleString()} + GST</b><br />
+              • Milestone Terms: <b>40% Advance • 40% Delivery • 20% Sign-Off</b>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
+              <button 
+                type="button" 
+                className="btn-ghost-edit" 
+                onClick={() => {
+                  setB2bStep(2);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 14px', fontSize: '12px' }}
+              >
+                ⬅️ Back
+              </button>
+              <button className="btn-luxury-gold" onClick={handleGenerateQuote} style={{ flex: 1, marginLeft: '10px', justifyContent: 'center', padding: '12px', fontWeight: '900' }}>
+                <Send size={16} /> 🏛️ Dispatch Formal B2B Quotation (WhatsApp)
+              </button>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

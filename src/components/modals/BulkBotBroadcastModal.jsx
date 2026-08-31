@@ -14,6 +14,7 @@ import {
   Upload, 
   Layers, 
   ArrowRight,
+  ArrowLeft,
   ShieldCheck,
   Zap,
   MessageSquare,
@@ -26,6 +27,9 @@ import { APPSHEET_BOTS } from '../../data/initialData';
 
 export function BulkBotBroadcastModal({ isOpen, onClose }) {
   const { inquiries, orders, architects, showToast } = useStore();
+
+  // Wizard Step State: 1 | 2 | 3
+  const [currentStep, setCurrentStep] = useState(1);
 
   const [selectedSegment, setSelectedSegment] = useState('HOT_LEADS');
   const [selectedBotId, setSelectedBotId] = useState('BOT-11');
@@ -83,7 +87,6 @@ export function BulkBotBroadcastModal({ isOpen, onClose }) {
 
   // Dynamic Multi-Lingual & Bot-Aware Message Generator
   const getDynamicMessagePreview = (botId, segmentKey, lang) => {
-    // 1. Architect Commission Bot (BOT-07)
     if (botId === 'BOT-07' || segmentKey === 'VIP_ARCHITECTS') {
       if (lang === 'OR') {
         return `🏛️ *ନମସ୍କାର {Architect_Name}! ଗୋଦ୍ରେଜ୍ ଇଣ୍ଟେରିଓ ରାୟଗଡ଼ା ପକ୍ଷରୁ ସ୍ୱାଗତ!*\n` +
@@ -98,290 +101,344 @@ export function BulkBotBroadcastModal({ isOpen, onClose }) {
           `📞 డైరెక్టర్ హెల్ప్‌లైన్: +91 93905 53301`;
       }
       return `🏛️ *VIP ARCHITECT INSTANT PAYOUT — GODREJ INTERIO RAYAGADA*\n` +
-        `━━━━━━━━━━━━━━━━━━━━\n` +
-        `Dear *{Architect_Name}*, your 8.5% referral commission of *₹14,200* for Order #ORD-101 has been credited to your UPI VPA.\n` +
-        `• 5% TDS under Sec 194H Deducted ✓\n` +
-        `• Form 16A Digital Tax Invoice Generated ✓\n\n` +
-        `👉 *Access VIP Architect Portal:* https://shreeganesh-godrej.web.app/#architect\n` +
-        `📞 *Director Helpline:* +91 93905 53301`;
+        `Dear {Architect_Name}, your 8.5% tier commission (₹14,200) for Villa Project #ORD-101 has been settled via UPI.\n` +
+        `Download Form 16A TDS Tax Invoice: https://shreeganesh-godrej.web.app/#architect`;
     }
 
-    // 2. 0% EMI Financing Bot (BOT-14)
-    if (botId === 'BOT-14') {
-      if (lang === 'OR') {
-        return `💳 *ଗୋଦ୍ରେଜ୍ ଇଣ୍ଟେରିଓ ରାୟଗଡ଼ା — ୦% ବିନା ସୁଧ EMI ଅଫର!*\n` +
-          `ନମସ୍କାର {Customer_Name}! ଆପଣଙ୍କ ପସନ୍ଦର ସଲିଡ୍ ଟିକ୍ ବେଡ୍ ଓ ସୋଫା ସେଟ୍ ଉପରେ ପାଆନ୍ତୁ ବଜାଜ୍ ଫିନସର୍ଭ ୦% No-Cost EMI।\n` +
-          `• ଡାଉନ୍ ପେମେଣ୍ଟ: ₹୦ (ଶୂନ ଟଙ୍କା)\n` +
-          `• ମାସିକ କିସ୍ତି: ମାତ୍ର ₹୬,୫୨୦ / ମାସ\n` +
-          `👉 ତୁରନ୍ତ ଅନୁମୋଦନ ଦେଖନ୍ତୁ: https://shreeganesh-godrej.web.app/#concierge`;
-      }
-      return `💳 *GODREJ INTERIO RAYAGADA — 0% NO-COST EMI PRE-APPROVAL*\n` +
-        `━━━━━━━━━━━━━━━━━━━━\n` +
-        `Dear *{Customer_Name}*, bring home luxury Solid Teak Furniture with zero down payment!\n` +
-        `• Partner: Bajaj Finserv & HDFC Bank\n` +
-        `• Tenure: 6 to 12 Months (0% Interest)\n` +
-        `• Monthly EMI: Just ₹6,520/Month\n\n` +
-        `👉 *Check Instant Pre-Approval:* https://shreeganesh-godrej.web.app/#concierge\n` +
-        `📞 *Showroom Desk:* +91 93905 53301`;
-    }
-
-    // 3. Driver Dispatch & OTP Bot (BOT-04) / Active Deliveries
-    if (botId === 'BOT-04' || segmentKey === 'ACTIVE_DELIVERIES') {
-      return `🚚 *GODREJ INTERIO RAYAGADA — OUT FOR DELIVERY*\n` +
-        `━━━━━━━━━━━━━━━━━━━━\n` +
-        `Dear *{Customer_Name}*, your order #ORD-101 (5/5 Staged Boxes) is loaded in Tata Ace (OD-18-A-1234).\n` +
-        `• Driver: Tophan Gouda (+91 94371 88291)\n` +
-        `• Est Delivery Window: Today 04:30 PM\n` +
-        `• Delivery OTP: *8892* (Share only after offloading)\n\n` +
-        `👉 *Track Live Truck GPS:* https://shreeganesh-godrej.web.app/#delivery`;
-    }
-
-    // 4. 48-Hour Drip & Hot Leads (BOT-16)
-    if (botId === 'BOT-16' || segmentKey === 'HOT_LEADS') {
-      if (lang === 'OR') {
-        return `✨ *ଗୋଦ୍ରେଜ୍ ଇଣ୍ଟେରିଓ ରାୟଗଡ଼ା — ସ୍ୱତନ୍ତ୍ର ୪୮ ଘଣ୍ଟା ଅଫର!*\n` +
-          `ନମସ୍କାର {Customer_Name}! ଗତକାଲି ଆପଣ ଦେଖିଥିବା ସଲିଡ୍ ଟିକ୍ ଖଟ ପାଇଁ ଡାଇରେକ୍ଟର ସ୍ପେଶାଲ୍ ଅଫର୍:\n` +
-          `🎁 ଆଜି ବୁକିଂ କଲେ ପାଆନ୍ତୁ ୨ଟି ଅର୍ଥୋ ମେମୋରୀ ଫୋମ୍ ତକିଆ (₹୩,୬୦୦ ମାଗଣା) + ୧୦ ବର୍ଷ ୱାରେଣ୍ଟି!\n` +
-          `👉 ୩D ଡିଜାଇନ୍ ଦେଖନ୍ତୁ: https://shreeganesh-godrej.web.app/#concierge`;
-      }
-      return `✨ *GODREJ INTERIO RAYAGADA — 48-HOUR EXCLUSIVE SHOWROOM OFFER*\n` +
-        `━━━━━━━━━━━━━━━━━━━━\n` +
-        `Dear *{Customer_Name}*, thank you for visiting our Rayagada showroom yesterday!\n` +
-        `To help with your room fitment planning for the *Solid Teak King Bed*:\n` +
-        `🎁 *Director Spot Sweetener:* Complimentary 2x Ortho Memory Foam Pillows (₹3,600 Value - Free) on booking within 48 hours!\n\n` +
-        `👉 *View Your 3D Room Suite Renders:* https://shreeganesh-godrej.web.app/#concierge\n` +
-        `📞 *Director VIP Desk:* +91 93905 53301 | Main Road, Rayagada`;
-    }
-
-    // Default: Festive Broadcast (BOT-11)
     if (lang === 'OR') {
-      return `✨ *ରାୟଗଡ଼ା ଗୋଦ୍ରେଜ୍ ଫେଷ୍ଟିଭ୍ ଧମାକା!* ପ୍ରୋମୋ କୋଡ୍ *RAYAGADA5000* ବ୍ୟବହାର କରି ପାଆନ୍ତୁ ଫ୍ଲାଟ୍ ₹୫,୦୦୦ ରିହାତି + ୨ଟି ଅର୍ଥୋ ପିଲୋ ମାଗଣା!`;
+      return `🎉 *ନମସ୍କାର {Customer_Name}! ଶ୍ରୀ ଗଣେଶ ଗୋଦ୍ରେଜ୍ ଇଣ୍ଟେରିଓ ରାୟଗଡ଼ା ତରଫରୁ ସ୍ୱତନ୍ତ୍ର ଅଫର୍!*\n` +
+        `ଆପଣଙ୍କ ପସନ୍ଦିତ ଫର୍ଣ୍ଣିଚର୍ ପ୍ୟାକେଜ୍ ଉପରେ ପାଆନ୍ତୁ ୧୫% ଫେଷ୍ଟିଭ୍ ରିହାତି + ମାଗଣା ୨x ମେମୋରୀ ଫୋମ୍ ତକିଆ!\n` +
+        `💳 *ବଜାଜ୍ ଫିନସର୍ଭ ୦% ସୁଧ EMI:* ମାତ୍ର ₹୧,୪୯୯/ମାସିକରୁ ଆରମ୍ଭ (କେବଳ ଆଧାର କାର୍ଡରେ ୫ ମିନିଟରେ ଅନୁମୋଦନ)।\n` +
+        `👉 ଡିଜିଟାଲ୍ କାଟାଲଗ୍ ଦେଖନ୍ତୁ: https://shreeganesh-godrej.web.app/#room-matcher\n` +
+        `📍 ନୂଆ ବସ୍ ଷ୍ଟାଣ୍ଡ୍ ପାଖ, ମୁଖ୍ୟ ରାସ୍ତା, ରାୟଗଡ଼ା | 📞 +91 93905 53301`;
     }
     if (lang === 'TE') {
-      return `✨ *రాయగడ గోద్రెజ్ పండుగ ధమాకా!* ప్రోమో కోడ్ *RAYAGADA5000* తో ఫ్లాట్ ₹5,000 తగ్గింపు + 2 ఆర్థో పిల్లోస్ ఉచితం!`;
+      return `🎉 *నమస్కారం {Customer_Name}! శ్రీ గణేష్ గోద్రెజ్ ఇంటీరియో రాయగడ ప్రత్యేక ఆఫర్!*\n` +
+        `మీకు ఇష్టమైన ఫర్నిచర్ ప్యాకేజీపై 15% పండుగ తగ్గింపు + ఉచిత 2x మెమరీ ఫోమ్ దిండ్లు పొందండి!\n` +
+        `💳 *బజాజ్ ఫిన్‌సర్వ్ 0% వడ్డీ EMI:* నెలకు కేవలం ₹1,499/- నుండి ప్రారంభం (5 నిమిషాల్లో ఆమోదం).\n` +
+        `👉 డిజిటల్ కేటలాగ్ చూడండి: https://shreeganesh-godrej.web.app/#room-matcher\n` +
+        `📍 న్యూ బస్ స్టాండ్ దగ్గర, మెయిన్ రోడ్, రాయగడ | 📞 +91 93905 53301`;
     }
     if (lang === 'HI') {
-      return `✨ *रायगड़ा गोदरेज फेस्टिव ऑफर!* प्रोमो कोड *RAYAGADA5000* पर फ्लैट ₹5,000 की छूट + 2 ऑर्थो तकिए बिल्कुल मुफ्त!`;
+      return `🎉 *नमस्ते {Customer_Name}! श्री गणेश गोदरेज इंटीरियो रायगड़ा की तरफ से विशेष ऑफर!*\n` +
+        `आपके पसंदीदा प्रीमियम फर्नीचर पैकेज पर पाइये 15% की विशेष छूट + मुफ़्त 2x मेमोरी फोम तकिए!\n` +
+        `💳 *बजाज फिनसर्व 0% ब्याज EMI:* मात्र ₹1,499/माह से शुरू (सिर्फ आधार कार्ड पर 5 मिनट में अप्रूवल)।\n` +
+        `👉 डिजिटल कैटलॉग देखें: https://shreeganesh-godrej.web.app/#room-matcher\n` +
+        `📍 न्यू बस स्टैंड के पास, मेन रोड, रायगड़ा | 📞 +91 93905 53301`;
     }
-    return `✨ *FESTIVE TEAK UTSAV — GODREJ INTERIO RAYAGADA*\n` +
-      `━━━━━━━━━━━━━━━━━━━━\n` +
-      `Dear *{Customer_Name}*, celebrate the festival of lights with 100% Solid CP Teak Furniture!\n` +
-      `Use Promo Code *RAYAGADA5000* for instant ₹5,000 savings + Free Doorstep Delivery & Assembly!\n\n` +
-      `👉 *Explore Festive Catalog:* https://shreeganesh-godrej.web.app/#concierge\n` +
-      `📞 *Hotline:* +91 93905 53301`;
+    return `🎉 *NAMASTE {Customer_Name}! GODREJ INTERIO RAYAGADA FESTIVE EXCLUSIVE!*\n` +
+      `Unlock 15% Festive Showroom Savings on your shortlisted furniture suite + FREE 2x Ortho Memory Foam Pillows!\n` +
+      `💳 *Bajaj Finserv 0% No-Cost EMI:* Starting at just ₹1,499/mo (Instant 5-minute Aadhaar approval).\n` +
+      `👉 View 3D Room Suite: https://shreeganesh-godrej.web.app/#room-matcher\n` +
+      `📍 Near New Bus Stand, Main Road, Rayagada | 📞 +91 93905 53301`;
   };
 
   const handleLaunchBroadcast = () => {
+    playScanBeep();
     playSuccessChime();
     triggerGoldenConfetti();
 
-    const campaignId = "CAMP-BULK-" + Math.floor(100000 + Math.random() * 900000);
-
-    dispatchWebhookAction('DISPATCH_BULK_BOT_CAMPAIGN', {
-      campaign_id: campaignId,
-      bot_id: selectedBotId,
+    dispatchWebhookAction('DISPATCH_BULK_BOT_BROADCAST', {
+      bot_id: currentBot.botId || selectedBotId,
       bot_name: currentBot.name,
-      target_segment: selectedSegment,
-      total_recipients: currentSegment.count,
+      segment_key: selectedSegment,
+      segment_name: currentSegment.name,
+      recipient_count: currentSegment.count,
       language: language,
-      enable_drip_scheduler: enableDrip,
-      timestamp: new Date().toISOString()
+      enable_drip_sequence: enableDrip,
+      scheduled_time: "Immediate Active Queue",
+      message_template: getDynamicMessagePreview(selectedBotId, selectedSegment, language)
     });
 
-    const sampleMsg = getDynamicMessagePreview(selectedBotId, selectedSegment, language).replace('{Customer_Name}', 'Dr. Subhashish Jena').replace('{Architect_Name}', 'Ar. Rajesh Mohanty');
-    const sampleUrl = `https://wa.me/919390553301?text=${encodeURIComponent(sampleMsg)}`;
-    window.open(sampleUrl, '_blank');
-
-    showToast(`🚀 Dispatched ${currentBot.name} across ${currentSegment.count} recipients in ${language}! Synced with Google Sheets.`, true);
+    showToast(`🚀 Dispatched ${currentBot.name} to ${currentSegment.count} recipients in ${language}! Scheduled in cloud webhook.`, true);
     onClose();
   };
 
   return (
     <div className="modal-overlay" style={{ zIndex: 9999 }}>
-      <div className="modal-card glass-panel" style={{ maxWidth: '840px', width: '95%', maxHeight: '92vh', overflowY: 'auto', background: '#0B132B', border: '2px solid var(--accent-gold)', boxShadow: '0 25px 60px rgba(0,0,0,0.95)', padding: '24px' }}>
+      <div className="modal-card" style={{ maxWidth: '680px', background: '#0B132B', border: '2px solid var(--accent-gold)' }}>
         
         {/* Modal Header */}
-        <div className="modal-header" style={{ borderBottom: '1px solid rgba(255,255,255,0.12)', paddingBottom: '14px', marginBottom: '16px' }}>
-          <div>
-            <span className="badge badge-gold">📢 AUTONOMOUS BULK BOT DISPATCHER</span>
-            <h3 style={{ fontSize: '18px', fontWeight: '900', color: '#FFFFFF', margin: '4px 0 0 0' }}>
-              📢 500-Customer Multi-Language Bot Broadcast Engine
-            </h3>
-            <div style={{ fontSize: '11px', color: 'var(--accent-cyan)', marginTop: '2px' }}>
-              Triggers any of the 20 AppSheet Cloud Bots across targeted customer audiences with dynamic personalization
+        <div className="modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="badge badge-gold">
+              <Bot size={14} /> AUTONOMOUS BOT DISPATCHER
             </div>
+            <h3 style={{ margin: 0, color: 'var(--accent-gold-light)' }}>
+              500-Customer Multi-Language Bot Broadcast
+            </h3>
           </div>
           <button className="btn-close-modal" onClick={onClose}><X size={18} /></button>
         </div>
 
-        {/* Step 1: Target Audience Selection */}
-        <div style={{ margin: '14px 0' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-gold-light)', textTransform: 'uppercase' }}>
-              1. 🎯 Select Target Customer Audience ({currentSegment.count} Active Recipients):
-            </label>
-            <span className="badge badge-emerald" style={{ fontSize: '10px' }}>
-              ✓ {currentSegment.count} Phone Numbers Ready
-            </span>
-          </div>
+        {/* 🧭 LUXURY STEP WIZARD NAVIGATION BAR */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', margin: '14px 0 18px', background: '#030712', padding: '6px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+          {[
+            { step: 1, label: '1. 🎯 Audience Segment', icon: Users },
+            { step: 2, label: '2. 🤖 Bot & Language', icon: Globe },
+            { step: 3, label: '3. 💬 Preview & Launch', icon: Send }
+          ].map(s => {
+            const IconComponent = s.icon;
+            const isActive = currentStep === s.step;
+            const isCompleted = currentStep > s.step;
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '8px' }}>
-            {Object.keys(segments).map(k => {
-              const isSelected = selectedSegment === k;
-              return (
-                <button 
-                  key={k}
-                  type="button"
+            return (
+              <button
+                key={s.step}
+                type="button"
+                onClick={() => {
+                  setCurrentStep(s.step);
+                  playScanBeep();
+                }}
+                style={{
+                  padding: '8px 6px',
+                  borderRadius: '8px',
+                  fontSize: '11px',
+                  fontWeight: isActive ? '900' : '700',
+                  background: isActive 
+                    ? 'linear-gradient(135deg, #D4AF37 0%, #B45309 100%)' 
+                    : isCompleted 
+                    ? 'rgba(16,185,129,0.15)' 
+                    : 'transparent',
+                  color: isActive ? '#000000' : isCompleted ? 'var(--accent-emerald)' : '#94A3B8',
+                  border: isActive ? '1.5px solid #FFFFFF' : isCompleted ? '1px solid rgba(16,185,129,0.3)' : '1px solid transparent',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {isCompleted ? <Check size={12} /> : <IconComponent size={12} />}
+                {s.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ========================================================================= */}
+        {/* 🎯 STEP 1: AUDIENCE SEGMENT SELECTION */}
+        {/* ========================================================================= */}
+        {currentStep === 1 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+            <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-gold-light)', textTransform: 'uppercase', display: 'block', marginBottom: '8px' }}>
+              Step 1: Select Target Customer Audience ({currentSegment.count} Selected Recipients):
+            </label>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', marginBottom: '14px' }}>
+              {Object.entries(segments).map(([key, seg]) => (
+                <div 
+                  key={key}
                   onClick={() => {
-                    setSelectedSegment(k);
+                    setSelectedSegment(key);
                     playScanBeep();
                   }}
                   style={{
-                    background: isSelected ? 'rgba(212,175,55,0.18)' : '#030712',
-                    border: isSelected ? '2px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.1)',
+                    background: selectedSegment === key ? 'rgba(212,175,55,0.15)' : '#030712',
+                    border: selectedSegment === key ? '1.5px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.08)',
                     borderRadius: '10px',
                     padding: '12px',
-                    textAlign: 'left',
                     cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '4px',
-                    transition: 'all 0.2s ease',
-                    boxShadow: isSelected ? '0 0 15px rgba(212,175,55,0.3)' : 'none'
+                    transition: 'all 0.15s ease'
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <b style={{ color: isSelected ? 'var(--accent-gold-light)' : '#FFFFFF', fontSize: '11.5px' }}>
-                      {segments[k].name}
-                    </b>
-                    {isSelected && <CheckCircle2 size={14} color="var(--accent-gold-light)" />}
+                    <span style={{ fontSize: '12px', fontWeight: '800', color: '#FFFFFF' }}>{seg.name}</span>
+                    <span className="badge badge-gold" style={{ fontSize: '10px' }}>{seg.count} Contacts</span>
                   </div>
-                  <span style={{ fontSize: '10px', color: isSelected ? 'var(--accent-cyan)' : 'var(--text-secondary)' }}>
-                    {segments[k].count} Contacts • {segments[k].source}
-                  </span>
-                  <span style={{ fontSize: '9.5px', color: '#64748B' }}>
-                    {segments[k].desc}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Interactive CSV Upload Box if CSV Selected */}
-          {selectedSegment === 'CSV_UPLOAD' && (
-            <div style={{ marginTop: '10px', background: '#030712', border: '1.5px dashed var(--accent-gold)', borderRadius: '10px', padding: '14px', textAlign: 'center' }}>
-              <input type="file" id="csvFile" accept=".csv, .xlsx" onChange={handleFileUpload} style={{ display: 'none' }} />
-              <label htmlFor="csvFile" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-                <FileSpreadsheet size={24} color="var(--accent-gold-light)" />
-                <span style={{ fontSize: '12px', fontWeight: '800', color: '#FFFFFF' }}>
-                  {customFileName ? `✓ Loaded: ${customFileName} (524 Numbers)` : 'Click to Upload Custom Customer CSV / Excel File'}
-                </span>
-                <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>
-                  Supports .csv with Customer Name, Phone, and SKU columns
-                </span>
-              </label>
+                  <div style={{ fontSize: '10.5px', color: '#94A3B8', marginTop: '4px' }}>
+                    Source: <b style={{ color: 'var(--accent-cyan)' }}>{seg.source}</b>
+                  </div>
+                </div>
+              ))}
             </div>
-          )}
-        </div>
 
-        {/* Step 2: Select Target Bot from All 20 Bots */}
-        <div style={{ margin: '16px 0' }}>
-          <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-cyan)', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
-            2. 🤖 Select Target Cloud Bot from the 20 AppSheet Bots:
-          </label>
-          <select 
-            value={selectedBotId} 
-            onChange={e => {
-              setSelectedBotId(e.target.value);
-              playScanBeep();
-            }}
-            style={{ 
-              width: '100%', 
-              padding: '12px', 
-              background: '#030712', 
-              border: '1.5px solid rgba(56,189,248,0.4)', 
-              borderRadius: '8px', 
-              color: '#FFFFFF', 
-              fontSize: '12.5px',
-              fontWeight: '700'
-            }}
-          >
-            {allBots.map(b => {
-              const id = b.botId || b.id;
-              return (
-                <option key={id} value={id}>
-                  {id}: {b.name} — ({b.trigger})
-                </option>
-              );
-            })}
-          </select>
-        </div>
+            {/* Custom CSV Upload Box if selected */}
+            {selectedSegment === 'CSV_UPLOAD' && (
+              <div style={{ background: 'rgba(212,175,55,0.08)', border: '1.5px dashed var(--accent-gold)', borderRadius: '10px', padding: '14px', textAlign: 'center', margin: '10px 0 14px' }}>
+                <FileSpreadsheet size={24} color="var(--accent-gold)" style={{ margin: '0 auto 6px' }} />
+                <div style={{ fontSize: '12px', color: '#FFFFFF', fontWeight: '700' }}>
+                  {customFileName ? `Loaded: ${customFileName} (${customCount} Contacts)` : 'Upload Customer Excel / CSV Phonebook (500+ Contacts)'}
+                </div>
+                <input type="file" accept=".csv, .xlsx, .xls" onChange={handleFileUpload} style={{ marginTop: '8px', fontSize: '11px', color: '#CBD5E1' }} />
+              </div>
+            )}
 
-        {/* Step 3: Multi-Language Switcher */}
-        <div style={{ margin: '16px 0' }}>
-          <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-emerald)', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
-            3. 🌐 Select Customer Regional Language (Rayagada Multi-Lingual Engine):
-          </label>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
-            {[
-              { id: 'EN', label: '🇬🇧 English' },
-              { id: 'OR', label: '🇮🇳 ଓଡ଼ିଆ (Odia)' },
-              { id: 'TE', label: '🇮🇳 తెలుగు (Telugu)' },
-              { id: 'HI', label: '🇮🇳 हिंदी (Hindi)' }
-            ].map(l => (
+            {/* Step 1 Navigation Footer */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px' }}>
               <button 
-                key={l.id}
-                type="button"
-                className={`btn-ghost-edit ${language === l.id ? 'badge-emerald' : ''}`}
+                type="button" 
+                className="btn-luxury-gold" 
                 onClick={() => {
-                  setLanguage(l.id);
+                  setCurrentStep(2);
                   playScanBeep();
                 }}
-                style={{ fontSize: '11.5px', padding: '8px 6px', textAlign: 'center', fontWeight: '800' }}
+                style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '800' }}
               >
-                {l.label}
+                Next: Select Cloud Bot & Language <ArrowRight size={15} />
               </button>
-            ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Dynamic Template Message Preview */}
-        <div style={{ background: '#030712', borderRadius: '10px', padding: '14px 16px', border: '1px solid rgba(212,175,55,0.35)', margin: '16px 0' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-gold-light)', textTransform: 'uppercase' }}>
-              💬 Live WhatsApp Message Preview ({currentBot.botId || selectedBotId} • {language}):
-            </span>
-            <span className="badge badge-cyan" style={{ fontSize: '9.5px' }}>Dynamic Variable Interpolation Active ✓</span>
-          </div>
-          <pre style={{ fontSize: '11.5px', color: '#E2E8F0', whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0, lineHeight: 1.5 }}>
-            {getDynamicMessagePreview(selectedBotId, selectedSegment, language)}
-          </pre>
-        </div>
-
-        {/* Step 4: 3-Stage Drip Follow-Up Scheduler Toggle */}
-        <div style={{ background: 'rgba(56,189,248,0.08)', borderRadius: '10px', padding: '12px 16px', border: '1px solid rgba(56,189,248,0.3)', marginBottom: '18px' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-            <input type="checkbox" checked={enableDrip} onChange={e => setEnableDrip(e.target.checked)} />
-            <div>
-              <div style={{ fontSize: '12.5px', fontWeight: '800', color: 'var(--accent-cyan)' }}>
-                ⏳ Enable Automated 3-Stage WhatsApp Drip Follow-Up Sequence:
-              </div>
-              <div style={{ fontSize: '10.5px', color: '#94A3B8', marginTop: '2px' }}>
-                Stage 1 (Day 1: Brochure PDF) ➔ Stage 2 (Day 3: 0% EMI Matrix) ➔ Stage 3 (Day 7: Free Pillows Urgency Close)
+        {/* ========================================================================= */}
+        {/* 🤖 STEP 2: CLOUD BOT & LANGUAGE SELECTION */}
+        {/* ========================================================================= */}
+        {currentStep === 2 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+            
+            {/* Bot Dropdown */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-cyan)', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
+                Step 2A: Select Cloud Bot from 20 AppSheet Automations:
+              </label>
+              <select 
+                value={selectedBotId} 
+                onChange={e => {
+                  setSelectedBotId(e.target.value);
+                  playScanBeep();
+                }}
+                style={{ 
+                  width: '100%', 
+                  padding: '12px', 
+                  background: '#030712', 
+                  border: '1.5px solid rgba(56,189,248,0.4)', 
+                  borderRadius: '8px', 
+                  color: '#FFFFFF', 
+                  fontSize: '12.5px',
+                  fontWeight: '700'
+                }}
+              >
+                {allBots.map(b => {
+                  const id = b.botId || b.id;
+                  return (
+                    <option key={id} value={id}>
+                      {id}: {b.name} — ({b.trigger})
+                    </option>
+                  );
+                })}
+              </select>
+              <div style={{ fontSize: '11px', color: 'var(--accent-gold-light)', marginTop: '4px' }}>
+                🎯 Target Action: {currentBot.target}
               </div>
             </div>
-          </label>
-        </div>
 
-        {/* Action Button */}
-        <button 
-          type="button"
-          className="btn-luxury-gold" 
-          onClick={handleLaunchBroadcast} 
-          style={{ width: '100%', justifyContent: 'center', padding: '14px', fontSize: '14px', fontWeight: '900' }}
-        >
-          <Send size={18} /> 🚀 Launch {currentSegment.count}-Customer Automated Bot Broadcast ({language})
-        </button>
+            {/* Language Switcher */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-emerald)', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
+                Step 2B: Select Regional Language:
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                {[
+                  { id: 'EN', label: '🇬🇧 English' },
+                  { id: 'OR', label: '🇮🇳 ଓଡ଼ିଆ (Odia)' },
+                  { id: 'TE', label: '🇮🇳 తెలుగు (Telugu)' },
+                  { id: 'HI', label: '🇮🇳 हिंदी (Hindi)' }
+                ].map(l => (
+                  <button 
+                    key={l.id}
+                    type="button"
+                    className={`btn-ghost-edit ${language === l.id ? 'badge-emerald' : ''}`}
+                    onClick={() => {
+                      setLanguage(l.id);
+                      playScanBeep();
+                    }}
+                    style={{ fontSize: '11.5px', padding: '10px 6px', textAlign: 'center', fontWeight: '800' }}
+                  >
+                    {l.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Step 2 Navigation Footer */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '18px' }}>
+              <button 
+                type="button" 
+                className="btn-ghost-edit" 
+                onClick={() => {
+                  setCurrentStep(1);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 16px', fontSize: '12px' }}
+              >
+                <ArrowLeft size={14} /> Back: Audience
+              </button>
+              <button 
+                type="button" 
+                className="btn-luxury-gold" 
+                onClick={() => {
+                  setCurrentStep(3);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '800' }}
+              >
+                Next: Review Message & Schedule <ArrowRight size={15} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* 💬 STEP 3: MESSAGE PREVIEW, DRIP SCHEDULER & LAUNCH */}
+        {/* ========================================================================= */}
+        {currentStep === 3 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+            
+            {/* Dynamic Template Message Preview */}
+            <div style={{ background: '#030712', borderRadius: '10px', padding: '14px 16px', border: '1.5px solid rgba(212,175,55,0.35)', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-gold-light)', textTransform: 'uppercase' }}>
+                  💬 Live WhatsApp Message Preview ({currentBot.botId || selectedBotId} • {language}):
+                </span>
+                <span className="badge badge-cyan" style={{ fontSize: '9.5px' }}>Dynamic Variable Interpolation Active ✓</span>
+              </div>
+              <pre style={{ fontSize: '11.5px', color: '#E2E8F0', whiteSpace: 'pre-wrap', fontFamily: 'inherit', margin: 0, lineHeight: 1.5, maxHeight: '180px', overflowY: 'auto' }}>
+                {getDynamicMessagePreview(selectedBotId, selectedSegment, language)}
+              </pre>
+            </div>
+
+            {/* 3-Stage Drip Follow-Up Scheduler Toggle */}
+            <div style={{ background: 'rgba(56,189,248,0.08)', borderRadius: '10px', padding: '10px 14px', border: '1px solid rgba(56,189,248,0.3)', marginBottom: '16px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                <input type="checkbox" checked={enableDrip} onChange={e => setEnableDrip(e.target.checked)} />
+                <div>
+                  <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-cyan)' }}>
+                    ⏳ Enable Automated 3-Stage WhatsApp Drip Follow-Up Sequence:
+                  </div>
+                  <div style={{ fontSize: '10px', color: '#94A3B8', marginTop: '2px' }}>
+                    Stage 1 (Day 1: Brochure PDF) ➔ Stage 2 (Day 3: 0% EMI Matrix) ➔ Stage 3 (Day 7: Free Pillows Urgency Close)
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            {/* Step 3 Navigation & Launch Footer */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <button 
+                type="button" 
+                className="btn-ghost-edit" 
+                onClick={() => {
+                  setCurrentStep(2);
+                  playScanBeep();
+                }}
+                style={{ padding: '12px 16px', fontSize: '12px' }}
+              >
+                <ArrowLeft size={14} /> Back: Bot & Language
+              </button>
+              <button 
+                type="button"
+                className="btn-luxury-gold" 
+                onClick={handleLaunchBroadcast} 
+                style={{ flex: 1, marginLeft: '12px', justifyContent: 'center', padding: '13px', fontSize: '13.5px', fontWeight: '900' }}
+              >
+                <Send size={16} /> 🚀 Launch {currentSegment.count}-Customer Broadcast ({language})
+              </button>
+            </div>
+
+          </div>
+        )}
 
       </div>
     </div>

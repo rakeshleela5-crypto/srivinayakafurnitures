@@ -7,6 +7,7 @@ import { dispatchWebhookAction } from '../../services/webhookService';
 
 export function DigitalEpodModal({ isOpen, onClose, stop = {} }) {
   const { submitEpodDelivery, showToast } = useStore();
+  const [epodStep, setEpodStep] = useState(1); // 1: OTP & Geotag, 2: Doorstep UPI Settlement, 3: CSAT & Signature Pad
   const [csat, setCsat] = useState(5);
   const [signatureDrawn, setSignatureDrawn] = useState(false);
   const [otpCode, setOtpCode] = useState(stop.Order_ID ? stop.Order_ID.replace('ORD-', '') : '8921');
@@ -77,109 +78,244 @@ export function DigitalEpodModal({ isOpen, onClose, stop = {} }) {
 
   return (
     <div className="modal-overlay">
-      <div className="modal-card">
+      <div className="modal-card" style={{ maxWidth: '520px', background: '#0B132B', border: '2px solid var(--accent-gold)' }}>
+        
+        {/* Header */}
         <div className="modal-header">
-          <h3>🚚 Digital ePOD & Customer Sign-Off ({stop.Order_ID})</h3>
+          <div>
+            <div className="badge badge-gold" style={{ fontSize: '10px' }}>
+              <Truck size={12} /> DRIVER FIELD DESK
+            </div>
+            <h3 style={{ margin: '4px 0 0', color: 'var(--accent-gold-light)' }}>
+              🚚 Digital ePOD & Delivery Sign-Off ({stop.Order_ID || 'ORD-8921'})
+            </h3>
+          </div>
           <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
         </div>
 
-        <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid var(--accent-emerald)', borderRadius: '12px', padding: '12px 14px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontSize: '13px', fontWeight: 800, color: '#FFFFFF' }}>{stop.Customer_Name}</div>
-              <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{stop.Address} • {stop.Items}</div>
-            </div>
-            <span className="badge badge-emerald">GPS LOCKED 📍</span>
-          </div>
-          <div style={{ fontSize: '10px', color: 'var(--accent-emerald)', marginTop: '4px', fontFamily: 'JetBrains Mono' }}>
-            🛰️ GeoTag: 19.1724° N, 83.4163° E (Near Gayatri Nagar Villa)
-          </div>
-        </div>
-
-        <div className="form-grid">
-          <div className="form-field">
-            <label>Customer Delivery 4-Digit OTP</label>
-            <input type="text" value={otpCode} onChange={e => setOtpCode(e.target.value)} style={{ textAlign: 'center', fontFamily: 'JetBrains Mono', fontSize: '16px', letterSpacing: '4px' }} />
-          </div>
-          <div className="form-field">
-            <label>Balance Due at Doorstep (₹)</label>
-            <input type="number" value={amountCollected} onChange={e => setAmountCollected(Number(e.target.value))} />
-          </div>
-        </div>
-
-        {/* 📱 1-Tap Doorstep Dynamic UPI QR Code */}
-        <div style={{ background: '#030712', border: '1.5px solid rgba(56,189,248,0.3)', borderRadius: '12px', padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px' }}>
-          <div>
-            <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-cyan)', textTransform: 'uppercase' }}>
-              📱 Doorstep Dynamic UPI Collection
-            </div>
-            <div style={{ fontSize: '15px', fontWeight: '900', color: 'var(--accent-gold-light)', marginTop: '2px' }}>
-              ₹{Number(amountCollected).toLocaleString()}
-            </div>
-            <div style={{ fontSize: '10.5px', color: '#94A3B8', marginTop: '2px' }}>
-              Scan with GPay / PhonePe / Paytm to settle balance instantly.
-            </div>
-          </div>
-          <div style={{ background: '#FFFFFF', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <DynamicQrCode 
-              value={`upi://pay?pa=9390553301@ybl&pn=Godrej%20Interio%20Rayagada&am=${amountCollected}&cu=INR&tn=Doorstep%20Balance%20${stop.Order_ID || 'ORD-8921'}`}
-              size={64}
-            />
-          </div>
-        </div>
-
-        <div>
-          <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-gold-light)', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
-            Customer Experience Rating (CSAT)
-          </label>
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', background: '#030712', padding: '10px', borderRadius: '10px' }}>
-            {[1, 2, 3, 4, 5].map(star => (
-              <button 
-                key={star} 
-                type="button" 
-                onClick={() => setCsat(star)}
-                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '22px' }}
+        {/* 🧭 LUXURY 3-STEP WIZARD PROGRESS BAR */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', margin: '10px 0 14px', background: '#030712', padding: '6px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+          {[
+            { step: 1, label: '1. 🔒 OTP' },
+            { step: 2, label: '2. 📱 UPI QR' },
+            { step: 3, label: '3. ✍️ Sign & Bill' }
+          ].map(s => {
+            const isActive = epodStep === s.step;
+            const isDone = epodStep > s.step;
+            return (
+              <button
+                key={s.step}
+                type="button"
+                onClick={() => {
+                  setEpodStep(s.step);
+                  playScanBeep();
+                }}
+                style={{
+                  padding: '7px 4px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: isActive ? '900' : '700',
+                  background: isActive 
+                    ? 'linear-gradient(135deg, #D4AF37 0%, #B45309 100%)' 
+                    : isDone ? 'rgba(16,185,129,0.15)' : 'transparent',
+                  color: isActive ? '#000000' : isDone ? 'var(--accent-emerald)' : '#94A3B8',
+                  border: isActive ? '1px solid #FFFFFF' : isDone ? '1px solid rgba(16,185,129,0.3)' : '1px solid transparent',
+                  cursor: 'pointer',
+                  textAlign: 'center'
+                }}
               >
-                {star <= csat ? '⭐' : '☆'}
+                {isDone ? '✓ ' : ''}{s.label}
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
 
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-            <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-gold-light)', textTransform: 'uppercase' }}>
-              Customer Digital Signature Pad
-            </label>
-            <button type="button" onClick={handleClearSignature} style={{ fontSize: '10px', background: 'transparent', border: 'none', color: 'var(--accent-rose)', cursor: 'pointer', fontWeight: '700' }}>
-              Clear Signature
-            </button>
-          </div>
-          <canvas 
-            ref={canvasRef}
-            width={480}
-            height={110}
-            onMouseDown={(e) => {
-              const ctx = canvasRef.current.getContext('2d');
-              ctx.beginPath();
-              handleCanvasDraw(e);
-            }}
-            onMouseMove={(e) => {
-              if (e.buttons === 1) handleCanvasDraw(e);
-            }}
-            onTouchMove={handleCanvasDraw}
-            style={{ width: '100%', height: '110px', background: '#030712', border: '1.5px dashed rgba(212,175,55,0.4)', borderRadius: '10px', touchAction: 'none' }}
-          />
-        </div>
+        {/* ========================================================================= */}
+        {/* 🔒 STEP 1: OTP & GEOTAG VERIFICATION */}
+        {/* ========================================================================= */}
+        {epodStep === 1 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid var(--accent-emerald)', borderRadius: '10px', padding: '10px 14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#FFFFFF' }}>{stop.Customer_Name || 'Dr. Subhashish Jena'}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{stop.Address || 'Gayatri Nagar Villa, Rayagada'}</div>
+                </div>
+                <span className="badge badge-emerald">GPS LOCKED 📍</span>
+              </div>
+              <div style={{ fontSize: '10px', color: 'var(--accent-emerald)', marginTop: '4px', fontFamily: 'JetBrains Mono' }}>
+                🛰️ GeoTag: 19.1724° N, 83.4163° E • Items: {stop.Items || 'Royal Teak Master Suite'}
+              </div>
+            </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn-emerald" onClick={() => handleSubmit(false)} style={{ flex: 1, justifyContent: 'center', padding: '12px' }}>
-            <Check size={16} /> Complete ePOD
-          </button>
-          <button className="btn-luxury-gold" onClick={() => handleSubmit(true)} style={{ flex: 2, justifyContent: 'center', padding: '12px' }}>
-            <Send size={16} /> 📲 Submit ePOD & Send WhatsApp Receipt
-          </button>
-        </div>
+            <div className="form-field">
+              <label style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--accent-gold-light)', textTransform: 'uppercase' }}>
+                Enter Customer's 4-Digit Delivery OTP:
+              </label>
+              <input 
+                type="text" 
+                value={otpCode} 
+                onChange={e => setOtpCode(e.target.value)} 
+                style={{ textAlign: 'center', fontFamily: 'JetBrains Mono', fontSize: '18px', letterSpacing: '6px', fontWeight: '900', color: 'var(--accent-gold-light)', padding: '10px' }} 
+              />
+              <div style={{ fontSize: '10px', color: '#94A3B8', marginTop: '2px', textAlign: 'center' }}>
+                (Ask customer to read the 4-digit code from their WhatsApp message)
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+              <button 
+                type="button" 
+                className="btn-luxury-gold" 
+                onClick={() => {
+                  setEpodStep(2);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '800' }}
+              >
+                Next: Doorstep Payment ➔
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* 📱 STEP 2: DOORSTEP UPI QR SETTLEMENT */}
+        {/* ========================================================================= */}
+        {epodStep === 2 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="form-field">
+              <label style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--accent-cyan)', textTransform: 'uppercase' }}>
+                Remaining Doorstep Balance (₹):
+              </label>
+              <input 
+                type="number" 
+                value={amountCollected} 
+                onChange={e => setAmountCollected(Number(e.target.value))} 
+                style={{ fontSize: '16px', fontWeight: '900', color: 'var(--accent-gold-light)' }}
+              />
+            </div>
+
+            {/* 📱 1-Tap Doorstep Dynamic UPI QR Code */}
+            <div style={{ background: '#030712', border: '1.5px solid rgba(56,189,248,0.3)', borderRadius: '12px', padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px' }}>
+              <div>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-cyan)', textTransform: 'uppercase' }}>
+                  📱 Doorstep Dynamic UPI Collection
+                </div>
+                <div style={{ fontSize: '16px', fontWeight: '900', color: 'var(--accent-gold-light)', marginTop: '2px' }}>
+                  ₹{Number(amountCollected).toLocaleString()}
+                </div>
+                <div style={{ fontSize: '10.5px', color: '#94A3B8', marginTop: '2px' }}>
+                  Customer can scan with GPay / PhonePe / Paytm to settle balance instantly.
+                </div>
+              </div>
+              <div style={{ background: '#FFFFFF', padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <DynamicQrCode 
+                  value={`upi://pay?pa=9390553301@ybl&pn=Godrej%20Interio%20Rayagada&am=${amountCollected}&cu=INR&tn=Doorstep%20Balance%20${stop.Order_ID || 'ORD-8921'}`}
+                  size={64}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+              <button 
+                type="button" 
+                className="btn-ghost-edit" 
+                onClick={() => {
+                  setEpodStep(1);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 16px', fontSize: '12px' }}
+              >
+                ⬅️ Back: OTP
+              </button>
+              <button 
+                type="button" 
+                className="btn-luxury-gold" 
+                onClick={() => {
+                  setEpodStep(3);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '800' }}
+              >
+                Next: Signature & Finish ➔
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* ✍️ STEP 3: CSAT RATING & DIGITAL SIGNATURE */}
+        {/* ========================================================================= */}
+        {epodStep === 3 && (
+          <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div>
+              <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-gold-light)', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
+                Customer Experience Rating (CSAT):
+              </label>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', background: '#030712', padding: '8px', borderRadius: '10px' }}>
+                {[1, 2, 3, 4, 5].map(star => (
+                  <button 
+                    key={star} 
+                    type="button" 
+                    onClick={() => setCsat(star)}
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '20px' }}
+                  >
+                    {star <= csat ? '⭐' : '☆'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-gold-light)', textTransform: 'uppercase' }}>
+                  Customer Digital Signature Pad:
+                </label>
+                <button type="button" onClick={handleClearSignature} style={{ fontSize: '10px', background: 'transparent', border: 'none', color: 'var(--accent-rose)', cursor: 'pointer', fontWeight: '700' }}>
+                  Clear Signature
+                </button>
+              </div>
+              <canvas 
+                ref={canvasRef}
+                width={480}
+                height={100}
+                onMouseDown={(e) => {
+                  const ctx = canvasRef.current.getContext('2d');
+                  ctx.beginPath();
+                  handleCanvasDraw(e);
+                }}
+                onMouseMove={(e) => {
+                  if (e.buttons === 1) handleCanvasDraw(e);
+                }}
+                onTouchMove={handleCanvasDraw}
+                style={{ width: '100%', height: '100px', background: '#030712', border: '1.5px dashed rgba(212,175,55,0.4)', borderRadius: '10px', touchAction: 'none' }}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+              <button 
+                type="button"
+                className="btn-ghost-edit" 
+                onClick={() => {
+                  setEpodStep(2);
+                  playScanBeep();
+                }}
+                style={{ padding: '10px', fontSize: '11.5px' }}
+              >
+                ⬅️ Back
+              </button>
+              <button className="btn-emerald" onClick={() => handleSubmit(false)} style={{ flex: 1, justifyContent: 'center', padding: '10px', fontSize: '12px' }}>
+                <Check size={14} /> Complete
+              </button>
+              <button className="btn-luxury-gold" onClick={() => handleSubmit(true)} style={{ flex: 1.8, justifyContent: 'center', padding: '10px', fontSize: '12px', fontWeight: '900' }}>
+                <Send size={14} /> 📲 Submit & WhatsApp
+              </button>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

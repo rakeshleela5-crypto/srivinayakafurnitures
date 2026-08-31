@@ -133,6 +133,20 @@ export function StoreProvider({ children }) {
     status: "OPEN_REGISTER"
   });
 
+  // 👑 VIP Turnkey Villa Projects State
+  const [vipProjects, setVipProjects] = useState([
+    { id: 'VIP-001', name: 'Dr. Subhashish Jena (Rayagada Civil Surgeon)', location: 'Raniguda Farmhouse Villa', value: 156494, advance: 78247, status: 'SAFELOCKED & STAGED', stage: '40% Balance on Delivery', phone: '+91 94371 88990', architect: 'Ar. Sunita Patnaik (Studio Vastu)', stage1Paid: true, stage2Paid: false, stage3Paid: false },
+    { id: 'VIP-002', name: 'Er. Pradeep Patnaik (JK Paper Executive)', location: 'Jaykaypur Officer Bungalow', value: 420000, advance: 210000, status: 'PROPOSAL DELIVERED', stage: '50% Token Pending', phone: '+91 94370 12345', architect: 'Ar. Rajesh Mohanty', stage1Paid: false, stage2Paid: false, stage3Paid: false },
+    { id: 'VIP-003', name: 'M/s Koraput Health Clinic', location: 'Medical Road, Koraput', value: 285000, advance: 142500, status: 'DISPATCH IN TRANSIT', stage: 'ePOD OTP Staged', phone: '+91 98610 99887', architect: 'Direct VIP Client', stage1Paid: true, stage2Paid: true, stage3Paid: false }
+  ]);
+
+  // 🔥 Floor Aging Stock Sentinel State
+  const [floorAgingStock, setFloorAgingStock] = useState([
+    { sku: 'ALM-MOD-001', name: '4-Door Solid Teak Wardrobe', floorDays: 52, bay: 'Bay 3', mrp: 78000, discountPct: 20, clearancePrice: 62400, notes: 'Showroom display piece in pristine condition' },
+    { sku: 'DIN-MOD-001', name: '6-Seater Italian Carrara Marble Dining', floorDays: 48, bay: 'Bay 1', mrp: 92000, discountPct: 20, clearancePrice: 73600, notes: 'Polished display unit' },
+    { sku: 'SOF-MOD-002', name: '3-Seater Chesterfield Velvet Sofa', floorDays: 46, bay: 'Bay 4', mrp: 68000, discountPct: 20, clearancePrice: 54400, notes: 'Buffed velvet upholstery' }
+  ]);
+
   // UI States & Modals
   const [activeModal, setActiveModal] = useState(null);
   const [modalProps, setModalProps] = useState({});
@@ -428,6 +442,89 @@ export function StoreProvider({ children }) {
     setBots(prev => prev.map(b => b.botId === botId ? { ...b, ...updatedProps } : b));
   };
 
+  // 👑 VIP Villa Management Actions
+  const addVipProject = (proj) => {
+    const newProj = {
+      id: proj.id || `VIP-${Math.floor(100 + Math.random() * 900)}`,
+      name: proj.name || 'VIP Client',
+      location: proj.location || 'Raniguda Farmhouse Villa',
+      value: Number(proj.value) || 150000,
+      advance: Number(proj.advance) || Math.round((Number(proj.value) || 150000) * 0.5),
+      status: proj.status || 'SAFELOCKED & STAGED',
+      stage: proj.stage || '50% Token Received',
+      phone: proj.phone || '+91 94370 88990',
+      architect: proj.architect || 'Direct VIP Account',
+      stage1Paid: true,
+      stage2Paid: false,
+      stage3Paid: false
+    };
+    setVipProjects(prev => [newProj, ...prev]);
+    playSuccessChime();
+    triggerGoldenConfetti();
+    showToast(`👑 New VIP Villa Project #${newProj.id} added!`, true);
+    dispatchWebhookAction('ADD_VIP_PROJECT', { ...newProj, project_id: newProj.id, project_value: newProj.value });
+  };
+
+  const updateVipProject = (id, updatedFields) => {
+    setVipProjects(prev => prev.map(p => p.id === id ? { ...p, ...updatedFields } : p));
+    playSuccessChime();
+    showToast(`👑 VIP Project #${id} updated!`, true);
+    dispatchWebhookAction('UPDATE_VIP_PROJECT', { project_id: id, ...updatedFields });
+  };
+
+  const deleteVipProject = (id) => {
+    setVipProjects(prev => prev.filter(p => p.id !== id));
+    playScanBeep();
+    showToast(`🗑️ VIP Project #${id} removed.`, false);
+  };
+
+  // 🔥 Floor Aging Management Actions
+  const addFloorAgingSku = (item) => {
+    const newItem = {
+      sku: item.sku || 'BED-MOD-001',
+      name: item.name || 'Solid King Bed',
+      floorDays: Number(item.floorDays) || 45,
+      bay: item.bay || 'Bay 1',
+      mrp: Number(item.mrp) || 98000,
+      discountPct: Number(item.discountPct) || 20,
+      clearancePrice: Math.round((Number(item.mrp) || 98000) * (1 - (Number(item.discountPct) || 20) / 100)),
+      notes: item.notes || 'Display piece tracked'
+    };
+    setFloorAgingStock(prev => [newItem, ...prev.filter(x => x.sku !== newItem.sku)]);
+    playSuccessChime();
+    showToast(`🔥 Display SKU ${newItem.sku} added to Aging Sentinel!`, true);
+    dispatchWebhookAction('ADD_FLOOR_AGING_SKU', { ...newItem, floor_days: newItem.floorDays });
+  };
+
+  const updateFloorAgingSku = (sku, updatedFields) => {
+    setFloorAgingStock(prev => prev.map(item => {
+      if (item.sku === sku) {
+        const merged = { ...item, ...updatedFields };
+        if (updatedFields.discountPct || updatedFields.mrp) {
+          merged.clearancePrice = Math.round(merged.mrp * (1 - merged.discountPct / 100));
+        }
+        return merged;
+      }
+      return item;
+    }));
+    playSuccessChime();
+    showToast(`🔥 Floor Aging SKU ${sku} updated!`, true);
+    dispatchWebhookAction('UPDATE_FLOOR_AGING_SKU', { sku, ...updatedFields });
+  };
+
+  const resetFloorAge = (sku) => {
+    setFloorAgingStock(prev => prev.map(item => {
+      if (item.sku === sku) {
+        return { ...item, floorDays: 1, notes: 'Fresh warehouse unit swapped onto floor' };
+      }
+      return item;
+    }));
+    playSuccessChime();
+    triggerGoldenConfetti();
+    showToast(`🔄 Display unit ${sku} age reset to Day 1 (Swapped with Warehouse Stock)!`, true);
+    dispatchWebhookAction('RESET_FLOOR_AGE', { sku });
+  };
+
   // 8. 2-Way Sync with Google Sheets
   const syncWithGoogleSheets = async () => {
     setIsSyncing(true);
@@ -466,6 +563,16 @@ export function StoreProvider({ children }) {
       setRouteStops,
       targets,
       setTargets,
+      vipProjects,
+      setVipProjects,
+      addVipProject,
+      updateVipProject,
+      deleteVipProject,
+      floorAgingStock,
+      setFloorAgingStock,
+      addFloorAgingSku,
+      updateFloorAgingSku,
+      resetFloorAge,
       bots,
       setBots,
       updateBotConfig,

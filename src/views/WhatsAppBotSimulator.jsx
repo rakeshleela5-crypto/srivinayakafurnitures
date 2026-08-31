@@ -228,7 +228,9 @@ export function WhatsAppBotSimulator() {
       'BOT-17': "🛡️ DATABASE INTEGRITY & DEDUPLICATION\nScanned all 21 Google Sheets tables.\n0 duplicate rows found. Index integrity 100% verified.",
       'BOT-18': "🏭 FACTORY SHIPMENT INWARD QC\nSupplier: Royal Teak Crafts (Saharanpur)\nPO: #PO-2026-881 | Cartons: 10/10 Verified\nZero Transit Damage ➔ Stock Added to Dock-A1 ✓",
       'BOT-19': "📊 STORE TARGET PACING GAUGE\nToday Achieved: ₹1,69,000 (112% of Daily Target)\nMonthly Run-Rate: ₹38.45L / ₹45.00L (85.4% Achieved) ✓",
-      'BOT-20': "🔄 MASTER 2-WAY CLOUD WEBHOOK ENGINE\nLive Bi-Directional Webhook Active with Google Apps Script.\nAll 21 tables synchronized in real-time."
+      'BOT-20': "🔄 MASTER 2-WAY CLOUD WEBHOOK ENGINE\nLive Bi-Directional Webhook Active with Google Apps Script.\nAll 21 tables synchronized in real-time.",
+      'BOT-21': "🚨 FLOOR AGING DISPLAY ALERT — GODREJ INTERIO RAYAGADA\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nModel: 4-Door Solid Teak Wardrobe (ALM-MOD-001)\n⏱️ Display Age: 52 Days in Bay 3 (₹78,000 Capital Locked)\n\n⚡ Recommended Action:\n1. Launch 20% Flash Clearance Flyer (₹62,400)\n2. Swap display piece with fresh warehouse carton stock.",
+      'BOT-22': "👑 VIP TURNKEY VILLA MILESTONE CONFIRMATION\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nNamaskar Dr. Subhashish Jena! 🙏\nYour Raniguda Farmhouse Villa Bedroom Suite is 100% staged!\n\n• Total Project Value: ₹1,56,494\n• Stage 1 (50% Booking Advance): ₹78,247 [PAID ✓]\n• Stage 2 (40% Factory Dispatch): ₹62,598 [DUE ON LOADING]\n• Stage 3 (10% Final Assembly): ₹15,649 [UPON MISTRI SIGN-OFF]\n\nShowroom Helpline: +91 93905 53301 | Shree Ganesh Enterprises"
     };
 
     let formattedText = b.customTemplate || defaultBotTemplates[b.botId] || `⚡ Automated Cloud Trigger Executed: Target [${b.target}]. Status: EXECUTED_SUCCESS ✓`;
@@ -253,7 +255,7 @@ export function WhatsAppBotSimulator() {
       title: `${b.name} (${b.botId})`,
       text: formattedText,
       time: "Just Now",
-      isDirector: ['BOT-08', 'BOT-12', 'BOT-17', 'BOT-19', 'BOT-20'].includes(b.botId)
+      isDirector: ['BOT-08', 'BOT-12', 'BOT-17', 'BOT-19', 'BOT-20', 'BOT-21', 'BOT-22'].includes(b.botId)
     };
 
     setChatMessages(prev => [...prev, newBotMsg]);

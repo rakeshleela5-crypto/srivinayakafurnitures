@@ -47,7 +47,10 @@ export function ExecutiveOverview() {
     setActiveTab,
     updateOrderStatus,
     showToast,
-    storeMeta
+    storeMeta,
+    vipProjects,
+    floorAgingStock,
+    resetFloorAge
   } = useStore();
 
   // Local Executive States
@@ -70,20 +73,6 @@ export function ExecutiveOverview() {
   const netShowroomContributionINR = Math.max(0, estimatedGrossMarginINR - architectBalance - carpenterLiabilityINR);
 
   const targetProgress = Math.min(100, Math.round((targets.currentAchievedINR / editableTarget) * 100));
-
-  // Top 3 VIP Villa Turnkey Projects
-  const vipProjects = [
-    { id: 'VIP-001', name: 'Dr. Subhashish Jena (Rayagada Civil Surgeon)', location: 'Raniguda Farmhouse Villa', value: 156494, status: 'SAFELOCKED & STAGED', stage: '40% Balance on Delivery', phone: '+91 94371 88990' },
-    { id: 'VIP-002', name: 'Er. Pradeep Patnaik (JK Paper Executive)', location: 'Jaykaypur Officer Bungalow', value: 420000, status: 'PROPOSAL DELIVERED', stage: '50% Token Pending', phone: '+91 94370 12345' },
-    { id: 'VIP-003', name: 'M/s Koraput Health Clinic', location: 'Medical Road, Koraput', value: 285000, status: 'DISPATCH IN TRANSIT', stage: 'ePOD OTP Staged', phone: '+91 98610 99887' }
-  ];
-
-  // Floor Aging Stock Sentinel (Display Pieces >45 Days)
-  const floorAgingStock = [
-    { sku: 'ALM-MOD-001', name: '4-Door Solid Teak Wardrobe', floorDays: 52, bay: 'Bay 3', mrp: 78000, clearancePrice: 62400 },
-    { sku: 'DIN-MOD-001', name: '6-Seater Italian Carrara Marble Dining', floorDays: 48, bay: 'Bay 1', mrp: 92000, clearancePrice: 73600 },
-    { sku: 'SOF-MOD-002', name: '3-Seater Chesterfield Velvet Sofa', floorDays: 46, bay: 'Bay 4', mrp: 68000, clearancePrice: 54400 }
-  ];
 
   // 1-Click Save Target Calibration
   const handleSaveCalibration = () => {
@@ -402,7 +391,9 @@ export function ExecutiveOverview() {
               <span style={{ fontSize: '16px' }}>👑</span>
               <h3 style={{ fontSize: '15px', fontWeight: '800' }}>VIP Turnkey Villa Client Radar</h3>
             </div>
-            <span className="badge badge-gold">HIGH-TICKET ACCOUNTS</span>
+            <button className="btn-luxury-gold" style={{ fontSize: '11px', padding: '4px 8px' }} onClick={() => openModal('add_vip_project')}>
+              + Add VIP Project
+            </button>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -411,12 +402,28 @@ export function ExecutiveOverview() {
                 <div>
                   <div style={{ fontSize: '12.5px', fontWeight: '900', color: '#FFFFFF' }}>{proj.name}</div>
                   <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>📍 {proj.location} • <span style={{ color: 'var(--accent-cyan)' }}>₹{proj.value.toLocaleString()}</span></div>
-                  <span className="badge badge-purple" style={{ fontSize: '9px', marginTop: '4px' }}>{proj.status}</span>
+                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center', marginTop: '4px' }}>
+                    <span className="badge badge-purple" style={{ fontSize: '9px' }}>{proj.status}</span>
+                    <span className={`badge ${proj.stage1Paid ? 'badge-emerald' : 'badge-gold'}`} style={{ fontSize: '8.5px' }}>
+                      50% Token {proj.stage1Paid ? '✓' : 'Due'}
+                    </span>
+                    <span className={`badge ${proj.stage2Paid ? 'badge-emerald' : 'badge-cyan'}`} style={{ fontSize: '8.5px' }}>
+                      40% Dispatch {proj.stage2Paid ? '✓' : 'Due'}
+                    </span>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', gap: '6px' }}>
+                <div style={{ display: 'flex', gap: '5px' }}>
                   <button 
                     className="btn-ghost-edit" 
-                    style={{ padding: '5px 8px', fontSize: '10.5px' }}
+                    style={{ padding: '5px 7px', fontSize: '10.5px' }}
+                    onClick={() => openModal('edit_vip_project', { project: proj })}
+                    title="Edit Project & Milestones"
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button 
+                    className="btn-ghost-edit" 
+                    style={{ padding: '5px 7px', fontSize: '10.5px' }}
                     onClick={() => {
                       const msg = encodeURIComponent(`Namaskar ${proj.name}! It would be our pleasure to invite you to our Rayagada Flagship Showroom for a private preview of custom teak finishes. Please let us know a convenient time.`);
                       window.open(`https://wa.me/${proj.phone.replace(/[^0-9]/g, '')}?text=${msg}`, '_blank');
@@ -427,7 +434,7 @@ export function ExecutiveOverview() {
                   </button>
                   <button 
                     className="btn-cyan" 
-                    style={{ padding: '5px 8px', fontSize: '10.5px' }}
+                    style={{ padding: '5px 7px', fontSize: '10.5px' }}
                     onClick={() => openModal('customer_proposal', { customerName: proj.name, totalAmount: proj.value })}
                   >
                     <FileText size={12} /> Proposal
@@ -445,7 +452,9 @@ export function ExecutiveOverview() {
               <Flame size={16} color="var(--accent-amber)" />
               <h3 style={{ fontSize: '15px', fontWeight: '800' }}>Floor Aging Stock Sentinel</h3>
             </div>
-            <span className="badge badge-amber">&gt; 45 DAYS ON DISPLAY</span>
+            <button className="btn-amber" style={{ fontSize: '11px', padding: '4px 8px' }} onClick={() => openModal('add_floor_aging')}>
+              + Track Display SKU
+            </button>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -454,22 +463,40 @@ export function ExecutiveOverview() {
                 <div>
                   <div style={{ fontSize: '12px', fontWeight: '900', color: '#FFFFFF' }}>{item.name}</div>
                   <div style={{ fontSize: '10.5px', color: 'var(--accent-amber)' }}>
-                    ⏱️ {item.floorDays} Days in {item.bay} • MRP ₹{item.mrp.toLocaleString()}
+                    ⏱️ {item.floorDays} Days in {item.bay} • MRP ₹{item.mrp?.toLocaleString()}
                   </div>
                   <div style={{ fontSize: '10.5px', color: 'var(--accent-emerald)', fontWeight: '800' }}>
-                    ⚡ Clearance Offer: ₹{item.clearancePrice.toLocaleString()} (-20%)
+                    ⚡ Clearance: ₹{item.clearancePrice?.toLocaleString()} (-{item.discountPct || 20}%)
                   </div>
                 </div>
-                <button 
-                  className="btn-amber"
-                  style={{ fontSize: '10.5px', padding: '4px 8px' }}
-                  onClick={() => {
-                    const text = `⚡ *GODREJ INTERIO RAYAGADA — EXCLUSIVE FLOOR CLEARANCE*\n\nGrab our showroom display piece *${item.name} (${item.sku})* in pristine condition with 10-Year Warranty!\n\n• Original MRP: ₹${item.mrp.toLocaleString()}\n• 🏷️ *Clearance Price: ₹${item.clearancePrice.toLocaleString()}*\n\n📞 Call Showroom: +91 9390553301 | Immediate Same-Day Dispatch!`;
-                    window.open(`https://wa.me/919390553301?text=${encodeURIComponent(text)}`, '_blank');
-                  }}
-                >
-                  ⚡ Flash Promo
-                </button>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  <button 
+                    className="btn-ghost-edit"
+                    style={{ fontSize: '10.5px', padding: '4px 7px' }}
+                    onClick={() => openModal('edit_floor_aging', { item })}
+                    title="Edit Clearance Discount & Bay"
+                  >
+                    ✏️
+                  </button>
+                  <button 
+                    className="btn-cyan"
+                    style={{ fontSize: '10px', padding: '4px 6px' }}
+                    onClick={() => resetFloorAge(item.sku)}
+                    title="Reset to Day 1 (Swapped Unit)"
+                  >
+                    🔄 Reset
+                  </button>
+                  <button 
+                    className="btn-amber"
+                    style={{ fontSize: '10.5px', padding: '4px 7px' }}
+                    onClick={() => {
+                      const text = `⚡ *GODREJ INTERIO RAYAGADA — EXCLUSIVE FLOOR CLEARANCE*\n\nGrab our showroom display piece *${item.name} (${item.sku})* in pristine condition with 10-Year Warranty!\n\n• Original MRP: ₹${item.mrp?.toLocaleString()}\n• 🏷️ *Clearance Price: ₹${item.clearancePrice?.toLocaleString()} (-${item.discountPct || 20}%)*\n\n📞 Call Showroom: +91 9390553301 | Immediate Same-Day Dispatch!`;
+                      window.open(`https://wa.me/919390553301?text=${encodeURIComponent(text)}`, '_blank');
+                    }}
+                  >
+                    ⚡ Promo
+                  </button>
+                </div>
               </div>
             ))}
           </div>

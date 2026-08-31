@@ -1331,3 +1331,449 @@ export function EodReconciliationModal({ isOpen, onClose }) {
     </div>
   );
 }
+
+// ==============================================================================================
+// 👑 EXECUTIVE MODAL 1: ADD NEW VIP TURNKEY VILLA PROJECT
+// ==============================================================================================
+export function AddVipProjectModal({ isOpen, onClose }) {
+  const { addVipProject } = useStore();
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [location, setLocation] = useState('');
+  const [value, setValue] = useState(250000);
+  const [stage, setStage] = useState('PROPOSAL DELIVERED');
+  const [architect, setArchitect] = useState('Ar. Sunita Patnaik (Studio Vastu)');
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!name.trim()) return;
+    addVipProject({
+      name,
+      phone: phone || '+91 94370 88990',
+      location: location || 'Rayagada Villa',
+      value: Number(value) || 250000,
+      stage,
+      status: stage,
+      architect
+    });
+    onClose();
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-card" style={{ maxWidth: '560px', background: '#0B132B', border: '2px solid var(--accent-gold)' }}>
+        <div className="modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '18px' }}>👑</span>
+            <div>
+              <span className="badge badge-gold">VIP CLIENT RADAR</span>
+              <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
+                Add New VIP Turnkey Villa Account
+              </h3>
+            </div>
+          </div>
+          <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px', margin: '14px 0' }}>
+          <div className="form-field">
+            <label>VIP Client Name & Title:</label>
+            <input 
+              required
+              placeholder="e.g. Dr. Subhashish Jena (Civil Surgeon)" 
+              value={name} 
+              onChange={e => setName(e.target.value)} 
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div className="form-field">
+              <label>Phone Number:</label>
+              <input 
+                placeholder="+91 94370 12345" 
+                value={phone} 
+                onChange={e => setPhone(e.target.value)} 
+              />
+            </div>
+            <div className="form-field">
+              <label>Estimated Project Value (₹):</label>
+              <input 
+                type="number"
+                step="10000"
+                value={value} 
+                onChange={e => setValue(e.target.value)} 
+              />
+            </div>
+          </div>
+
+          <div className="form-field">
+            <label>Project Site / Villa Location:</label>
+            <input 
+              placeholder="e.g. Raniguda Farmhouse Villa, Rayagada" 
+              value={location} 
+              onChange={e => setLocation(e.target.value)} 
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div className="form-field">
+              <label>Current Account Stage:</label>
+              <select value={stage} onChange={e => setStage(e.target.value)}>
+                <option value="PROPOSAL DELIVERED">📄 PROPOSAL DELIVERED (50% Due)</option>
+                <option value="50% TOKEN ADVANCE RECEIVED">💰 50% ADVANCE PAID</option>
+                <option value="SAFELOCKED & STAGED">🔒 SAFELOCKED & STAGED (5-Box)</option>
+                <option value="DISPATCH IN TRANSIT">🚚 DISPATCH IN TRANSIT</option>
+                <option value="COMPLETED & ASSEMBLED">✅ COMPLETED & ASSEMBLED</option>
+              </select>
+            </div>
+            <div className="form-field">
+              <label>Assigned Architect Partner:</label>
+              <input 
+                placeholder="Ar. Sunita Patnaik" 
+                value={architect} 
+                onChange={e => setArchitect(e.target.value)} 
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
+            <button type="button" className="btn-ghost-edit" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn-luxury-gold">
+              <Check size={14} /> Save VIP Project
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ==============================================================================================
+// 👑 EXECUTIVE MODAL 2: EDIT VIP PROJECT & MILESTONE SCHEDULE
+// ==============================================================================================
+export function EditVipProjectModal({ isOpen, onClose, project }) {
+  const { updateVipProject, deleteVipProject } = useStore();
+  const [val, setVal] = useState(project?.value || 150000);
+  const [stage, setStage] = useState(project?.stage || 'SAFELOCKED & STAGED');
+  const [phone, setPhone] = useState(project?.phone || '');
+  const [loc, setLoc] = useState(project?.location || '');
+  const [stage1, setStage1] = useState(project?.stage1Paid !== undefined ? project.stage1Paid : true);
+  const [stage2, setStage2] = useState(project?.stage2Paid || false);
+  const [stage3, setStage3] = useState(project?.stage3Paid || false);
+
+  if (!isOpen || !project) return null;
+
+  const handleSave = () => {
+    updateVipProject(project.id, {
+      value: Number(val),
+      stage,
+      status: stage,
+      phone,
+      location: loc,
+      stage1Paid: stage1,
+      stage2Paid: stage2,
+      stage3Paid: stage3,
+      advance: stage1 ? Math.round(Number(val) * 0.5) : 0
+    });
+    onClose();
+  };
+
+  const handleSendMilestoneWhatsApp = () => {
+    const text = `👑 *GODREJ INTERIO RAYAGADA — VIP VILLA MILESTONE UPDATE*\n` +
+      `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+      `Namaskar ${project.name}! 🙏\n` +
+      `Here is the live status for your *${loc}* project:\n\n` +
+      `• *Total Value:* ₹${Number(val).toLocaleString()}\n` +
+      `• *Stage 1 (50% Booking Token):* ₹${Math.round(val * 0.5).toLocaleString()} [${stage1 ? 'PAID ✓' : 'DUE'}]\n` +
+      `• *Stage 2 (40% Factory Dispatch):* ₹${Math.round(val * 0.4).toLocaleString()} [${stage2 ? 'PAID ✓' : 'DUE ON LOADING'}]\n` +
+      `• *Stage 3 (10% Final Assembly):* ₹${Math.round(val * 0.1).toLocaleString()} [${stage3 ? 'PAID ✓' : 'UPON FITTING'}]\n` +
+      `• *Current Account Status:* ${stage}\n\n` +
+      `📞 *Director Desk:* +91 9390553301 | Shree Ganesh Enterprises`;
+
+    window.open(`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-card" style={{ maxWidth: '600px', background: '#0B132B', border: '2px solid var(--accent-gold)' }}>
+        <div className="modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '18px' }}>👑</span>
+            <div>
+              <span className="badge badge-gold">{project.id}</span>
+              <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
+                Edit VIP Account: {project.name}
+              </h3>
+            </div>
+          </div>
+          <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', margin: '14px 0' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div className="form-field">
+              <label>Project Value (₹):</label>
+              <input type="number" value={val} onChange={e => setVal(e.target.value)} />
+            </div>
+            <div className="form-field">
+              <label>Client Phone:</label>
+              <input value={phone} onChange={e => setPhone(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="form-field">
+            <label>Project Site Address:</label>
+            <input value={loc} onChange={e => setLoc(e.target.value)} />
+          </div>
+
+          <div className="form-field">
+            <label>Project Stage:</label>
+            <select value={stage} onChange={e => setStage(e.target.value)}>
+              <option value="PROPOSAL DELIVERED">📄 PROPOSAL DELIVERED</option>
+              <option value="50% TOKEN ADVANCE RECEIVED">💰 50% ADVANCE PAID</option>
+              <option value="SAFELOCKED & STAGED">🔒 SAFELOCKED & STAGED</option>
+              <option value="DISPATCH IN TRANSIT">🚚 DISPATCH IN TRANSIT</option>
+              <option value="COMPLETED & ASSEMBLED">✅ COMPLETED & ASSEMBLED</option>
+            </select>
+          </div>
+
+          {/* Milestone Payment Checklist */}
+          <div style={{ background: '#030712', borderRadius: '10px', padding: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-gold-light)', marginBottom: '8px' }}>
+              💰 Milestone Payment Schedule (3-Stage Split):
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11.5px', color: '#FFFFFF', cursor: 'pointer' }}>
+                <input type="checkbox" checked={stage1} onChange={e => setStage1(e.target.checked)} />
+                <span>Stage 1: <b>50% Booking Advance (₹{Math.round(val * 0.5).toLocaleString()})</b></span>
+                {stage1 && <span className="badge badge-emerald" style={{ fontSize: '9px' }}>PAID ✓</span>}
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11.5px', color: '#FFFFFF', cursor: 'pointer' }}>
+                <input type="checkbox" checked={stage2} onChange={e => setStage2(e.target.checked)} />
+                <span>Stage 2: <b>40% Factory Dispatch Loading (₹{Math.round(val * 0.4).toLocaleString()})</b></span>
+                {stage2 && <span className="badge badge-emerald" style={{ fontSize: '9px' }}>PAID ✓</span>}
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11.5px', color: '#FFFFFF', cursor: 'pointer' }}>
+                <input type="checkbox" checked={stage3} onChange={e => setStage3(e.target.checked)} />
+                <span>Stage 3: <b>10% Master Assembly Sign-off (₹{Math.round(val * 0.1).toLocaleString()})</b></span>
+                {stage3 && <span className="badge badge-emerald" style={{ fontSize: '9px' }}>PAID ✓</span>}
+              </label>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+            <button 
+              type="button" 
+              className="btn-ghost-edit" 
+              style={{ color: 'var(--accent-rose)' }}
+              onClick={() => {
+                if (window.confirm(`Delete VIP Project #${project.id}?`)) {
+                  deleteVipProject(project.id);
+                  onClose();
+                }
+              }}
+            >
+              🗑️ Remove
+            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button type="button" className="btn-cyan" onClick={handleSendMilestoneWhatsApp}>
+                <Send size={13} /> 📲 Send Milestone WhatsApp
+              </button>
+              <button type="button" className="btn-luxury-gold" onClick={handleSave}>
+                <Check size={14} /> Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==============================================================================================
+// 🔥 EXECUTIVE MODAL 3: ADD DISPLAY SKU TO FLOOR AGING SENTINEL
+// ==============================================================================================
+export function AddFloorAgingSkuModal({ isOpen, onClose }) {
+  const { catalog, addFloorAgingSku } = useStore();
+  const [selectedSku, setSelectedSku] = useState(catalog[0]?.SKU || 'BED-MOD-001');
+  const [days, setDays] = useState(45);
+  const [bay, setBay] = useState('Bay 1');
+  const [disc, setDisc] = useState(20);
+
+  if (!isOpen) return null;
+
+  const chosenProduct = catalog.find(c => c.SKU === selectedSku) || catalog[0];
+
+  const handleSave = () => {
+    addFloorAgingSku({
+      sku: chosenProduct.SKU,
+      name: chosenProduct.Product_Name,
+      floorDays: Number(days),
+      bay,
+      mrp: chosenProduct.MRP_INR || 98000,
+      discountPct: Number(disc),
+      notes: 'Showroom display unit under active age monitoring'
+    });
+    onClose();
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-card" style={{ maxWidth: '520px', background: '#0B132B', border: '2px solid var(--accent-amber)' }}>
+        <div className="modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '18px' }}>🔥</span>
+            <div>
+              <span className="badge badge-amber">FLOOR AGING SENTINEL</span>
+              <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
+                Track Display Unit on Showroom Floor
+              </h3>
+            </div>
+          </div>
+          <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', margin: '14px 0' }}>
+          <div className="form-field">
+            <label>Select Showroom Furniture SKU:</label>
+            <select value={selectedSku} onChange={e => setSelectedSku(e.target.value)}>
+              {catalog.map(c => (
+                <option key={c.SKU} value={c.SKU}>
+                  {c.SKU} — {c.Product_Name} (MRP ₹{c.MRP_INR?.toLocaleString()})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div className="form-field">
+              <label>Days on Showroom Floor:</label>
+              <input type="number" value={days} onChange={e => setDays(e.target.value)} />
+            </div>
+            <div className="form-field">
+              <label>Showroom Bay / Zone:</label>
+              <select value={bay} onChange={e => setBay(e.target.value)}>
+                <option value="Bay 1 (Main Entrance)">Bay 1 (Main Entrance)</option>
+                <option value="Bay 2 (Living Recliners)">Bay 2 (Living Recliners)</option>
+                <option value="Bay 3 (Bedroom Master Suites)">Bay 3 (Bedroom Master Suites)</option>
+                <option value="Bay 4 (Dining & Marble)">Bay 4 (Dining & Marble)</option>
+                <option value="Bay 5 (Modular Wardrobes)">Bay 5 (Modular Wardrobes)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="form-field">
+            <label>Clearance Markdown Discount ({disc}%):</label>
+            <input type="range" min="10" max="35" step="5" value={disc} onChange={e => setDisc(e.target.value)} />
+            <div style={{ fontSize: '11px', color: 'var(--accent-emerald)', marginTop: '4px' }}>
+              Clearance Price: <b>₹{Math.round((chosenProduct.MRP_INR || 98000) * (1 - disc / 100)).toLocaleString()}</b>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
+            <button className="btn-ghost-edit" onClick={onClose}>Cancel</button>
+            <button className="btn-amber" onClick={handleSave}>
+              <Check size={14} /> Add to Aging Watch
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ==============================================================================================
+// 🔥 EXECUTIVE MODAL 4: EDIT FLOOR AGING DISCOUNT & RESET AGE
+// ==============================================================================================
+export function EditFloorAgingModal({ isOpen, onClose, item }) {
+  const { updateFloorAgingSku, resetFloorAge } = useStore();
+  const [disc, setDisc] = useState(item?.discountPct || 20);
+  const [bay, setBay] = useState(item?.bay || 'Bay 1');
+  const [notes, setNotes] = useState(item?.notes || '');
+
+  if (!isOpen || !item) return null;
+
+  const clrPrice = Math.round(item.mrp * (1 - disc / 100));
+
+  const handleSave = () => {
+    updateFloorAgingSku(item.sku, {
+      discountPct: Number(disc),
+      bay,
+      notes
+    });
+    onClose();
+  };
+
+  const handleResetAge = () => {
+    if (window.confirm(`Reset floor age for ${item.name} to Day 1 (Unit swapped from warehouse)?`)) {
+      resetFloorAge(item.sku);
+      onClose();
+    }
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-card" style={{ maxWidth: '520px', background: '#0B132B', border: '2px solid var(--accent-amber)' }}>
+        <div className="modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '18px' }}>🔥</span>
+            <div>
+              <span className="badge badge-amber">{item.sku}</span>
+              <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
+                Manage Display Piece: {item.name}
+              </h3>
+            </div>
+          </div>
+          <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', margin: '14px 0' }}>
+          <div style={{ background: '#030712', borderRadius: '10px', padding: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+              <span>Display Age: <strong style={{ color: 'var(--accent-amber)' }}>{item.floorDays} Days on Floor</strong></span>
+              <span>Original MRP: <strong>₹{item.mrp?.toLocaleString()}</strong></span>
+            </div>
+          </div>
+
+          <div className="form-field">
+            <label>Showroom Bay / Zone:</label>
+            <input value={bay} onChange={e => setBay(e.target.value)} />
+          </div>
+
+          <div className="form-field">
+            <label>Clearance Markdown Discount ({disc}%):</label>
+            <input type="range" min="10" max="40" step="5" value={disc} onChange={e => setDisc(e.target.value)} />
+            <div style={{ fontSize: '12px', color: 'var(--accent-emerald)', marginTop: '4px' }}>
+              Flash Clearance Price: <b>₹{clrPrice.toLocaleString()}</b> (Save ₹{(item.mrp - clrPrice).toLocaleString()})
+            </div>
+          </div>
+
+          <div className="form-field">
+            <label>Condition & Maintenance Notes:</label>
+            <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Polish buffed, pristine factory condition" />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+            <button 
+              type="button" 
+              className="btn-cyan" 
+              style={{ fontSize: '11px' }}
+              onClick={handleResetAge}
+            >
+              🔄 Reset to Day 1 (Swapped Unit)
+            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button type="button" className="btn-ghost-edit" onClick={onClose}>Cancel</button>
+              <button type="button" className="btn-luxury-gold" onClick={handleSave}>
+                <Check size={14} /> Save
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+

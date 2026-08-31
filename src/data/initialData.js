@@ -1899,7 +1899,9 @@ export const APPSHEET_BOTS = [
   { botId: "BOT-17", name: "Universal Table Deduplication & Key Fixer", trigger: "Hourly Cron", target: "All 21 Google Sheets Tables", color: "#3B82F6" },
   { botId: "BOT-18", name: "Supplier Shipment Inward QC Gatepass", trigger: "On Factory Delivery", target: "SmartKit_Components ➔ Warehouse Inward", color: "#10B981" },
   { botId: "BOT-19", name: "Showroom Sales Target vs Actual Pacer", trigger: "Real-Time Transaction", target: "Store_Sales_Targets ➔ Gauge Dial", color: "#F59E0B" },
-  { botId: "BOT-20", name: "Master Apps Script Webhook 2-Way Sync Engine", trigger: "Continuous Polling / Push", target: "Google Sheets 2-Way Live Reflection", color: "#06B6D4" }
+  { botId: "BOT-20", name: "Master Apps Script Webhook 2-Way Sync Engine", trigger: "Continuous Polling / Push", target: "Google Sheets 2-Way Live Reflection", color: "#06B6D4" },
+  { botId: "BOT-21", name: "Floor Aging Stock & Liquidity Sentinel Bot", trigger: "Daily 09:30 IST / Display > 45 Days", target: "Floor_Aging_Sentinel ➔ Director WhatsApp Alert", color: "#F43F5E" },
+  { botId: "BOT-22", name: "VIP Turnkey Villa Milestone Payment Bot", trigger: "On VIP Project Stage Change", target: "VIP_Villa_Projects ➔ VIP WhatsApp Receipt", color: "#8B5CF6" }
 ];
 
 // Target Sales

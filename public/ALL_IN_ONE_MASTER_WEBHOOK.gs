@@ -316,10 +316,117 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
             break;
           }
         }
+        result.inquiry_id = inqId;
       }
-      result.inquiry_id = inqId;
       result.status = newStatus;
       result.message = "Inquiry #" + inqId + " updated in Inquiries_Log on " + currentDateTimeStr + "!";
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // 👑 EXECUTIVE RADAR: VIP Turnkey Villa Projects (VIP_Villa_Projects)
+    // ------------------------------------------------------------------------------------------
+    else if (action === "ADD_VIP_PROJECT" || action === "UPDATE_VIP_PROJECT") {
+      var vipSheet = getOrCreateSheet(ss, "VIP_Villa_Projects", [
+        "Project_ID", "Client_Name", "Phone", "Project_Location", "Project_Value_INR", 
+        "Advance_Paid_INR", "Balance_Due_INR", "Project_Stage", "Milestone_Schedule", 
+        "Assigned_Architect", "Last_Updated"
+      ], "#1E1B4B");
+
+      var projId = params.project_id || ("VIP-" + Math.floor(100 + Math.random() * 900));
+      var clientName = params.client_name || params.name || "VIP Villa Client";
+      var rawPhone = (params.phone || "9437088990").toString().replace(/[^0-9]/g, "");
+      var phone = Number(rawPhone) || 9437088990;
+      var location = params.location || params.project_location || "Raniguda Farmhouse, Rayagada";
+      var projVal = Number(params.project_value || params.value) || 150000;
+      var advPaid = Number(params.advance_paid) || Math.round(projVal * 0.5);
+      var balDue = projVal - advPaid;
+      var stage = params.stage || params.project_stage || "SAFELOCKED & STAGED";
+      var milestone = params.milestone || "Stage 1: 50% Token Paid ✓ | Stage 2: 40% Due on Dispatch | Stage 3: 10% on Assembly";
+      var architect = params.assigned_architect || "Ar. Sunita Patnaik (Studio Vastu)";
+
+      if (vipSheet) {
+        var data = vipSheet.getDataRange().getValues();
+        var found = false;
+        for (var i = 1; i < data.length; i++) {
+          if (data[i][0] == projId) {
+            vipSheet.getRange(i + 1, 2).setValue(clientName);
+            vipSheet.getRange(i + 1, 3).setValue(phone);
+            vipSheet.getRange(i + 1, 4).setValue(location);
+            vipSheet.getRange(i + 1, 5).setValue(projVal);
+            vipSheet.getRange(i + 1, 6).setValue(advPaid);
+            vipSheet.getRange(i + 1, 7).setValue(balDue);
+            vipSheet.getRange(i + 1, 8).setValue(stage);
+            vipSheet.getRange(i + 1, 9).setValue(milestone);
+            vipSheet.getRange(i + 1, 10).setValue(architect);
+            vipSheet.getRange(i + 1, 11).setValue(currentDateTimeStr);
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          vipSheet.appendRow([
+            projId, clientName, phone, location, projVal, advPaid, balDue, stage, milestone, architect, currentDateTimeStr
+          ]);
+        }
+        applyStandardFormat(vipSheet);
+      }
+
+      result.project_id = projId;
+      result.client = clientName;
+      result.value = projVal;
+      result.stage = stage;
+      result.message = "VIP Villa Project #" + projId + " for " + clientName + " updated in Google Sheets on " + currentDateTimeStr + "!";
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // 🔥 EXECUTIVE SENTINEL: Floor Aging Display Sentinel (Floor_Aging_Sentinel)
+    // ------------------------------------------------------------------------------------------
+    else if (action === "ADD_FLOOR_AGING_SKU" || action === "UPDATE_FLOOR_AGING_SKU" || action === "RESET_FLOOR_AGE") {
+      var agingSheet = getOrCreateSheet(ss, "Floor_Aging_Sentinel", [
+        "SKU", "Product_Name", "Bay_Location", "Display_Days_On_Floor", "MRP_INR", 
+        "Clearance_Discount_Pct", "Clearance_Price_INR", "Condition_Notes", "Last_Restocked_Date"
+      ], "#78350F");
+
+      var sku = params.sku || "BED-MOD-001";
+      var prodName = params.product_name || params.name || "Solid Teak King Bed";
+      var bay = params.bay || params.bay_location || "Bay 1";
+      var days = action === "RESET_FLOOR_AGE" ? 1 : (Number(params.floor_days || params.days) || 45);
+      var mrp = Number(params.mrp) || 98000;
+      var discPct = Number(params.discount_pct || params.clearance_discount_pct) || 20;
+      var clrPrice = Number(params.clearance_price) || Math.round(mrp * (1 - discPct / 100));
+      var notes = params.notes || (action === "RESET_FLOOR_AGE" ? "Fresh factory unit swapped on floor" : "Showroom display piece in pristine condition");
+
+      if (agingSheet) {
+        var data = agingSheet.getDataRange().getValues();
+        var found = false;
+        for (var i = 1; i < data.length; i++) {
+          if (data[i][0] == sku) {
+            agingSheet.getRange(i + 1, 2).setValue(prodName);
+            agingSheet.getRange(i + 1, 3).setValue(bay);
+            agingSheet.getRange(i + 1, 4).setValue(days);
+            agingSheet.getRange(i + 1, 5).setValue(mrp);
+            agingSheet.getRange(i + 1, 6).setValue(discPct);
+            agingSheet.getRange(i + 1, 7).setValue(clrPrice);
+            agingSheet.getRange(i + 1, 8).setValue(notes);
+            agingSheet.getRange(i + 1, 9).setValue(currentDateTimeStr);
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          agingSheet.appendRow([
+            sku, prodName, bay, days, mrp, discPct, clrPrice, notes, currentDateTimeStr
+          ]);
+        }
+        applyStandardFormat(agingSheet);
+      }
+
+      result.sku = sku;
+      result.product = prodName;
+      result.bay = bay;
+      result.days = days;
+      result.clearance_price = clrPrice;
+      result.message = "Floor Aging SKU " + sku + " (" + prodName + ") saved with " + days + " days on floor on " + currentDateTimeStr + "!";
     }
 
     // ------------------------------------------------------------------------------------------

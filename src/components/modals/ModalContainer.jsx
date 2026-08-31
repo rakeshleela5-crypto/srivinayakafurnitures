@@ -3,7 +3,19 @@ import { useStore } from '../../context/StoreContext';
 import { ShowroomAdvanceModal, NewInquiryModal } from './CrmModals';
 import { EditInquiryModal, ConvertInquiryModal, ManageOrderModal, StockOverrideModal, EmiCalculatorModal } from './OrderModals';
 import { DigitalEpodModal, SmsDispatchModal, EditFleetDriverModal, WarehouseWallPosterModal } from './LogisticsModals';
-import { RegisterArchitectModal, ArchitectPayoutModal, CarpenterDispatchModal, UniversalPaymentCheckoutModal, BarcodeStudioModal, OrderInvoiceModal, EodReconciliationModal } from './ExecutiveModals';
+import { 
+  RegisterArchitectModal, 
+  ArchitectPayoutModal, 
+  CarpenterDispatchModal, 
+  UniversalPaymentCheckoutModal, 
+  BarcodeStudioModal, 
+  OrderInvoiceModal, 
+  EodReconciliationModal,
+  AddVipProjectModal,
+  EditVipProjectModal,
+  AddFloorAgingSkuModal,
+  EditFloorAgingModal
+} from './ExecutiveModals';
 import { WhatsAppProposalModal, EmiSchemeModal, FurnitureExchangeModal } from './ProposalAndFinanceModals';
 import { DpdpComplianceModal } from './DpdpComplianceModal';
 import { CsvImportModal } from './CsvImportModal';
@@ -56,6 +68,12 @@ export function ModalContainer() {
       <BarcodeStudioModal isOpen={activeModal === 'barcode_studio'} onClose={closeModal} />
       <OrderInvoiceModal isOpen={activeModal === 'order_invoice'} onClose={closeModal} order={modalProps.order} />
       <EodReconciliationModal isOpen={activeModal === 'eod_reconciliation'} onClose={closeModal} />
+
+      {/* 👑 VIP Villa & 🔥 Floor Aging Executive Modals */}
+      <AddVipProjectModal isOpen={activeModal === 'add_vip_project'} onClose={closeModal} />
+      <EditVipProjectModal isOpen={activeModal === 'edit_vip_project'} onClose={closeModal} project={modalProps.project} />
+      <AddFloorAgingSkuModal isOpen={activeModal === 'add_floor_aging'} onClose={closeModal} />
+      <EditFloorAgingModal isOpen={activeModal === 'edit_floor_aging'} onClose={closeModal} item={modalProps.item} />
 
       {/* New Proposals & Finance Modals */}
       <WhatsAppProposalModal isOpen={activeModal === 'whatsapp_proposal'} onClose={closeModal} proposalData={modalProps} />

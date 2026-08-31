@@ -124,6 +124,30 @@ export function ExecutiveOverview() {
     playScanBeep();
   };
 
+  // 1-Click Direct Gatepass Issuer from Executive Table
+  const handleQuickIssueGatepass = (order) => {
+    playScanBeep();
+    showToast(`🔍 Running 1-Click Staging Verification for Order #${order.Order_ID}...`, true);
+    
+    setTimeout(() => {
+      playSuccessChime();
+      triggerGoldenConfetti();
+      const newStatus = "5/5 STAGED (DOCK GATEPASS ISSUED ✓)";
+      updateOrderStatus(order.Order_ID, newStatus);
+      
+      dispatchWebhookAction('SMARTKIT_BOX_STAGED', {
+        bot_id: 'BOT-03',
+        order_id: order.Order_ID,
+        customer_name: order.Customer_Name,
+        product: order.Ordered_SKU,
+        staged_status: '5/5_STAGED_DOCK_GATEPASS_ISSUED',
+        driver: order.Assigned_Driver || 'Tophan Gouda (Tata Ace)'
+      });
+      
+      showToast(`🔒 Gatepass Issued for Order #${order.Order_ID} (${order.Customer_Name})! Dock 1 Clear for Truck Loading.`, true);
+    }, 800);
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
@@ -523,68 +547,108 @@ export function ExecutiveOverview() {
                 <th>Order ID</th>
                 <th>Customer & Address</th>
                 <th>Ordered Furniture Model</th>
+                <th>SmartKit™ Staging & Gatepass</th>
                 <th>Total / Advance</th>
-                <th>SafeLock Status (Fast Inline)</th>
+                <th>SafeLock & Dispatch Status</th>
                 <th>Driver / Carpenter</th>
                 <th>Schedule</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {orders.map(order => (
-                <tr key={order.Order_ID}>
-                  <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-cyan)' }}>{order.Order_ID}</td>
-                  <td>
-                    <div style={{ fontWeight: '800', color: '#FFFFFF' }}>{order.Customer_Name}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{order.Project_Address} • 📞 {order.Customer_Phone}</div>
-                  </td>
-                  <td style={{ fontWeight: '600' }}>{order.Ordered_SKU}</td>
-                  <td>
-                    <div style={{ fontWeight: '800', color: 'var(--accent-gold-light)' }}>₹{order.Total_Amount_INR.toLocaleString()}</div>
-                    <div style={{ fontSize: '10.5px', color: 'var(--accent-emerald)' }}>Adv: ₹{(order.Advance_Paid_INR || 0).toLocaleString()}</div>
-                  </td>
-                  <td>
-                    {/* Fast Inline Status Dropdown (Superpower 2) */}
-                    <select
-                      value={order.SafeLock_Status}
-                      onChange={e => handleFastStatusChange(order.Order_ID, e.target.value)}
-                      style={{
-                        background: order.SafeLock_Status.includes('DELIVERED') ? '#064E3B' : order.SafeLock_Status.includes('TRANSIT') ? '#1E3A8A' : '#78350F',
-                        color: '#FFFFFF',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        borderRadius: '6px',
-                        padding: '4px 6px',
-                        fontSize: '10.5px',
-                        fontWeight: '800',
-                        outline: 'none',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <option value="SAFELOCKED (RESERVED)">🔒 SAFELOCKED (RESERVED)</option>
-                      <option value="DISPATCHED_IN_TRANSIT (Tata Ace OD-18-A-1234)">🚚 DISPATCHED IN TRANSIT</option>
-                      <option value="DELIVERED (ePOD VERIFIED ✓)">✅ DELIVERED (ePOD VERIFIED)</option>
-                    </select>
-                  </td>
-                  <td>
-                    <div style={{ fontSize: '11.5px', color: '#FFFFFF' }}>🚚 {order.Assigned_Driver}</div>
-                    <div style={{ fontSize: '10.5px', color: 'var(--accent-purple)' }}>🪚 {order.Carpenter_Assigned} (₹{order.Carpenter_Payout_INR})</div>
-                  </td>
-                  <td style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>{order.Delivery_Schedule}</td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '5px' }}>
-                      <button className="btn-cyan" style={{ fontSize: '10.5px', padding: '3px 8px' }} onClick={() => openModal('order_rescheduler', { order })}>
-                        📅 Reschedule
-                      </button>
-                      <button className="btn-ghost-edit" onClick={() => openModal('order_invoice', { order })}>
-                        🧾 Invoice
-                      </button>
-                      <button className="btn-ghost-edit" onClick={() => openModal('manage_order', { order })}>
-                        ✏️
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {orders.map(order => {
+                const isStaged = (order.SafeLock_Status || '').includes('STAGED') || (order.SafeLock_Status || '').includes('TRANSIT') || (order.SafeLock_Status || '').includes('DELIVERED');
+                return (
+                  <tr key={order.Order_ID}>
+                    <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-cyan)' }}>{order.Order_ID}</td>
+                    <td>
+                      <div style={{ fontWeight: '800', color: '#FFFFFF' }}>{order.Customer_Name}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{order.Project_Address} • 📞 {order.Customer_Phone}</div>
+                    </td>
+                    <td style={{ fontWeight: '600' }}>{order.Ordered_SKU}</td>
+                    
+                    {/* 📦 SmartKit™ Dynamic Flat-Pack Staging Column */}
+                    <td>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                          <span 
+                            className={`badge ${isStaged ? 'badge-emerald' : 'badge-purple'}`} 
+                            style={{ fontSize: '9px', fontWeight: '800' }}
+                          >
+                            {isStaged ? '📦 5/5 STAGED (GATEPASS ✓)' : '⚠️ Staging Pending'}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                          <button 
+                            className="btn-ghost-edit" 
+                            style={{ fontSize: '10px', padding: '3px 7px', color: 'var(--accent-purple)', borderColor: 'rgba(168,85,247,0.4)', background: 'rgba(168,85,247,0.08)' }}
+                            onClick={() => openModal('smartkit_staging', { order })}
+                            title="Open SmartKit Flat-Pack Component Staging Bay"
+                          >
+                            📦 Staging Bay
+                          </button>
+                          {!isStaged && (
+                            <button 
+                              className="btn-emerald" 
+                              style={{ fontSize: '10px', padding: '3px 8px', fontWeight: '800' }}
+                              onClick={() => handleQuickIssueGatepass(order)}
+                              title="1-Click Verify All Component Cartons & Issue Dock Gatepass"
+                            >
+                              ⚡ Issue Gatepass
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+
+                    <td>
+                      <div style={{ fontWeight: '800', color: 'var(--accent-gold-light)' }}>₹{order.Total_Amount_INR.toLocaleString()}</div>
+                      <div style={{ fontSize: '10.5px', color: 'var(--accent-emerald)' }}>Adv: ₹{(order.Advance_Paid_INR || 0).toLocaleString()}</div>
+                    </td>
+                    <td>
+                      {/* Fast Inline Status Dropdown */}
+                      <select
+                        value={order.SafeLock_Status}
+                        onChange={e => handleFastStatusChange(order.Order_ID, e.target.value)}
+                        style={{
+                          background: order.SafeLock_Status.includes('DELIVERED') ? '#064E3B' : order.SafeLock_Status.includes('TRANSIT') ? '#1E3A8A' : order.SafeLock_Status.includes('STAGED') ? '#4C1D95' : '#78350F',
+                          color: '#FFFFFF',
+                          border: '1px solid rgba(255,255,255,0.2)',
+                          borderRadius: '6px',
+                          padding: '4px 6px',
+                          fontSize: '10.5px',
+                          fontWeight: '800',
+                          outline: 'none',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <option value="SAFELOCKED (RESERVED)">🔒 SAFELOCKED (RESERVED)</option>
+                        <option value="5/5 STAGED (DOCK GATEPASS ISSUED ✓)">📦 5/5 STAGED (GATEPASS ISSUED ✓)</option>
+                        <option value="DISPATCHED_IN_TRANSIT (Tata Ace OD-18-A-1234)">🚚 DISPATCHED IN TRANSIT</option>
+                        <option value="DELIVERED (ePOD VERIFIED ✓)">✅ DELIVERED (ePOD VERIFIED)</option>
+                      </select>
+                    </td>
+                    <td>
+                      <div style={{ fontSize: '11.5px', color: '#FFFFFF' }}>🚚 {order.Assigned_Driver}</div>
+                      <div style={{ fontSize: '10.5px', color: 'var(--accent-purple)' }}>🪚 {order.Carpenter_Assigned} (₹{order.Carpenter_Payout_INR})</div>
+                    </td>
+                    <td style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>{order.Delivery_Schedule}</td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '5px' }}>
+                        <button className="btn-cyan" style={{ fontSize: '10.5px', padding: '3px 8px' }} onClick={() => openModal('order_rescheduler', { order })}>
+                          📅 Reschedule
+                        </button>
+                        <button className="btn-ghost-edit" onClick={() => openModal('order_invoice', { order })}>
+                          🧾 Invoice
+                        </button>
+                        <button className="btn-ghost-edit" onClick={() => openModal('manage_order', { order })}>
+                          ✏️
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

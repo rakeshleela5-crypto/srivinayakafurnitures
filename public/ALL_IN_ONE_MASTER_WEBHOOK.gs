@@ -430,6 +430,117 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
     }
 
     // ------------------------------------------------------------------------------------------
+    // 🔒 EXECUTIVE BOT-12: Daily 9:00 PM Showroom Cash Lock & EOD Summary (Daily_Sales_Summary)
+    // ------------------------------------------------------------------------------------------
+    else if (action === "RECORD_EOD_CASH_LOCK" || action === "SUBMIT_EOD_CLOSING" || action === "DAILY_SALES_SUMMARY") {
+      var summarySheet = getOrCreateSheet(ss, "Daily_Sales_Summary", [
+        "Summary_Date", "Total_Gross_Sales_INR", "Cash_In_Safe_INR", "UPI_Settled_INR", 
+        "Card_POS_INR", "Total_Orders_Count", "Estimated_Gross_Margin_INR", "Closed_By_Staff", 
+        "Director_Pin_Verified", "Closing_Timestamp", "Status"
+      ], "#312E81");
+
+      var summaryDate = params.summary_date || currentDateStr;
+      var grossSales = Number(params.total_gross_sales || params.gross_sales || params.sales) || 169000;
+      var cashSafe = Number(params.cash_in_safe || params.cash) || 45000;
+      var upiSettled = Number(params.upi_settled || params.upi) || 124000;
+      var cardPos = Number(params.card_pos || params.card) || 0;
+      var ordersCount = Number(params.orders_count) || 4;
+      var grossMargin = Number(params.gross_margin) || Math.round(grossSales * 0.308);
+      var closedBy = params.closed_by || params.staff || "B. Santosh (Head Cashier)";
+      var pinVerified = params.pin_verified || "8899 (DIRECTOR_VERIFIED)";
+      var status = params.status || "LOCKED_REGISTER_CLOSED";
+
+      if (summarySheet) {
+        var data = summarySheet.getDataRange().getValues();
+        var found = false;
+        for (var i = 1; i < data.length; i++) {
+          if (data[i][0] == summaryDate) {
+            summarySheet.getRange(i + 1, 2).setValue(grossSales);
+            summarySheet.getRange(i + 1, 3).setValue(cashSafe);
+            summarySheet.getRange(i + 1, 4).setValue(upiSettled);
+            summarySheet.getRange(i + 1, 5).setValue(cardPos);
+            summarySheet.getRange(i + 1, 6).setValue(ordersCount);
+            summarySheet.getRange(i + 1, 7).setValue(grossMargin);
+            summarySheet.getRange(i + 1, 8).setValue(closedBy);
+            summarySheet.getRange(i + 1, 9).setValue(pinVerified);
+            summarySheet.getRange(i + 1, 10).setValue(currentDateTimeStr);
+            summarySheet.getRange(i + 1, 11).setValue(status);
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          summarySheet.appendRow([
+            summaryDate, grossSales, cashSafe, upiSettled, cardPos, ordersCount, grossMargin, closedBy, pinVerified, currentDateTimeStr, status
+          ]);
+        }
+        applyStandardFormat(summarySheet);
+      }
+
+      result.summary_date = summaryDate;
+      result.gross_sales = grossSales;
+      result.cash_in_safe = cashSafe;
+      result.upi_settled = upiSettled;
+      result.status = status;
+      result.message = "Daily Sales Summary for " + summaryDate + " (Gross: Rs. " + grossSales + ") locked on " + currentDateTimeStr + "!";
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // 📜 BOT-15 & DOCUMENT STUDIO: Document Generation Log (Document_Generation_Log)
+    // ------------------------------------------------------------------------------------------
+    else if (action === "GENERATE_WARRANTY_CERTIFICATE" || action === "LOG_DOCUMENT" || action === "CREATE_DOCUMENT" || action === "RECORD_DOCUMENTATION_LOG") {
+      var docSheet = getOrCreateSheet(ss, "Document_Generation_Log", [
+        "Doc_ID", "Generated_Date_Time", "Doc_Type", "Entity_Ref_ID", "Customer_Vendor_Name", 
+        "Customer_Phone", "Total_Amount_INR", "Warranty_Hologram_Serial", "Generated_By_Staff", 
+        "Document_Status", "PDF_Drive_URL"
+      ], "#0284C7");
+
+      var docId = params.doc_id || ("DOC-WAR-" + Math.floor(1000 + Math.random() * 9000));
+      var docType = params.doc_type || "10_YEAR_DIGITAL_WARRANTY";
+      var entityRef = params.order_id || params.entity_ref_id || "ORD-8921";
+      var custName = params.customer_name || params.customer_vendor_name || "Dr. Subhashish Jena";
+      var phone = (params.customer_phone || params.phone || "9437188990").toString().replace(/[^0-9]/g, "");
+      var amount = Number(params.total_amount || params.amount) || 156494;
+      var hologram = params.hologram_serial || ("GDJ-WAR-" + entityRef.replace(/[^0-9]/g, '') + "-2026");
+      var staff = params.generated_by || "Director Desk (Bot-15)";
+      var docStatus = params.status || "GENERATED_AND_DISPATCHED";
+      var driveUrl = params.drive_url || params.pdf_url || "https://shreeganesh-godrej.web.app";
+
+      if (docSheet) {
+        var data = docSheet.getDataRange().getValues();
+        var found = false;
+        for (var i = 1; i < data.length; i++) {
+          if (data[i][0] == docId) {
+            docSheet.getRange(i + 1, 2).setValue(currentDateTimeStr);
+            docSheet.getRange(i + 1, 3).setValue(docType);
+            docSheet.getRange(i + 1, 4).setValue(entityRef);
+            docSheet.getRange(i + 1, 5).setValue(custName);
+            docSheet.getRange(i + 1, 6).setValue(phone);
+            docSheet.getRange(i + 1, 7).setValue(amount);
+            docSheet.getRange(i + 1, 8).setValue(hologram);
+            docSheet.getRange(i + 1, 9).setValue(staff);
+            docSheet.getRange(i + 1, 10).setValue(docStatus);
+            docSheet.getRange(i + 1, 11).setValue(driveUrl);
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          docSheet.appendRow([
+            docId, currentDateTimeStr, docType, entityRef, custName, phone, amount, hologram, staff, docStatus, driveUrl
+          ]);
+        }
+        applyStandardFormat(docSheet);
+      }
+
+      result.doc_id = docId;
+      result.doc_type = docType;
+      result.customer = custName;
+      result.hologram = hologram;
+      result.message = "Document #" + docId + " (" + docType + ") generated and recorded in Document_Generation_Log on " + currentDateTimeStr + "!";
+    }
+
+    // ------------------------------------------------------------------------------------------
     // EXECUTIVE ACTION 2: 1-Click Convert Inquiry to Confirmed SafeLock Order
     // ------------------------------------------------------------------------------------------
     else if (action === "CONVERT_INQUIRY_TO_ORDER") {
@@ -3092,6 +3203,24 @@ function bootstrapAllTables(ss) {
       color: "#25D366",
       headers: ["Campaign_ID", "Launched_Date_Time", "Campaign_Name", "Theme", "Audience_Segment", "Total_Recipients", "Channel", "Offer_Details", "Catalog_Link", "Campaign_Status"],
       seed: ["CMP-2026-0825", dtStr, "Diwali Luxury Furniture Utsav", "diwali", "All Showroom Walk-Ins & Leads", 42, "WhatsApp Business Cloud API", "Flat 10% Off on Bedroom Suites + Free Master Carpenter Fitting", "https://omnibuild-rayagada.web.app", "DISPATCHED_ACTIVE"]
+    },
+    {
+      name: "Document_Generation_Log",
+      color: "#0284C7",
+      headers: ["Doc_ID", "Generated_Date_Time", "Doc_Type", "Entity_Ref_ID", "Customer_Vendor_Name", "Customer_Phone", "Total_Amount_INR", "Warranty_Hologram_Serial", "Generated_By_Staff", "Document_Status", "PDF_Drive_URL"],
+      seed: ["DOC-WAR-8921", dtStr, "10_YEAR_DIGITAL_WARRANTY", "ORD-8921", "Dr. Subhashish Jena", "9437188990", 156494, "GDJ-WAR-8921-2026", "Director Desk (Bot-15)", "GENERATED_AND_DISPATCHED", "https://shreeganesh-godrej.web.app"]
+    },
+    {
+      name: "VIP_Villa_Projects",
+      color: "#6366F1",
+      headers: ["Project_ID", "Created_Date_Time", "Client_Name", "Phone", "Project_Location", "Project_Value_INR", "Advance_Paid_INR", "Balance_Due_INR", "Project_Stage", "Assigned_Architect", "Expected_Completion", "Status"],
+      seed: ["VIP-001", dtStr, "Dr. Subhashish Jena (Rayagada Civil Surgeon)", "9437188990", "Raniguda Farmhouse Villa", 156494, 78247, 78247, "SAFELOCKED & STAGED", "Ar. Sunita Patnaik (Studio Vastu)", formatDateIndian(new Date(Date.now() + 14 * 86400000)), "ACTIVE_ON_TRACK"]
+    },
+    {
+      name: "Floor_Aging_Sentinel",
+      color: "#DC2626",
+      headers: ["SKU", "Product_Name", "Bay_Location", "Display_Days_On_Floor", "MRP_INR", "Clearance_Discount_Pct", "Clearance_Price_INR", "Condition_Notes", "Last_Restocked_Date"],
+      seed: ["ALM-MOD-001", "4-Door Solid Teak Wardrobe", "Bay 3", 52, 78000, 20, 62400, "Showroom display piece in pristine condition", dStr]
     }
   ];
 

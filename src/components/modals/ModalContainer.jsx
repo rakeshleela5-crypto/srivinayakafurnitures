@@ -35,6 +35,7 @@ import {
 } from './HeartEngineModals';
 import { BulkBotBroadcastModal } from './BulkBotBroadcastModal';
 import { FurnitureFollowUpModal } from './FurnitureFollowUpModal';
+import { SmartKitStagingModal } from './SmartKitStagingModal';
 
 export function ModalContainer() {
   const { activeModal, modalProps, closeModal } = useStore();
@@ -106,6 +107,7 @@ export function ModalContainer() {
       <BoxDamageClaimModal isOpen={activeModal === 'box_damage_claim'} onClose={closeModal} stop={modalProps.stop} />
       <GodrejCareAmcModal isOpen={activeModal === 'godrej_care_amc'} onClose={closeModal} customer={modalProps.customer} />
       <B2bTurnkeyModal isOpen={activeModal === 'b2b_turnkey'} onClose={closeModal} />
+      <SmartKitStagingModal isOpen={activeModal === 'smartkit_staging'} onClose={closeModal} order={modalProps.order} />
     </>
   );
 }

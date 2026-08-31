@@ -29,6 +29,7 @@ export function WhatsAppBotSimulator() {
 
   const [viewMode, setViewMode] = useState('SPLIT'); // Default to 'SPLIT' for best demo experience
   const [callerMode, setCallerMode] = useState('CUSTOMER'); // 'CUSTOMER' | 'DIRECTOR'
+  const [selectedCustomerFilter, setSelectedCustomerFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
 
@@ -386,8 +387,109 @@ export function WhatsAppBotSimulator() {
           </div>
         </div>
 
+        {/* Customer Spotlight Selector for Simulation */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', margin: '8px 0 12px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#030712', padding: '4px 10px', borderRadius: '8px', border: '1.5px solid var(--accent-gold)' }}>
+            <span style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: '800' }}>🔍 Spotlight Customer for Simulation:</span>
+            <select
+              value={selectedCustomerFilter}
+              onChange={e => {
+                setSelectedCustomerFilter(e.target.value);
+                const order = orders.find(o => o.Order_ID === e.target.value);
+                if (order) {
+                  showToast(`👤 Loaded ${order.Customer_Name} (#${order.Order_ID}) into AI Bot Simulator!`);
+                }
+              }}
+              style={{
+                background: '#0B132B',
+                color: '#FFFFFF',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '6px',
+                padding: '4px 8px',
+                fontSize: '11px',
+                fontWeight: '700'
+              }}
+            >
+              <option value="ALL">Generic Client Mode</option>
+              {orders.map(o => (
+                <option key={o.Order_ID} value={o.Order_ID}>
+                  #{o.Order_ID} — {o.Customer_Name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
         {/* Interactive Prompt Pills Strip */}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          {selectedCustomerFilter !== 'ALL' && (() => {
+            const activeOrder = orders.find(o => o.Order_ID === selectedCustomerFilter);
+            if (!activeOrder) return null;
+            return (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (viewMode === 'GRID') setViewMode('SPLIT');
+                    handleSendChat(`Send delivery dispatch OTP for order #${activeOrder.Order_ID} for ${activeOrder.Customer_Name}`);
+                  }}
+                  style={{
+                    background: 'rgba(56,189,248,0.2)',
+                    color: 'var(--accent-cyan)',
+                    border: '1.5px solid var(--accent-cyan)',
+                    borderRadius: '20px',
+                    padding: '5px 12px',
+                    fontSize: '11px',
+                    fontWeight: '900',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ⚡ BOT-04: Dispatch OTP to {activeOrder.Customer_Name.split(' ')[0]}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (viewMode === 'GRID') setViewMode('SPLIT');
+                    handleSendChat(`Send official 10-Year Warranty PDF certificate for order #${activeOrder.Order_ID} (${activeOrder.Customer_Name})`);
+                  }}
+                  style={{
+                    background: 'rgba(212,175,55,0.2)',
+                    color: 'var(--accent-gold-light)',
+                    border: '1.5px solid var(--accent-gold)',
+                    borderRadius: '20px',
+                    padding: '5px 12px',
+                    fontSize: '11px',
+                    fontWeight: '900',
+                    cursor: 'pointer'
+                  }}
+                >
+                  📜 BOT-15: Send 10-Yr Warranty to {activeOrder.Customer_Name.split(' ')[0]}
+                </button>
+                {activeOrder.Balance_Due_INR > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (viewMode === 'GRID') setViewMode('SPLIT');
+                      handleSendChat(`Send dynamic UPI payment QR for balance ₹${activeOrder.Balance_Due_INR?.toLocaleString()} for order #${activeOrder.Order_ID}`);
+                    }}
+                    style={{
+                      background: 'rgba(16,185,129,0.2)',
+                      color: 'var(--accent-emerald)',
+                      border: '1.5px solid var(--accent-emerald)',
+                      borderRadius: '20px',
+                      padding: '5px 12px',
+                      fontSize: '11px',
+                      fontWeight: '900',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    💳 BOT-06: Request ₹{activeOrder.Balance_Due_INR?.toLocaleString()} UPI
+                  </button>
+                )}
+              </>
+            );
+          })()}
+
           {callerMode === 'CUSTOMER' ? [
             { label: '🏷️ Quote for King Bed', query: 'Can you send the quote for the Solid King Bed with Hydraulic Storage?' },
             { label: '🛋️ Quote for 4-Door Wardrobe', query: 'Show details and price for 4-Door Modular Wardrobe' },

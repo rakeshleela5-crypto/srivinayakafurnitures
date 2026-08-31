@@ -111,8 +111,26 @@ export function StoreProvider({ children }) {
     return USER_ROLES.OWNER; // Defaults to Store Owner for seamless startup
   });
 
-  // Navigation
+  // Navigation & Showcase Mode
   const [activeTab, setActiveTab] = useState('executive');
+  const [appMode, setAppMode] = useState(() => {
+    return localStorage.getItem('OMNIBUILD_APP_MODE') || 'DEMO';
+  });
+
+  const toggleAppMode = () => {
+    setAppMode(prev => {
+      const next = prev === 'DEMO' ? 'PRODUCTION' : 'DEMO';
+      localStorage.setItem('OMNIBUILD_APP_MODE', next);
+      playSuccessChime();
+      if (next === 'PRODUCTION') {
+        triggerGoldenConfetti();
+        showToast("🏢 Switched to LIVE PRODUCTION MODE — Pure Showroom Cloud Data Active!", true);
+      } else {
+        showToast("🎭 Switched to DEMO SHOWCASE MODE — Full Luxury Showcase Active!");
+      }
+      return next;
+    });
+  };
 
   // Core Persistent 21-Table Data Stores
   const [catalog, setCatalog] = useState(FURNITURE_CATALOG);
@@ -620,6 +638,8 @@ export function StoreProvider({ children }) {
       logout,
       activeTab,
       setActiveTab,
+      appMode,
+      toggleAppMode,
       catalog,
       setCatalog,
       orders,

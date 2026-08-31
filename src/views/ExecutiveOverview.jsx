@@ -54,6 +54,7 @@ export function ExecutiveOverview() {
   } = useStore();
 
   // Local Executive States
+  const [selectedCustomerFilter, setSelectedCustomerFilter] = useState('ALL');
   const [isCalibratorOpen, setIsCalibratorOpen] = useState(false);
   const [editableTarget, setEditableTarget] = useState(targets.monthlyTargetINR || 1500000);
   const [editableWalkInTarget, setEditableWalkInTarget] = useState(25);
@@ -528,16 +529,43 @@ export function ExecutiveOverview() {
 
       </div>
 
-      {/* 6. Active Orders SafeLock Table with Fast Inline Status Switcher */}
+      {/* 6. Active Orders SafeLock Table with Customer Spotlight Selector */}
       <div className="glass-panel">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
           <div>
             <h3 style={{ fontSize: '16px', fontWeight: '800' }}>📦 Active SafeLock Orders & Dispatch Status</h3>
             <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Real-time 2-way reflection from Orders_SafeLock sheet</span>
           </div>
-          <button className="btn-cyan" onClick={() => setActiveTab('safelock')}>
-            View 115-SKU Stock Matrix ➔
-          </button>
+
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#030712', padding: '4px 10px', borderRadius: '8px', border: '1.5px solid var(--accent-gold)' }}>
+              <span style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: '800' }}>🔍 Spotlight Customer:</span>
+              <select
+                value={selectedCustomerFilter}
+                onChange={e => setSelectedCustomerFilter(e.target.value)}
+                style={{
+                  background: '#0B132B',
+                  color: '#FFFFFF',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '6px',
+                  padding: '4px 8px',
+                  fontSize: '11.5px',
+                  fontWeight: '700'
+                }}
+              >
+                <option value="ALL">Show All Orders ({orders.length} Active)</option>
+                {orders.map(o => (
+                  <option key={o.Order_ID} value={o.Order_ID}>
+                    #{o.Order_ID} — {o.Customer_Name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <button className="btn-cyan" onClick={() => setActiveTab('safelock')}>
+              View 115-SKU Stock Matrix ➔
+            </button>
+          </div>
         </div>
 
         <div className="data-table-wrapper">
@@ -556,7 +584,7 @@ export function ExecutiveOverview() {
               </tr>
             </thead>
             <tbody>
-              {orders.map(order => {
+              {(selectedCustomerFilter === 'ALL' ? orders : orders.filter(o => o.Order_ID === selectedCustomerFilter)).map(order => {
                 const isStaged = (order.SafeLock_Status || '').includes('STAGED') || (order.SafeLock_Status || '').includes('TRANSIT') || (order.SafeLock_Status || '').includes('DELIVERED');
                 return (
                   <tr key={order.Order_ID}>

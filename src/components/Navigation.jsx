@@ -94,7 +94,7 @@ export function AppHeader() {
         <button className="btn-luxury-gold" onClick={() => setActiveTab('staff_qr')} style={{ padding: '6px 14px', fontSize: '11.5px' }}>
           <span>📱 Staff QR</span>
         </button>
-        <button className="btn-header-sync" onClick={syncWithGoogleSheets}>
+        <button className="btn-header-sync" onClick={() => syncWithGoogleSheets(false)}>
           <RefreshCw size={13} className={isSyncing ? 'spin-anim' : ''} />
           <span>{isSyncing ? 'Syncing...' : '2-Way Webhook Sync'}</span>
         </button>

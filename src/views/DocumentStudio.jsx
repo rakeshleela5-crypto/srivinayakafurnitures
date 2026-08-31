@@ -37,26 +37,54 @@ export function DocumentStudio() {
         </div>
       </div>
 
-      {/* Document Switcher Ribbon */}
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }} className="no-print">
-        {[
-          { id: 'tax_invoice', label: '📄 Official Tax Invoice', icon: FileText },
-          { id: 'client_onboarding_sop', label: '📘 Master Client Onboarding & SOP (Printable PDF)', icon: Sparkles },
-          { id: 'delivery_challan', label: '🚚 Delivery Challan', icon: Truck },
-          { id: 'gate_pass', label: '🚪 Warehouse Gate Pass', icon: ShieldCheck },
-          { id: 'warranty_card', label: '🛡️ 10-Year Warranty Card', icon: Award },
-          { id: 'carpenter_voucher', label: '🪚 Carpenter Job Voucher', icon: Award },
-          { id: 'eod_closing', label: '🔒 9 PM EOD Cash Lock Slip', icon: Lock }
-        ].map(doc => (
-          <button 
-            key={doc.id}
-            className={`btn-ghost-edit ${selectedDocType === doc.id ? 'badge-gold' : ''}`}
-            onClick={() => setSelectedDocType(doc.id)}
-            style={{ fontSize: '11.5px', padding: '7px 14px' }}
+      {/* Order Selector & Document Switcher Ribbon */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', background: '#0B132B', padding: '12px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }} className="no-print">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-gold)' }}>Select Customer / Order:</span>
+          <select
+            value={selectedOrder.Order_ID || (orders[0] && orders[0].Order_ID)}
+            onChange={e => {
+              const matched = orders.find(o => o.Order_ID === e.target.value);
+              if (matched) setSelectedOrder(matched);
+            }}
+            style={{
+              background: '#030712',
+              color: '#FFFFFF',
+              border: '1.5px solid var(--accent-gold)',
+              borderRadius: '8px',
+              padding: '6px 12px',
+              fontSize: '12px',
+              fontWeight: '700'
+            }}
           >
-            {doc.label}
-          </button>
-        ))}
+            {orders.map(o => (
+              <option key={o.Order_ID} value={o.Order_ID}>
+                #{o.Order_ID} — {o.Customer_Name} ({o.Ordered_SKU ? o.Ordered_SKU.slice(0, 30) : 'Order'}...)
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+          {[
+            { id: 'tax_invoice', label: '📄 Official Tax Invoice', icon: FileText },
+            { id: 'warranty_card', label: '🛡️ 10-Year Warranty Card', icon: Award },
+            { id: 'delivery_challan', label: '🚚 Delivery Challan', icon: Truck },
+            { id: 'gate_pass', label: '🚪 Warehouse Gate Pass', icon: ShieldCheck },
+            { id: 'carpenter_voucher', label: '🪚 Carpenter Job Voucher', icon: Award },
+            { id: 'eod_closing', label: '🔒 9 PM EOD Cash Lock Slip', icon: Lock },
+            { id: 'client_onboarding_sop', label: '📘 Master Client Onboarding & SOP', icon: Sparkles }
+          ].map(doc => (
+            <button 
+              key={doc.id}
+              className={`btn-ghost-edit ${selectedDocType === doc.id ? 'badge-gold' : ''}`}
+              onClick={() => setSelectedDocType(doc.id)}
+              style={{ fontSize: '11px', padding: '6px 12px', fontWeight: selectedDocType === doc.id ? '800' : '500' }}
+            >
+              {doc.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Main Printable Document Canvas */}
@@ -328,32 +356,183 @@ export function DocumentStudio() {
           </div>
         )}
 
-        {/* Document 1: Tax Invoice */}
-        {selectedDocType === 'tax_invoice' && (
-          <div className="printable-area" style={{ background: '#FFFFFF', color: '#000000', borderRadius: '14px', padding: '36px', border: '3px solid #D4AF37', textAlign: 'center' }}>
-            <div style={{ fontSize: '22px', fontWeight: '900', color: '#B45309', letterSpacing: '1px' }}>
-              OFFICIAL 10-YEAR WARRANTY CERTIFICATE
-            </div>
-            <div style={{ fontSize: '13px', fontWeight: '700', color: '#475569', marginTop: '4px' }}>
-              GODREJ INTERIO RAYAGADA FLAGSHIP SHOWROOM
-            </div>
-
-            <div style={{ width: '100px', height: '3px', background: '#D4AF37', margin: '14px auto' }} />
-
-            <div style={{ fontSize: '13.5px', lineHeight: '1.6', color: '#1E293B', maxWidth: '540px', margin: '16px auto' }}>
-              This certifies that <b>{selectedOrder.Customer_Name}</b> has purchased certified Godrej Interio furniture (<b>{selectedOrder.Ordered_SKU}</b>) with 10-Year Anti-Termite, Anti-Borer and Hydraulic mechanism coverage.
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'center', gap: '40px', marginTop: '24px' }}>
+        {/* Document: Delivery Challan */}
+        {selectedDocType === 'delivery_challan' && (
+          <div className="printable-area" style={{ background: '#FFFFFF', color: '#000000', borderRadius: '14px', padding: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2.5px solid #0F172A', paddingBottom: '14px' }}>
               <div>
-                <div style={{ fontSize: '11px', color: '#64748B' }}>CERTIFICATE ID</div>
-                <div style={{ fontWeight: '800', fontFamily: 'JetBrains Mono' }}>WRN-2026-8921</div>
+                <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#0F172A' }}>{storeMeta.storeName}</h2>
+                <div style={{ fontSize: '11.5px', color: '#475569' }}>{storeMeta.address}</div>
+                <div style={{ fontSize: '11px', color: '#475569' }}>GSTIN: {storeMeta.gstin} | Phone: {storeMeta.phone}</div>
               </div>
-              <div>
-                <div style={{ fontSize: '11px', color: '#64748B' }}>COVERAGE PERIOD</div>
-                <div style={{ fontWeight: '800' }}>2026 — 2036 (10 Years)</div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '16px', fontWeight: '900', color: '#D97706' }}>OFFICIAL DELIVERY CHALLAN</div>
+                <div style={{ fontSize: '12.5px', fontWeight: '800' }}>Challan No: DC-2026-{selectedOrder.Order_ID?.replace('ORD-', '') || '8921'}</div>
+                <div style={{ fontSize: '11px', color: '#64748B' }}>Date: {new Date().toLocaleDateString('en-GB')}</div>
               </div>
             </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', margin: '16px 0', padding: '12px', background: '#F8FAFC', borderRadius: '10px' }}>
+              <div>
+                <div style={{ fontSize: '11px', color: '#64748B', fontWeight: '700' }}>CONSIGNEE (DELIVER TO):</div>
+                <div style={{ fontSize: '13px', fontWeight: '800', color: '#0F172A' }}>{selectedOrder.Customer_Name}</div>
+                <div style={{ fontSize: '11.5px', color: '#475569' }}>{selectedOrder.Project_Address}</div>
+                <div style={{ fontSize: '11px', color: '#475569' }}>Phone: {selectedOrder.Customer_Phone || '9437088990'}</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '11px', color: '#64748B', fontWeight: '700' }}>FLEET LOGISTICS:</div>
+                <div style={{ fontSize: '12px', fontWeight: '800' }}>Vehicle: Tata Ace (OD-18-A-1234)</div>
+                <div style={{ fontSize: '11px', color: '#475569' }}>Driver: Tophan Gouda</div>
+                <div style={{ fontSize: '11px', color: '#047857', fontWeight: '800' }}>Dock Gatepass: GP-{selectedOrder.Order_ID || '8921'} ✓</div>
+              </div>
+            </div>
+
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', margin: '14px 0' }}>
+              <thead>
+                <tr style={{ background: '#0F172A', color: '#FFFFFF' }}>
+                  <th style={{ padding: '8px 10px', textAlign: 'left' }}>Item Description</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'center' }}>Package Units</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'center' }}>QC Seal</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>Total Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style={{ padding: '12px 10px', borderBottom: '1px solid #E2E8F0' }}>
+                    <b>{selectedOrder.Ordered_SKU}</b>
+                    <div style={{ fontSize: '10.5px', color: '#64748B' }}>SmartKit™ Flat-Pack Cartons Verified • Pre-Delivery Inspection Passed</div>
+                  </td>
+                  <td style={{ padding: '12px 10px', textAlign: 'center', borderBottom: '1px solid #E2E8F0' }}>5 Cartons</td>
+                  <td style={{ padding: '12px 10px', textAlign: 'center', borderBottom: '1px solid #E2E8F0', color: '#047857', fontWeight: '800' }}>PASSED ✓</td>
+                  <td style={{ padding: '12px 10px', textAlign: 'right', borderBottom: '1px solid #E2E8F0', fontWeight: '800' }}>₹{selectedOrder.Total_Amount_INR?.toLocaleString()}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '36px', fontSize: '11px', color: '#475569' }}>
+              <div>Driver Signature: _______________________</div>
+              <div>Customer Signature: _______________________</div>
+            </div>
+          </div>
+        )}
+
+        {/* Document: Official 10-Year Luxury Gold & Navy Warranty Certificate */}
+        {selectedDocType === 'warranty_card' && (
+          <div className="printable-area" style={{ background: 'linear-gradient(135deg, #0B132B 0%, #1C2541 100%)', color: '#FFFFFF', borderRadius: '16px', padding: '40px', border: '3px solid #D4AF37', boxShadow: '0 20px 60px rgba(0,0,0,0.5)', position: 'relative', overflow: 'hidden' }}>
+            
+            {/* Ambient Watermark */}
+            <div style={{ position: 'absolute', right: '-40px', bottom: '-40px', fontSize: '160px', opacity: 0.04, color: '#D4AF37', pointerEvents: 'none', fontWeight: '900', fontFamily: 'serif' }}>
+              GI
+            </div>
+
+            {/* Certificate Header */}
+            <div style={{ textAlign: 'center', borderBottom: '2px solid rgba(212,175,55,0.4)', paddingBottom: '20px' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(212,175,55,0.15)', border: '1px solid #D4AF37', borderRadius: '30px', padding: '6px 18px', marginBottom: '12px' }}>
+                <Award size={16} color="#D4AF37" />
+                <span style={{ fontSize: '11px', letterSpacing: '2px', fontWeight: '800', color: '#D4AF37', textTransform: 'uppercase' }}>
+                  GODREJ INTERIO OFFICIAL GUARANTEE
+                </span>
+              </div>
+              <h1 style={{ fontSize: '26px', fontWeight: '900', color: '#D4AF37', letterSpacing: '1px', textTransform: 'uppercase', fontFamily: 'Cinzel, Georgia, serif' }}>
+                10-Year Digital Warranty Certificate
+              </h1>
+              <div style={{ fontSize: '13px', color: '#94A3B8', marginTop: '4px' }}>
+                Shree Ganesh Enterprises • Main Road, Near New Bus Stand, Rayagada (OD 765001)
+              </div>
+            </div>
+
+            {/* Certificate Body */}
+            <div style={{ padding: '24px 0', textAlign: 'center' }}>
+              <p style={{ fontSize: '13px', color: '#CBD5E1', letterSpacing: '0.5px' }}>
+                This is to officially certify that
+              </p>
+              <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#FFFFFF', margin: '8px 0', letterSpacing: '0.5px' }}>
+                {selectedOrder.Customer_Name || 'VIP Showroom Client'}
+              </h2>
+              <p style={{ fontSize: '12px', color: '#94A3B8' }}>
+                📍 Destination Site: <b>{selectedOrder.Project_Address || 'Rayagada District'}</b>
+              </p>
+
+              <div style={{ width: '120px', height: '2px', background: 'linear-gradient(90deg, transparent, #D4AF37, transparent)', margin: '16px auto' }} />
+
+              <p style={{ fontSize: '13.5px', color: '#E2E8F0', maxWidth: '620px', margin: '0 auto', lineHeight: '1.7' }}>
+                is granted a <b>Comprehensive 10-Year Manufacturer Warranty</b> on genuine Godrej Interio Certified Model:
+                <br />
+                <span style={{ color: '#FCD34D', fontSize: '16px', fontWeight: '800', display: 'inline-block', marginTop: '6px' }}>
+                  "{selectedOrder.Ordered_SKU || selectedOrder.Item_Names || 'Solid Teak Luxury Furniture Suite'}"
+                </span>
+              </p>
+            </div>
+
+            {/* 4 Pillars of Warranty Protection */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', margin: '16px 0' }}>
+              <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(212,175,55,0.3)', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+                <div style={{ fontSize: '18px' }}>🐜</div>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#FCD34D', marginTop: '4px' }}>ANTI-TERMITE</div>
+                <div style={{ fontSize: '9.5px', color: '#94A3B8' }}>100% Core Infusion</div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(212,175,55,0.3)', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+                <div style={{ fontSize: '18px' }}>🪚</div>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#FCD34D', marginTop: '4px' }}>ANTI-BORER</div>
+                <div style={{ fontSize: '9.5px', color: '#94A3B8' }}>Seasoned Teak Timber</div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(212,175,55,0.3)', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+                <div style={{ fontSize: '18px' }}>⚙️</div>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#FCD34D', marginTop: '4px' }}>HYDRAULIC LIFTS</div>
+                <div style={{ fontSize: '9.5px', color: '#94A3B8' }}>50,000 Cycle Tested</div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(212,175,55,0.3)', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+                <div style={{ fontSize: '18px' }}>🛠️</div>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#FCD34D', marginTop: '4px' }}>FREE ANNUAL QC</div>
+                <div style={{ fontSize: '9.5px', color: '#94A3B8' }}>Doorstep Mistri Service</div>
+              </div>
+            </div>
+
+            {/* Hologram Stamp & Authentication Grid */}
+            <div style={{ background: 'rgba(0,0,0,0.4)', border: '1.5px dashed #D4AF37', borderRadius: '12px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px', margin: '20px 0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(135deg, #D4AF37 0%, #F59E0B 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', boxShadow: '0 0 20px rgba(212,175,55,0.6)' }}>
+                  🔒
+                </div>
+                <div>
+                  <div style={{ fontSize: '10px', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                    Tamper-Proof Hologram Serial
+                  </div>
+                  <div style={{ fontSize: '15px', fontWeight: '900', fontFamily: 'JetBrains Mono', color: '#FCD34D' }}>
+                    GDJ-WAR-{selectedOrder.Order_ID?.replace('ORD-', '') || '8921'}-2026
+                  </div>
+                  <div style={{ fontSize: '10.5px', color: '#6EE7B7' }}>
+                    ✓ Cryptographically Signed & Cloud Ledger Stored
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '10px', color: '#94A3B8' }}>COVERAGE TIMELINE</div>
+                <div style={{ fontSize: '13px', fontWeight: '800', color: '#FFFFFF' }}>
+                  2026 — 2036 (10 Full Years)
+                </div>
+                <div style={{ fontSize: '10px', color: '#94A3B8' }}>Invoice Ref: INV-2026-{selectedOrder.Order_ID || '8921'}</div>
+              </div>
+            </div>
+
+            {/* Signature & Security Footer */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px' }}>
+              <div style={{ fontSize: '11px', color: '#94A3B8' }}>
+                <div>Authorized Signatory: <b>Rakesh (Store Director)</b></div>
+                <div>Godrej Interio Flagship Store • Rayagada</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <button 
+                  className="btn-luxury-gold no-print" 
+                  onClick={() => window.print()}
+                  style={{ fontSize: '12px', padding: '8px 18px' }}
+                >
+                  <Printer size={14} /> [Generate 10-Year Warranty PDF]
+                </button>
+              </div>
+            </div>
+
           </div>
         )}
 

@@ -18,6 +18,7 @@ import { playScanBeep, playSuccessChime, playSafeLockSound } from '../utils/audi
 export function InventorySafeLockView() {
   const { 
     inventory, 
+    orders,
     smartKitBoxes, 
     adjustStock, 
     verifySmartKitBox, 
@@ -26,6 +27,7 @@ export function InventorySafeLockView() {
   } = useStore();
 
   const [selectedSku, setSelectedSku] = useState('BED-MOD-001');
+  const [selectedCustomerFilter, setSelectedCustomerFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('ALL');
   const [isLaserSweeping, setIsLaserSweeping] = useState(false);
@@ -45,7 +47,13 @@ export function InventorySafeLockView() {
     }
   };
 
+  const selectedOrderObj = selectedCustomerFilter !== 'ALL' ? orders.find(o => o.Order_ID === selectedCustomerFilter) : null;
+
   const filteredInventory = inventory.filter(item => {
+    if (selectedOrderObj) {
+      const isOrderedItem = (selectedOrderObj.Ordered_SKU || '').includes(item.SKU);
+      return isOrderedItem;
+    }
     const matchesSearch = item.Product_Name.toLowerCase().includes(searchQuery.toLowerCase()) || item.SKU.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCat = filterCategory === 'ALL' || item.Category === filterCategory;
     return matchesSearch && matchesCat;
@@ -171,18 +179,42 @@ export function InventorySafeLockView() {
             <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Atomic warehouse reservation preventing double-selling</span>
           </div>
 
-          {/* Search & Category Filter */}
-          <div style={{ display: 'flex', gap: '8px' }}>
+          {/* Customer Spotlight & Search & Category Filter */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#030712', padding: '4px 10px', borderRadius: '8px', border: '1.5px solid var(--accent-gold)' }}>
+              <span style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: '800' }}>🔍 Spotlight Customer:</span>
+              <select
+                value={selectedCustomerFilter}
+                onChange={e => setSelectedCustomerFilter(e.target.value)}
+                style={{
+                  background: '#0B132B',
+                  color: '#FFFFFF',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '6px',
+                  padding: '4px 8px',
+                  fontSize: '11.5px',
+                  fontWeight: '700'
+                }}
+              >
+                <option value="ALL">All Inventory (115 Models)</option>
+                {orders.map(o => (
+                  <option key={o.Order_ID} value={o.Order_ID}>
+                    #{o.Order_ID} — {o.Customer_Name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <input 
               placeholder="🔍 Search SKU or Model..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              style={{ background: '#030712', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 12px', color: '#FFFFFF', fontSize: '12px', outline: 'none' }}
+              style={{ background: '#030712', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '6px 12px', color: '#FFFFFF', fontSize: '11.5px', outline: 'none' }}
             />
             <select 
               value={filterCategory} 
               onChange={e => setFilterCategory(e.target.value)}
-              style={{ background: '#030712', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '7px 10px', color: '#FFFFFF', fontSize: '12px' }}
+              style={{ background: '#030712', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '6px 10px', color: '#FFFFFF', fontSize: '11.5px' }}
             >
               <option value="ALL">All Categories</option>
               <option value="Bedroom">Bedroom</option>

@@ -32,9 +32,11 @@ import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/
 import { dispatchWebhookAction } from '../services/webhookService';
 
 export function BarcodeStudio() {
-  const { catalog, setCatalog, storeMeta, openModal, showToast } = useStore();
+  const { catalog, setCatalog, orders, storeMeta, openModal, showToast } = useStore();
 
+  const [sourceMode, setSourceMode] = useState('SUPPLIER_CATALOG'); // 'SUPPLIER_CATALOG' (default) | 'CUSTOMER_ORDER'
   const [selectedSku, setSelectedSku] = useState(catalog[0]?.SKU || 'BED-MOD-001');
+  const [selectedOrderId, setSelectedOrderId] = useState(orders[0]?.Order_ID || '');
   const [printLayout, setPrintLayout] = useState('pallet_label'); // pallet_label | carton_strip | thermal_50x25 | a4_24up | zpl_code
   const [barcodeStep, setBarcodeStep] = useState(1);
 
@@ -80,9 +82,32 @@ export function BarcodeStudio() {
       setSellingPrice(item.Selling_Price_INR || 75000);
       setWarranty(item.Warranty_Years || 5);
       setBoxCount(item.Total_Component_Boxes || 3);
+      setBatchNo(`GI-${new Date().getFullYear()}-0881`);
+      setStorageBay(item.Assigned_Bay || 'Dock-A1');
       setIsFragileGlass(item.Material_Spec?.toLowerCase().includes('glass') || item.Material_Spec?.toLowerCase().includes('marble'));
       playScanBeep();
-      showToast(`📦 Loaded Barcode SKU: ${item.SKU}`);
+      showToast(`📦 Loaded Supplier Catalog SKU: ${item.SKU}`);
+    }
+  };
+
+  // Load from Customer Order (Outward Packaging Mode)
+  const handleSelectCustomerOrder = (orderId) => {
+    setSelectedOrderId(orderId);
+    const order = orders.find(o => o.Order_ID === orderId);
+    if (order) {
+      const firstSku = order.Ordered_SKU ? order.Ordered_SKU.split(' ')[0] : 'BED-MOD-001';
+      setSkuCode(`SK-${order.Order_ID}`);
+      setProductName(`${order.Customer_Name} • ${order.Ordered_SKU}`);
+      setCategory('Customer Staging');
+      setMaterial('SmartKit Verified Cartons');
+      setDimensions(order.Project_Address || 'Rayagada District');
+      setMrp(order.Total_Amount_INR || 95000);
+      setSellingPrice(order.Balance_Due_INR || 0);
+      setBatchNo(`GP-${order.Order_ID}`);
+      setStorageBay(`Dock 1 (Driver: ${order.Assigned_Driver ? order.Assigned_Driver.split(' ')[0] : 'Tophan'})`);
+      setBoxCount(5);
+      playScanBeep();
+      showToast(`📦 Loaded Customer Packaging Barcode for #${order.Order_ID} (${order.Customer_Name})`);
     }
   };
 
@@ -240,20 +265,82 @@ export function BarcodeStudio() {
           {/* STEP 1: SKU SELECTOR & BASICS */}
           {barcodeStep === 1 && (
             <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div className="form-field">
-                <label style={{ fontWeight: '800', color: 'var(--accent-gold-light)' }}>Select Furniture Product from Catalog:</label>
-                <select 
-                  value={selectedSku} 
-                  onChange={e => handleSelectCatalogItem(e.target.value)}
-                  style={{ background: '#030712', color: '#FFFFFF', border: '1.5px solid var(--accent-cyan)', padding: '10px', fontSize: '13px' }}
+              
+              {/* Source Switcher: Supplier Catalog (Default) ⇋ Customer Dispatch Order */}
+              <div style={{ display: 'flex', gap: '6px', background: '#030712', padding: '4px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.12)' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSourceMode('SUPPLIER_CATALOG');
+                    handleSelectCatalogItem(selectedSku);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '7px 8px',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    fontWeight: '800',
+                    background: sourceMode === 'SUPPLIER_CATALOG' ? 'linear-gradient(135deg, #0284C7, #0369A1)' : 'transparent',
+                    color: sourceMode === 'SUPPLIER_CATALOG' ? '#FFFFFF' : '#94A3B8',
+                    border: sourceMode === 'SUPPLIER_CATALOG' ? '1px solid #FFFFFF' : 'none',
+                    cursor: 'pointer'
+                  }}
                 >
-                  {catalog.map(item => (
-                    <option key={item.SKU} value={item.SKU}>
-                      {item.SKU} — {item.Product_Name}
-                    </option>
-                  ))}
-                </select>
+                  🏭 1. Supplier / Catalog Inward
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSourceMode('CUSTOMER_ORDER');
+                    if (orders.length > 0) handleSelectCustomerOrder(selectedOrderId || orders[0].Order_ID);
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '7px 8px',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    fontWeight: '800',
+                    background: sourceMode === 'CUSTOMER_ORDER' ? 'linear-gradient(135deg, #D4AF37, #B45309)' : 'transparent',
+                    color: sourceMode === 'CUSTOMER_ORDER' ? '#000000' : '#94A3B8',
+                    border: sourceMode === 'CUSTOMER_ORDER' ? '1px solid #D4AF37' : 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  📦 2. Customer Dispatch Packaging
+                </button>
               </div>
+
+              {sourceMode === 'SUPPLIER_CATALOG' ? (
+                <div className="form-field">
+                  <label style={{ fontWeight: '800', color: 'var(--accent-cyan)' }}>Select Furniture Product from Master Catalog:</label>
+                  <select 
+                    value={selectedSku} 
+                    onChange={e => handleSelectCatalogItem(e.target.value)}
+                    style={{ background: '#030712', color: '#FFFFFF', border: '1.5px solid var(--accent-cyan)', padding: '10px', fontSize: '13px' }}
+                  >
+                    {catalog.map(item => (
+                      <option key={item.SKU} value={item.SKU}>
+                        {item.SKU} — {item.Product_Name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="form-field">
+                  <label style={{ fontWeight: '800', color: 'var(--accent-gold-light)' }}>Select Customer / SafeLock Order for Packaging:</label>
+                  <select 
+                    value={selectedOrderId} 
+                    onChange={e => handleSelectCustomerOrder(e.target.value)}
+                    style={{ background: '#030712', color: '#FFFFFF', border: '1.5px solid var(--accent-gold)', padding: '10px', fontSize: '13px' }}
+                  >
+                    {orders.map(order => (
+                      <option key={order.Order_ID} value={order.Order_ID}>
+                        #{order.Order_ID} — {order.Customer_Name} ({order.Ordered_SKU ? order.Ordered_SKU.slice(0, 30) : 'Suite'}...)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                 <div className="form-field">

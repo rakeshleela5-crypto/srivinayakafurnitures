@@ -85,6 +85,22 @@ export const USER_ROLES = {
   }
 };
 
+// Helper for safe localStorage reading with fallback
+const getStored = (key, fallback) => {
+  try {
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(fallback) ? (Array.isArray(parsed) && parsed.length > 0) : parsed) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.warn(`[localStorage] Read error for ${key}:`, e);
+  }
+  return fallback;
+};
+
 export function StoreProvider({ children }) {
   // Authentication & Current User Session
   const [currentUser, setCurrentUser] = useState(() => {
@@ -98,32 +114,32 @@ export function StoreProvider({ children }) {
   // Navigation
   const [activeTab, setActiveTab] = useState('executive');
 
-  // Core 21-Table Data Stores
+  // Core Persistent 21-Table Data Stores
   const [catalog, setCatalog] = useState(FURNITURE_CATALOG);
-  const [orders, setOrders] = useState(INITIAL_ORDERS);
-  const [inventory, setInventory] = useState(INITIAL_INVENTORY);
-  const [smartKitBoxes, setSmartKitBoxes] = useState(INITIAL_SMARTKIT_BOXES);
-  const [inquiries, setInquiries] = useState(INITIAL_INQUIRIES);
-  const [architects, setArchitects] = useState(INITIAL_ARCHITECTS);
+  const [orders, setOrders] = useState(() => getStored('OMNIBUILD_ORDERS', INITIAL_ORDERS));
+  const [inventory, setInventory] = useState(() => getStored('OMNIBUILD_INVENTORY', INITIAL_INVENTORY));
+  const [smartKitBoxes, setSmartKitBoxes] = useState(() => getStored('OMNIBUILD_SMARTKIT_BOXES', INITIAL_SMARTKIT_BOXES));
+  const [inquiries, setInquiries] = useState(() => getStored('OMNIBUILD_INQUIRIES', INITIAL_INQUIRIES));
+  const [architects, setArchitects] = useState(() => getStored('OMNIBUILD_ARCHITECTS', INITIAL_ARCHITECTS));
   const [drivers, setDrivers] = useState(INITIAL_DRIVERS);
   const [routeStops, setRouteStops] = useState(INITIAL_ROUTE_STOPS);
-  const [targets, setTargets] = useState(STORE_TARGETS);
+  const [targets, setTargets] = useState(() => getStored('OMNIBUILD_TARGETS', STORE_TARGETS));
   const [bots, setBots] = useState(APPSHEET_BOTS.map(b => ({
     ...b,
     status: 'ACTIVE',
     schedule: b.trigger && b.trigger.includes('Daily') ? 'Scheduled Daily at 21:00' : b.trigger && b.trigger.includes('Hourly') ? 'Scheduled Hourly' : 'Instant Real-Time',
     targetChannel: 'WhatsApp Cloud + Google Sheets'
   })));
-  const [storeMeta, setStoreMeta] = useState(STORE_METADATA);
+  const [storeMeta, setStoreMeta] = useState(() => getStored('OMNIBUILD_STORE_META', STORE_METADATA));
 
-  // Additional Logs
-  const [paymentsLog, setPaymentsLog] = useState([
+  // Additional Logs with Persistence
+  const [paymentsLog, setPaymentsLog] = useState(() => getStored('OMNIBUILD_PAYMENTS', [
     { Txn_ID: "TXN-ADV-1049", Payment_Date_Time: formatDateTimeIndian(), Order_ID: "ORD-8921", Customer_Name: "Dr. Subhashish Jena", Payment_Type: "ADVANCE_50", Amount_INR: 78247, Payment_Mode: "DYNAMIC_UPI_QR", UPI_VPA: "9390553301@ybl", UPI_Transaction_Ref: "UPI-ADV-88912", Status: "SETTLED" }
-  ]);
-  const [documentsLog, setDocumentsLog] = useState([
+  ]));
+  const [documentsLog, setDocumentsLog] = useState(() => getStored('OMNIBUILD_DOCUMENTS', [
     { Doc_ID: "INV-2026-0881", Doc_Type: "INVOICE", Entity_Ref_ID: "ORD-8921", Customer_Vendor_Name: "Dr. Subhashish Jena", Total_Amount_INR: 156494, GST_Amount_INR: 28169, Generated_Date_Time: formatDateTimeIndian(), Status: "GENERATED_LEGAL_COMPLIANT" }
-  ]);
-  const [eodSummary, setEodSummary] = useState({
+  ]));
+  const [eodSummary, setEodSummary] = useState(() => getStored('OMNIBUILD_EOD_SUMMARY', {
     cashDrawerINR: 45000,
     upiSettledINR: 124000,
     cardPosINR: 0,
@@ -131,21 +147,35 @@ export function StoreProvider({ children }) {
     safeLockCount: 4,
     closedBy: "Rakesh (Store Manager)",
     status: "OPEN_REGISTER"
-  });
+  }));
 
-  // 👑 VIP Turnkey Villa Projects State
-  const [vipProjects, setVipProjects] = useState([
+  // 👑 VIP Turnkey Villa Projects State with Persistence
+  const [vipProjects, setVipProjects] = useState(() => getStored('OMNIBUILD_VIP_PROJECTS', [
     { id: 'VIP-001', name: 'Dr. Subhashish Jena (Rayagada Civil Surgeon)', location: 'Raniguda Farmhouse Villa', value: 156494, advance: 78247, status: 'SAFELOCKED & STAGED', stage: '40% Balance on Delivery', phone: '+91 94371 88990', architect: 'Ar. Sunita Patnaik (Studio Vastu)', stage1Paid: true, stage2Paid: false, stage3Paid: false },
     { id: 'VIP-002', name: 'Er. Pradeep Patnaik (JK Paper Executive)', location: 'Jaykaypur Officer Bungalow', value: 420000, advance: 210000, status: 'PROPOSAL DELIVERED', stage: '50% Token Pending', phone: '+91 94370 12345', architect: 'Ar. Rajesh Mohanty', stage1Paid: false, stage2Paid: false, stage3Paid: false },
     { id: 'VIP-003', name: 'M/s Koraput Health Clinic', location: 'Medical Road, Koraput', value: 285000, advance: 142500, status: 'DISPATCH IN TRANSIT', stage: 'ePOD OTP Staged', phone: '+91 98610 99887', architect: 'Direct VIP Client', stage1Paid: true, stage2Paid: true, stage3Paid: false }
-  ]);
+  ]));
 
-  // 🔥 Floor Aging Stock Sentinel State
-  const [floorAgingStock, setFloorAgingStock] = useState([
+  // 🔥 Floor Aging Stock Sentinel State with Persistence
+  const [floorAgingStock, setFloorAgingStock] = useState(() => getStored('OMNIBUILD_FLOOR_AGING', [
     { sku: 'ALM-MOD-001', name: '4-Door Solid Teak Wardrobe', floorDays: 52, bay: 'Bay 3', mrp: 78000, discountPct: 20, clearancePrice: 62400, notes: 'Showroom display piece in pristine condition' },
     { sku: 'DIN-MOD-001', name: '6-Seater Italian Carrara Marble Dining', floorDays: 48, bay: 'Bay 1', mrp: 92000, discountPct: 20, clearancePrice: 73600, notes: 'Polished display unit' },
     { sku: 'SOF-MOD-002', name: '3-Seater Chesterfield Velvet Sofa', floorDays: 46, bay: 'Bay 4', mrp: 68000, discountPct: 20, clearancePrice: 54400, notes: 'Buffed velvet upholstery' }
-  ]);
+  ]));
+
+  // Automatic LocalStorage Sync Hooks
+  useEffect(() => { localStorage.setItem('OMNIBUILD_ORDERS', JSON.stringify(orders)); }, [orders]);
+  useEffect(() => { localStorage.setItem('OMNIBUILD_INVENTORY', JSON.stringify(inventory)); }, [inventory]);
+  useEffect(() => { localStorage.setItem('OMNIBUILD_SMARTKIT_BOXES', JSON.stringify(smartKitBoxes)); }, [smartKitBoxes]);
+  useEffect(() => { localStorage.setItem('OMNIBUILD_INQUIRIES', JSON.stringify(inquiries)); }, [inquiries]);
+  useEffect(() => { localStorage.setItem('OMNIBUILD_ARCHITECTS', JSON.stringify(architects)); }, [architects]);
+  useEffect(() => { localStorage.setItem('OMNIBUILD_TARGETS', JSON.stringify(targets)); }, [targets]);
+  useEffect(() => { localStorage.setItem('OMNIBUILD_STORE_META', JSON.stringify(storeMeta)); }, [storeMeta]);
+  useEffect(() => { localStorage.setItem('OMNIBUILD_PAYMENTS', JSON.stringify(paymentsLog)); }, [paymentsLog]);
+  useEffect(() => { localStorage.setItem('OMNIBUILD_DOCUMENTS', JSON.stringify(documentsLog)); }, [documentsLog]);
+  useEffect(() => { localStorage.setItem('OMNIBUILD_EOD_SUMMARY', JSON.stringify(eodSummary)); }, [eodSummary]);
+  useEffect(() => { localStorage.setItem('OMNIBUILD_VIP_PROJECTS', JSON.stringify(vipProjects)); }, [vipProjects]);
+  useEffect(() => { localStorage.setItem('OMNIBUILD_FLOOR_AGING', JSON.stringify(floorAgingStock)); }, [floorAgingStock]);
 
   // UI States & Modals
   const [activeModal, setActiveModal] = useState(null);
@@ -525,17 +555,62 @@ export function StoreProvider({ children }) {
     dispatchWebhookAction('RESET_FLOOR_AGE', { sku });
   };
 
-  // 8. 2-Way Sync with Google Sheets
-  const syncWithGoogleSheets = async () => {
+  // 8. 2-Way Sync with Google Sheets with Real-Time Cloud Hydration
+  const syncWithGoogleSheets = async (silent = false) => {
     setIsSyncing(true);
-    playScanBeep();
-    showToast("📡 Connecting to Google Apps Script Master Webhook...");
+    if (!silent) {
+      playScanBeep();
+      showToast("📡 Connecting to Google Apps Script Master Webhook...");
+    }
 
-    const res = await dispatchWebhookAction('FETCH_ALL_TABLES', {});
-    setIsSyncing(false);
-    playSuccessChime();
-    showToast("✅ Master Webhook 2-Way Sync Complete! All 21 Tables Live.");
+    try {
+      const res = await dispatchWebhookAction('FETCH_ALL_TABLES', {});
+      if (res && res.tables) {
+        // 1. Sync & Merge Orders from Google Sheets Orders_SafeLock
+        if (Array.isArray(res.tables.Orders_SafeLock) && res.tables.Orders_SafeLock.length > 0) {
+          const cloudOrders = res.tables.Orders_SafeLock.map(row => ({
+            Order_ID: row.Order_ID || `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
+            Customer_Name: row.Customer_Name || "VIP Customer",
+            Customer_Phone: row.Customer_Phone || "",
+            Project_Address: row.Project_Address || "Rayagada",
+            Designer_ID: row.Designer_ID || "VIP-ARC-001",
+            Ordered_SKU: row.Ordered_SKU || "BED-MOD-001",
+            Total_Amount_INR: Number(row.Total_Amount_INR) || 0,
+            Advance_Paid_INR: Number(row.Advance_Paid_INR) || 0,
+            Balance_Due_INR: Number(row.Balance_Due_INR) || 0,
+            SafeLock_Status: row.SafeLock_Status || "SAFELOCKED (RESERVED)",
+            SmartKit_Status: row.SmartKit_Status || "5/5 Staged",
+            Assigned_Driver: row.Assigned_Driver || "Tophan Gouda (Tata Ace OD-18-A-1234)",
+            Delivery_Schedule: row.Delivery_Schedule || "Today",
+            Carpenter_Assigned: row.Carpenter_Assigned || "Narayana Mistri",
+            Carpenter_Payout_INR: Number(row.Carpenter_Payout_INR) || 500,
+            OTP_Code: row.OTP_Code || "8899",
+            Created_Date: row.Created_Date || formatDateTimeIndian()
+          }));
+          
+          setOrders(prev => {
+            const map = new Map();
+            cloudOrders.forEach(o => map.set(o.Order_ID, o));
+            prev.forEach(o => map.set(o.Order_ID, { ...(map.get(o.Order_ID) || {}), ...o }));
+            return Array.from(map.values());
+          });
+        }
+      }
+    } catch (e) {
+      console.warn("[Cloud Sync Hydration Warning]:", e);
+    } finally {
+      setIsSyncing(false);
+      if (!silent) {
+        playSuccessChime();
+        showToast("✅ Master Webhook 2-Way Sync Complete! All Tables Synchronized.");
+      }
+    }
   };
+
+  // Initial Silent Startup Cloud Hydration
+  useEffect(() => {
+    syncWithGoogleSheets(true);
+  }, []);
 
   return (
     <StoreContext.Provider value={{

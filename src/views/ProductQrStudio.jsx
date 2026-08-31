@@ -28,6 +28,7 @@ export function ProductQrStudio() {
 
   const [selectedSku, setSelectedSku] = useState(catalog[0]?.SKU || 'BED-MOD-001');
   const [printLayout, setPrintLayout] = useState('frame_sticker'); // frame_sticker | acrylic_standee | 5_box_labels | a4_24up
+  const [qrStep, setQrStep] = useState(1);
 
   // Editable Product Fields
   const [skuCode, setSkuCode] = useState('BED-MOD-001');
@@ -195,118 +196,215 @@ export function ProductQrStudio() {
         
         {/* Left Column: Product Selector & Full In-Place Spec Editor */}
         <div className="glass-panel no-print">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: '900' }}>🛋️ Master Catalog Product Customizer</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: '900', color: 'var(--accent-gold-light)' }}>🛋️ Product Spec & QR Routing Studio</h3>
             <span className="badge badge-purple">{catalog.length} SKUs LOADED</span>
           </div>
 
-          {/* Quick SKU Selector */}
-          <div className="form-field" style={{ margin: '10px 0' }}>
-            <label style={{ fontWeight: '800', color: 'var(--accent-gold-light)' }}>Select Furniture Product to Customize</label>
-            <select 
-              value={selectedSku} 
-              onChange={e => handleSelectCatalogItem(e.target.value)}
-              style={{ background: '#030712', color: '#FFFFFF', border: '1.5px solid var(--accent-gold)' }}
-            >
-              {catalog.map(item => (
-                <option key={item.SKU} value={item.SKU}>
-                  {item.SKU} — {item.Product_Name} (MRP: ₹{item.MRP_INR?.toLocaleString()})
-                </option>
-              ))}
-            </select>
+          {/* 3-Step Navigation Tabs */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '14px', background: '#030712', padding: '6px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+            {[
+              { step: 1, label: '1. 🛋️ Select SKU' },
+              { step: 2, label: '2. 🏷️ Specs & Pricing' },
+              { step: 3, label: '3. 📱 QR Routing' }
+            ].map(s => {
+              const isActive = qrStep === s.step;
+              const isDone = qrStep > s.step;
+              return (
+                <button
+                  key={s.step}
+                  type="button"
+                  onClick={() => {
+                    setQrStep(s.step);
+                    playScanBeep();
+                  }}
+                  style={{
+                    padding: '7px 4px',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    fontWeight: isActive ? '900' : '700',
+                    background: isActive 
+                      ? 'linear-gradient(135deg, #D4AF37 0%, #B45309 100%)' 
+                      : isDone ? 'rgba(16,185,129,0.15)' : 'transparent',
+                    color: isActive ? '#000000' : isDone ? 'var(--accent-emerald)' : '#94A3B8',
+                    border: isActive ? '1px solid #FFFFFF' : isDone ? '1px solid rgba(16,185,129,0.3)' : '1px solid transparent',
+                    cursor: 'pointer',
+                    textAlign: 'center'
+                  }}
+                >
+                  {isDone ? '✓ ' : ''}{s.label}
+                </button>
+              );
+            })}
           </div>
 
-          {/* Detailed Product Edit Form */}
-          <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-            <div className="form-field">
-              <label>SKU Code</label>
-              <input value={skuCode} onChange={e => setSkuCode(e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label>Product Name</label>
-              <input value={productName} onChange={e => setProductName(e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label>Main Category</label>
-              <select value={category} onChange={e => setCategory(e.target.value)}>
-                <option value="Bedroom">Bedroom (King/Queen Beds)</option>
-                <option value="Living Room">Living Room (Sofas & Recliners)</option>
-                <option value="Dining & Study">Dining & Study (Marble/Wood)</option>
-                <option value="Storage & Wardrobes">Storage & Wardrobes (Almirahs)</option>
-                <option value="Commercial Office">Commercial Office (Workstations)</option>
-              </select>
-            </div>
-            <div className="form-field">
-              <label>Material & Wood Specification</label>
-              <input value={material} onChange={e => setMaterial(e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label>Physical Dimensions (L × W × H)</label>
-              <input value={dimensions} onChange={e => setDimensions(e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label>Godrej Warranty (Years)</label>
-              <input type="number" value={warranty} onChange={e => setWarranty(Number(e.target.value))} />
-            </div>
-            <div className="form-field">
-              <label>MRP Price (₹)</label>
-              <input type="number" value={mrp} onChange={e => setMrp(Number(e.target.value))} />
-            </div>
-            <div className="form-field">
-              <label>Showroom Selling Price (₹)</label>
-              <input type="number" value={sellingPrice} onChange={e => setSellingPrice(Number(e.target.value))} />
-            </div>
-            <div className="form-field">
-              <label>Knockdown Box Count</label>
-              <input type="number" value={boxCount} onChange={e => setBoxCount(Number(e.target.value))} />
-            </div>
-            <div className="form-field">
-              <label>Default Factory Supplier</label>
-              <input value={supplier} onChange={e => setSupplier(e.target.value)} />
-            </div>
-          </div>
-
-          {/* QR Engine Configuration Box */}
-          <div style={{ background: '#030712', borderRadius: '12px', padding: '14px', border: '1px solid rgba(56,189,248,0.3)', marginTop: '12px' }}>
-            <div style={{ fontSize: '12px', fontWeight: '900', color: 'var(--accent-cyan)', marginBottom: '8px', textTransform: 'uppercase' }}>
-              ⚙️ QR Code Destination & Payload Engine:
-            </div>
-
-            <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+          {/* STEP 1: SKU SELECTOR & BASIC INFO */}
+          {qrStep === 1 && (
+            <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div className="form-field">
-                <label>QR Action / Target</label>
-                <select value={qrDestination} onChange={e => setQrDestination(e.target.value)}>
-                  <option value="MOBILE_AI_CONCIERGE">🌟 Instant Mobile 24/7 AI Concierge (Best for Monday Demo!)</option>
-                  <option value="WHATSAPP_AI">💬 WhatsApp Click-to-Chat (Direct Lead Capture)</option>
-                  <option value="UPI_TOKEN">💰 Instant 50% Token UPI QR (₹{tokenAdvance50.toLocaleString()})</option>
-                  <option value="PRODUCT_SPEC">📄 Digital Spec & 10-Yr Warranty Certificate</option>
-                  <option value="DOCK_ROUTE">📦 Staff Dock Inward/Outward Route</option>
-                  <option value="CUSTOM_URL">🌐 Custom Website / WhatsApp Link</option>
+                <label style={{ fontWeight: '800', color: 'var(--accent-gold-light)' }}>Select Furniture Product to Customize:</label>
+                <select 
+                  value={selectedSku} 
+                  onChange={e => handleSelectCatalogItem(e.target.value)}
+                  style={{ background: '#030712', color: '#FFFFFF', border: '1.5px solid var(--accent-gold)', padding: '10px', fontSize: '13px' }}
+                >
+                  {catalog.map(item => (
+                    <option key={item.SKU} value={item.SKU}>
+                      {item.SKU} — {item.Product_Name} (MRP: ₹{item.MRP_INR?.toLocaleString()})
+                    </option>
+                  ))}
                 </select>
               </div>
 
-              <div className="form-field">
-                <label>QR Visual Color Theme</label>
-                <select value={qrColor} onChange={e => setQrColor(e.target.value)}>
-                  <option value="#000000">Matte Obsidian Black (Highest Contrast)</option>
-                  <option value="#0F172A">Deep Navy Slate</option>
-                  <option value="#B45309">Champagne Gold Luxury</option>
-                  <option value="#0284C7">Godrej Cyan Blue</option>
-                </select>
-              </div>
-
-              {qrDestination === 'CUSTOM_URL' && (
-                <div className="form-field" style={{ gridColumn: '1 / -1' }}>
-                  <label>Enter Custom Destination URL</label>
-                  <input value={customUrl} onChange={e => setCustomUrl(e.target.value)} />
+              <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div className="form-field">
+                  <label>SKU Code</label>
+                  <input value={skuCode} onChange={e => setSkuCode(e.target.value)} />
                 </div>
-              )}
+                <div className="form-field">
+                  <label>Main Category</label>
+                  <select value={category} onChange={e => setCategory(e.target.value)}>
+                    <option value="Bedroom">Bedroom</option>
+                    <option value="Living Room">Living Room</option>
+                    <option value="Dining Room">Dining Room</option>
+                    <option value="Office & Study">Office & Study</option>
+                    <option value="Storage & Almirah">Storage & Almirah</option>
+                  </select>
+                </div>
+                <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+                  <label>Product Name</label>
+                  <input value={productName} onChange={e => setProductName(e.target.value)} />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+                <button 
+                  type="button" 
+                  className="btn-luxury-gold" 
+                  onClick={() => {
+                    setQrStep(2);
+                    playScanBeep();
+                  }}
+                  style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '800' }}
+                >
+                  Next: Specs, Pricing & Warranty ➔
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
+          {/* STEP 2: SPECS, PRICING & WARRANTY */}
+          {qrStep === 2 && (
+            <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div className="form-field">
+                  <label>Wood / Material Spec</label>
+                  <input value={material} onChange={e => setMaterial(e.target.value)} />
+                </div>
+                <div className="form-field">
+                  <label>Dimensions (L×W×H)</label>
+                  <input value={dimensions} onChange={e => setDimensions(e.target.value)} />
+                </div>
+                <div className="form-field">
+                  <label>Official MRP (₹)</label>
+                  <input type="number" value={mrp} onChange={e => setMrp(Number(e.target.value))} />
+                </div>
+                <div className="form-field">
+                  <label style={{ color: 'var(--accent-emerald)', fontWeight: '800' }}>Selling Price (₹)</label>
+                  <input type="number" value={sellingPrice} onChange={e => setSellingPrice(Number(e.target.value))} />
+                </div>
+                <div className="form-field">
+                  <label>Godrej Warranty (Years)</label>
+                  <input type="number" value={warranty} onChange={e => setWarranty(Number(e.target.value))} />
+                </div>
+                <div className="form-field">
+                  <label>Component Box Count</label>
+                  <input type="number" value={boxCount} onChange={e => setBoxCount(Number(e.target.value))} />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+                <button 
+                  type="button" 
+                  className="btn-ghost-edit" 
+                  onClick={() => {
+                    setQrStep(1);
+                    playScanBeep();
+                  }}
+                  style={{ padding: '10px 16px', fontSize: '12px' }}
+                >
+                  ⬅️ Back: SKU
+                </button>
+                <button 
+                  type="button" 
+                  className="btn-luxury-gold" 
+                  onClick={() => {
+                    setQrStep(3);
+                    playScanBeep();
+                  }}
+                  style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '800' }}
+                >
+                  Next: QR Destination & Color ➔
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3: QR DESTINATION & COLOR */}
+          {qrStep === 3 && (
+            <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div className="form-field">
+                <label style={{ color: 'var(--accent-cyan)', fontWeight: '800' }}>QR Code Scan Destination Trigger</label>
+                <select value={qrDestination} onChange={e => setQrDestination(e.target.value)} style={{ padding: '10px', fontSize: '12.5px' }}>
+                  <option value="MOBILE_AI_CONCIERGE">🤖 Mobile AI Concierge (Instant Customer Phone UI)</option>
+                  <option value="WHATSAPP_AI">💬 Direct WhatsApp Inquiry (+91 93905 53301)</option>
+                  <option value="UPI_TOKEN">💳 50% Token Advance Instant UPI Payment (₹{tokenAdvance50.toLocaleString()})</option>
+                  <option value="PRODUCT_SPEC">📋 Official Godrej Product Spec Sheet</option>
+                  <option value="DOCK_ROUTE">🚚 Warehouse Inward Dock Barcode Route</option>
+                </select>
+              </div>
+
+              <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div className="form-field">
+                  <label>QR Pixel Color</label>
+                  <select value={qrColor} onChange={e => setQrColor(e.target.value)}>
+                    <option value="#000000">Midnight Black (High Contrast)</option>
+                    <option value="#0F172A">Navy Slate Dark</option>
+                    <option value="#B45309">Luxury Gold Bronze</option>
+                    <option value="#0284C7">Godrej Interio Cyan</option>
+                  </select>
+                </div>
+                <div className="form-field">
+                  <label>QR Density Size ({qrSize}px)</label>
+                  <input type="range" min="120" max="240" value={qrSize} onChange={e => setQrSize(Number(e.target.value))} />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+                <button 
+                  type="button" 
+                  className="btn-ghost-edit" 
+                  onClick={() => {
+                    setQrStep(2);
+                    playScanBeep();
+                  }}
+                  style={{ padding: '10px 16px', fontSize: '12px' }}
+                >
+                  ⬅️ Back: Specs
+                </button>
+                <button 
+                  type="button" 
+                  className="btn-luxury-gold" 
+                  onClick={handleSaveToCatalog}
+                  style={{ flex: 1, marginLeft: '10px', justifyContent: 'center', padding: '10px', fontSize: '12px', fontWeight: '900' }}
+                >
+                  <Save size={14} /> 💾 Save to Google Sheets
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-
-        {/* Right Column: Physical Label Layout Picker & Live Print-Ready Preview */}
+{/* Right Column: Physical Label Layout Picker & Live Print-Ready Preview */}
         <div className="glass-panel">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ fontSize: '16px', fontWeight: '900' }}>🖨️ Physical Sticker & Standee Layout</h3>

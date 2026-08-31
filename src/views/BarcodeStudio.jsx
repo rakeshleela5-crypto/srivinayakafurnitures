@@ -36,6 +36,7 @@ export function BarcodeStudio() {
 
   const [selectedSku, setSelectedSku] = useState(catalog[0]?.SKU || 'BED-MOD-001');
   const [printLayout, setPrintLayout] = useState('pallet_label'); // pallet_label | carton_strip | thermal_50x25 | a4_24up | zpl_code
+  const [barcodeStep, setBarcodeStep] = useState(1);
 
   // Editable Barcode Fields
   const [skuCode, setSkuCode] = useState('BED-MOD-001');
@@ -192,130 +193,238 @@ export function BarcodeStudio() {
         
         {/* Left Column: SKU Selector & Barcode Configuration */}
         <div className="glass-panel no-print">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
             <h3 style={{ fontSize: '16px', fontWeight: '900', color: 'var(--accent-cyan)' }}>
               ⚙️ GS1 Code-128 Barcode Line Parameters
             </h3>
             <span className="badge badge-purple">{catalog.length} SKUs</span>
           </div>
 
-          {/* Quick SKU Selector */}
-          <div className="form-field" style={{ margin: '10px 0' }}>
-            <label style={{ fontWeight: '800', color: 'var(--accent-gold-light)' }}>Select Furniture Product</label>
-            <select 
-              value={selectedSku} 
-              onChange={e => handleSelectCatalogItem(e.target.value)}
-              style={{ background: '#030712', color: '#FFFFFF', border: '1.5px solid var(--accent-cyan)' }}
-            >
-              {catalog.map(item => (
-                <option key={item.SKU} value={item.SKU}>
-                  {item.SKU} — {item.Product_Name}
-                </option>
-              ))}
-            </select>
+          {/* 3-Step Navigation Tabs */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '14px', background: '#030712', padding: '6px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
+            {[
+              { step: 1, label: '1. 🛋️ Select SKU' },
+              { step: 2, label: '2. 🏷️ Specs & Safety' },
+              { step: 3, label: '3. 🎛️ Laser & ZPL' }
+            ].map(s => {
+              const isActive = barcodeStep === s.step;
+              const isDone = barcodeStep > s.step;
+              return (
+                <button
+                  key={s.step}
+                  type="button"
+                  onClick={() => {
+                    setBarcodeStep(s.step);
+                    playScanBeep();
+                  }}
+                  style={{
+                    padding: '7px 4px',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    fontWeight: isActive ? '900' : '700',
+                    background: isActive 
+                      ? 'linear-gradient(135deg, #0284C7 0%, #0369A1 100%)' 
+                      : isDone ? 'rgba(16,185,129,0.15)' : 'transparent',
+                    color: isActive ? '#FFFFFF' : isDone ? 'var(--accent-emerald)' : '#94A3B8',
+                    border: isActive ? '1px solid #FFFFFF' : isDone ? '1px solid rgba(16,185,129,0.3)' : '1px solid transparent',
+                    cursor: 'pointer',
+                    textAlign: 'center'
+                  }}
+                >
+                  {isDone ? '✓ ' : ''}{s.label}
+                </button>
+              );
+            })}
           </div>
 
-          {/* Barcode Parameters Form */}
-          <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
-            <div className="form-field">
-              <label>SKU / Barcode Data Value</label>
-              <input value={skuCode} onChange={e => setSkuCode(e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label>Warehouse Batch Code</label>
-              <input value={batchNo} onChange={e => setBatchNo(e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label>Product Name</label>
-              <input value={productName} onChange={e => setProductName(e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label>Material Spec</label>
-              <input value={material} onChange={e => setMaterial(e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label>Selling Rate (₹)</label>
-              <input type="number" value={sellingPrice} onChange={e => setSellingPrice(Number(e.target.value))} />
-            </div>
-            <div className="form-field">
-              <label>Total Knockdown Boxes</label>
-              <input type="number" value={boxCount} onChange={e => setBoxCount(Number(e.target.value))} />
-            </div>
-            <div className="form-field">
-              <label>Assigned Rack Bay</label>
-              <select value={storageBay} onChange={e => setStorageBay(e.target.value)}>
-                <option value="Dock-A1">Dock-A1 (Ground Pallet)</option>
-                <option value="Dock-A2">Dock-A2 (Hydraulic Beds)</option>
-                <option value="Bay-B1">Bay-B1 (Living Sectionals)</option>
-                <option value="Bay-C1">Bay-C1 (Marble Dining)</option>
-                <option value="Mezzanine-1">Mezzanine-1 (Fittings)</option>
-              </select>
-            </div>
-            <div className="form-field">
-              <label>Total Weight (KG)</label>
-              <input type="number" value={totalWeightKg} onChange={e => setTotalWeightKg(Number(e.target.value))} />
-            </div>
-          </div>
-
-          {/* Industrial Handling & Safety Warning Badges Config */}
-          <div style={{ background: '#030712', borderRadius: '12px', padding: '12px', border: '1px solid rgba(245,158,11,0.3)', marginTop: '12px' }}>
-            <div style={{ fontSize: '11px', fontWeight: '900', color: 'var(--accent-gold-light)', marginBottom: '8px', textTransform: 'uppercase' }}>
-              ⚠️ Warehouse Safety & Handling Warning Badges:
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#FFF', cursor: 'pointer' }}>
-                <input type="checkbox" checked={isHeavyCarton} onChange={e => setIsHeavyCarton(e.target.checked)} />
-                🏋️ Heavy Lift (30+ KG) Banner
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#FFF', cursor: 'pointer' }}>
-                <input type="checkbox" checked={isFragileGlass} onChange={e => setIsFragileGlass(e.target.checked)} />
-                🍷 Fragile Glass / Marble Warning
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#FFF', cursor: 'pointer' }}>
-                <input type="checkbox" checked={isThisSideUp} onChange={e => setIsThisSideUp(e.target.checked)} />
-                ⬆️⬆️ This Side Up Arrows
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#FFF', cursor: 'pointer' }}>
-                <input type="checkbox" checked={isKeepDry} onChange={e => setIsKeepDry(e.target.checked)} />
-                💧 Protect From Water
-              </label>
-            </div>
-          </div>
-
-          {/* Laser Scanner Barcode Styling Controls */}
-          <div style={{ background: '#030712', borderRadius: '12px', padding: '14px', border: '1px solid rgba(56,189,248,0.3)', marginTop: '12px' }}>
-            <div style={{ fontSize: '11px', fontWeight: '900', color: 'var(--accent-cyan)', marginBottom: '8px', textTransform: 'uppercase' }}>
-              🎛️ Code-128 Line Multipliers & Industrial Features:
-            </div>
-
-            <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+          {/* STEP 1: SKU SELECTOR & BASICS */}
+          {barcodeStep === 1 && (
+            <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div className="form-field">
-                <label>Bar Height ({barHeight}px)</label>
-                <input type="range" min="35" max="85" value={barHeight} onChange={e => setBarHeight(Number(e.target.value))} />
-              </div>
-              <div className="form-field">
-                <label>Bar Line Thickness ({moduleWidth}px)</label>
-                <input type="range" min="1.1" max="2.6" step="0.1" value={moduleWidth} onChange={e => setModuleWidth(Number(e.target.value))} />
-              </div>
-              <div className="form-field">
-                <label>Industrial Bearer Guard Lines</label>
-                <select value={bearerBars ? 'YES' : 'NO'} onChange={e => setBearerBars(e.target.value === 'YES')}>
-                  <option value="YES">Top & Bottom Heavy Guard Lines (Corrugated Boxes)</option>
-                  <option value="NO">Standard Flush Edges</option>
+                <label style={{ fontWeight: '800', color: 'var(--accent-gold-light)' }}>Select Furniture Product from Catalog:</label>
+                <select 
+                  value={selectedSku} 
+                  onChange={e => handleSelectCatalogItem(e.target.value)}
+                  style={{ background: '#030712', color: '#FFFFFF', border: '1.5px solid var(--accent-cyan)', padding: '10px', fontSize: '13px' }}
+                >
+                  {catalog.map(item => (
+                    <option key={item.SKU} value={item.SKU}>
+                      {item.SKU} — {item.Product_Name}
+                    </option>
+                  ))}
                 </select>
               </div>
-              <div className="form-field">
-                <label>Quiet Zone Margin (10-Module)</label>
-                <select value={quietZone ? 'YES' : 'NO'} onChange={e => setQuietZone(e.target.value === 'YES')}>
-                  <option value="YES">Enabled (Standard GS1 Compliance)</option>
-                  <option value="NO">Tight Padding</option>
-                </select>
+
+              <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div className="form-field">
+                  <label>SKU Code</label>
+                  <input value={skuCode} onChange={e => setSkuCode(e.target.value)} />
+                </div>
+                <div className="form-field">
+                  <label>Warehouse Batch</label>
+                  <input value={batchNo} onChange={e => setBatchNo(e.target.value)} />
+                </div>
+                <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+                  <label>Product Full Title</label>
+                  <input value={productName} onChange={e => setProductName(e.target.value)} />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+                <button 
+                  type="button" 
+                  className="btn-cyan" 
+                  onClick={() => {
+                    setBarcodeStep(2);
+                    playScanBeep();
+                  }}
+                  style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '800' }}
+                >
+                  Next: Specs, Pricing & Safety Badges ➔
+                </button>
               </div>
             </div>
-          </div>
+          )}
+
+          {/* STEP 2: SPECS, PRICING & SAFETY BADGES */}
+          {barcodeStep === 2 && (
+            <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <div className="form-field">
+                  <label>Material Spec</label>
+                  <input value={material} onChange={e => setMaterial(e.target.value)} />
+                </div>
+                <div className="form-field">
+                  <label>Selling Rate (₹)</label>
+                  <input type="number" value={sellingPrice} onChange={e => setSellingPrice(Number(e.target.value))} />
+                </div>
+                <div className="form-field">
+                  <label>Total Knockdown Boxes</label>
+                  <input type="number" value={boxCount} onChange={e => setBoxCount(Number(e.target.value))} />
+                </div>
+                <div className="form-field">
+                  <label>Assigned Rack Bay</label>
+                  <select value={storageBay} onChange={e => setStorageBay(e.target.value)}>
+                    <option value="Dock-A1">Dock-A1 (Ground Pallet)</option>
+                    <option value="Dock-A2">Dock-A2 (Hydraulic Beds)</option>
+                    <option value="Bay-B1">Bay-B1 (Living Sectionals)</option>
+                    <option value="Bay-C1">Bay-C1 (Marble Dining)</option>
+                    <option value="Mezzanine-1">Mezzanine-1 (Fittings)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Industrial Handling & Safety Warning Badges Config */}
+              <div style={{ background: '#030712', borderRadius: '12px', padding: '12px', border: '1px solid rgba(245,158,11,0.3)', marginTop: '6px' }}>
+                <div style={{ fontSize: '11px', fontWeight: '900', color: 'var(--accent-gold-light)', marginBottom: '8px', textTransform: 'uppercase' }}>
+                  ⚠️ Warehouse Safety & Handling Badges:
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#FFF', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={isHeavyCarton} onChange={e => setIsHeavyCarton(e.target.checked)} />
+                    🏋️ Heavy Lift (30+ KG)
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#FFF', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={isFragileGlass} onChange={e => setIsFragileGlass(e.target.checked)} />
+                    🍷 Fragile Glass / Marble
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#FFF', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={isThisSideUp} onChange={e => setIsThisSideUp(e.target.checked)} />
+                    ⬆️⬆️ This Side Up
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#FFF', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={isKeepDry} onChange={e => setIsKeepDry(e.target.checked)} />
+                    💧 Protect From Water
+                  </label>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+                <button 
+                  type="button" 
+                  className="btn-ghost-edit" 
+                  onClick={() => {
+                    setBarcodeStep(1);
+                    playScanBeep();
+                  }}
+                  style={{ padding: '10px 16px', fontSize: '12px' }}
+                >
+                  ⬅️ Back: SKU
+                </button>
+                <button 
+                  type="button" 
+                  className="btn-cyan" 
+                  onClick={() => {
+                    setBarcodeStep(3);
+                    playScanBeep();
+                  }}
+                  style={{ padding: '10px 20px', fontSize: '13px', fontWeight: '800' }}
+                >
+                  Next: Laser Line & ZPL Controls ➔
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 3: LASER & ZPL CONTROLS */}
+          {barcodeStep === 3 && (
+            <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ background: '#030712', borderRadius: '12px', padding: '14px', border: '1px solid rgba(56,189,248,0.3)' }}>
+                <div style={{ fontSize: '11px', fontWeight: '900', color: 'var(--accent-cyan)', marginBottom: '8px', textTransform: 'uppercase' }}>
+                  🎛️ Code-128 Line Multipliers & Industrial Features:
+                </div>
+
+                <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div className="form-field">
+                    <label>Bar Height ({barHeight}px)</label>
+                    <input type="range" min="35" max="85" value={barHeight} onChange={e => setBarHeight(Number(e.target.value))} />
+                  </div>
+                  <div className="form-field">
+                    <label>Bar Line Thickness ({moduleWidth}px)</label>
+                    <input type="range" min="1.1" max="2.6" step="0.1" value={moduleWidth} onChange={e => setModuleWidth(Number(e.target.value))} />
+                  </div>
+                  <div className="form-field">
+                    <label>Bearer Guard Lines</label>
+                    <select value={bearerBars ? 'YES' : 'NO'} onChange={e => setBearerBars(e.target.value === 'YES')}>
+                      <option value="YES">Top & Bottom Guard Lines</option>
+                      <option value="NO">Standard Flush Edges</option>
+                    </select>
+                  </div>
+                  <div className="form-field">
+                    <label>Quiet Zone Margin</label>
+                    <select value={quietZone ? 'YES' : 'NO'} onChange={e => setQuietZone(e.target.value === 'YES')}>
+                      <option value="YES">Enabled (GS1 Compliance)</option>
+                      <option value="NO">Tight Padding</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px' }}>
+                <button 
+                  type="button" 
+                  className="btn-ghost-edit" 
+                  onClick={() => {
+                    setBarcodeStep(2);
+                    playScanBeep();
+                  }}
+                  style={{ padding: '10px 16px', fontSize: '12px' }}
+                >
+                  ⬅️ Back: Specs
+                </button>
+                <button 
+                  type="button" 
+                  className="btn-luxury-gold" 
+                  onClick={handleSaveToCatalog}
+                  style={{ flex: 1, marginLeft: '10px', justifyContent: 'center', padding: '10px', fontSize: '12px', fontWeight: '900' }}
+                >
+                  <Save size={14} /> 💾 Save to Google Sheets
+                </button>
+              </div>
+            </div>
+          )}
         </div>
-
-        {/* Right Column: Physical Print Layouts & Live Preview */}
+{/* Right Column: Physical Print Layouts & Live Preview */}
         <div className="glass-panel">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ fontSize: '16px', fontWeight: '900' }}>🖨️ Physical 1D Barcode Formats</h3>

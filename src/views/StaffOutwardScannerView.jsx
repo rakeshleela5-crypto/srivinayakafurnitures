@@ -37,6 +37,7 @@ export function StaffOutwardScannerView() {
   const { orders, drivers, updateOrderStatus, showToast } = useStore();
 
   const [sunnyMode, setSunnyMode] = useState(false);
+  const [outwardStep, setOutwardStep] = useState(1);
   const [selectedOrderId, setSelectedOrderId] = useState(orders[0]?.Order_ID || 'ORD-8921');
   const [selectedDriverId, setSelectedDriverId] = useState('DRV-01');
   const [scannedInput, setScannedInput] = useState('');
@@ -679,6 +680,43 @@ export function StaffOutwardScannerView() {
           </div>
         </div>
       )}
+
+      {/* 🧭 3-Step Guided Outward Truck Staging Wizard Navigation */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', background: sunnyMode ? '#E2E8F0' : '#030712', padding: '6px', borderRadius: '12px', border: sunnyMode ? '2px solid #000' : '1px solid rgba(255,255,255,0.08)' }}>
+        {[
+          { step: 1, label: '1. 📋 Route & Driver Staging' },
+          { step: 2, label: '2. 📦 5-Box Zero-Missing Scan' },
+          { step: 3, label: '3. 🚀 Gatepass & WhatsApp OTP' }
+        ].map(s => {
+          const isActive = outwardStep === s.step;
+          const isDone = outwardStep > s.step;
+          return (
+            <button
+              key={s.step}
+              type="button"
+              onClick={() => {
+                setOutwardStep(s.step);
+                playScanBeep();
+              }}
+              style={{
+                padding: '10px 8px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: isActive ? '900' : '700',
+                background: isActive 
+                  ? 'linear-gradient(135deg, #0284C7 0%, #0369A1 100%)' 
+                  : isDone ? 'rgba(16,185,129,0.15)' : 'transparent',
+                color: isActive ? '#FFFFFF' : isDone ? 'var(--accent-emerald)' : sunnyMode ? '#475569' : '#94A3B8',
+                border: isActive ? '2px solid #FFFFFF' : isDone ? '1px solid rgba(16,185,129,0.4)' : '1px solid transparent',
+                cursor: 'pointer',
+                textAlign: 'center'
+              }}
+            >
+              {isDone ? '✓ ' : ''}{s.label}
+            </button>
+          );
+        })}
+      </div>
 
       {/* Main Grid: Loading Bay Cockpit + Granular 5-Box Vehicle Loading Checklist */}
       <div className="dock-scanner-grid">

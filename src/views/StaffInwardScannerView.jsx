@@ -37,6 +37,7 @@ export function StaffInwardScannerView() {
   const { catalog, inventory, adjustStock, showToast } = useStore();
 
   const [sunnyMode, setSunnyMode] = useState(false);
+  const [inwardStep, setInwardStep] = useState(1);
   const [scannedInput, setScannedInput] = useState('');
   const [selectedPoSku, setSelectedPoSku] = useState('BED-MOD-001');
   const [inwardQuantity, setInwardQuantity] = useState(1); // Default to 1 Set
@@ -664,6 +665,43 @@ export function StaffInwardScannerView() {
           </div>
         </div>
       )}
+
+      {/* 🧭 3-Step Guided Inward Dock Wizard Navigation */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', background: sunnyMode ? '#E2E8F0' : '#030712', padding: '6px', borderRadius: '12px', border: sunnyMode ? '2px solid #000' : '1px solid rgba(255,255,255,0.08)' }}>
+        {[
+          { step: 1, label: '1. 🚚 Factory PO & Truck Match' },
+          { step: 2, label: '2. 📷 5-Box Laser QC Scan' },
+          { step: 3, label: '3. 🏷️ Bay Putaway & Restock' }
+        ].map(s => {
+          const isActive = inwardStep === s.step;
+          const isDone = inwardStep > s.step;
+          return (
+            <button
+              key={s.step}
+              type="button"
+              onClick={() => {
+                setInwardStep(s.step);
+                playScanBeep();
+              }}
+              style={{
+                padding: '10px 8px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: isActive ? '900' : '700',
+                background: isActive 
+                  ? 'linear-gradient(135deg, #059669 0%, #047857 100%)' 
+                  : isDone ? 'rgba(16,185,129,0.15)' : 'transparent',
+                color: isActive ? '#FFFFFF' : isDone ? 'var(--accent-emerald)' : sunnyMode ? '#475569' : '#94A3B8',
+                border: isActive ? '2px solid #FFFFFF' : isDone ? '1px solid rgba(16,185,129,0.4)' : '1px solid transparent',
+                cursor: 'pointer',
+                textAlign: 'center'
+              }}
+            >
+              {isDone ? '✓ ' : ''}{s.label}
+            </button>
+          );
+        })}
+      </div>
 
       {/* Main Grid: Live Camera / Laser Gun + Granular Box-by-Box Verification Checklist */}
       <div className="dock-scanner-grid">

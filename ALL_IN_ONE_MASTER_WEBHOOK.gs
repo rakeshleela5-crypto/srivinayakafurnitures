@@ -1652,6 +1652,51 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
     // ==========================================================================================
     // 📦 PACKAGE 3: WAREHOUSE INWARD DOCK & QC RECEIVING
     // ==========================================================================================
+    else if (action === "GENERATE_FACTORY_PO" || action === "SYSTEM_9_AUTOPROCURE_PO" || action === "CREATE_PURCHASE_ORDER") {
+      var poId = params.po_id || ("PO-2026-" + Math.floor(900 + Math.random() * 99));
+      var supplier = params.supplier || "Royal Teak Crafts, Saharanpur (UP)";
+      var sku = params.sku || "BED-MOD-001";
+      var qty = Number(params.qty) || 5;
+      var unitCost = Number(params.unit_cost) || 62000;
+      var totalValue = Number(params.total_value) || (qty * unitCost);
+      var leadDays = Number(params.lead_days) || 14;
+      var expectedDelivery = params.expected_delivery || "15-Sep-2026";
+      var status = params.status || "PO_ACTIVE";
+
+      var poSheet = getOrCreateSheet(ss, "Purchase_Orders_Log", [
+        "PO_ID", "Factory_Plant", "SKU", "Reorder_Qty", "Unit_Cost_INR", 
+        "Total_PO_Value_INR", "Lead_Time_Days", "Expected_Delivery", "PO_Raised_Date_Time", "Status"
+      ], "#10B981");
+
+      if (poSheet) {
+        poSheet.appendRow([
+          poId, supplier, sku, qty, unitCost,
+          totalValue, leadDays, expectedDelivery, currentDateTimeStr, status
+        ]);
+        applyStandardFormat(poSheet);
+      }
+
+      result.po_id = poId;
+      result.supplier = supplier;
+      result.sku = sku;
+      result.total_value = totalValue;
+      result.expected_delivery = expectedDelivery;
+      result.message = "Factory Purchase Order (" + poId + " - Rs. " + totalValue.toLocaleString('en-IN') + ") saved to Purchase_Orders_Log!";
+    }
+
+    else if (action === "SAVE_FACTORY_LEADTIME_POLICIES") {
+      var bedLead = Number(params.bed_lead_days) || 14;
+      var bedBuffer = Number(params.bed_reorder_threshold) || 2;
+      var sofaLead = Number(params.sofa_lead_days) || 21;
+      var sofaBuffer = Number(params.sofa_reorder_threshold) || 1;
+
+      result.bed_lead_days = bedLead;
+      result.bed_reorder_threshold = bedBuffer;
+      result.sofa_lead_days = sofaLead;
+      result.sofa_reorder_threshold = sofaBuffer;
+      result.message = "Predictive Reorder Buffer Policies & Lead Times saved successfully!";
+    }
+
     else if (action === "RECEIVE_INWARD_PO_QC") {
       var poId = params.po_id || "PO-2026-" + Utilities.getUuid().substring(0, 6).toUpperCase();
       var factoryPlant = params.factory_plant || "Godrej Interio Shirwal Plant";

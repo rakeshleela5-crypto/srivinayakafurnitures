@@ -103,6 +103,77 @@ function handleWebhookRequest(params) {
     }
 
     // ------------------------------------------------------------------------------------------
+    // 📁 BULK CSV / EXCEL CATALOG IMPORT & REAL-TIME AUTO-BORDER SYNC ENGINE
+    // ------------------------------------------------------------------------------------------
+    else if (action === "BULK_CATALOG_IMPORT" || action === "IMPORT_CSV_CATALOG") {
+      var catSheet = ss.getSheetByName("Furniture_Catalog");
+      if (!catSheet) {
+        catSheet = bootstrapFurnitureCatalog(ss);
+      }
+
+      var items = params.rows || params.items || [];
+      if (typeof items === "string") {
+        try { items = JSON.parse(items); } catch(e) { items = []; }
+      }
+
+      var importedCount = 0;
+      var curLastRow = catSheet.getLastRow();
+      var existingSkus = {};
+      if (curLastRow > 1) {
+        var existingData = catSheet.getRange(2, 1, curLastRow - 1, 1).getValues();
+        for (var r = 0; r < existingData.length; r++) {
+          var s = String(existingData[r][0] || "").trim().toUpperCase();
+          if (s) existingSkus[s] = r + 2;
+        }
+      }
+
+      var importMode = params.import_mode || "MERGE";
+      if (importMode === "REPLACE" && curLastRow > 1) {
+        catSheet.getRange(2, 1, curLastRow - 1, 12).clearContent();
+        existingSkus = {};
+      }
+
+      for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        var sku = String(item.SKU || item.sku || "GI-SKU-" + (1000 + i)).toUpperCase();
+        var mrp = Number(item.MRP_INR || item.mrp || 45000);
+        var sellPrice = Number(item.Selling_Price_INR || item.selling_price || Math.round(mrp * 0.82));
+        var tier = item.Price_Tier || item.price_tier || (mrp > 90000 ? "Luxury" : mrp > 45000 ? "Premium" : "Executive");
+
+        var rowData = [
+          sku,
+          item.Product_Name || item.product_name || "Godrej Furniture",
+          item.Main_Category || item.main_category || "Living Room",
+          item.Sub_Category || item.sub_category || "Furniture",
+          tier,
+          item.Material_Spec || item.material_spec || "Solid Teak & CRCA Steel Spec",
+          item.Dimensions || item.dimensions || "Standard Size",
+          mrp,
+          sellPrice,
+          Number(item.Warranty_Years || item.warranty_years || 5),
+          Number(item.Total_Component_Boxes || item.total_component_boxes || 3),
+          item.Default_Supplier || item.supplier || "Godrej Interio Hub"
+        ];
+
+        if (existingSkus[sku] && importMode !== "APPEND") {
+          catSheet.getRange(existingSkus[sku], 1, 1, 12).setValues([rowData]);
+          importedCount++;
+        } else if (!existingSkus[sku]) {
+          catSheet.appendRow(rowData);
+          existingSkus[sku] = catSheet.getLastRow();
+          importedCount++;
+        }
+      }
+
+      // Automatically format borders, column divider lines, currency, and auto-widths
+      formatAndBorderCatalogSheet(catSheet);
+
+      result.imported_count = importedCount;
+      result.total_catalog_size = catSheet.getLastRow() - 1;
+      result.message = "Successfully imported & auto-bordered " + importedCount + " CSV furniture products into Google Sheets!";
+    }
+
+    // ------------------------------------------------------------------------------------------
     // SYSTEM 1: AI Room Matcher & Suite Combo Deal
     // ------------------------------------------------------------------------------------------
     

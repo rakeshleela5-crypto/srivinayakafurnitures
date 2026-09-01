@@ -10,7 +10,7 @@ export function DigitalEpodModal({ isOpen, onClose, stop = {} }) {
   const [epodStep, setEpodStep] = useState(1); // 1: OTP & Geotag, 2: Doorstep UPI Settlement, 3: CSAT & Signature Pad
   const [csat, setCsat] = useState(5);
   const [signatureDrawn, setSignatureDrawn] = useState(false);
-  const [otpCode, setOtpCode] = useState(stop.Order_ID ? stop.Order_ID.replace('ORD-', '') : '8921');
+  const [otpCode, setOtpCode] = useState(stop.Order_ID ? String(stop.Order_ID).replace('ORD-', '') : '8921');
   const [amountCollected, setAmountCollected] = useState(stop.Amount_Due || 78247);
   const canvasRef = useRef(null);
 
@@ -64,11 +64,11 @@ export function DigitalEpodModal({ isOpen, onClose, stop = {} }) {
         `🚚 *Delivered By:* Tophan Gouda (Tata Ace OD-18-A-1234)\n` +
         `💰 *Doorstep Settlement:* ₹${Number(amountCollected).toLocaleString()} (Settled ✓)\n` +
         `⭐ *Your Rating:* ${csat}.0 / 5.0 Stars\n` +
-        `🛡️ *5-Year Digital Warranty:* #WAR-GI-${(stop.Order_ID || '8921').replace(/[^0-9]/g, '')}\n\n` +
+        `🛡️ *5-Year Digital Warranty:* #WAR-GI-${String(stop.Order_ID || '8921').replace(/[^0-9]/g, '')}\n\n` +
         `👉 *Download Digital Tax Invoice & Warranty Card:*\nhttps://shreeganesh-godrej.web.app/#documents\n\n` +
         `_Thank you for choosing Godrej Interio Rayagada!_ | 📞 +91 93905 53301`;
 
-      const cleanPhone = stop.Customer_Phone.replace(/[^0-9]/g, '');
+      const cleanPhone = String(stop.Customer_Phone || '').replace(/[^0-9]/g, '');
       const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
       window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(receiptText)}`, '_blank');
     }
@@ -341,7 +341,7 @@ export function SmsDispatchModal({ isOpen, onClose, stop = {} }) {
   if (!isOpen) return null;
 
   const getCleanWhatsAppPhone = () => {
-    let clean = (phone || '').replace(/[^0-9]/g, '');
+    let clean = String(phone || '').replace(/[^0-9]/g, '');
     if (clean.startsWith('0')) clean = clean.substring(1);
     if (clean.startsWith('91') && clean.length > 10) {
       return clean;

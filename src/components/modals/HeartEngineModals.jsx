@@ -237,7 +237,7 @@ export function OrderReschedulerModal({ isOpen, onClose, order = {} }) {
       timestamp: new Date().toISOString()
     });
 
-    const cleanPhone = customerPhone.replace(/[^0-9]/g, '');
+    const cleanPhone = String(customerPhone || '').replace(/[^0-9]/g, '');
     const text = `🚚 *GODREJ INTERIO RAYAGADA — DELIVERY & ASSEMBLY UPDATE*\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
       `Dear ${customerName}, your delivery schedule for Order *#${orderId}* has been updated:\n\n` +
@@ -477,7 +477,7 @@ export function WeddingSuiteModal({ isOpen, onClose }) {
       `👉 *View Full 3D Room Suite Renders:* https://shreeganesh-godrej.web.app/#concierge\n` +
       `📞 *Director VIP Desk:* +91 9390553301 | Main Road, Rayagada`;
 
-    window.open(`https://wa.me/91${phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
+    window.open(`https://wa.me/91${String(phone || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
     showToast(`👑 ${tier} Wedding Suite Brochure dispatched to ${coupleName}!`, true);
     onClose();
   };
@@ -597,7 +597,7 @@ export function MistriQcWarrantyModal({ isOpen, onClose, stop = {} }) {
       `👉 *Download Certificate PDF:* https://shreeganesh-godrej.web.app/#documents\n` +
       `📞 *Customer Care Desk:* +91 9390553301`;
 
-    window.open(`https://wa.me/91${customerPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
+    window.open(`https://wa.me/91${String(customerPhone || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
     showToast(`🛡️ 5-Year Warranty Certificate #${certId} dispatched to ${stop.Customer_Name || 'Customer'}!`, true);
     onClose();
   };
@@ -1079,7 +1079,7 @@ export function GodrejCareAmcModal({ isOpen, onClose, customer = {} }) {
       `• 24-Hour Priority Mistri Breakdown Visit\n\n` +
       `📍 *Godrej Interio Rayagada Hotline:* +91 93905 53301`;
 
-    const waUrl = `https://wa.me/91${phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
+    const waUrl = `https://wa.me/91${String(phone || '').replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
     window.open(waUrl, '_blank');
 
     showToast(`🧼 Godrej Care™ AMC Activated for ${customerName}! WhatsApp Welcome Kit dispatched.`, true);
@@ -1327,7 +1327,7 @@ export function B2bTurnkeyModal({ isOpen, onClose }) {
       `🏢 *Godrej Interio Commercial Projects Division, Rayagada*\n` +
       `📞 *Director Hotline:* +91 93905 53301`;
 
-    const waUrl = `https://wa.me/91${phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
+    const waUrl = `https://wa.me/91${String(phone || '').replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
     window.open(waUrl, '_blank');
 
     showToast(`🏛️ B2B Proposal ${quoteId} generated & dispatched to ${orgName} on WhatsApp!`, true);

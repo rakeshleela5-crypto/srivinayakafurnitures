@@ -367,7 +367,7 @@ export function DocumentStudio() {
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: '16px', fontWeight: '900', color: '#D97706' }}>OFFICIAL DELIVERY CHALLAN</div>
-                <div style={{ fontSize: '12.5px', fontWeight: '800' }}>Challan No: DC-2026-{selectedOrder.Order_ID?.replace('ORD-', '') || '8921'}</div>
+                <div style={{ fontSize: '12.5px', fontWeight: '800' }}>Challan No: DC-2026-{String(selectedOrder.Order_ID || '8921').replace('ORD-', '')}</div>
                 <div style={{ fontSize: '11px', color: '#64748B' }}>Date: {new Date().toLocaleDateString('en-GB')}</div>
               </div>
             </div>
@@ -499,7 +499,7 @@ export function DocumentStudio() {
                     Tamper-Proof Hologram Serial
                   </div>
                   <div style={{ fontSize: '15px', fontWeight: '900', fontFamily: 'JetBrains Mono', color: '#FCD34D' }}>
-                    GDJ-WAR-{selectedOrder.Order_ID?.replace('ORD-', '') || '8921'}-2026
+                    GDJ-WAR-{String(selectedOrder.Order_ID || '8921').replace('ORD-', '')}-2026
                   </div>
                   <div style={{ fontSize: '10.5px', color: '#6EE7B7' }}>
                     ✓ Cryptographically Signed & Cloud Ledger Stored

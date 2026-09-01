@@ -290,7 +290,7 @@ export function ArchitectPayoutModal({ isOpen, onClose, architect = {} }) {
     disburseArchitectPayout(architect.Architect_ID || "VIP-ARC-001", Number(amount), rrn);
 
     const message = generateWhatsAppMessage();
-    const cleanPhone = phone.replace(/[^0-9]/g, '');
+    const cleanPhone = String(phone || '').replace(/[^0-9]/g, '');
     const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
     const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
 
@@ -485,7 +485,7 @@ export function CarpenterDispatchModal({ isOpen, onClose }) {
     triggerGoldenConfetti();
 
     const message = generateWhatsAppMessage();
-    const cleanPhone = targetPhone.replace(/[^0-9]/g, '');
+    const cleanPhone = String(targetPhone || '').replace(/[^0-9]/g, '');
     const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
     const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
 
@@ -721,7 +721,7 @@ export function OrderInvoiceModal({ isOpen, onClose, order = {} }) {
             </div>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: '16px', fontWeight: '900', color: '#0284C7' }}>TAX INVOICE</div>
-              <div style={{ fontSize: '12px', fontWeight: '800' }}>Invoice #: INV-2026-{order.Order_ID ? order.Order_ID.replace('ORD-', '') : '8891'}</div>
+              <div style={{ fontSize: '12px', fontWeight: '800' }}>Invoice #: INV-2026-{order.Order_ID ? String(order.Order_ID).replace('ORD-', '') : '8891'}</div>
               <div style={{ fontSize: '11px', color: '#64748B' }}>Date: 28-Aug-2026</div>
             </div>
           </div>
@@ -1492,7 +1492,7 @@ export function EditVipProjectModal({ isOpen, onClose, project }) {
       `• *Current Account Status:* ${stage}\n\n` +
       `📞 *Director Desk:* +91 9390553301 | Shree Ganesh Enterprises`;
 
-    window.open(`https://wa.me/${phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
+    window.open(`https://wa.me/${String(phone || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   return (

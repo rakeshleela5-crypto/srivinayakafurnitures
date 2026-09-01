@@ -115,7 +115,7 @@ export function WhatsAppProposalModal({ isOpen, onClose, proposalData = {} }) {
         `*Flagship Store:* Near New Bus Stand, Rayagada | 📞 9390553301`;
     }
 
-    const cleanPhone = customerPhone.replace(/[^0-9]/g, '');
+    const cleanPhone = String(customerPhone || '').replace(/[^0-9]/g, '');
     const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
     const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
 
@@ -410,7 +410,7 @@ export function EmiSchemeModal({ isOpen, onClose, amount = 125000, customerPhone
     playSuccessChime();
     triggerGoldenConfetti();
     const message = generateEmiMessage();
-    const cleanPhone = customerPhone.replace(/[^0-9]/g, '');
+    const cleanPhone = String(customerPhone || '').replace(/[^0-9]/g, '');
     const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
     const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
 
@@ -659,7 +659,7 @@ export function FurnitureExchangeModal({ isOpen, onClose, onApplyDiscount, custo
 
     if (sendWhatsApp) {
       const message = generateBuybackMessage();
-      const cleanPhone = phone.replace(/[^0-9]/g, '');
+      const cleanPhone = String(phone || '').replace(/[^0-9]/g, '');
       const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
       window.open(`https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`, '_blank');
     }

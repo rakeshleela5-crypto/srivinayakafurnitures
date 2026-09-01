@@ -7,7 +7,7 @@ import { STORE_METADATA } from '../data/initialData';
 // FIX 2: Hardcoded fallback URL — even if localStorage AND STORE_METADATA fail,
 // the webhook will ALWAYS fire to the correct endpoint
 // ============================================================================
-const HARDCODED_FALLBACK_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxDOn7rk0D3IL_s5-jLscvpz_Gg3-9qWSpXFRzugPlUpv2xq9Npag0cehBAYQDBJKep/exec";
+const HARDCODED_FALLBACK_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxjQNkOWMtaDYZHaCoEp-jDF5dD8HMuAjnvPBiHlMVeMBTIjJ8tlPo39JBWaMezkzj9/exec";
 
 export function formatDateTimeIndian(date = new Date()) {
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];

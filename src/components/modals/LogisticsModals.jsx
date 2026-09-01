@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { DynamicQrCode } from '../../utils/qrcodeGenerator';
 import { X, Check, Truck, Navigation, Star, Camera, MessageSquare, AlertTriangle, QrCode, Printer, Copy, Send, Share2 } from 'lucide-react';
@@ -323,13 +323,34 @@ export function DigitalEpodModal({ isOpen, onClose, stop = {} }) {
 
 export function SmsDispatchModal({ isOpen, onClose, stop = {} }) {
   const { showToast } = useStore();
-  const [phone, setPhone] = useState(stop.Customer_Phone || "9437188291");
-  const [otp, setOtp] = useState("8921");
-  const [driver, setDriver] = useState("Tophan Gouda (+91 94371 88291)");
+  const [phone, setPhone] = useState(stop.Customer_Phone || "9390553301");
+  const [otp, setOtp] = useState(stop.OTP_Code || "8899");
+  const [driver, setDriver] = useState(stop.Driver || "Tophan Gouda (+91 94371 88291)");
   const [vehicle, setVehicle] = useState("Tata Ace (OD-18-A-1234)");
   const [lang, setLang] = useState('EN');
 
+  // Synchronize state dynamically whenever a new customer stop is selected
+  useEffect(() => {
+    if (isOpen && stop) {
+      if (stop.Customer_Phone) setPhone(stop.Customer_Phone);
+      if (stop.OTP_Code) setOtp(stop.OTP_Code);
+      if (stop.Driver) setDriver(stop.Driver);
+    }
+  }, [isOpen, stop]);
+
   if (!isOpen) return null;
+
+  const getCleanWhatsAppPhone = () => {
+    let clean = (phone || '').replace(/[^0-9]/g, '');
+    if (clean.startsWith('0')) clean = clean.substring(1);
+    if (clean.startsWith('91') && clean.length > 10) {
+      return clean;
+    }
+    if (clean.length === 10) {
+      return `91${clean}`;
+    }
+    return clean || '919390553301';
+  };
 
   const generateWhatsAppMessage = () => {
     if (lang === 'OR') {
@@ -382,19 +403,18 @@ export function SmsDispatchModal({ isOpen, onClose, stop = {} }) {
       `_Shree Ganesh Enterprises (Godrej Interio Rayagada)_ | 📞 +91 93905 53301`;
   };
 
-  const handleSendWhatsApp = () => {
+  const handleSendWhatsApp = (e) => {
     playSuccessChime();
     triggerGoldenConfetti();
 
     const message = generateWhatsAppMessage();
-    const cleanPhone = phone.replace(/[^0-9]/g, '');
-    const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+    const formattedPhone = getCleanWhatsAppPhone();
     const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
 
     dispatchWebhookAction('DISPATCH_DELIVERY_OTP', {
       order_id: stop.Order_ID || "ORD-8921",
       customer_name: stop.Customer_Name || "Customer",
-      phone: phone,
+      phone: formattedPhone,
       otp_code: otp,
       driver: driver,
       vehicle: vehicle,
@@ -402,8 +422,16 @@ export function SmsDispatchModal({ isOpen, onClose, stop = {} }) {
       language: lang
     });
 
-    window.open(whatsappUrl, '_blank');
-    showToast(`📲 Dispatched Live WhatsApp Delivery OTP to ${phone}!`, true);
+    try {
+      const win = window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
+      if (!win || win.closed || typeof win.closed === 'undefined') {
+        window.location.href = whatsappUrl;
+      }
+    } catch (err) {
+      window.location.href = whatsappUrl;
+    }
+
+    showToast(`📲 Dispatched Live WhatsApp Delivery OTP to +${formattedPhone}!`, true);
     onClose();
   };
 
@@ -412,6 +440,8 @@ export function SmsDispatchModal({ isOpen, onClose, stop = {} }) {
     navigator.clipboard.writeText(generateWhatsAppMessage());
     showToast(`📋 Copied Delivery OTP Message to clipboard!`);
   };
+
+  const targetWhatsAppUrl = `https://wa.me/${getCleanWhatsAppPhone()}?text=${encodeURIComponent(generateWhatsAppMessage())}`;
 
   return (
     <div className="modal-overlay" style={{ zIndex: 9999 }}>
@@ -478,9 +508,16 @@ export function SmsDispatchModal({ isOpen, onClose, stop = {} }) {
           <button className="btn-ghost-edit" onClick={handleCopyText} style={{ flex: 1, justifyContent: 'center' }}>
             <Copy size={14} /> Copy
           </button>
-          <button className="btn-emerald" onClick={handleSendWhatsApp} style={{ flex: 2, justifyContent: 'center', padding: '12px' }}>
+          <a 
+            href={targetWhatsAppUrl} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            onClick={handleSendWhatsApp} 
+            className="btn-emerald" 
+            style={{ flex: 2, justifyContent: 'center', padding: '12px', textDecoration: 'none', color: '#FFFFFF', fontWeight: '900', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
             <Send size={16} /> 📲 Send WhatsApp Live OTP & Tracker
-          </button>
+          </a>
         </div>
       </div>
     </div>

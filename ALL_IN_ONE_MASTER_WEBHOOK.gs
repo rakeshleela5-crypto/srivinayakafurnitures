@@ -1626,7 +1626,43 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
           }
         }
         applyStandardFormat(catSheet);
-      }
+ 
+
+        // 🌟 AUTOMATIC DUAL-TABLE PROVISIONING: Auto-sync new SKUs into Inventory_Stock
+        var invSheet = getSheetByNameFlexible(ss, ["Inventory_Stock", "03_Inventory_Stock", "Inventory Stock"]);
+        if (invSheet) {
+          var invData = invSheet.getDataRange().getValues();
+          var invSkuMap = {};
+          for (var v = 1; v < invData.length; v++) {
+            if (invData[v][0]) {
+              invSkuMap[invData[v][0].toString().trim().toUpperCase()] = v + 1;
+            }
+          }
+          if (importMode === "REPLACE" && invSheet.getLastRow() > 1) {
+            invSheet.deleteRows(2, invSheet.getLastRow() - 1);
+            invSkuMap = {};
+          }
+          for (var j = 0; j < items.length; j++) {
+            var it = items[j];
+            var sKey = (it.SKU || it.sku || "GI-CSV-" + (1000 + j)).toString().trim().toUpperCase();
+            var pName = it.Product_Name || it.product_name || it.Name || it.name || "Furniture Model";
+            var cName = it.Main_Category || it.main_category || it.Category || it.category || "Living / Bedroom";
+            var stockQty = Number(it.Warehouse_Stock_Qty || it.Showroom_Stock || it.In_Stock_Warehouse) || 5;
+            var bayLoc = it.Assigned_Bay || it.bay || ("Bay " + ((j % 6) + 1));
+
+            var invRowData = [
+              sKey, sKey, pName, cName, stockQty, 0, 0, 2, 2, bayLoc, currentDateTimeStr, currentDateTimeStr
+            ];
+
+            if (invSkuMap[sKey] && importMode !== "APPEND") {
+              invSheet.getRange(invSkuMap[sKey], 1, 1, invRowData.length).setValues([invRowData]);
+            } else if (!invSkuMap[sKey]) {
+              invSheet.appendRow(invRowData);
+              invSkuMap[sKey] = invSheet.getLastRow();
+            }
+          }
+          applyStandardFormat(invSheet);
+        }     }
 
       var auditSheet = getSheetByNameFlexible(ss, ["AppSheet_Bots_Log", "System_Audit_Log", "Store_Alerts_Log"]);
       if (auditSheet) {

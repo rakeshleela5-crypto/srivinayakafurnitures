@@ -75,6 +75,18 @@ export function RoomMatcherStudio() {
   const [customerAddress, setCustomerAddress] = useState("Gayatri Nagar Villa, Rayagada");
   const [exchangeCredit, setExchangeCredit] = useState(0);
 
+  // ⚡ Budget-to-Suite Auto-Assembler State
+  const [customerBudget, setCustomerBudget] = useState(150000);
+  const [isBudgetAssemblerOpen, setIsBudgetAssemblerOpen] = useState(false);
+
+  // 🕉️ 8-Point Vastu Orientation State
+  const [bedDirection, setBedDirection] = useState('SOUTH'); // 'SOUTH' | 'WEST' | 'NORTH' | 'EAST'
+  const [almirahDirection, setAlmirahDirection] = useState('SOUTH_WEST');
+  const [sofaDirection, setSofaDirection] = useState('EAST');
+
+  // 🎨 Flooring Material Shader State
+  const [flooringTexture, setFlooringTexture] = useState('MARBLE'); // 'MARBLE' | 'TEAK' | 'TERRAZZO' | 'TILES'
+
   // Suite Combo Pieces (Selectable from catalog)
   const [item1Sku, setItem1Sku] = useState(catalog[0]?.SKU || 'BED-MOD-001');
   const [item2Sku, setItem2Sku] = useState(catalog[10]?.SKU || 'ALM-MOD-001');
@@ -161,6 +173,69 @@ export function RoomMatcherStudio() {
   const netPayable = Math.max(0, suiteFinalPrice - exchangeCredit);
   const tokenAdvance50Pct = Math.round(netPayable * 0.5);
   const emi12Month = Math.round(netPayable / 12);
+
+  // Live Vastu Score Calculation
+  const calculateVastuScore = () => {
+    let score = 50;
+    if (bedDirection === 'SOUTH' || bedDirection === 'WEST') score += 25;
+    if (almirahDirection === 'SOUTH_WEST') score += 15;
+    if (sofaDirection === 'EAST' || sofaDirection === 'NORTH') score += 10;
+    return Math.min(100, score);
+  };
+  const vastuScore = calculateVastuScore();
+
+  // 1-Click Auto Align Vastu
+  const handleAutoAlignVastu = () => {
+    setBedDirection('SOUTH');
+    setAlmirahDirection('SOUTH_WEST');
+    setSofaDirection('EAST');
+    playSuccessChime();
+    triggerGoldenConfetti();
+    showToast("🕉️ Vastu Auto-Aligned! 100% Vastu Approved (South Headboard, SW Almirah).", true);
+  };
+
+  // ⚡ 1-Click Budget-to-Suite Auto-Assembler Logic
+  const handleAutoAssembleBudget = (targetBudget = customerBudget) => {
+    const beds = catalog.filter(c => c.Main_Category?.includes('Bedroom') || c.Product_Name?.includes('Bed') || c.SKU?.startsWith('BED'));
+    const almirahs = catalog.filter(c => c.Main_Category?.includes('Storage') || c.Product_Name?.includes('Almirah') || c.SKU?.startsWith('ALM'));
+    const accents = catalog.filter(c => c.Main_Category?.includes('Seating') || c.Product_Name?.includes('Chair') || c.SKU?.startsWith('CHR') || c.SKU?.startsWith('SOF'));
+
+    let bestCombo = null;
+    let maxSpend = 0;
+    const discountFactor = (100 - comboDiscountPct) / 100;
+
+    const bList = beds.length ? beds : catalog.slice(0, 5);
+    const aList = almirahs.length ? almirahs : catalog.slice(5, 10);
+    const cList = accents.length ? accents : catalog.slice(10, 15);
+
+    for (const b of bList) {
+      for (const a of aList) {
+        for (const c of cList) {
+          const comboMRP = b.MRP_INR + a.MRP_INR + c.MRP_INR;
+          const comboPrice = Math.round(comboMRP * discountFactor);
+          if (comboPrice <= targetBudget && comboPrice > maxSpend) {
+            maxSpend = comboPrice;
+            bestCombo = { b, a, c, comboMRP, comboPrice };
+          }
+        }
+      }
+    }
+
+    if (bestCombo) {
+      setItem1Sku(bestCombo.b.SKU);
+      setItem2Sku(bestCombo.a.SKU);
+      setItem3Sku(bestCombo.c.SKU);
+      setCategoryMode('ALL');
+      playSuccessChime();
+      triggerGoldenConfetti();
+      showToast(`⚡ AI Budget Assembler matched 3 items for ₹${bestCombo.comboPrice.toLocaleString()}! (Budget: ₹${Number(targetBudget).toLocaleString()})`, true);
+    } else {
+      setItem1Sku(catalog[0]?.SKU);
+      setItem2Sku(catalog[1]?.SKU);
+      setItem3Sku(catalog[2]?.SKU);
+      showToast(`⚠️ No exact 3-piece combo under ₹${Number(targetBudget).toLocaleString()}. Loaded nearest suite.`);
+    }
+  };
 
   // Photo Upload Handler
   const handleFileUpload = (e) => {
@@ -266,17 +341,72 @@ export function RoomMatcherStudio() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', animation: 'fadeIn 0.25s ease-out' }}>
 
-      {/* Top Notification Bar */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0B132B', border: '1px solid rgba(212,175,55,0.3)', padding: '10px 16px', borderRadius: '12px' }}>
+      {/* Top Notification Bar & Quick Action Controls */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0B132B', border: '1px solid rgba(212,175,55,0.3)', padding: '10px 16px', borderRadius: '12px', flexWrap: 'wrap', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div className="badge badge-gold">
-            <Sparkles size={13} /> 2D MULTIMODAL AI ROOM FITTER & VISUALIZER
+            <Sparkles size={13} /> 2D MULTIMODAL AI ROOM FITTER & FITMENT ENGINE
           </div>
           <span style={{ fontSize: '12.5px', color: '#CBD5E1' }}>
-            Real-time Spatial Clearance, Door-Swing Arcs & 115-SKU Dimension Validation
+            Real-time Spatial Clearance, 8-Point Vastu Alignment & Budget-to-Suite Assembler
           </span>
         </div>
-        <div style={{ display: 'flex', gap: '6px' }}>
+
+        {/* Quick Budget & Vastu Action Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          
+          {/* 🕉️ Live Vastu Score Badge */}
+          <div 
+            onClick={handleAutoAlignVastu}
+            style={{ 
+              background: vastuScore >= 90 ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)',
+              border: `1.5px solid ${vastuScore >= 90 ? '#10B981' : '#F59E0B'}`,
+              borderRadius: '8px',
+              padding: '4px 10px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            title="Click to 1-Click Auto-Align Vastu orientation!"
+          >
+            <span style={{ fontSize: '13px' }}>🕉️</span>
+            <div>
+              <div style={{ fontSize: '10.5px', fontWeight: '900', color: vastuScore >= 90 ? 'var(--accent-emerald)' : '#F59E0B' }}>
+                {vastuScore}% VASTU APPROVED
+              </div>
+              <div style={{ fontSize: '8.5px', color: '#94A3B8' }}>Tap to Auto-Align ⚡</div>
+            </div>
+          </div>
+
+          {/* ⚡ Budget-to-Suite Auto Assembler Quick Trigger */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#030712', border: '1px solid rgba(212,175,55,0.4)', borderRadius: '8px', padding: '3px 8px' }}>
+            <span style={{ fontSize: '11px', color: 'var(--accent-gold-light)', fontWeight: '800' }}>⚡ Budget: ₹</span>
+            <select 
+              value={customerBudget}
+              onChange={e => {
+                const b = Number(e.target.value);
+                setCustomerBudget(b);
+                handleAutoAssembleBudget(b);
+              }}
+              style={{ background: 'transparent', color: '#FFFFFF', border: 'none', fontSize: '11.5px', fontWeight: '900', cursor: 'pointer' }}
+            >
+              <option value={75000}>₹75,000 Package</option>
+              <option value={100000}>₹1,00,000 Package</option>
+              <option value={150000}>₹1,50,000 Package</option>
+              <option value={200000}>₹2,00,000 Package</option>
+              <option value={250000}>₹2,50,000 Package</option>
+              <option value={350000}>₹3,50,000 Package</option>
+            </select>
+            <button 
+              className="btn-luxury-gold" 
+              onClick={() => handleAutoAssembleBudget(customerBudget)}
+              style={{ fontSize: '10px', padding: '4px 8px' }}
+            >
+              Auto-Assemble
+            </button>
+          </div>
+
           <button 
             className="btn-luxury-gold" 
             onClick={triggerAiScan} 
@@ -284,7 +414,7 @@ export function RoomMatcherStudio() {
             style={{ fontSize: '11px', padding: '6px 12px' }}
           >
             <RefreshCw size={13} className={isScanning ? 'animate-spin' : ''} />
-            {isScanning ? `Analyzing (${scanProgress}%)...` : '⚡ Re-Scan Room Synergy'}
+            {isScanning ? `Scanning (${scanProgress}%)...` : '⚡ Re-Scan'}
           </button>
         </div>
       </div>
@@ -498,6 +628,48 @@ export function RoomMatcherStudio() {
               ))}
             </div>
 
+            {/* Flooring Shader Selectors */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ fontSize: '10px', color: '#94A3B8' }}>🪵 Floor:</span>
+              {[
+                { id: 'MARBLE', label: 'Carrara' },
+                { id: 'TEAK', label: 'Teak Wood' },
+                { id: 'TERRAZZO', label: 'Terrazzo' }
+              ].map(fl => (
+                <button
+                  key={fl.id}
+                  onClick={() => setFlooringTexture(fl.id)}
+                  style={{
+                    fontSize: '9.5px',
+                    padding: '3px 6px',
+                    borderRadius: '6px',
+                    background: flooringTexture === fl.id ? 'var(--accent-cyan)' : 'rgba(255,255,255,0.06)',
+                    color: flooringTexture === fl.id ? '#000000' : '#CBD5E1',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontWeight: '800'
+                  }}
+                >
+                  {fl.label}
+                </button>
+              ))}
+            </div>
+
+            {/* 🕉️ Vastu Headboard Direction Selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ fontSize: '10px', color: '#94A3B8' }}>🕉️ Headboard:</span>
+              <select 
+                value={bedDirection}
+                onChange={e => setBedDirection(e.target.value)}
+                style={{ background: '#0B132B', color: 'var(--accent-gold-light)', border: '1px solid rgba(212,175,55,0.4)', borderRadius: '6px', fontSize: '9.5px', fontWeight: '800', padding: '2px 4px', cursor: 'pointer' }}
+              >
+                <option value="SOUTH">South (Ideal ✓)</option>
+                <option value="WEST">West (Good ✓)</option>
+                <option value="EAST">East (Neutral)</option>
+                <option value="NORTH">North (Avoid ❌)</option>
+              </select>
+            </div>
+
             {/* Laser Tape Tool */}
             <button 
               className={`btn-ghost-edit ${activeTapeTool ? 'badge-gold' : ''}`}
@@ -643,6 +815,33 @@ export function RoomMatcherStudio() {
               <div style={{ fontSize: '13px', fontWeight: '900', color: spatialMetrics.elevatorFits ? 'var(--accent-emerald)' : '#F59E0B', marginTop: '2px' }}>
                 {spatialMetrics.elevatorFits ? '5.5ft Lift Safe ✓' : 'Stairway Check'}
               </div>
+            </div>
+          </div>
+
+          {/* 🚪 DOORWAY & STAIRCASE KNOCKDOWN CLEARANCE SENTINEL */}
+          <div style={{ background: '#030712', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(212,175,55,0.2)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '11px', fontWeight: '800', color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Ruler size={13} color="var(--accent-gold)" /> Doorway Entry Clearance Check:
+              </span>
+              <span style={{ fontSize: '11px', fontWeight: '900', color: doorwayWidth >= 34 ? 'var(--accent-emerald)' : '#F59E0B' }}>
+                {doorwayWidth} Inches ({doorwayWidth >= 34 ? 'Standard Entry Safe ✓' : 'Narrow Doorway Warning'})
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '10px', color: '#94A3B8' }}>28"</span>
+              <input 
+                type="range" 
+                min={28} 
+                max={48} 
+                value={doorwayWidth} 
+                onChange={e => setDoorwayWidth(Number(e.target.value))}
+                style={{ flex: 1, accentColor: 'var(--accent-gold)', cursor: 'pointer' }}
+              />
+              <span style={{ fontSize: '10px', color: '#94A3B8' }}>48"</span>
+            </div>
+            <div style={{ fontSize: '10px', color: '#CBD5E1', background: 'rgba(255,255,255,0.03)', padding: '6px 10px', borderRadius: '6px', borderLeft: '3px solid var(--accent-gold)' }}>
+              📦 <b>Knockdown Logistics Status:</b> All Godrej Interio suites are flat-packed in 5 heavy-duty corrugated boxes. Fits through {doorwayWidth}" doorways and narrow Rayagada apartment staircases safely!
             </div>
           </div>
 

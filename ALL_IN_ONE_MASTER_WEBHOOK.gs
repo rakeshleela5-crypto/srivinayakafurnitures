@@ -200,7 +200,9 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
       var address = params.address || "Gayatri Nagar Villa, Rayagada";
       var orderedSku = params.ordered_sku || "BED-MOD-001 (Royal Teak Bed) + WDR-MOD-001";
       var amount = Number(params.amount) || 169000;
+      var advanceAmount = Number(params.advance_amount) || Math.round(amount * 0.5);
 
+      // 1. Append to Orders_SafeLock
       if (sheet) {
         sheet.appendRow([
           newOrderId,                            // Col A (1):  Order_ID
@@ -219,16 +221,66 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
         ]);
         applyStandardFormat(sheet);
       }
+
+      // 2. SafeLock Atomic Stock Reservation in Inventory_Stock (Table 3)
+      var targetSku = params.sku || (orderedSku.includes("BED") ? "BED-MOD-001" : orderedSku.includes("SOF") ? "SOF-MOD-001" : "BED-MOD-001");
+      var invSheet = getSheetByNameFlexible(ss, ["Inventory_Stock", "03_Inventory_Stock", "Inventory Stock"]);
+      var newWh = 4;
+      var newRes = 1;
+      if (invSheet) {
+        var invData = invSheet.getDataRange().getValues();
+        for (var j = 1; j < invData.length; j++) {
+          if (invData[j][0] == targetSku || invData[j][1] == targetSku || (orderedSku && String(orderedSku).indexOf(String(invData[j][0])) !== -1)) {
+            var currWh = Number(invData[j][4]) || 5;  // Col E (5): Warehouse_Stock_Qty
+            var currRes = Number(invData[j][5]) || 0; // Col F (6): Reserved_SafeLock_Qty
+            newWh = Math.max(0, currWh - 1);
+            newRes = currRes + 1;
+            invSheet.getRange(j + 1, 5).setValue(newWh);
+            invSheet.getRange(j + 1, 6).setValue(newRes);
+            invSheet.getRange(j + 1, 12).setValue(currentDateTimeStr);
+            result.decremented_sku = invData[j][0];
+            result.new_warehouse_qty = newWh;
+            result.new_reserved_qty = newRes;
+            break;
+          }
+        }
+      }
+
+      // 3. Log Advance Payment to Payments_Log
+      if (advanceAmount > 0) {
+        var paySheet = getOrCreateSheet(ss, "Payments_Log", [
+          "Txn_ID", "Payment_Date_Time", "Order_ID", "Customer_Name", "Payment_Type", 
+          "Amount_INR", "Payment_Mode", "UPI_VPA", "UPI_Transaction_Ref", 
+          "Merchant_Name", "Collected_By", "Status"
+        ], "#047857");
+        if (paySheet) {
+          paySheet.appendRow([
+            "TXN-ADV-" + Math.floor(1000 + Math.random() * 9000),
+            currentDateTimeStr,
+            newOrderId,
+            customerName,
+            "ADVANCE_TOKEN_50",
+            advanceAmount,
+            "DYNAMIC_UPI_QR",
+            "9390553301@ybl",
+            "UPI-ADV-" + Math.floor(100000 + Math.random() * 900000),
+            "Godrej Interio Rayagada",
+            "Voice POS Desk",
+            "SETTLED"
+          ]);
+          applyStandardFormat(paySheet);
+        }
+      }
+
       result.order_id = newOrderId;
       result.date_time = currentDateTimeStr;
       result.customer = customerName;
       result.amount = amount;
-      result.message = "Order #" + newOrderId + " recorded in Google Sheets on " + currentDateTimeStr + "!";
+      result.new_warehouse_qty = newWh;
+      result.new_reserved_qty = newRes;
+      result.message = "Order #" + newOrderId + " recorded in Google Sheets! Stock decremented from " + (newWh + 1) + " to " + newWh + " (Reserved: " + newRes + ").";
     }
 
-    // ------------------------------------------------------------------------------------------
-    // SHOWROOM CRM: Log New Footfall Inquiry (Orders_SafeLock + Inquiries_Log)
-    // ------------------------------------------------------------------------------------------
     else if (action === "LOG_NEW_INQUIRY") {
       var sheet = getSheetByNameFlexible(ss, ["Orders_SafeLock", "05_Orders_SafeLock", "Orders SafeLock"]);
       var inquiryId = params.inquiry_id || ("INQ-2026-" + Math.floor(100 + Math.random() * 900));
@@ -1985,14 +2037,15 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
       var customerPhone = (params.customer_phone || "9437188291").toString().replace(/[^0-9]/g, "");
       var address = params.address || "Gayatri Nagar Villa, Rayagada";
       var suiteSku = params.suite_sku || params.sku || "3-Item Room Suite Combo";
-      var finalAmount = Number(params.final_price_inr) || Number(params.amount) || 158000;
-      var advanceToken = Number(params.advance_token_inr) || Math.round(finalAmount * 0.5);
+      var finalAmount = Number(params.final_price_inr || params.final_price) || Number(params.amount) || 158000;
+      var advanceToken = Number(params.advance_token_inr || params.advance_token) || Math.round(finalAmount * 0.5);
 
+      // 1. Append to Orders_SafeLock
       if (ordSheet) {
         ordSheet.appendRow([
           orderId,
           customerName,
-          customerPhone,
+          Number(customerPhone) || 9437188291,
           address,
           "VIP-ARC-001",
           suiteSku,
@@ -2007,14 +2060,64 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
         applyStandardFormat(ordSheet);
       }
 
+      // 2. SafeLock Atomic Stock Reservation in Inventory_Stock (Table 3)
+      var targetSku = suiteSku.includes("BED") ? "BED-MOD-001" : suiteSku.includes("SOF") ? "SOF-MOD-001" : "BED-MOD-001";
+      var invSheet = getSheetByNameFlexible(ss, ["Inventory_Stock", "03_Inventory_Stock", "Inventory Stock"]);
+      var newWh = 4;
+      var newRes = 1;
+      if (invSheet) {
+        var invData = invSheet.getDataRange().getValues();
+        for (var j = 1; j < invData.length; j++) {
+          if (invData[j][0] == targetSku || invData[j][1] == targetSku || (suiteSku && String(suiteSku).indexOf(String(invData[j][0])) !== -1)) {
+            var currWh = Number(invData[j][4]) || 5;
+            var currRes = Number(invData[j][5]) || 0;
+            newWh = Math.max(0, currWh - 1);
+            newRes = currRes + 1;
+            invSheet.getRange(j + 1, 5).setValue(newWh);
+            invSheet.getRange(j + 1, 6).setValue(newRes);
+            invSheet.getRange(j + 1, 12).setValue(currentDateTimeStr);
+            result.decremented_sku = invData[j][0];
+            result.new_warehouse_qty = newWh;
+            result.new_reserved_qty = newRes;
+            break;
+          }
+        }
+      }
+
+      // 3. Log Advance Payment
+      if (advanceToken > 0) {
+        var paySheet = getOrCreateSheet(ss, "Payments_Log", [
+          "Txn_ID", "Payment_Date_Time", "Order_ID", "Customer_Name", "Payment_Type", 
+          "Amount_INR", "Payment_Mode", "UPI_VPA", "UPI_Transaction_Ref", 
+          "Merchant_Name", "Collected_By", "Status"
+        ], "#047857");
+        if (paySheet) {
+          paySheet.appendRow([
+            "TXN-ADV-" + Math.floor(1000 + Math.random() * 9000),
+            currentDateTimeStr,
+            orderId,
+            customerName,
+            "ROOM_MATCHER_50_ADVANCE",
+            advanceToken,
+            "DYNAMIC_UPI_QR",
+            "9390553301@ybl",
+            "UPI-ADV-" + Math.floor(100000 + Math.random() * 900000),
+            "Godrej Interio Rayagada",
+            "AI Room Matcher Studio",
+            "SETTLED"
+          ]);
+          applyStandardFormat(paySheet);
+        }
+      }
+
       result.order_id = orderId;
       result.customer_name = customerName;
       result.final_amount = finalAmount;
       result.advance_token = advanceToken;
-      result.message = "Room Matcher Suite Order #" + orderId + " (Rs. " + finalAmount.toLocaleString('en-IN') + ") successfully converted to SafeLock Order!";
+      result.new_warehouse_qty = newWh;
+      result.new_reserved_qty = newRes;
+      result.message = "Room Matcher Suite Order #" + orderId + " (Rs. " + finalAmount.toLocaleString('en-IN') + ") SafeLocked with stock reservation (Warehouse: " + newWh + ", Reserved: " + newRes + ")!";
     }
-
-    
 
     // ==========================================================================================
     // 🛋️ SMART FURNITURE 48-HOUR FOLLOW-UP & FESTIVE DRIP ENGINE

@@ -16,7 +16,8 @@ import {
   Smartphone,
   Layers,
   ArrowRight,
-  TrendingDown
+  TrendingDown,
+  Copy
 } from 'lucide-react';
 import { DynamicQrCode } from '../../utils/qrcodeGenerator';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../../utils/audioUtils';

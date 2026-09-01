@@ -28,7 +28,9 @@ import {
   DollarSign,
   Printer,
   Sliders,
-  Layers
+  Layers,
+  Maximize2,
+  RotateCcw
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, playSafeLockSound, triggerGoldenConfetti, speakVoiceFeedback } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';

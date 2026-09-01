@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
+import CustomerOrderSearchSelector from '../components/common/CustomerOrderSearchSelector';
 import { 
   Truck, 
   MapPin, 
@@ -153,29 +154,13 @@ export function LogisticsEpodView() {
             </span>
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#030712', padding: '4px 10px', borderRadius: '8px', border: '1.5px solid var(--accent-gold)' }}>
-              <span style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: '800' }}>🔍 Spotlight Customer:</span>
-              <select
-                value={selectedCustomerFilter}
-                onChange={e => setSelectedCustomerFilter(e.target.value)}
-                style={{
-                  background: '#0B132B',
-                  color: '#FFFFFF',
-                  border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: '6px',
-                  padding: '4px 8px',
-                  fontSize: '11px',
-                  fontWeight: '700'
-                }}
-              >
-                <option value="ALL">All Customers ({activeManifestStops.length} Stops)</option>
-                {orders.map(o => (
-                  <option key={o.Order_ID} value={o.Order_ID}>
-                    #{o.Order_ID} — {o.Customer_Name}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <CustomerOrderSearchSelector
+              selectedOrderId={selectedCustomerFilter === 'ALL' ? '' : selectedCustomerFilter}
+              onSelectOrder={(orderId) => setSelectedCustomerFilter(orderId || 'ALL')}
+              placeholder="🔍 Spotlight Delivery Stop / Customer..."
+              allLabel={`All Deliveries (${activeManifestStops.length} Stops)`}
+              compact={true}
+            />
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>Driver:</span>

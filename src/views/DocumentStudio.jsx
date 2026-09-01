@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
+import CustomerOrderSearchSelector from '../components/common/CustomerOrderSearchSelector';
 import { 
   FileText, 
   Printer, 
@@ -41,28 +42,16 @@ export function DocumentStudio() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', background: '#0B132B', padding: '12px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }} className="no-print">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-gold)' }}>Select Customer / Order:</span>
-          <select
-            value={selectedOrder.Order_ID || (orders[0] && orders[0].Order_ID)}
-            onChange={e => {
-              const matched = orders.find(o => o.Order_ID === e.target.value);
-              if (matched) setSelectedOrder(matched);
+          <CustomerOrderSearchSelector
+            selectedOrderId={selectedOrder.Order_ID}
+            onSelectOrder={(orderId, orderObj) => {
+              if (orderObj) setSelectedOrder(orderObj);
+              else if (orders.length > 0) setSelectedOrder(orders[0]);
             }}
-            style={{
-              background: '#030712',
-              color: '#FFFFFF',
-              border: '1.5px solid var(--accent-gold)',
-              borderRadius: '8px',
-              padding: '6px 12px',
-              fontSize: '12px',
-              fontWeight: '700'
-            }}
-          >
-            {orders.map(o => (
-              <option key={o.Order_ID} value={o.Order_ID}>
-                #{o.Order_ID} — {o.Customer_Name} ({o.Ordered_SKU ? o.Ordered_SKU.slice(0, 30) : 'Order'}...)
-              </option>
-            ))}
-          </select>
+            placeholder="🔍 Search Customer, Phone, Order ID..."
+            allowAll={false}
+            style={{ width: '320px' }}
+          />
         </div>
 
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>

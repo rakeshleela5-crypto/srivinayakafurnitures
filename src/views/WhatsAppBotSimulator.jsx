@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
+import CustomerOrderSearchSelector from '../components/common/CustomerOrderSearchSelector';
 import { 
   Smartphone, 
   Send, 
@@ -389,35 +390,18 @@ export function WhatsAppBotSimulator() {
 
         {/* Customer Spotlight Selector for Simulation */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', margin: '8px 0 12px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#030712', padding: '4px 10px', borderRadius: '8px', border: '1.5px solid var(--accent-gold)' }}>
-            <span style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: '800' }}>🔍 Spotlight Customer for Simulation:</span>
-            <select
-              value={selectedCustomerFilter}
-              onChange={e => {
-                setSelectedCustomerFilter(e.target.value);
-                const order = orders.find(o => o.Order_ID === e.target.value);
-                if (order) {
-                  showToast(`👤 Loaded ${order.Customer_Name} (#${order.Order_ID}) into AI Bot Simulator!`);
-                }
-              }}
-              style={{
-                background: '#0B132B',
-                color: '#FFFFFF',
-                border: '1px solid rgba(255,255,255,0.2)',
-                borderRadius: '6px',
-                padding: '4px 8px',
-                fontSize: '11px',
-                fontWeight: '700'
-              }}
-            >
-              <option value="ALL">Generic Client Mode</option>
-              {orders.map(o => (
-                <option key={o.Order_ID} value={o.Order_ID}>
-                  #{o.Order_ID} — {o.Customer_Name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <CustomerOrderSearchSelector
+            selectedOrderId={selectedCustomerFilter === 'ALL' ? '' : selectedCustomerFilter}
+            onSelectOrder={(orderId, orderObj) => {
+              setSelectedCustomerFilter(orderId || 'ALL');
+              if (orderObj) {
+                showToast(`👤 Loaded ${orderObj.Customer_Name} (#${orderObj.Order_ID}) into AI Bot Simulator!`);
+              }
+            }}
+            placeholder="🔍 Spotlight Customer for Bot Simulation..."
+            allLabel="Generic Client Mode (No Filter)"
+            style={{ width: '360px' }}
+          />
         </div>
 
         {/* Interactive Prompt Pills Strip */}

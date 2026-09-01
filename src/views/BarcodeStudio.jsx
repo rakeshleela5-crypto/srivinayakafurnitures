@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useStore } from '../context/StoreContext';
+import CustomerOrderSearchSelector from '../components/common/CustomerOrderSearchSelector';
 import { Code128Barcode } from '../utils/barcode128';
 import { DynamicQrCode } from '../utils/qrcodeGenerator';
 import { 
@@ -327,18 +328,16 @@ export function BarcodeStudio() {
                 </div>
               ) : (
                 <div className="form-field">
-                  <label style={{ fontWeight: '800', color: 'var(--accent-gold-light)' }}>Select Customer / SafeLock Order for Packaging:</label>
-                  <select 
-                    value={selectedOrderId} 
-                    onChange={e => handleSelectCustomerOrder(e.target.value)}
-                    style={{ background: '#030712', color: '#FFFFFF', border: '1.5px solid var(--accent-gold)', padding: '10px', fontSize: '13px' }}
-                  >
-                    {orders.map(order => (
-                      <option key={order.Order_ID} value={order.Order_ID}>
-                        #{order.Order_ID} — {order.Customer_Name} ({order.Ordered_SKU ? order.Ordered_SKU.slice(0, 30) : 'Suite'}...)
-                      </option>
-                    ))}
-                  </select>
+                  <label style={{ fontWeight: '800', color: 'var(--accent-gold-light)' }}>Search Customer / SafeLock Order for Packaging Barcode:</label>
+                  <CustomerOrderSearchSelector
+                    selectedOrderId={selectedOrderId}
+                    onSelectOrder={(orderId) => {
+                      if (orderId) handleSelectCustomerOrder(orderId);
+                    }}
+                    placeholder="🔍 Search Customer, Phone, Order ID (#8921)..."
+                    allowAll={false}
+                    style={{ width: '100%' }}
+                  />
                 </div>
               )}
 

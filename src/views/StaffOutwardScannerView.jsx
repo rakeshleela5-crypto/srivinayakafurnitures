@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../context/StoreContext';
+import CustomerOrderSearchSelector from '../components/common/CustomerOrderSearchSelector';
 import { Code128Barcode } from '../utils/barcode128';
 import { DynamicQrCode } from '../utils/qrcodeGenerator';
 import { 
@@ -941,17 +942,18 @@ export function StaffOutwardScannerView() {
           {/* Select Customer Order to Load */}
           <div className="form-field">
             <label style={{ color: sunnyMode ? '#000' : 'var(--text-secondary)', fontWeight: '800' }}>Select Dispatch Order (Delivery Challan)</label>
-            <select 
-              value={selectedOrderId} 
-              onChange={e => { setSelectedOrderId(e.target.value); setLoadedBoxes([]); }}
-              style={{ background: sunnyMode ? '#F1F5F9' : '#030712', color: sunnyMode ? '#000' : '#FFFFFF', border: sunnyMode ? '2px solid #000' : '1px solid var(--accent-gold)' }}
-            >
-              {orders.map(o => (
-                <option key={o.Order_ID} value={o.Order_ID}>
-                  {o.Order_ID} — {o.Customer_Name} ({o.Ordered_SKU})
-                </option>
-              ))}
-            </select>
+            <CustomerOrderSearchSelector
+              selectedOrderId={selectedOrderId}
+              onSelectOrder={(orderId) => {
+                if (orderId) {
+                  setSelectedOrderId(orderId);
+                  setLoadedBoxes([]);
+                }
+              }}
+              placeholder="🔍 Search Dispatch Customer, Phone, Order ID..."
+              allowAll={false}
+              style={{ width: '100%' }}
+            />
           </div>
 
           {/* Customer & Address Quick Card */}

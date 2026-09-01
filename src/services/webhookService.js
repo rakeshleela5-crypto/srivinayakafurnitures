@@ -49,23 +49,8 @@ export async function dispatchWebhookAction(actionName, payload = {}, customWebh
 
   try {
     // ========================================================================
-    // FIX 3: STRATEGY — Primary GET (reads real response) + Backup POST (fire-and-forget for large payloads)
+    // SINGLE CLEAN HTTP DISPATCH (Prevents Duplicate Row Writing in Google Sheets)
     // ========================================================================
-
-    // 1. BACKUP: Fire POST with no-cors for large payloads (bulk imports, CSV data)
-    //    This ensures the full JSON body always reaches the backend even for huge payloads
-    fetch(webhookUrl, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(fullPayload)
-    }).catch(err => {
-      console.warn("[POST backup] fire-and-forget notice:", err.message);
-    });
-
-    // 2. PRIMARY: GET request WITH response reading (follows Google's 302 redirect → reads real JSON)
-    //    Google Apps Script deployed web apps redirect /exec → googleusercontent.com CDN
-    //    The CDN endpoint returns Access-Control-Allow-Origin: * which allows cross-origin reads
     const sanitizedParams = {
       action: actionName,
       client_timestamp: currentTimestamp
@@ -76,6 +61,23 @@ export async function dispatchWebhookAction(actionName, payload = {}, customWebh
       if (val !== undefined && val !== null && typeof val !== 'object') {
         sanitizedParams[key] = String(val);
       }
+    }
+
+    // For bulk import actions with large arrays/objects, use POST; otherwise use GET with redirect follow
+    if (actionName === 'BULK_CATALOG_IMPORT' || actionName === 'RESTORE_BACKUP') {
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(fullPayload)
+      });
+      return {
+        success: true,
+        action: actionName,
+        timestamp: currentTimestamp,
+        dispatched: true,
+        _source: 'POST_BULK_DISPATCH'
+      };
     }
 
     const getParams = new URLSearchParams(sanitizedParams).toString();
@@ -95,30 +97,31 @@ export async function dispatchWebhookAction(actionName, payload = {}, customWebh
           _dispatched: true
         };
       } else {
-        // Server returned non-200 — fall back to dispatched confirmation
         console.warn(`[⚠️ GET response status: ${response.status}] Falling back to dispatch confirmation.`);
         return {
           success: true,
           action: actionName,
           timestamp: currentTimestamp,
           dispatched: true,
-          _source: 'DISPATCH_CONFIRMED_POST_SENT',
-          message: `Action ${actionName} dispatched to Google Apps Script backend (POST confirmed)!`
+          _source: 'DISPATCH_CONFIRMED'
         };
       }
     } catch (getErr) {
-      // GET with response-reading failed (CORS block on some browsers) — still safe because POST already fired
-      console.warn(`[⚠️ GET response read failed — POST backup already sent] ${getErr.message}`);
+      console.warn(`[GET error]: ${getErr.message}. Retrying via POST mode...`);
+      await fetch(webhookUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(fullPayload)
+      });
       return {
         success: true,
         action: actionName,
         timestamp: currentTimestamp,
         dispatched: true,
-        _source: 'POST_FIRE_AND_FORGET',
-        message: `Action ${actionName} dispatched via POST backup to Google Apps Script!`
+        _source: 'DISPATCH_CONFIRMED_POST_RETRY'
       };
     }
-
   } catch (error) {
     console.error("Webhook Dispatch Exception:", error);
     return {

@@ -64,6 +64,25 @@ function handleWebhookRequest(params) {
     timestamp: currentDateTimeStr
   };
 
+  // ------------------------------------------------------------------------------------------
+  // DEDUPLICATION LOCK: Prevent duplicate rapid clicks within 3 seconds for the same action & ID
+  // ------------------------------------------------------------------------------------------
+  var reqId = params.inquiry_id || params.order_id || params.po_id || params.quote_id || params.architect_id || params.sku || params.client_timestamp || "";
+  if (reqId && action !== "FETCH_ALL_TABLES" && action !== "GET_ALL_STATUS" && action !== "GET_ALL_TABLES") {
+    var cacheKey = "LOCK_" + action + "_" + reqId.toString().replace(/[^a-zA-Z0-9]/g, "");
+    try {
+      var cache = CacheService.getScriptCache();
+      if (cache.get(cacheKey)) {
+        result.message = "Duplicate request blocked (Processed within last 3s)";
+        result.duplicate_prevented = true;
+        return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
+      }
+      cache.put(cacheKey, "LOCKED", 3);
+    } catch (cErr) {
+      // CacheService fallback
+    }
+  }
+
   try {
     // ------------------------------------------------------------------------------------------
     // SYSTEM BOOTSTRAP: AUTO-CREATE & INITIALIZE ALL 8 MISSING TABLES WITH FORMATTING
@@ -92,11 +111,6 @@ function handleWebhookRequest(params) {
       result.fixed_count = fixRes.fixed_count;
       result.message = "Successfully verified and deduplicated " + fixRes.fixed_count + " keys across all Google Sheets tables!";
     }
-
-    // ------------------------------------------------------------------------------------------
-    // SYSTEM 1: AI Room Matcher & Suite Combo Deal
-    // ------------------------------------------------------------------------------------------
-    
     // ------------------------------------------------------------------------------------------
     // SYSTEM API: Real-Time Dynamic 2-Way Sync Engine for Dashboard & WhatsApp AI
     // ------------------------------------------------------------------------------------------

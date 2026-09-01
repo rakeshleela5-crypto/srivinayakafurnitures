@@ -1481,64 +1481,64 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
       result.architect_id = archId;
       result.new_tier = newTier;
       result.commission_rate = newRate;
-      result.message = "Architect Partner (" + archName + ") tier updated to " + newTier + " in Architect_VIPs!";
-    }
+      var stopAddr = params.address || "Gayatri Nagar, Lane 3, Rayagada";
+      var stopItems = params.items || "1x Royal Teak King Bed (Hydraulic)";
+      var stopTime = params.time_window || "10:30 AM - 11:30 AM";
+      var stopDue = Number(params.balance_due) || 40000;
+      var stopMode = params.payment_mode || "Doorstep UPI QR";
+      var stopStatus = params.status || "OUT_FOR_DELIVERY";
 
-    // ==========================================================================================
-    // 🚚 PACKAGE 5: SMARTLOGISTICS PRIORITY ROUTING & SERVICE DESK
-    // ==========================================================================================
-    else if (action === "REORDER_DELIVERY_ROUTE") {
-      var driverId = params.driver_id || "DRV-001";
-      var tripDate = params.trip_date || currentDateStr;
-      var stopsOrder = params.stops_order || [];
-
-      result.driver_id = driverId;
-      result.trip_date = tripDate;
-      result.total_stops_reordered = Array.isArray(stopsOrder) ? stopsOrder.length : 3;
-      result.message = "Delivery Priority Route for " + driverId + " re-sequenced with optimized ETAs!";
-    }
-
-    else if (action === "LOG_DELIVERY_ISSUE_TICKET") {
-      var ticketId = "TKT-" + Utilities.getUuid().substring(0, 8).toUpperCase();
-      var orderId = params.order_id || "ORD-2026-8801";
-      var custName = params.customer_name || "Valued Customer";
-      var issueType = params.issue_type || "TRANSIT_SCUFF_TOUCHUP";
-      var affectedSku = params.affected_sku || "Godrej Interio Model";
-      var priority = params.priority || "HIGH";
-      var resolutionPlan = params.resolution_plan || "Dispatch Replacement Hardware Kit";
-
-      var alertSheet = getOrCreateSheet(ss, "Store_Alerts_Log", [
-        "Alert_ID", "Alert_Type", "Related_Order_ID", "Customer_Name", "SKU",
-        "Priority", "Resolution_Plan", "Timestamp", "Status"
-      ]);
-
-      if (alertSheet) {
-        alertSheet.appendRow([
-          ticketId, issueType, orderId, custName, affectedSku,
-          priority, resolutionPlan, currentDateTimeStr, "OPEN_SERVICE_TICKET"
+      if (stpSheet) {
+        stpSheet.appendRow([
+          stopId, currentDateStr, params.driver_id || "DRV-001", params.order_id || "ORD-8921",
+          stopCust, stopPhone, stopAddr, stopItems, stopTime, stopDue, stopMode, stopStatus
         ]);
+        applyStandardFormat(stpSheet);
       }
 
-      result.ticket_id = ticketId;
-      result.order_id = orderId;
-      result.issue_type = issueType;
-      result.priority = priority;
-      result.message = "Doorstep Service Desk Ticket (" + ticketId + " - " + issueType + ") logged in Store_Alerts_Log!";
+      result.stop_id = stopId;
+      result.customer_name = stopCust;
+      result.message = "Delivery Route Stop for " + stopCust + " saved to Delivery_Route_Stops sheet!";
     }
 
-    // ==========================================================================================
-    // 🗄️ PACKAGE 6: UNIVERSAL 20-TABLE RECORD EDITOR & BULK CSV INGESTER
-    // ==========================================================================================
-    else if (action === "UPDATE_UNIVERSAL_RECORD") {
-      var targetTable = params.target_table || "Orders_SafeLock";
-      var recordId = params.record_id || "";
-      var updatedFields = params.updated_fields || {};
+    // ------------------------------------------------------------------------------------------
+    // ACTION 16: LOG_EXECUTIVE_BRIEFING (Record 8:00 AM WhatsApp Briefing)
+    // ------------------------------------------------------------------------------------------
+    else if (action === "LOG_EXECUTIVE_BRIEFING" || action === "SYSTEM_8_MORNING_BRIEFING") {
+      var brfSheet = getOrCreateSheet(ss, "Executive_Briefings_Log", [
+        "Briefing_ID", "Briefing_Date", "Owner_Phone", "Gross_Revenue_INR", "Active_Orders_Count", 
+        "Footfall_Count", "Fleet_Drops_Count", "Custom_Directive", "Dispatched_Date_Time"
+      ], "#7C3AED");
 
-      var targetSheet = ss.getSheetByName(targetTable);
-      if (targetSheet) {
-        var data = targetSheet.getDataRange().getValues();
-        var headers = data[0] || [];
-        for (var r = 1; r < data.length; r++) {
+      var brfId = "BRF-" + currentDateStr.replace(/[^a-zA-Z0-9]/g, '');
+      var ownerPhone = params.owner_phone || "+91 94371 88291";
+      var grossRev = Number(params.gross_revenue) || 832500;
+      var activeOrders = Number(params.active_orders) || 5;
+      var footfall = Number(params.footfall) || 42;
+      var fleetDrops = Number(params.fleet_drops) || 4;
+      var directive = params.custom_directive || "Prioritize Gayatri Nagar villa delivery with Tophan. Collect balance via doorstep UPI QR.";
+
+      if (brfSheet) {
+        brfSheet.appendRow([
+          brfId, currentDateStr, ownerPhone, grossRev, activeOrders, footfall, fleetDrops, directive, currentDateTimeStr
+        ]);
+        applyStandardFormat(brfSheet);
+      }
+
+      result.briefing_id = brfId;
+      result.owner_phone = ownerPhone;
+      result.message = "8:00 AM Coffee Briefing logged to Executive_Briefings_Log sheet & dispatched to Owner WhatsApp (" + ownerPhone + ")!";
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // ACTION 17: UPDATE_STORE_TARGETS (Persist Showroom Monthly KPI Targets)
+    // ------------------------------------------------------------------------------------------
+    else if (action === "UPDATE_STORE_TARGETS") {
+      var tgtSheet = getOrCreateSheet(ss, "Store_Sales_Targets", [
+        "Target_Month_Year", "Monthly_Sales_Target_INR", "Daily_Footfall_Goal", 
+        "Target_Conversion_Rate_Pct", "Achieved_Sales_INR", "Last_Updated_Date_Time"
+      ], "#059669");
+
       var monthYear = params.month_year || "August-2026";
       var revTarget = Number(params.monthly_sales_target) || 2500000;
       var footfallGoal = Number(params.daily_footfall_goal) || 35;

@@ -3620,6 +3620,11 @@ function seedSpecificTablePristine(ss, tableName, params) {
   return { status: "SUCCESS", rows_count: sheet ? sheet.getLastRow() : 0 };
 }
 
+function bootstrapAllTables(ss) {
+  var res = bootstrapAll28PristineTables(ss);
+  return res.tables_created || [];
+}
+
 function menuBootstrapAllTables() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var createdTabs = bootstrapAllTables(ss);

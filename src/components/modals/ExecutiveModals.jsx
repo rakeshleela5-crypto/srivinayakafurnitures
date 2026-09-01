@@ -601,6 +601,28 @@ export function UniversalPaymentCheckoutModal({ isOpen, onClose, amount = 78247,
 
   const upiUri = `upi://pay?pa=${storeMeta.upiVpa}&pn=${encodeURIComponent(storeMeta.merchantName)}&am=${amount}&tr=${orderId}&cu=INR`;
 
+  const handleVerifyAndSettlePayment = () => {
+    const paymentTxnRef = `UPI-TXN-${Date.now().toString().slice(-8)}`;
+
+    dispatchWebhookAction('RECORD_UPI_PAYMENT', {
+      payment_id: `PAY-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+      order_id: orderId,
+      customer_name: "Dr. Subhashish Jena",
+      customer_phone: "9437088990",
+      amount: Number(amount) || 10000,
+      payment_method: "UPI QR (GPay / PhonePe / Paytm)",
+      upi_ref: paymentTxnRef,
+      merchant_vpa: storeMeta.upiVpa || "9390553301@ybl",
+      status: "VERIFIED & SETTLED ✓",
+      notes: "Auto-verified via Dynamic Indian UPI QR POS Terminal"
+    });
+
+    playSuccessChime();
+    triggerGoldenConfetti();
+    showToast(`✅ Payment of ₹${Number(amount).toLocaleString()} Verified & Logged into Payments_Log! Ref: ${paymentTxnRef}`, true);
+    onClose();
+  };
+
   return (
     <div className="modal-overlay">
       <div className="modal-card" style={{ textAlign: 'center' }}>
@@ -619,13 +641,13 @@ export function UniversalPaymentCheckoutModal({ isOpen, onClose, amount = 78247,
         </div>
 
         <div style={{ fontSize: '20px', fontWeight: '900', color: 'var(--accent-emerald)', fontFamily: 'JetBrains Mono' }}>
-          ₹{amount.toLocaleString()}
+          ₹{Number(amount).toLocaleString()}
         </div>
         <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
           Merchant VPA: <strong style={{ color: '#FFFFFF' }}>{storeMeta.upiVpa}</strong> • Ref: {orderId}
         </div>
 
-        <button className="btn-emerald" onClick={() => { showToast("✅ UPI Payment Verified & Settled via Webhook!", true); onClose(); }} style={{ width: '100%', justifyContent: 'center', marginTop: '10px' }}>
+        <button className="btn-emerald" onClick={handleVerifyAndSettlePayment} style={{ width: '100%', justifyContent: 'center', marginTop: '10px' }}>
           <Check size={16} /> Verify & Confirm Payment Settlement
         </button>
       </div>

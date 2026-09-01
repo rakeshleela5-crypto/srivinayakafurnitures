@@ -591,6 +591,89 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
     }
 
     // ------------------------------------------------------------------------------------------
+    // CATALOG & BARCODE STUDIO ENGINE: Real-Time 2-Way Product Parameter Sync
+    // ------------------------------------------------------------------------------------------
+    else if (action === "UPDATE_CATALOG_ITEM" || action === "SAVE_BARCODE_PARAMETERS" || action === "UPDATE_INVENTORY") {
+      var targetSku = params.sku || params.skuCode || "BED-MOD-001";
+      var prodName = params.product_name || params.productName || "Luxury Furniture Unit";
+      var cat = params.category || params.main_category || "Living Room";
+      var mat = params.material || params.material_spec || "Engineered Teak Wood";
+      var dims = params.dimensions || "Standard Size";
+      var mrpVal = Number(params.mrp || params.mrp_inr) || 0;
+      var sellVal = Number(params.selling_price || params.selling_price_inr || params.sellingPrice) || 0;
+      var warrVal = Number(params.warranty || params.warranty_years) || 5;
+      var boxesVal = Number(params.box_count || params.total_component_boxes || params.boxCount) || 1;
+      var bayVal = params.assigned_bay || params.bay || params.storage_bay || "Dock-A1";
+
+      var catSheet = getOrCreateSheet(ss, "Furniture_Catalog", [
+        "SKU", "Product_Name", "Main_Category", "Sub_Category", "Material_Spec", 
+        "Dimensions", "MRP_INR", "Selling_Price_INR", "Warranty_Years", 
+        "Total_Component_Boxes", "Assigned_Bay", "Last_Updated"
+      ], "#1E3A8A");
+
+      var matchedRow = -1;
+      if (catSheet) {
+        var data = catSheet.getDataRange().getValues();
+        for (var i = 1; i < data.length; i++) {
+          if (data[i][0] == targetSku || (data[i][1] && data[i][1].toString().toLowerCase() === prodName.toLowerCase())) {
+            matchedRow = i + 1;
+            if (prodName) catSheet.getRange(matchedRow, 2).setValue(prodName);
+            if (cat) catSheet.getRange(matchedRow, 3).setValue(cat);
+            if (mat) catSheet.getRange(matchedRow, 5).setValue(mat);
+            if (dims) catSheet.getRange(matchedRow, 6).setValue(dims);
+            if (mrpVal > 0) catSheet.getRange(matchedRow, 7).setValue(mrpVal);
+            if (sellVal > 0) catSheet.getRange(matchedRow, 8).setValue(sellVal);
+            if (warrVal > 0) catSheet.getRange(matchedRow, 9).setValue(warrVal);
+            if (boxesVal > 0) catSheet.getRange(matchedRow, 10).setValue(boxesVal);
+            if (bayVal) catSheet.getRange(matchedRow, 11).setValue(bayVal);
+            catSheet.getRange(matchedRow, 12).setValue(currentDateTimeStr);
+            break;
+          }
+        }
+
+        // If new SKU, append new row
+        if (matchedRow === -1) {
+          catSheet.appendRow([
+            targetSku,
+            prodName,
+            cat,
+            "Custom Collection",
+            mat,
+            dims,
+            mrpVal,
+            sellVal,
+            warrVal,
+            boxesVal,
+            bayVal,
+            currentDateTimeStr
+          ]);
+          matchedRow = catSheet.getLastRow();
+        }
+        applyStandardFormat(catSheet);
+      }
+
+      // Also sync Bay and Box count to Inventory_Stock table
+      var invSheet = getSheetByNameFlexible(ss, ["Inventory_Stock", "03_Inventory_Stock", "Inventory Stock"]);
+      if (invSheet) {
+        var invData = invSheet.getDataRange().getValues();
+        for (var j = 1; j < invData.length; j++) {
+          if (invData[j][0] == targetSku || invData[j][1] == targetSku) {
+            if (bayVal && invData[j].length >= 10) invSheet.getRange(j + 1, 10).setValue(bayVal);
+            break;
+          }
+        }
+      }
+
+      result.sku = targetSku;
+      result.product_name = prodName;
+      result.selling_price = sellVal;
+      result.box_count = boxesVal;
+      result.bay = bayVal;
+      result.matched_row = matchedRow;
+      result.message = "Product parameters for " + targetSku + " (" + prodName + ") saved & synced to Furniture_Catalog on " + currentDateTimeStr + "!";
+    }
+
+    // ------------------------------------------------------------------------------------------
     // SYSTEM 3: SmartKit™ 5-Box Staging & Dispatch Lock
     // ------------------------------------------------------------------------------------------
     else if (action === "SYSTEM_3_SMARTKIT_STAGE") {

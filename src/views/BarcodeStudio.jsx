@@ -164,22 +164,30 @@ export function BarcodeStudio() {
 
     setCatalog(prev => {
       const exists = prev.some(c => c.SKU === skuCode);
+      let updated;
       if (exists) {
-        return prev.map(c => c.SKU === skuCode ? { ...c, ...updatedItem } : c);
+        updated = prev.map(c => c.SKU === skuCode ? { ...c, ...updatedItem } : c);
+      } else {
+        updated = [updatedItem, ...prev];
       }
-      return [updatedItem, ...prev];
+      try { localStorage.setItem('OMNIBUILD_CATALOG', JSON.stringify(updated)); } catch (e) {}
+      return updated;
     });
 
     showToast(`💾 Barcode parameters saved for ${skuCode} & synced to Google Sheets!`, true);
 
-    await dispatchWebhookAction('UPDATE_INVENTORY', {
+    await dispatchWebhookAction('UPDATE_CATALOG_ITEM', {
       sku: skuCode,
-      productName: productName,
-      sellingPrice: Number(sellingPrice),
-      batchNo: batchNo,
-      boxCount: Number(boxCount),
-      bay: storageBay,
-      timestamp: new Date().toISOString()
+      product_name: productName,
+      category: category,
+      material: material,
+      dimensions: dimensions,
+      mrp: Number(mrp),
+      selling_price: Number(sellingPrice),
+      warranty: Number(warranty),
+      box_count: Number(boxCount),
+      assigned_bay: storageBay,
+      batch_no: batchNo
     });
   };
 

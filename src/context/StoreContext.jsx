@@ -181,7 +181,8 @@ export function StoreProvider({ children }) {
     { sku: 'SOF-MOD-002', name: '3-Seater Chesterfield Velvet Sofa', floorDays: 46, bay: 'Bay 4', mrp: 68000, discountPct: 20, clearancePrice: 54400, notes: 'Buffed velvet upholstery' }
   ]));
 
-  // Automatic LocalStorage Sync Hooks
+  // Automatic LocalStorage Sync Hooks for All Core Datastores
+  useEffect(() => { localStorage.setItem('OMNIBUILD_CATALOG', JSON.stringify(catalog)); }, [catalog]);
   useEffect(() => { localStorage.setItem('OMNIBUILD_ORDERS', JSON.stringify(orders)); }, [orders]);
   useEffect(() => { localStorage.setItem('OMNIBUILD_INVENTORY', JSON.stringify(inventory)); }, [inventory]);
   useEffect(() => { localStorage.setItem('OMNIBUILD_SMARTKIT_BOXES', JSON.stringify(smartKitBoxes)); }, [smartKitBoxes]);

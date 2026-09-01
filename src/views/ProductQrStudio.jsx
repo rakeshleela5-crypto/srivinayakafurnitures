@@ -115,6 +115,7 @@ export function ProductQrStudio() {
       newCatalog.unshift(updatedItem);
     }
     setCatalog(newCatalog);
+    try { localStorage.setItem('OMNIBUILD_CATALOG', JSON.stringify(newCatalog)); } catch (e) {}
 
     playSuccessChime();
     triggerGoldenConfetti();
@@ -126,10 +127,10 @@ export function ProductQrStudio() {
       category: category,
       material: material,
       dimensions: dimensions,
-      mrp: mrp,
-      selling_price: sellingPrice,
-      warranty: warranty,
-      box_count: boxCount,
+      mrp: Number(mrp),
+      selling_price: Number(sellingPrice),
+      warranty: Number(warranty),
+      box_count: Number(boxCount),
       supplier: supplier
     });
   };

@@ -66,25 +66,19 @@ export async function dispatchWebhookAction(actionName, payload = {}, customWebh
     // 2. PRIMARY: GET request WITH response reading (follows Google's 302 redirect → reads real JSON)
     //    Google Apps Script deployed web apps redirect /exec → googleusercontent.com CDN
     //    The CDN endpoint returns Access-Control-Allow-Origin: * which allows cross-origin reads
-    const getParams = new URLSearchParams({
+    const sanitizedParams = {
       action: actionName,
-      client_timestamp: currentTimestamp,
-      ...(payload.customer_name ? { customer_name: payload.customer_name } : {}),
-      ...(payload.customer_phone ? { customer_phone: payload.customer_phone } : {}),
-      ...(payload.order_id ? { order_id: payload.order_id } : {}),
-      ...(payload.sku ? { sku: payload.sku } : {}),
-      ...(payload.amount ? { amount: payload.amount } : {}),
-      ...(payload.inquiry_id ? { inquiry_id: payload.inquiry_id } : {}),
-      ...(payload.bot_id ? { bot_id: payload.bot_id } : {}),
-      ...(payload.bot_name ? { bot_name: payload.bot_name } : {}),
-      ...(payload.trigger ? { trigger: payload.trigger } : {}),
-      ...(payload.total_rows ? { total_rows: payload.total_rows } : {}),
-      ...(payload.sample_skus ? { sample_skus: payload.sample_skus } : {}),
-      ...(payload.import_mode ? { import_mode: payload.import_mode } : {}),
-      ...(payload.driver ? { driver: payload.driver } : {}),
-      ...(payload.address ? { address: payload.address } : {}),
-      ...(payload.phone ? { phone: payload.phone } : {})
-    }).toString();
+      client_timestamp: currentTimestamp
+    };
+
+    // Dynamically include all scalar payload fields (strings, numbers, booleans)
+    for (const [key, val] of Object.entries(payload)) {
+      if (val !== undefined && val !== null && typeof val !== 'object') {
+        sanitizedParams[key] = String(val);
+      }
+    }
+
+    const getParams = new URLSearchParams(sanitizedParams).toString();
 
     try {
       const response = await fetch(`${webhookUrl}?${getParams}`, {

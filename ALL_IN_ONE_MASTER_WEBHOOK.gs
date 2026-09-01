@@ -3656,3 +3656,22 @@ function menuCheckSyncHealth() {
   var sheets = ss.getSheets().map(function(s) { return s.getName(); });
   SpreadsheetApp.getUi().alert("✅ 2-Way Sync Engine Active!\n\nConnected to: Godrej Interio Rayagada\nActive Sheets: " + sheets.length + "\nWebhook Status: OPERATIONAL ✓");
 }
+
+
+/**
+ * ==============================================================================================
+ * GOOGLE SHEETS TOP NAVBAR CUSTOM MENU TRIGGER
+ * Runs automatically when the spreadsheet is opened or reloaded in the browser
+ * ==============================================================================================
+ */
+function onOpen(e) {
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu("👑 OmniBuild OS™")
+    .addItem("🚀 1-Click Bootstrap & Create All 28 Tables", "menuBootstrapAllTables")
+    .addItem("📅 Standardize All Timestamps to IST (DD-MMM-YYYY)", "menuStandardizeTimestamps")
+    .addItem("🔑 AppSheet Key Deduplication & Repair", "menuFixDuplicateKeys")
+    .addSeparator()
+    .addItem("🎨 Auto-Format & Apply Luxury Styling to All Sheets", "menuFormatAllSheets")
+    .addItem("🔄 Verify 2-Way Sync Engine Health", "menuCheckSyncHealth")
+    .addToUi();
+}

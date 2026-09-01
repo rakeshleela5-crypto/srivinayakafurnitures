@@ -1724,6 +1724,50 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
       result.message = "VIP Turnkey Villa Project #" + projId + " for " + clientName + " (₹" + value.toLocaleString() + ") saved to VIP_Villa_Projects on " + currentDateTimeStr + "!";
     }
 
+    // ------------------------------------------------------------------------------------------
+    // ⏳ FLOOR AGING STOCK & LIQUIDITY SENTINEL ENGINE (Floor_Aging_Sentinel)
+    // ------------------------------------------------------------------------------------------
+    else if (action === "ADD_FLOOR_AGING_STOCK" || action === "UPDATE_FLOOR_AGING_STOCK" || action === "RESET_FLOOR_AGING_STOCK" || action === "LOG_FLOOR_AGING") {
+      var ageSheet = getOrCreateSheet(ss, "Floor_Aging_Sentinel", [
+        "SKU_Code", "Date_Time", "Product_Name", "Floor_Days_Count", "Showroom_Bay_Location", 
+        "MRP_INR", "Clearance_Discount_Pct", "Clearance_Price_INR", "Liquidity_Status", "Notes"
+      ], "#F43F5E");
+
+      var skuCode = params.sku || params.sku_code || "BED-MOD-001";
+      var productName = params.name || params.product_name || "Display Furniture Unit";
+      var daysCount = Number(params.floorDays || params.days) || 45;
+      var bayLocation = params.bay || params.bay_location || "Bay 1";
+      var mrp = Number(params.mrp) || 98000;
+      var discountPct = Number(params.discountPct || params.discount) || 20;
+      var clearancePrice = Number(params.clearancePrice || params.clearance_price) || Math.round(mrp * ((100 - discountPct) / 100));
+      var statusStr = action === "RESET_FLOOR_AGING_STOCK" ? "RESET TO DAY 1 ✓" : (daysCount >= 60 ? "CRITICAL CLEARANCE 🔥" : "ACTIVE MONITORING");
+      var notes = params.notes || "Showroom display unit under active age monitoring";
+
+      if (ageSheet) {
+        ageSheet.appendRow([
+          skuCode,
+          currentDateTimeStr,
+          productName,
+          daysCount + " Days",
+          bayLocation,
+          mrp,
+          discountPct + "%",
+          clearancePrice,
+          statusStr,
+          notes
+        ]);
+        applyStandardFormat(ageSheet);
+      }
+
+      result.sku = skuCode;
+      result.date_time = currentDateTimeStr;
+      result.product = productName;
+      result.days = daysCount;
+      result.clearance_price = clearancePrice;
+      result.status = statusStr;
+      result.message = "Floor Aging Stock #" + skuCode + " (" + daysCount + " Days in " + bayLocation + ") saved to Floor_Aging_Sentinel on " + currentDateTimeStr + "!";
+    }
+
     else if (action === "LOG_WALKIN_LEAD" || action === "ADD_INQUIRY" || action === "SYSTEM_1_WALKIN_INQUIRY") {
       var inqId = params.inquiry_id || ("INQ-" + currentDateStr.replace(/-/g, "") + "-" + Math.floor(100 + Math.random() * 900));
       var custName = params.customer_name || params.name || "Walk-In Visitor";

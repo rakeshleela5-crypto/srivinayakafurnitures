@@ -507,7 +507,16 @@ export function ExecutiveOverview() {
                   <button 
                     className="btn-cyan"
                     style={{ fontSize: '10px', padding: '4px 6px' }}
-                    onClick={() => resetFloorAge(item.sku)}
+                    onClick={() => {
+                      resetFloorAge(item.sku);
+                      dispatchWebhookAction('RESET_FLOOR_AGING_STOCK', {
+                        sku: item.sku,
+                        name: item.name,
+                        floorDays: 1,
+                        bay: item.bay,
+                        mrp: item.mrp
+                      });
+                    }}
                     title="Reset to Day 1 (Swapped Unit)"
                   >
                     🔄 Reset

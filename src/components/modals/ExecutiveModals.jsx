@@ -1648,15 +1648,23 @@ export function AddFloorAgingSkuModal({ isOpen, onClose }) {
   const chosenProduct = catalog.find(c => c.SKU === selectedSku) || catalog[0];
 
   const handleSave = () => {
-    addFloorAgingSku({
+    const payload = {
       sku: chosenProduct.SKU,
       name: chosenProduct.Product_Name,
       floorDays: Number(days),
       bay,
       mrp: chosenProduct.MRP_INR || 98000,
       discountPct: Number(disc),
+      clearancePrice: Math.round((chosenProduct.MRP_INR || 98000) * (1 - disc / 100)),
       notes: 'Showroom display unit under active age monitoring'
-    });
+    };
+
+    addFloorAgingSku(payload);
+    dispatchWebhookAction('ADD_FLOOR_AGING_STOCK', payload);
+
+    playSuccessChime();
+    triggerGoldenConfetti();
+    showToast(`🔥 Display SKU ${chosenProduct.SKU} tracked & synced to Floor_Aging_Sentinel!`, true);
     onClose();
   };
 
@@ -1739,17 +1747,48 @@ export function EditFloorAgingModal({ isOpen, onClose, item }) {
   const clrPrice = Math.round(item.mrp * (1 - disc / 100));
 
   const handleSave = () => {
+    const updatedPayload = {
+      sku: item.sku,
+      name: item.name,
+      floorDays: item.floorDays,
+      bay,
+      mrp: item.mrp,
+      discountPct: Number(disc),
+      clearancePrice: clrPrice,
+      notes
+    };
+
     updateFloorAgingSku(item.sku, {
       discountPct: Number(disc),
       bay,
       notes
     });
+
+    dispatchWebhookAction('UPDATE_FLOOR_AGING_STOCK', updatedPayload);
+
+    playSuccessChime();
+    triggerGoldenConfetti();
+    showToast(`🔥 Floor Aging SKU ${item.sku} updated & synced to Floor_Aging_Sentinel!`, true);
     onClose();
   };
 
   const handleResetAge = () => {
     if (window.confirm(`Reset floor age for ${item.name} to Day 1 (Unit swapped from warehouse)?`)) {
       resetFloorAge(item.sku);
+
+      dispatchWebhookAction('RESET_FLOOR_AGING_STOCK', {
+        sku: item.sku,
+        name: item.name,
+        floorDays: 1,
+        bay,
+        mrp: item.mrp,
+        discountPct: Number(disc),
+        clearancePrice: clrPrice,
+        notes: 'Swapped fresh unit from warehouse — reset to Day 1'
+      });
+
+      playSuccessChime();
+      showToast(`🔄 Floor Age for ${item.sku} reset to Day 1 & logged in Floor_Aging_Sentinel!`, true);
       onClose();
     }
   };

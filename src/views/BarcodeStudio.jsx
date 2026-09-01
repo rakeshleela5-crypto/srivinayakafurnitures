@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useStore } from '../context/StoreContext';
 import CustomerOrderSearchSelector from '../components/common/CustomerOrderSearchSelector';
 import { Code128Barcode } from '../utils/barcode128';
@@ -27,7 +27,10 @@ import {
   ArrowUp, 
   Droplets, 
   Wine, 
-  Download 
+  Download,
+  Search,
+  X,
+  Filter
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
@@ -38,6 +41,32 @@ export function BarcodeStudio() {
   const [sourceMode, setSourceMode] = useState('SUPPLIER_CATALOG'); // 'SUPPLIER_CATALOG' (default) | 'CUSTOMER_ORDER'
   const [selectedSku, setSelectedSku] = useState(catalog[0]?.SKU || 'BED-MOD-001');
   const [selectedOrderId, setSelectedOrderId] = useState(orders[0]?.Order_ID || '');
+
+  // 🔍 Smart Search & Category Filter State
+  const [catalogSearchQuery, setCatalogSearchQuery] = useState('');
+  const [catalogCategoryFilter, setCatalogCategoryFilter] = useState('ALL');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // Filtered Catalog List
+  const filteredCatalog = useMemo(() => {
+    return catalog.filter(item => {
+      // Category filter check
+      let matchesCat = true;
+      if (catalogCategoryFilter === 'CSV') {
+        matchesCat = (item.SKU || '').toUpperCase().includes('CSV') || (item.Default_Supplier || '').includes('Featherlite') || (item.SKU || '').startsWith('OFFICE-');
+      } else if (catalogCategoryFilter !== 'ALL') {
+        const catStr = `${item.Main_Category || ''} ${item.Sub_Category || ''}`.toLowerCase();
+        matchesCat = catStr.includes(catalogCategoryFilter.toLowerCase());
+      }
+
+      // Text search check
+      const q = catalogSearchQuery.toLowerCase().trim();
+      if (!q) return matchesCat;
+
+      const fullStr = `${item.SKU || ''} ${item.Product_Name || ''} ${item.Main_Category || ''} ${item.Sub_Category || ''} ${item.Material_Spec || ''} ${item.Default_Supplier || ''} ${item.Price_Tier || ''}`.toLowerCase();
+      return matchesCat && fullStr.includes(q);
+    });
+  }, [catalog, catalogSearchQuery, catalogCategoryFilter]);
   const [printLayout, setPrintLayout] = useState('pallet_label'); // pallet_label | carton_strip | thermal_50x25 | a4_24up | zpl_code
   const [barcodeStep, setBarcodeStep] = useState(1);
 
@@ -353,19 +382,192 @@ export function BarcodeStudio() {
               </div>
 
               {sourceMode === 'SUPPLIER_CATALOG' ? (
-                <div className="form-field">
-                  <label style={{ fontWeight: '800', color: 'var(--accent-cyan)' }}>Select Furniture Product from Master Catalog:</label>
-                  <select 
-                    value={selectedSku} 
-                    onChange={e => handleSelectCatalogItem(e.target.value)}
-                    style={{ background: '#030712', color: '#FFFFFF', border: '1.5px solid var(--accent-cyan)', padding: '10px', fontSize: '13px' }}
-                  >
-                    {catalog.map(item => (
-                      <option key={item.SKU} value={item.SKU}>
-                        {item.SKU} — {item.Product_Name}
-                      </option>
-                    ))}
-                  </select>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <label style={{ fontWeight: '800', color: 'var(--accent-cyan)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Search size={13} /> Search & Select Furniture Product from Master Catalog ({catalog.length} SKUs):
+                    </label>
+                    <span style={{ fontSize: '10.5px', color: '#94A3B8', fontWeight: '700' }}>
+                      ✨ Showing <span style={{ color: 'var(--accent-cyan)' }}>{filteredCatalog.length}</span> matches
+                    </span>
+                  </div>
+
+                  {/* 1-Click Category Filter Pills */}
+                  <div style={{ display: 'flex', gap: '5px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }}>
+                    {[
+                      { id: 'ALL', label: `🌟 All (${catalog.length})` },
+                      { id: 'Bedroom', label: '🛏️ Bedroom' },
+                      { id: 'Living', label: '🛋️ Living Room' },
+                      { id: 'Dining', label: '🍽️ Dining & Study' },
+                      { id: 'Office', label: '🏢 Office' },
+                      { id: 'Storage', label: '🗄️ Storage' },
+                      { id: 'Kitchen', label: '🍳 Kitchen' },
+                      { id: 'CSV', label: '🆕 CSV Imports' }
+                    ].map(cat => {
+                      const isCatActive = catalogCategoryFilter === cat.id;
+                      return (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => setCatalogCategoryFilter(cat.id)}
+                          style={{
+                            padding: '4px 9px',
+                            borderRadius: '12px',
+                            fontSize: '10px',
+                            fontWeight: isCatActive ? '800' : '600',
+                            whiteSpace: 'nowrap',
+                            background: isCatActive ? 'var(--accent-cyan)' : 'rgba(255,255,255,0.06)',
+                            color: isCatActive ? '#000000' : '#CBD5E1',
+                            border: isCatActive ? '1px solid #FFFFFF' : '1px solid rgba(255,255,255,0.1)',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          {cat.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Live Search Input */}
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <Search size={14} style={{ position: 'absolute', left: '10px', color: '#64748B' }} />
+                    <input
+                      type="text"
+                      value={catalogSearchQuery}
+                      onChange={e => {
+                        setCatalogSearchQuery(e.target.value);
+                        setIsDropdownOpen(true);
+                      }}
+                      onFocus={() => setIsDropdownOpen(true)}
+                      placeholder="🔍 Type Dining, Bed, Mesh Chair, Sofa, SKU, Material, Supplier..."
+                      style={{
+                        width: '100%',
+                        padding: '8px 30px 8px 32px',
+                        background: '#030712',
+                        color: '#FFFFFF',
+                        border: '1.5px solid var(--accent-cyan)',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                        fontWeight: '600'
+                      }}
+                    />
+                    {catalogSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setCatalogSearchQuery('')}
+                        style={{
+                          position: 'absolute',
+                          right: '8px',
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#94A3B8',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center'
+                        }}
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Visual Dropdown / Quick Results List */}
+                  <div style={{
+                    maxHeight: '170px',
+                    overflowY: 'auto',
+                    background: '#050B18',
+                    border: '1px solid rgba(2,132,199,0.3)',
+                    borderRadius: '8px',
+                    padding: '4px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px'
+                  }}>
+                    {filteredCatalog.length === 0 ? (
+                      <div style={{ padding: '12px', textAlign: 'center', fontSize: '11px', color: '#94A3B8' }}>
+                        No furniture products match "{catalogSearchQuery}". Try another keyword or reset filters.
+                      </div>
+                    ) : (
+                      filteredCatalog.map(item => {
+                        const isSelected = item.SKU === selectedSku;
+                        const isCsv = (item.SKU || '').toUpperCase().includes('CSV') || (item.SKU || '').startsWith('OFFICE-');
+                        return (
+                          <div
+                            key={item.SKU}
+                            onClick={() => {
+                              handleSelectCatalogItem(item.SKU);
+                              setIsDropdownOpen(false);
+                            }}
+                            style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              padding: '6px 10px',
+                              borderRadius: '6px',
+                              background: isSelected ? 'rgba(2,132,199,0.25)' : 'rgba(255,255,255,0.03)',
+                              border: isSelected ? '1.5px solid var(--accent-cyan)' : '1px solid rgba(255,255,255,0.06)',
+                              cursor: 'pointer',
+                              transition: 'all 0.12s ease'
+                            }}
+                            onMouseEnter={e => {
+                              if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                            }}
+                            onMouseLeave={e => {
+                              if (!isSelected) e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+                              <span style={{
+                                fontSize: '10.5px',
+                                fontWeight: '900',
+                                color: isSelected ? '#38BDF8' : 'var(--accent-cyan)',
+                                background: 'rgba(2,132,199,0.15)',
+                                padding: '2px 6px',
+                                borderRadius: '4px',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                {item.SKU}
+                              </span>
+                              {isCsv && (
+                                <span style={{
+                                  fontSize: '9px',
+                                  fontWeight: '800',
+                                  color: '#F59E0B',
+                                  background: 'rgba(245,158,11,0.15)',
+                                  padding: '1px 5px',
+                                  borderRadius: '4px',
+                                  whiteSpace: 'nowrap'
+                                }}>
+                                  🆕 CSV
+                                </span>
+                              )}
+                              <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                <span style={{ fontSize: '11.5px', fontWeight: '700', color: isSelected ? '#FFFFFF' : '#E2E8F0' }}>
+                                  {item.Product_Name}
+                                </span>
+                                <span style={{ fontSize: '10px', color: '#94A3B8', marginLeft: '6px' }}>
+                                  • {item.Main_Category} {item.Dimensions ? `(${item.Dimensions})` : ''}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
+                              <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-emerald)' }}>
+                                ₹{(item.Selling_Price_INR || item.MRP_INR || 0).toLocaleString('en-IN')}
+                              </span>
+                              <span style={{ fontSize: '9.5px', color: '#94A3B8', background: 'rgba(255,255,255,0.06)', padding: '2px 5px', borderRadius: '4px' }}>
+                                📦 {item.Total_Component_Boxes || 1} Box{(item.Total_Component_Boxes || 1) > 1 ? 'es' : ''}
+                              </span>
+                              {isSelected && (
+                                <span style={{ color: 'var(--accent-emerald)', fontWeight: '900', fontSize: '12px' }}>✓</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div className="form-field">

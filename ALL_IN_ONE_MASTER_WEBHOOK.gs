@@ -1600,6 +1600,28 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
       result.message = "Showroom Walk-in Lead (" + inqId + " - " + custName + ") saved successfully to Inquiries_Log sheet!";
     }
 
+    else if (action === "DISPATCH_WHATSAPP_PO_DISPATCH" || action === "SEND_WHATSAPP_PROPOSAL" || action === "DISPATCH_BOT_ACTION" || action === "DISPATCH_BULK_BOT_BROADCAST") {
+      var dispatchId = "WA-" + Utilities.getUuid().substring(0, 8).toUpperCase();
+      var recipientPhone = params.phone || params.recipient_phone || "+91 94371";
+      var messageContent = params.message || params.text || "WhatsApp Outbound Message";
+      var refId = params.po_id || params.order_id || params.quote_id || "REF-WA-001";
+
+      var waSheet = getOrCreateSheet(ss, "WhatsApp_Dispatches_Log", [
+        "Dispatch_ID", "Reference_ID", "Recipient_Phone", "Message_Snippet", "Dispatched_Date_Time", "Status"
+      ], "#25D366");
+
+      if (waSheet) {
+        waSheet.appendRow([
+          dispatchId, refId, recipientPhone, String(messageContent).substring(0, 150), currentDateTimeStr, "DELIVERED"
+        ]);
+        applyStandardFormat(waSheet);
+      }
+
+      result.dispatch_id = dispatchId;
+      result.recipient_phone = recipientPhone;
+      result.message = "WhatsApp Outbound Dispatch (" + dispatchId + ") logged to WhatsApp_Dispatches_Log sheet!";
+    }
+
 
     // ==========================================================================================
     // 🏷️ PACKAGE 1: COMMERCIAL SALES & MARGIN ENGINE

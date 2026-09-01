@@ -3551,8 +3551,93 @@ function autoAlignCatalogRows(ss) {
     }
   }
 
-  Logger.log("🪄 Successfully auto-aligned " + alignedCount + " catalog rows into 12 columns!");
+  // Apply borders, alignments, and auto-fit widths across entire sheet
+  formatAndBorderCatalogSheet(sheet);
+
+  Logger.log("🪄 Successfully auto-aligned " + alignedCount + " catalog rows into 12 columns with enterprise borders!");
   return { success: true, alignedRows: alignedCount };
+}
+
+/**
+ * 🎨 Enterprise Grid, Column-to-Column Borders & Auto-Width Engine
+ */
+function formatAndBorderCatalogSheet(sheet) {
+  if (!sheet) {
+    var ss = SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById("14TqQ7LR5xSNppufWFhXDGo9hANC0JV_wRukc7HlIpaI");
+    sheet = ss.getSheetByName("Furniture_Catalog");
+  }
+  if (!sheet) return;
+
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return;
+
+  // 1. Header Styling (Row 1, Cols A to L)
+  var headerRange = sheet.getRange(1, 1, 1, 12);
+  headerRange
+    .setBackground("#0F172A")
+    .setFontColor("#FFFFFF")
+    .setFontFamily("Arial")
+    .setFontSize(10.5)
+    .setFontWeight("bold")
+    .setHorizontalAlignment("center")
+    .setVerticalAlignment("middle")
+    .setWrap(true);
+  sheet.setRowHeight(1, 36);
+
+  // 2. Data Grid Borders & Alignments (Row 2 to lastRow, Cols A to L)
+  var dataRange = sheet.getRange(2, 1, lastRow - 1, 12);
+  
+  // Set clean solid borders between all columns and all rows
+  dataRange.setBorder(
+    true,  // Top
+    true,  // Left
+    true,  // Bottom
+    true,  // Right
+    true,  // 📐 Vertical Column-to-Column Divider Lines
+    true,  // 📐 Horizontal Row-to-Row Divider Lines
+    "#CBD5E1", // Clean slate border color
+    SpreadsheetApp.BorderStyle.SOLID
+  );
+
+  dataRange
+    .setFontFamily("Arial")
+    .setFontSize(10)
+    .setFontColor("#0F172A")
+    .setVerticalAlignment("middle");
+
+  // Specific Column Formats & Alignments
+  // Col A: SKU (Center, Bold)
+  sheet.getRange(2, 1, lastRow - 1, 1).setHorizontalAlignment("center").setFontWeight("bold").setFontColor("#1E293B");
+  // Col B: Product_Name (Left, Bold)
+  sheet.getRange(2, 2, lastRow - 1, 1).setHorizontalAlignment("left").setFontWeight("bold").setFontColor("#0F172A");
+  // Col C: Main_Category (Center)
+  sheet.getRange(2, 3, lastRow - 1, 1).setHorizontalAlignment("center");
+  // Col D: Sub_Category (Center)
+  sheet.getRange(2, 4, lastRow - 1, 1).setHorizontalAlignment("center");
+  // Col E: Price_Tier (Center)
+  sheet.getRange(2, 5, lastRow - 1, 1).setHorizontalAlignment("center");
+  // Col F: Material_Spec (Left, Wrap)
+  sheet.getRange(2, 6, lastRow - 1, 1).setHorizontalAlignment("left").setWrap(true);
+  // Col G: Dimensions (Center)
+  sheet.getRange(2, 7, lastRow - 1, 1).setHorizontalAlignment("center");
+  // Col H: MRP_INR (Right, Currency format ₹#,##0)
+  sheet.getRange(2, 8, lastRow - 1, 1).setHorizontalAlignment("right").setNumberFormat('₹#,##0');
+  // Col I: Selling_Price_INR (Right, Bold Currency format ₹#,##0)
+  sheet.getRange(2, 9, lastRow - 1, 1).setHorizontalAlignment("right").setFontWeight("bold").setNumberFormat('₹#,##0');
+  // Col J: Warranty_Years (Center, "X Yrs")
+  sheet.getRange(2, 10, lastRow - 1, 1).setHorizontalAlignment("center").setNumberFormat('0" Yrs"');
+  // Col K: Total_Component_Boxes (Center, "X Boxes")
+  sheet.getRange(2, 11, lastRow - 1, 1).setHorizontalAlignment("center").setNumberFormat('0" Boxes"');
+  // Col L: Default_Supplier (Left)
+  sheet.getRange(2, 12, lastRow - 1, 1).setHorizontalAlignment("left");
+
+  // Apply clean row heights (28px)
+  for (var r = 2; r <= lastRow; r++) {
+    sheet.setRowHeight(r, 28);
+  }
+
+  // 3. Auto-fit column widths
+  sheet.autoResizeColumns(1, 12);
 }
 
 /**
@@ -3662,6 +3747,7 @@ function onOpen() {
   var ui = SpreadsheetApp.getUi();
   ui.createMenu("👑 OmniBuild OS™")
     .addItem("🪄 Auto-Align & Clean Catalog Data (A to L)", "menuAutoAlignCatalog")
+    .addItem("🎨 Format Grid & Column Borders (Cols A to L)", "menuFormatGridBorders")
     .addItem("🔑 Deduplicate All AppSheet Keys", "menuFixDuplicateKeys")
     .addItem("📅 Standardize All Timestamps", "menuStandardizeTimestamps")
     .addToUi();
@@ -3670,7 +3756,13 @@ function onOpen() {
 function menuAutoAlignCatalog() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var res = autoAlignCatalogRows(ss);
-  SpreadsheetApp.getUi().alert("🪄 Auto-Alignment Complete!\n\nAligned & structured " + res.alignedRows + " rows into the official 12-column catalog (Cols A to L).");
+  SpreadsheetApp.getUi().alert("🪄 Auto-Alignment Complete!\n\nAligned & structured " + res.alignedRows + " rows into the official 12-column catalog (Cols A to L) with clean borders and column divider lines.");
+}
+
+function menuFormatGridBorders() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  formatAndBorderCatalogSheet();
+  SpreadsheetApp.getUi().alert("🎨 Grid Borders Applied!\n\nSolid column divider lines, row borders, text alignments, and currency formats applied to Columns A through L.");
 }
 
 function menuFixDuplicateKeys() {
@@ -3683,4 +3775,5 @@ function menuStandardizeTimestamps() {
   var count = standardizeAllExistingTimestamps(ss);
   SpreadsheetApp.getUi().alert("📅 Timestamp Standardization Complete!\n\nUpdated " + count + " date/time cells to DD-MMM-YYYY hh:mm AM/PM IST.");
 }
+
 

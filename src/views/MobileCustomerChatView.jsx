@@ -28,7 +28,7 @@ import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/
 import { dispatchWebhookAction } from '../services/webhookService';
 
 export function MobileCustomerChatView() {
-  const { catalog, storeMeta, showToast, openModal } = useStore();
+  const { catalog, storeMeta, showToast, openModal, triggerSafeLockOrder, inquiries, setInquiries } = useStore();
 
   // Extract SKU from URL parameters (e.g. #chat?sku=BED-MOD-001 or ?sku=BED-MOD-001)
   const getInitialSku = () => {
@@ -49,6 +49,31 @@ export function MobileCustomerChatView() {
   const [inputMsg, setInputMsg] = useState('');
   const [cloudSynced, setCloudSynced] = useState(false);
   const chatBottomRef = useRef(null);
+
+  // VIP Customer Profile State (Persisted in localStorage)
+  const [customerProfile, setCustomerProfile] = useState(() => {
+    try {
+      const saved = localStorage.getItem('OMNIBUILD_CUSTOMER_PROFILE');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.warn("Error reading customer profile:", e);
+    }
+    return { name: '', phone: '', address: 'Rayagada', isRegistered: false };
+  });
+
+  const [isLeadCaptureOpen, setIsLeadCaptureOpen] = useState(!customerProfile.isRegistered);
+  const [leadName, setLeadName] = useState(customerProfile.name || '');
+  const [leadPhone, setLeadPhone] = useState(customerProfile.phone || '');
+  const [leadAddress, setLeadAddress] = useState(customerProfile.address || 'Rayagada');
+
+  // Interactive Product Customization & Tuner
+  const [woodFinish, setWoodFinish] = useState('👑 Natural Teak');
+  const [storageType, setStorageType] = useState('⚡ Hydraulic Auto-Lift');
+  const [freePillows, setFreePillows] = useState(true);
+  const [freeProtector, setFreeProtector] = useState(true);
+  const [roomPreset, setRoomPreset] = useState('14x16'); // '12x14', '14x16', '16x18'
+  const [isSafeLockModalOpen, setIsSafeLockModalOpen] = useState(false);
+  const [tokenAmountOption, setTokenAmountOption] = useState(5000); // 5000 or 50%
 
   // Silent Background Cloud Sync with Google Sheets on QR scan
   useEffect(() => {
@@ -83,6 +108,110 @@ export function MobileCustomerChatView() {
   const sp = activeProduct.Selling_Price_INR || 89790;
   const savings = mrp - sp;
   const tokenAdvance50 = Math.round(sp * 0.5);
+
+  // Handle Lead Registration (Saves to Google Sheets & CRM)
+  const handleRegisterLead = (e) => {
+    if (e) e.preventDefault();
+    if (!leadName.trim() || !leadPhone.trim()) {
+      showToast("⚠️ Please enter your Name and WhatsApp Mobile Number to unlock VIP discounts.", false);
+      return;
+    }
+
+    const newProfile = {
+      name: leadName.trim(),
+      phone: leadPhone.trim(),
+      address: leadAddress.trim() || 'Rayagada',
+      isRegistered: true
+    };
+    setCustomerProfile(newProfile);
+    localStorage.setItem('OMNIBUILD_CUSTOMER_PROFILE', JSON.stringify(newProfile));
+    setIsLeadCaptureOpen(false);
+
+    // Register in CRM Leads State
+    const newInquiry = {
+      Inquiry_ID: `INQ-2026-${Math.floor(100 + Math.random() * 900)}`,
+      Customer_Name: newProfile.name,
+      Customer_Phone: newProfile.phone,
+      Address: newProfile.address,
+      Category_Models: `${activeProduct.Product_Name} (${activeProduct.SKU})`,
+      Budget_INR: activeProduct.Selling_Price_INR || 89790,
+      Urgency: "HIGH_HOT_LEAD",
+      AI_Intent_Score: "95% (HOT VIP LEAD)",
+      Status: "ENGAGED_ON_MOBILE_AI"
+    };
+    setInquiries(prev => [newInquiry, ...prev]);
+
+    playSuccessChime();
+    triggerGoldenConfetti();
+    showToast(`🎉 Welcome ${newProfile.name}! 8% Festive Discount Unlocked ✓`, true);
+
+    // Dispatch to Master Google Apps Script Webhook (Table 6: Inquiries_Log)
+    dispatchWebhookAction('LOG_INQUIRY', {
+      customer_name: newProfile.name,
+      customer_phone: newProfile.phone,
+      address: newProfile.address,
+      category: activeProduct.Product_Name,
+      budget: activeProduct.Selling_Price_INR,
+      intent_score: '95% (HOT VIP LEAD)'
+    });
+
+    // Personalized Welcome Greeting in Chat
+    setChatMessages(prev => [
+      ...prev,
+      {
+        id: Date.now(),
+        sender: "bot",
+        title: "👑 VIP Welcome & Festive Offer Unlocked",
+        text: `Namaskar **${newProfile.name} Ji**! 🙏\n\nI have registered your profile for **${newProfile.address}** delivery. You now have exclusive access to:\n\n• ✨ **Showroom Spot Discount:** Up to ₹${savings.toLocaleString()} OFF\n• 🎁 **Complimentary Gifts:** 2x Ortho Pillows + Mattress Protector\n• 🚚 **Free Hydraulic Assembly:** In Rayagada by Master Carpenter Narayana Mistri.\n\nTap **[🔒 SafeLock Bed]** below to hold this piece for 48 hours, or ask me any question!`,
+        time: "Just Now",
+        matchedProducts: []
+      }
+    ]);
+  };
+
+  // Handle 1-Click SafeLock Confirmation by Customer
+  const handleConfirmCustomerSafeLock = () => {
+    if (!customerProfile.isRegistered) {
+      setIsLeadCaptureOpen(true);
+      showToast("⚠️ Please enter your name and phone number to SafeLock this furniture piece.");
+      return;
+    }
+
+    const giftsText = [freePillows ? '2x Ortho Pillows (FREE)' : '', freeProtector ? 'Mattress Protector (FREE)' : ''].filter(Boolean).join(', ');
+    const skuSpec = `${activeProduct.SKU} (${activeProduct.Product_Name}) [Finish: ${woodFinish}, Storage: ${storageType}]${giftsText ? ` + Gifts: [${giftsText}]` : ''}`;
+
+    const advancePaid = Number(tokenAmountOption) || 5000;
+
+    const created = triggerSafeLockOrder({
+      Customer_Name: customerProfile.name,
+      Customer_Phone: customerProfile.phone,
+      Project_Address: customerProfile.address,
+      Ordered_SKU: skuSpec,
+      Total_Amount_INR: sp,
+      Advance_Paid_INR: advancePaid,
+      Balance_Due_INR: sp - advancePaid,
+      Delivery_Schedule: "Today, 04:30 PM",
+      Assigned_Driver: "Tophan Gouda (Tata Ace OD-18-A-1234)",
+      Carpenter_Assigned: "Narayana Mistri"
+    });
+
+    setIsSafeLockModalOpen(false);
+    playSuccessChime();
+    triggerGoldenConfetti();
+    showToast(`🔒 Order #${created.Order_ID} SAFELOCKED for ${customerProfile.name}! Stock reserved in warehouse.`, true);
+
+    setChatMessages(prev => [
+      ...prev,
+      {
+        id: Date.now(),
+        sender: "bot",
+        title: "🔒 SafeLock Reservation Confirmed!",
+        text: `🎉 **Congratulations ${customerProfile.name} Ji!**\n\nYour **${activeProduct.Product_Name}** has been **SAFELOCKED (RESERVED)** under Order Ref: **#${created.Order_ID}**!\n\n• 📦 **Stock Reserved:** 1 Unit locked at Warehouse Dock 1\n• 💰 **Token Advance:** ₹${advancePaid.toLocaleString()} Settled via UPI QR\n• 🚚 **Delivery Scheduled:** Today, 04:30 PM (Driver: Tophan Gouda)\n• 🪚 **Installation:** Narayana Mistri assigned\n\nDirector Rakesh has received your order notification. Thank you for choosing Godrej Interio!`,
+        time: "Just Now",
+        matchedProducts: []
+      }
+    ]);
+  };
 
   // Chat Messages State
   const [chatMessages, setChatMessages] = useState([
@@ -401,8 +530,86 @@ export function MobileCustomerChatView() {
         </div>
       </div>
 
+      {/* Top VIP Lead Capture & Identity Bar */}
+      {isLeadCaptureOpen ? (
+        <div style={{ margin: '10px 14px 4px 14px', background: 'linear-gradient(135deg, rgba(212,175,55,0.2) 0%, rgba(16,185,129,0.15) 100%)', border: '1.5px solid var(--accent-gold)', borderRadius: '16px', padding: '14px', boxShadow: '0 8px 25px rgba(0,0,0,0.5)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Sparkles size={16} color="var(--accent-gold)" />
+              <span style={{ fontSize: '12px', fontWeight: '900', color: '#FCD34D', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Unlock VIP 8% Festive Discount
+              </span>
+            </div>
+            {customerProfile.isRegistered && (
+              <button 
+                onClick={() => setIsLeadCaptureOpen(false)}
+                style={{ background: 'transparent', border: 'none', color: '#94A3B8', fontSize: '11px', cursor: 'pointer' }}
+              >
+                ✕ Close
+              </button>
+            )}
+          </div>
+          <p style={{ fontSize: '11px', color: '#CBD5E1', margin: '0 0 10px 0', lineHeight: '1.4' }}>
+            Enter your name & WhatsApp number to lock in exclusive showroom festive pricing, free delivery, and a 48-hour SafeLock stock hold!
+          </p>
+          <form onSubmit={handleRegisterLead} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <input
+                type="text"
+                placeholder="Your Full Name (e.g. Jai Sriram)"
+                value={leadName}
+                onChange={e => setLeadName(e.target.value)}
+                style={{ background: '#030712', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', padding: '8px 10px', color: '#FFFFFF', fontSize: '12px', outline: 'none' }}
+                required
+              />
+              <input
+                type="tel"
+                placeholder="WhatsApp Number (e.g. 9437155667)"
+                value={leadPhone}
+                onChange={e => setLeadPhone(e.target.value)}
+                style={{ background: '#030712', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', padding: '8px 10px', color: '#FFFFFF', fontSize: '12px', outline: 'none' }}
+                required
+              />
+            </div>
+            <input
+              type="text"
+              placeholder="Delivery Location in Rayagada (e.g. Sai Priya Nagar, Rayagada)"
+              value={leadAddress}
+              onChange={e => setLeadAddress(e.target.value)}
+              style={{ background: '#030712', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', padding: '8px 10px', color: '#FFFFFF', fontSize: '12px', outline: 'none' }}
+            />
+            <button
+              type="submit"
+              style={{ background: 'linear-gradient(135deg, #D4AF37 0%, #B45309 100%)', color: '#000000', border: 'none', borderRadius: '10px', padding: '9px', fontSize: '12px', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 15px rgba(212,175,55,0.4)' }}
+            >
+              <Sparkles size={14} /> ✨ Claim VIP Discount & Save My Profile
+            </button>
+          </form>
+        </div>
+      ) : (
+        <div style={{ margin: '8px 14px 2px 14px', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.35)', borderRadius: '12px', padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '14px' }}>👑</span>
+            <div>
+              <div style={{ fontSize: '12px', fontWeight: '800', color: '#6EE7B7' }}>
+                VIP Client: {customerProfile.name}
+              </div>
+              <div style={{ fontSize: '10px', color: '#94A3B8' }}>
+                📞 {customerProfile.phone} • 📍 {customerProfile.address}
+              </div>
+            </div>
+          </div>
+          <button 
+            onClick={() => setIsLeadCaptureOpen(true)}
+            style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '4px 8px', color: '#FFFFFF', fontSize: '10.5px', fontWeight: '700', cursor: 'pointer' }}
+          >
+            ✏️ Edit
+          </button>
+        </div>
+      )}
+
       {/* Scanned Furniture Showcase Card */}
-      <div style={{ margin: '12px 14px 6px 14px', background: '#0F172A', borderRadius: '18px', border: '1.5px solid rgba(212,175,55,0.35)', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.6)' }}>
+      <div style={{ margin: '10px 14px 6px 14px', background: '#0F172A', borderRadius: '18px', border: '1.5px solid rgba(212,175,55,0.35)', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.6)' }}>
         
         {/* Card Header Banner */}
         <div 
@@ -422,14 +629,14 @@ export function MobileCustomerChatView() {
           </div>
         </div>
 
-        {/* Collapsible Product Details */}
+        {/* Collapsible Product Details & Interactive Customizer */}
         {isProductCardExpanded && (
           <div style={{ padding: '12px 14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '90px 1fr', gap: '12px', alignItems: 'center' }}>
               <img 
                 src={activeProduct.Image_URL || 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=600'} 
                 alt={activeProduct.Product_Name}
-                style={{ width: '90px', height: '80px', objectFit: 'cover', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.15)' }}
+                style={{ width: '90px', height: '85px', objectFit: 'cover', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.15)' }}
               />
               <div>
                 <h3 style={{ fontSize: '13.5px', fontWeight: '900', color: '#FFFFFF', margin: '0 0 4px 0', lineHeight: '1.3' }}>
@@ -452,24 +659,158 @@ export function MobileCustomerChatView() {
               </div>
             </div>
 
-            {/* Quick 1-Tap Booking Buttons */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '12px' }}>
+            {/* 🎛️ Interactive Customer Preference Customizer */}
+            <div style={{ background: '#030712', borderRadius: '12px', padding: '10px', margin: '12px 0 8px 0', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '11px', color: 'var(--accent-gold-light)', fontWeight: '800' }}>🪵 Wood / Polish Finish:</span>
+                <select 
+                  value={woodFinish} 
+                  onChange={e => setWoodFinish(e.target.value)}
+                  style={{ background: '#0F1A2E', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '3px 6px', fontSize: '11px' }}
+                >
+                  <option value="👑 Natural Teak">👑 Natural CP Teak</option>
+                  <option value="🍫 Dark Walnut">🍫 Dark Walnut</option>
+                  <option value="🍷 Royal Mahogany">🍷 Royal Mahogany</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '11px', color: 'var(--accent-cyan)', fontWeight: '800' }}>⚙️ Storage Mechanism:</span>
+                <select 
+                  value={storageType} 
+                  onChange={e => setStorageType(e.target.value)}
+                  style={{ background: '#0F1A2E', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', padding: '3px 6px', fontSize: '11px' }}
+                >
+                  <option value="⚡ Hydraulic Auto-Lift">⚡ Hydraulic Auto-Lift</option>
+                  <option value="📦 Manual Box Storage">📦 Manual Box Storage</option>
+                  <option value="🗄️ Side Drawers">🗄️ Side Drawers</option>
+                </select>
+              </div>
+
+              {/* Free Gifts Checklist */}
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '6px', marginTop: '2px' }}>
+                <label style={{ fontSize: '10.5px', color: '#6EE7B7', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={freePillows} onChange={e => setFreePillows(e.target.checked)} />
+                  2x Ortho Pillows (FREE)
+                </label>
+                <label style={{ fontSize: '10.5px', color: '#6EE7B7', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={freeProtector} onChange={e => setFreeProtector(e.target.checked)} />
+                  Mattress Protector (FREE)
+                </label>
+              </div>
+            </div>
+
+            {/* Quick 1-Tap Booking & Action Buttons */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '8px', marginTop: '10px' }}>
               <button 
-                onClick={() => handlePayUpi()}
-                style={{ background: 'linear-gradient(135deg, #10B981, #047857)', color: '#FFFFFF', border: 'none', borderRadius: '10px', padding: '8px 10px', fontSize: '11px', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', cursor: 'pointer', boxShadow: '0 4px 12px rgba(16,185,129,0.3)' }}
+                onClick={() => setIsSafeLockModalOpen(true)}
+                style={{ background: 'linear-gradient(135deg, #D4AF37 0%, #B45309 100%)', color: '#000000', border: 'none', borderRadius: '10px', padding: '9px 10px', fontSize: '11.5px', fontWeight: '900', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(212,175,55,0.4)' }}
               >
-                <CreditCard size={13} /> 50% Token (₹{tokenAdvance50.toLocaleString()})
+                🔒 SafeLock Bed (₹5k Token)
               </button>
               <button 
-                onClick={() => handleSendChat(`Please provide full room clearance and dimensions for ${activeProduct.Product_Name}`)}
-                style={{ background: 'rgba(255,255,255,0.08)', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '10px', padding: '8px 10px', fontSize: '11px', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', cursor: 'pointer' }}
+                onClick={() => handleOpenWhatsApp()}
+                style={{ background: 'rgba(37,211,102,0.15)', color: '#25D366', border: '1px solid #25D366', borderRadius: '10px', padding: '9px 10px', fontSize: '11px', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', cursor: 'pointer' }}
               >
-                <Sparkles size={13} color="var(--accent-gold-light)" /> Room Clearance
+                <MessageSquare size={13} /> 📲 Video Brochure
               </button>
             </div>
           </div>
         )}
       </div>
+
+      {/* SafeLock Reservation & Dynamic Token Advance Modal */}
+      {isSafeLockModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div style={{ background: '#0F172A', border: '2px solid var(--accent-gold)', borderRadius: '20px', padding: '20px', maxWidth: '420px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.8)', color: '#FFFFFF' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(212,175,55,0.3)', paddingBottom: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '18px' }}>🔒</span>
+                <h3 style={{ fontSize: '15px', fontWeight: '900', color: '#FCD34D' }}>SafeLock 48-Hour Stock Hold</h3>
+              </div>
+              <button onClick={() => setIsSafeLockModalOpen(false)} style={{ background: 'transparent', border: 'none', color: '#94A3B8', fontSize: '14px', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            <div style={{ margin: '14px 0', fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ background: '#030712', borderRadius: '10px', padding: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <div style={{ fontWeight: '800', color: '#FFFFFF', fontSize: '13px' }}>{activeProduct.Product_Name}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Finish: {woodFinish} • Storage: {storageType}</div>
+                <div style={{ fontSize: '11px', color: 'var(--accent-emerald)', marginTop: '4px' }}>
+                  {freePillows && '✓ 2x Ortho Pillows (FREE) '}
+                  {freeProtector && '✓ Mattress Protector (FREE)'}
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Select Token Advance Amount:</label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginTop: '4px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setTokenAmountOption(5000)}
+                    style={{
+                      background: tokenAmountOption === 5000 ? 'var(--accent-gold)' : '#030712',
+                      color: tokenAmountOption === 5000 ? '#000000' : '#FFFFFF',
+                      border: '1px solid var(--accent-gold)',
+                      borderRadius: '8px',
+                      padding: '8px',
+                      fontSize: '11.5px',
+                      fontWeight: '800',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ₹5,000 Token Hold
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTokenAmountOption(tokenAdvance50)}
+                    style={{
+                      background: tokenAmountOption === tokenAdvance50 ? 'var(--accent-emerald)' : '#030712',
+                      color: tokenAmountOption === tokenAdvance50 ? '#FFFFFF' : '#FFFFFF',
+                      border: '1px solid var(--accent-emerald)',
+                      borderRadius: '8px',
+                      padding: '8px',
+                      fontSize: '11.5px',
+                      fontWeight: '800',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    50% Advance (₹{tokenAdvance50.toLocaleString()})
+                  </button>
+                </div>
+              </div>
+
+              {/* Dynamic QR Display & Bank Details */}
+              <div style={{ textAlign: 'center', background: '#FFFFFF', color: '#000000', borderRadius: '12px', padding: '12px', margin: '6px 0' }}>
+                <div style={{ fontSize: '11px', fontWeight: '800', color: '#0F172A' }}>SCAN & PAY VIA ANY UPI APP</div>
+                <div style={{ fontSize: '10px', color: '#475569' }}>Merchant VPA: {storeMeta.upiVpa || '9390553301@ybl'}</div>
+                <div style={{ width: '120px', height: '120px', background: '#F1F5F9', border: '1px solid #CBD5E1', borderRadius: '8px', margin: '8px auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(`upi://pay?pa=${storeMeta.upiVpa || '9390553301@ybl'}&pn=${encodeURIComponent(storeMeta.storeName || 'Godrej Interio Rayagada')}&am=${tokenAmountOption}&cu=INR&tn=${encodeURIComponent(`SafeLock Token for ${activeProduct.SKU}`)}`)}`}
+                    alt="UPI QR"
+                    style={{ width: '110px', height: '110px' }}
+                  />
+                </div>
+                <div style={{ fontSize: '12px', fontWeight: '900', color: '#047857' }}>Amount Payable: ₹{tokenAmountOption.toLocaleString()}</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button 
+                onClick={() => setIsSafeLockModalOpen(false)}
+                style={{ flex: 1, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px', padding: '10px', color: '#FFFFFF', fontSize: '12px', fontWeight: '700', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleConfirmCustomerSafeLock}
+                style={{ flex: 2, background: 'linear-gradient(135deg, #10B981 0%, #047857 100%)', border: 'none', borderRadius: '10px', padding: '10px', color: '#FFFFFF', fontSize: '12px', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 15px rgba(16,185,129,0.4)' }}
+              >
+                <Check size={15} /> Confirm SafeLock Reservation
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Chat Messages Stream */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '12px' }}>

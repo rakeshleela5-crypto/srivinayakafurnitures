@@ -103,6 +103,21 @@ function handleWebhookRequest(params) {
     }
 
     // ------------------------------------------------------------------------------------------
+    // ✨ MASTER POLISH & ENTERPRISE GRID BORDERS FOR ALL 28 TABLES
+    // ------------------------------------------------------------------------------------------
+    else if (action === "MASTER_POLISH_ALL" || action === "POLISH_ALL_TABLES" || action === "MASTER_HEALTH_FIX") {
+      var polishRes = masterPolishAllEnterpriseTables(ss);
+      result.summary = polishRes;
+      result.message = "Master polish complete! Deduplicated " + polishRes.dedupedKeys + " keys, standardized " + polishRes.standardizedTimestamps + " dates, aligned " + polishRes.alignedCatalogRows + " catalog rows, and bordered " + polishRes.formattedSheetsCount + " tables!";
+    }
+
+    else if (action === "FORMAT_ALL_SHEETS" || action === "BORDER_ALL_TABLES") {
+      var bCount = formatAndBorderAllSheets(ss);
+      result.formatted_sheets = bCount;
+      result.message = "Successfully applied solid grid divider lines and borders across " + bCount + " tables in Google Sheets!";
+    }
+
+    // ------------------------------------------------------------------------------------------
     // 📁 BULK CSV / EXCEL CATALOG IMPORT & REAL-TIME AUTO-BORDER SYNC ENGINE
     // ------------------------------------------------------------------------------------------
     else if (action === "BULK_CATALOG_IMPORT" || action === "IMPORT_CSV_CATALOG") {
@@ -3630,20 +3645,17 @@ function autoAlignCatalogRows(ss) {
 }
 
 /**
- * 🎨 Enterprise Grid, Column-to-Column Borders & Auto-Width Engine
+ * 🎨 Universal Dynamic Table Grid, Border & Column Line Formatter
+ * Works for ANY of the 28 tables in Google Sheets
  */
-function formatAndBorderCatalogSheet(sheet) {
-  if (!sheet) {
-    var ss = SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById("14TqQ7LR5xSNppufWFhXDGo9hANC0JV_wRukc7HlIpaI");
-    sheet = ss.getSheetByName("Furniture_Catalog");
-  }
+function formatAndBorderSingleSheet(sheet) {
   if (!sheet) return;
-
   var lastRow = sheet.getLastRow();
-  if (lastRow <= 1) return;
+  var lastCol = sheet.getLastColumn();
+  if (lastRow <= 0 || lastCol <= 0) return;
 
-  // 1. Header Styling (Row 1, Cols A to L)
-  var headerRange = sheet.getRange(1, 1, 1, 12);
+  // 1. Header Styling (Row 1, Cols 1 to lastCol)
+  var headerRange = sheet.getRange(1, 1, 1, lastCol);
   headerRange
     .setBackground("#0F172A")
     .setFontColor("#FFFFFF")
@@ -3653,83 +3665,149 @@ function formatAndBorderCatalogSheet(sheet) {
     .setHorizontalAlignment("center")
     .setVerticalAlignment("middle")
     .setWrap(true);
-  sheet.setRowHeight(1, 36);
 
-  // 2. Data Grid Borders & Alignments (Row 2 to lastRow, Cols A to L)
-  var dataRange = sheet.getRange(2, 1, lastRow - 1, 12);
-  
-  // Set clean solid borders between all columns and all rows
-  dataRange.setBorder(
-    true,  // Top
-    true,  // Left
-    true,  // Bottom
-    true,  // Right
-    true,  // 📐 Vertical Column-to-Column Divider Lines
-    true,  // 📐 Horizontal Row-to-Row Divider Lines
-    "#CBD5E1", // Clean slate border color
-    SpreadsheetApp.BorderStyle.SOLID
-  );
+  try { sheet.setRowHeight(1, 36); } catch(e) {}
 
-  dataRange
-    .setFontFamily("Arial")
-    .setFontSize(10)
-    .setFontColor("#0F172A")
-    .setVerticalAlignment("middle");
+  if (lastRow > 1) {
+    // 2. Data Grid Borders (Row 2 to lastRow, Cols 1 to lastCol)
+    var dataRange = sheet.getRange(2, 1, lastRow - 1, lastCol);
+    dataRange.setBorder(
+      true,  // Top
+      true,  // Left
+      true,  // Bottom
+      true,  // Right
+      true,  // 📐 Vertical Column-to-Column Divider Lines
+      true,  // 📐 Horizontal Row-to-Row Divider Lines
+      "#CBD5E1", // Clean slate border color
+      SpreadsheetApp.BorderStyle.SOLID
+    );
 
-  // Specific Column Formats & Alignments
-  // Col A: SKU (Center, Bold)
-  sheet.getRange(2, 1, lastRow - 1, 1).setHorizontalAlignment("center").setFontWeight("bold").setFontColor("#1E293B");
-  // Col B: Product_Name (Left, Bold)
-  sheet.getRange(2, 2, lastRow - 1, 1).setHorizontalAlignment("left").setFontWeight("bold").setFontColor("#0F172A");
-  // Col C: Main_Category (Center)
-  sheet.getRange(2, 3, lastRow - 1, 1).setHorizontalAlignment("center");
-  // Col D: Sub_Category (Center)
-  sheet.getRange(2, 4, lastRow - 1, 1).setHorizontalAlignment("center");
-  // Col E: Price_Tier (Center)
-  sheet.getRange(2, 5, lastRow - 1, 1).setHorizontalAlignment("center");
-  // Col F: Material_Spec (Left, Wrap)
-  sheet.getRange(2, 6, lastRow - 1, 1).setHorizontalAlignment("left").setWrap(true);
-  // Col G: Dimensions (Center)
-  sheet.getRange(2, 7, lastRow - 1, 1).setHorizontalAlignment("center");
-  // Col H: MRP_INR (Right, Currency format)
-  try {
-    sheet.getRange(2, 8, lastRow - 1, 1).setHorizontalAlignment("right").setNumberFormat('₹#,##0');
-  } catch(e) {
-    try { sheet.getRange(2, 8, lastRow - 1, 1).setHorizontalAlignment("right"); } catch(e2) {}
-  }
-  // Col I: Selling_Price_INR (Right, Bold Currency format)
-  try {
-    sheet.getRange(2, 9, lastRow - 1, 1).setHorizontalAlignment("right").setFontWeight("bold").setNumberFormat('₹#,##0');
-  } catch(e) {
-    try { sheet.getRange(2, 9, lastRow - 1, 1).setHorizontalAlignment("right").setFontWeight("bold"); } catch(e2) {}
-  }
-  // Col J: Warranty_Years (Center, "X Yrs")
-  try {
-    sheet.getRange(2, 10, lastRow - 1, 1).setHorizontalAlignment("center").setNumberFormat('0" Yrs"');
-  } catch(e) {
-    try { sheet.getRange(2, 10, lastRow - 1, 1).setHorizontalAlignment("center"); } catch(e2) {}
-  }
-  // Col K: Total_Component_Boxes (Center, "X Boxes")
-  try {
-    sheet.getRange(2, 11, lastRow - 1, 1).setHorizontalAlignment("center").setNumberFormat('0" Boxes"');
-  } catch(e) {
-    try { sheet.getRange(2, 11, lastRow - 1, 1).setHorizontalAlignment("center"); } catch(e2) {}
-  }
-  // Col L: Default_Supplier (Left)
-  sheet.getRange(2, 12, lastRow - 1, 1).setHorizontalAlignment("left");
+    dataRange
+      .setFontFamily("Arial")
+      .setFontSize(10)
+      .setFontColor("#0F172A")
+      .setVerticalAlignment("middle");
 
-  // Apply clean row heights (28px) safely
-  try {
-    sheet.setRowHeight(1, 36);
-    for (var r = 2; r <= Math.min(lastRow, 300); r++) {
-      sheet.setRowHeight(r, 28);
+    // 3. Intelligent Column Alignments & Formats based on Header Names
+    var headers = headerRange.getValues()[0];
+    for (var c = 0; c < headers.length; c++) {
+      var headerName = String(headers[c] || "").trim().toUpperCase();
+      var colRange = sheet.getRange(2, c + 1, lastRow - 1, 1);
+
+      // Primary Key / SKU / ID / Status / Date / Phone / OTP / Bay / Tier ➔ Center
+      if (headerName.includes("ID") || headerName.includes("SKU") || headerName.includes("CODE") ||
+          headerName.includes("STATUS") || headerName.includes("DATE") || headerName.includes("TIME") ||
+          headerName.includes("PHONE") || headerName.includes("OTP") || headerName.includes("PIN") ||
+          headerName.includes("BAY") || headerName.includes("TIER") || headerName.includes("PLATE") ||
+          headerName.includes("CATEGORY") || headerName.includes("DIMENSIONS") || headerName.includes("WARRANTY") ||
+          headerName.includes("BOX")) {
+        colRange.setHorizontalAlignment("center");
+        if (c === 0 || headerName.includes("SKU") || headerName.includes("ID")) {
+          colRange.setFontWeight("bold").setFontColor("#1E293B");
+        }
+      }
+      // Currency & Numbers (Amount, Price, MRP, Margin, Cost, Revenue, Balance, Wage, Due) ➔ Right
+      else if (headerName.includes("INR") || headerName.includes("AMOUNT") || headerName.includes("PRICE") ||
+               headerName.includes("MRP") || headerName.includes("REVENUE") || headerName.includes("COST") ||
+               headerName.includes("MARGIN") || headerName.includes("BALANCE") || headerName.includes("DUE") ||
+               headerName.includes("WAGE") || headerName.includes("CREDIT") || headerName.includes("PAYOUT") ||
+               headerName.includes("TOTAL") || headerName.includes("COUNT") || headerName.includes("DAYS")) {
+        colRange.setHorizontalAlignment("right");
+        if (headerName.includes("INR") || headerName.includes("PRICE") || headerName.includes("MRP") || headerName.includes("AMOUNT") || headerName.includes("REVENUE") || headerName.includes("MARGIN") || headerName.includes("BALANCE")) {
+          colRange.setFontWeight("bold");
+          try { colRange.setNumberFormat('₹#,##0'); } catch(e) {}
+        }
+      }
+      // Names, Specs, Addresses, Descriptions ➔ Left
+      else {
+        colRange.setHorizontalAlignment("left");
+        if (headerName.includes("NAME") || headerName.includes("CUSTOMER")) {
+          colRange.setFontWeight("bold").setFontColor("#0F172A");
+        }
+        if (headerName.includes("SPEC") || headerName.includes("ADDRESS") || headerName.includes("NOTES") || headerName.includes("ITEMS")) {
+          colRange.setWrap(true);
+        }
+      }
     }
-  } catch(e) {}
 
-  // 3. Auto-fit column widths safely
+    // Row heights for data rows
+    try {
+      for (var r = 2; r <= Math.min(lastRow, 300); r++) {
+        sheet.setRowHeight(r, 28);
+      }
+    } catch(e) {}
+  }
+
+  // 4. Auto-fit column widths
   try {
-    sheet.autoResizeColumns(1, 12);
+    sheet.autoResizeColumns(1, lastCol);
   } catch(e) {}
+}
+
+/**
+ * 🎨 Format Grid, Column Divider Lines & Borders for ALL 28 Sheets
+ */
+function formatAndBorderAllSheets(ss) {
+  if (!ss) ss = SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById("14TqQ7LR5xSNppufWFhXDGo9hANC0JV_wRukc7HlIpaI");
+  var sheets = ss.getSheets();
+  var formattedCount = 0;
+
+  for (var i = 0; i < sheets.length; i++) {
+    var sheet = sheets[i];
+    try {
+      formatAndBorderSingleSheet(sheet);
+      formattedCount++;
+    } catch(e) {
+      Logger.log("Notice on sheet " + sheet.getName() + ": " + e.toString());
+    }
+  }
+
+  Logger.log("🎨 Successfully formatted borders and column divider lines on " + formattedCount + " sheets!");
+  return formattedCount;
+}
+
+function formatAndBorderCatalogSheet(sheet) {
+  if (!sheet) {
+    var ss = SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById("14TqQ7LR5xSNppufWFhXDGo9hANC0JV_wRukc7HlIpaI");
+    sheet = ss.getSheetByName("Furniture_Catalog");
+  }
+  if (sheet) formatAndBorderSingleSheet(sheet);
+}
+
+/**
+ * ✨ 1-Click Master Polish Engine:
+ * 1. Deduplicates all AppSheet Keys across all 28 tables
+ * 2. Standardizes all Timestamps & Dates to DD-MMM-YYYY hh:mm AM/PM IST
+ * 3. Auto-aligns messy raw catalog rows into 12 columns
+ * 4. Applies solid column divider lines, borders, row heights and auto-widths across all 28 tables
+ */
+function masterPolishAllEnterpriseTables(ss) {
+  if (!ss) ss = SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById("14TqQ7LR5xSNppufWFhXDGo9hANC0JV_wRukc7HlIpaI");
+
+  // Step 1: AppSheet Key Deduplication
+  var keyRes = fixAllAppSheetDuplicateKeys();
+  var dedupedKeys = (keyRes && keyRes.fixed_count) || 0;
+
+  // Step 2: Timestamp Standardization
+  var stampCount = standardizeAllExistingTimestamps(ss);
+
+  // Step 3: Catalog Auto-Alignment
+  var alignRes = autoAlignCatalogRows(ss);
+  var alignedRows = (alignRes && alignRes.alignedRows) || 0;
+
+  // Step 4: Universal Grid Borders & Column Divider Lines across all tables
+  var sheetsCount = formatAndBorderAllSheets(ss);
+
+  Logger.log("✨ Master Polish Finished: " + dedupedKeys + " keys fixed, " + stampCount + " dates standardized, " + alignedRows + " catalog rows aligned, " + sheetsCount + " tables bordered!");
+
+  return {
+    success: true,
+    dedupedKeys: dedupedKeys,
+    standardizedTimestamps: stampCount,
+    alignedCatalogRows: alignedRows,
+    formattedSheetsCount: sheetsCount,
+    timestamp: formatDateTimeIndian(new Date())
+  };
 }
 
 /**
@@ -3838,23 +3916,38 @@ function parseRawFurnitureText(text) {
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
   ui.createMenu("👑 OmniBuild OS™")
+    .addItem("✨ Master Polish All 28 Tables (Borders + Keys + Dates)", "menuMasterPolishAll")
+    .addSeparator()
+    .addItem("🎨 Format Grid & Column Borders (All 28 Tables)", "menuFormatAllGridBorders")
     .addItem("🪄 Auto-Align & Clean Catalog Data (A to L)", "menuAutoAlignCatalog")
-    .addItem("🎨 Format Grid & Column Borders (Cols A to L)", "menuFormatGridBorders")
     .addItem("🔑 Deduplicate All AppSheet Keys", "menuFixDuplicateKeys")
     .addItem("📅 Standardize All Timestamps", "menuStandardizeTimestamps")
     .addToUi();
+}
+
+function menuMasterPolishAll() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var res = masterPolishAllEnterpriseTables(ss);
+  SpreadsheetApp.getUi().alert(
+    "✨ Master Enterprise Polish Complete!\n\n" +
+    "• Deduplicated AppSheet Keys: " + res.dedupedKeys + "\n" +
+    "• Standardized Timestamps: " + res.standardizedTimestamps + "\n" +
+    "• Aligned Catalog Rows: " + res.alignedCatalogRows + "\n" +
+    "• Bordered & Styled Tables: " + res.formattedSheetsCount + " / 28\n\n" +
+    "All sheets are now fully synchronized with solid column divider lines and auto-width formatting!"
+  );
+}
+
+function menuFormatAllGridBorders() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var count = formatAndBorderAllSheets(ss);
+  SpreadsheetApp.getUi().alert("🎨 Grid Borders Applied!\n\nSolid column divider lines, row borders, and auto-widths applied across " + count + " tables!");
 }
 
 function menuAutoAlignCatalog() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var res = autoAlignCatalogRows(ss);
   SpreadsheetApp.getUi().alert("🪄 Auto-Alignment Complete!\n\nAligned & structured " + res.alignedRows + " rows into the official 12-column catalog (Cols A to L) with clean borders and column divider lines.");
-}
-
-function menuFormatGridBorders() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  formatAndBorderCatalogSheet();
-  SpreadsheetApp.getUi().alert("🎨 Grid Borders Applied!\n\nSolid column divider lines, row borders, text alignments, and currency formats applied to Columns A through L.");
 }
 
 function menuFixDuplicateKeys() {

@@ -676,7 +676,7 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
     // ------------------------------------------------------------------------------------------
     // SYSTEM 3: SmartKit™ 5-Box Staging & Dispatch Lock
     // ------------------------------------------------------------------------------------------
-    else if (action === "SYSTEM_3_SMARTKIT_STAGE") {
+    else if (action === "SYSTEM_3_SMARTKIT_STAGE" || action === "SMARTKIT_BOX_STAGED") {
       var sheet = getSheetByNameFlexible(ss, ["SmartKit_Components", "02_SmartKit_Components", "SmartKit Components"]);
       var targetSku = params.sku || "BED-MOD-001";
       if (sheet) {
@@ -1607,22 +1607,22 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
     // ==========================================================================================
     // 📦 STAFF MOBILE INWARD & FACTORY UNLOADING SCANNER ENGINE
     // ==========================================================================================
-    else if (action === "INWARD_STOCK_SCAN" || action === "INWARD_SCAN" || action === "RECEIVE_INWARD_PO_QC" || action === "INWARD_STOCK" || action === "FACTORY_INWARD_RECEIVING") {
-      var sku = params.sku || "BED-MOD-001";
-      var productName = params.product_name || "Godrej Royal Teak King Bed";
-      var category = params.category || "Bedroom";
-      var poNumber = params.po_number || "PO-2026-" + Math.floor(100 + Math.random() * 900);
-      var supplierName = params.supplier_name || "Godrej Vikhroli Plant";
-      var qtyReceived = Number(params.quantity_received) || 1;
-      var boxNumber = params.box_number || "Box 1 of 3";
-      var qcCondition = params.qc_condition || "PRISTINE_INTACT";
-      var dockBay = params.dock_bay || "Bay 1 (Main Warehouse)";
-      var rackSlot = params.rack_slot || "Zone B - Rack 03 (Bed Section)";
-      var receiverStaff = params.staff_name || "Warehouse Staff";
-      var damagePhotoUrl = params.damage_photo_url || "";
-      var damageRemarks = params.damage_remarks || "";
+    else if (action === "INWARD_STOCK_SCAN" || action === "INWARD_SCAN" || action === "RECEIVE_INWARD_PO_QC" || action === "INWARD_STOCK" || action === "FACTORY_INWARD_RECEIVING" || action === "INWARD_TRUCK_COMPLETE") {
+      var sku = params.sku || params.skuCode || "BED-MOD-001";
+      var productName = params.product_name || params.productName || "Godrej Luxury Furniture Unit";
+      var qtyReceived = Number(params.quantity || params.quantity_received || params.qty) || 1;
+      var storageBay = params.storage_bay || params.dock_bay || params.bay || "Dock-B6";
+      var batchNo = params.batch_no || params.batch || ("BAT-" + Math.floor(1000 + Math.random() * 9000));
+      var truckNo = params.truck_no || params.truckNumber || "OD-18-TRK-9901";
+      var biltyNo = params.bilty_no || params.biltyNumber || "BLR-89214";
+      var transporter = params.transporter || "Godrej Logistics Transporter";
+      var totalWeight = Number(params.total_weight_kg) || (qtyReceived * 35);
+      var verifiedBoxes = params.verified_boxes || "Box A, Box B, Box C (100% Complete)";
+      var dockWorker = params.dock_worker || "Warehouse Dock Supervisor (Rayagada)";
+      var supplierNotes = params.supplier_notes || "Factory Direct Safe Inward";
+      var poNumber = params.po_number || ("PO-" + biltyNo);
 
-      // 1. Log to Purchase_Orders_Log
+      // 1. Log to Purchase_Orders_Log (Table 12)
       var poSheet = getOrCreateSheet(ss, "Purchase_Orders_Log", [
         "PO_ID", "PO_Raised_Date_Time", "PO_Number", "Supplier_Name", "SKU", "Product_Name",
         "Quantity_Ordered", "Quantity_Received", "Unit_Cost_INR", "Total_PO_Amount_INR",
@@ -1633,8 +1633,8 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
         poSheet.appendRow([
           "INW-" + Utilities.getUuid().substring(0, 8).toUpperCase(),
           currentDateTimeStr,
-          poNumber,
-          supplierName,
+          poNumber + " (" + biltyNo + ")",
+          transporter + " [" + truckNo + "]",
           sku,
           productName,
           qtyReceived,
@@ -1643,99 +1643,85 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
           24500 * qtyReceived,
           currentDateStr,
           currentDateTimeStr,
-          qcCondition,
-          dockBay,
-          "INWARD_RECEIVED"
+          "QC_PASSED_100% (" + verifiedBoxes + ")",
+          storageBay,
+          "INWARD_RECEIVED_AND_STOCKED"
         ]);
         applyStandardFormat(poSheet);
       }
 
-      // 2. Increment Stock in Furniture_Catalog & Inventory_Stock
+      // 2. Increment Stock & update Bay in Inventory_Stock (Table 3)
+      var newStockLevel = qtyReceived;
+      var invSheet = getSheetByNameFlexible(ss, ["Inventory_Stock", "03_Inventory_Stock", "Inventory Stock"]);
+      if (invSheet) {
+        var invData = invSheet.getDataRange().getValues();
+        var foundRow = -1;
+        for (var r = 1; r < invData.length; r++) {
+          if (String(invData[r][0]).toUpperCase() === sku.toUpperCase() || String(invData[r][1]).toUpperCase() === sku.toUpperCase()) {
+            foundRow = r + 1;
+            var currWh = Number(invData[r][4]) || 0; // Col 5 is Warehouse_Stock_Qty
+            newStockLevel = currWh + qtyReceived;
+            invSheet.getRange(foundRow, 5).setValue(newStockLevel);
+            if (storageBay) invSheet.getRange(foundRow, 10).setValue(storageBay); // Col 10 is Storage_Bay
+            invSheet.getRange(foundRow, 11).setValue(currentDateTimeStr); // Col 11 is Last_Inward_Date
+            invSheet.getRange(foundRow, 12).setValue(currentDateTimeStr); // Col 12 is Last_Audit_Timestamp
+            break;
+          }
+        }
+        // If not found in Inventory_Stock, append new SKU row
+        if (foundRow === -1) {
+          invSheet.appendRow([
+            sku,
+            sku,
+            productName,
+            "Living / Bedroom",
+            qtyReceived,
+            0,
+            0,
+            2,
+            "IN_STOCK_HEALTHY",
+            storageBay,
+            currentDateTimeStr,
+            currentDateTimeStr
+          ]);
+          applyStandardFormat(invSheet);
+          newStockLevel = qtyReceived;
+        }
+      }
+
+      // 3. Update Furniture_Catalog Assigned Bay
       var catSheet = getSheetByNameFlexible(ss, ["Furniture_Catalog", "02_Furniture_Catalog"]);
-      var newStockLevel = 5;
       if (catSheet) {
         var catData = catSheet.getDataRange().getValues();
-        for (var r = 1; r < catData.length; r++) {
-          if (String(catData[r][0]).toUpperCase() === sku.toUpperCase()) {
-            var currStock = Number(catData[r][6]) || 0;
-            newStockLevel = currStock + qtyReceived;
-            catSheet.getRange(r + 1, 7).setValue(newStockLevel);
+        for (var c = 1; c < catData.length; c++) {
+          if (String(catData[c][0]).toUpperCase() === sku.toUpperCase()) {
+            if (storageBay) catSheet.getRange(c + 1, 11).setValue(storageBay);
+            catSheet.getRange(c + 1, 12).setValue(currentDateTimeStr);
             break;
           }
         }
       }
 
-      // 3. Update SmartKit_Components Flat-Pack Staging
+      // 4. Update SmartKit_Components Staging Status
       var kitSheet = getSheetByNameFlexible(ss, ["SmartKit_Components", "03_SmartKit_Components"]);
       if (kitSheet) {
         var kitData = kitSheet.getDataRange().getValues();
         for (var k = 1; k < kitData.length; k++) {
-          if (String(kitData[k][0]).toUpperCase() === sku.toUpperCase()) {
-            kitSheet.getRange(k + 1, 4).setValue("INWARD STAGED ✓ (" + currentDateTimeStr + ")");
-            break;
-          }
-        }
-      }
-
-      // 4. If Damaged, log RMA Ticket in Store_Alerts_Log
-      var rmaLogged = false;
-      if (qcCondition !== "PRISTINE_INTACT" || damagePhotoUrl || damageRemarks) {
-        var alertSheet = getOrCreateSheet(ss, "Store_Alerts_Log", [
-          "Alert_ID", "Alert_Type", "Related_Order_ID", "Customer_Name", "SKU",
-          "Priority", "Resolution_Plan", "Timestamp", "Status"
-        ]);
-        if (alertSheet) {
-          alertSheet.appendRow([
-            "RMA-" + Utilities.getUuid().substring(0, 8).toUpperCase(),
-            "FACTORY_TRANSIT_DAMAGE",
-            poNumber,
-            supplierName,
-            sku + " (" + productName + ")",
-            "P1_HIGH",
-            "Transit Damage Claim: " + (damageRemarks || qcCondition) + " | Photo: " + (damagePhotoUrl || "Logged"),
-            currentDateTimeStr,
-            "OPEN_SUPPLIER_CLAIM"
-          ]);
-          rmaLogged = true;
-        }
-      }
-
-      // 5. Scan for Back-ordered Waiting Customers in Orders_SafeLock
-      var matchedCustomer = null;
-      var ordSheet = getSheetByNameFlexible(ss, ["Orders_SafeLock", "05_Orders_SafeLock"]);
-      if (ordSheet) {
-        var ordData = ordSheet.getDataRange().getValues();
-        for (var o = 1; o < ordData.length; o++) {
-          var orderedSku = String(ordData[o][5] || "");
-          var status = String(ordData[o][7] || "");
-          if (orderedSku.indexOf(sku) !== -1 && status.indexOf("WAITING") !== -1) {
-            matchedCustomer = {
-              order_id: ordData[o][0],
-              customer_name: ordData[o][1],
-              customer_phone: ordData[o][2],
-              address: ordData[o][3]
-            };
-            ordSheet.getRange(o + 1, 8).setValue("SAFELOCKED (STOCK ARRIVED ✓)");
-            break;
+          if (String(kitData[k][0]).toUpperCase().indexOf(sku.toUpperCase()) !== -1 || String(kitData[k][1]).toUpperCase().indexOf(sku.toUpperCase()) !== -1) {
+            kitSheet.getRange(k + 1, 4).setValue("INWARD STAGED (" + storageBay + " on " + currentDateTimeStr + ")");
           }
         }
       }
 
       result.sku = sku;
-      result.product_name = productName;
-      result.po_number = poNumber;
       result.quantity_received = qtyReceived;
-      result.box_number = boxNumber;
-      result.qc_condition = qcCondition;
-      result.dock_bay = dockBay;
-      result.rack_slot = rackSlot;
-      result.new_stock_level = newStockLevel;
-      result.rma_claim_logged = rmaLogged;
-      result.matched_backorder = matchedCustomer;
-      result.message = "Carton Barcode " + sku + " (" + productName + ") received and recorded in Google Sheets! Current Stock: " + newStockLevel + " units.";
+      result.new_warehouse_stock = newStockLevel;
+      result.storage_bay = storageBay;
+      result.truck_no = truckNo;
+      result.bilty_no = biltyNo;
+      result.message = "✅ Inward QC Complete! +" + qtyReceived + " Set(s) of " + sku + " added to " + storageBay + " in Google Sheets Inventory_Stock (New Total: " + newStockLevel + " units).";
     }
 
-    
     // ==========================================================================================
     // 🚚 STAFF MOBILE OUTWARD TRUCK DISPATCH & 5-BOX STAGING SYNC
     // ==========================================================================================
@@ -1760,7 +1746,7 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
         for (var o = 1; o < ordData.length; o++) {
           if (String(ordData[o][0]).toUpperCase() === orderId.toUpperCase() || String(ordData[o][1]).toLowerCase() === customerName.toLowerCase()) {
             ordSheet.getRange(o + 1, 8).setValue("DISPATCHED (IN TRANSIT)");
-            ordSheet.getRange(o + 1, 9).setValue("5/5 Boxes Loaded ✓");
+            ordSheet.getRange(o + 1, 9).setValue("Loaded in Truck ✓ (" + loadedBoxes + ")");
             ordSheet.getRange(o + 1, 10).setValue(driverName + " (" + vehiclePlate + ")");
             ordSheet.getRange(o + 1, 12).setValue(carpenterName);
             ordSheet.getRange(o + 1, 13).setValue(carpenterPayout);
@@ -1790,7 +1776,7 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
           "5/5 ⭐ (Pending)",
           balanceDue,
           paymentMode,
-          "OUT_FOR_DELIVERY (5/5 BOXES LOADED)",
+          "OUT_FOR_DELIVERY (" + loadedBoxes + ")",
           "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?w=500"
         ]);
         applyStandardFormat(delSheet);
@@ -1807,25 +1793,41 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
         }
       }
 
-      // 4. Log in Executive_Briefings_Log
-      var brfSheet = getOrCreateSheet(ss, "Executive_Briefings_Log", [
-        "Briefing_ID", "Briefing_Date", "Owner_Phone", "Gross_Revenue_INR", "Active_Orders_Count",
-        "Footfall_Count", "Fleet_Drops_Count", "Custom_Directive", "Dispatched_Date_Time"
-      ], "#7C3AED");
-
-      if (brfSheet) {
-        brfSheet.appendRow([
-          "DISP-" + Date.now().toString().slice(-6),
-          currentDateStr,
-          "+91 93905 53301",
-          balanceDue,
-          1,
-          0,
-          1,
-          "Truck Dispatched: " + orderId + " (" + customerName + ") with " + driverName + " (" + vehiclePlate + "). Boxes: " + loadedBoxes + ". Balance: Rs. " + balanceDue.toLocaleString('en-IN'),
+      // 4. Create / Update Carpenter_Work_Orders
+      var carpSheet = getOrCreateSheet(ss, "Carpenter_Work_Orders", [
+        "Work_Order_ID", "Order_ID", "Customer_Name", "Customer_Phone", "Site_Address", 
+        "Carpenter_Name", "Carpenter_Phone", "Fitting_Wage_INR", "Fitting_Status", "Customer_Rating", "Dispatched_Date_Time"
+      ], "#8B5CF6");
+      if (carpSheet) {
+        carpSheet.appendRow([
+          "WO-DISP-" + Date.now().toString().slice(-4),
+          orderId,
+          customerName,
+          customerPhone,
+          deliveryAddress,
+          carpenterName,
+          "+91 94371 88200",
+          carpenterPayout,
+          "DISPATCHED (ON TRANSIT WITH DRIVER)",
+          "5.0 ⭐ (Pending Completion)",
           currentDateTimeStr
         ]);
-        applyStandardFormat(brfSheet);
+        applyStandardFormat(carpSheet);
+      }
+
+      // 5. Shift Stock from Reserved to In_Transit in Inventory_Stock
+      var invSheet = getSheetByNameFlexible(ss, ["Inventory_Stock", "03_Inventory_Stock"]);
+      if (invSheet) {
+        var invData = invSheet.getDataRange().getValues();
+        for (var j = 1; j < invData.length; j++) {
+          if (invData[j][0] == "BED-MOD-001" || (invData[j][1] && String(invData[j][1]).indexOf("BED") !== -1)) {
+            var currRes = Number(invData[j][5]) || 0;
+            var currTransit = Number(invData[j][6]) || 0;
+            invSheet.getRange(j + 1, 6).setValue(Math.max(0, currRes - 1));
+            invSheet.getRange(j + 1, 7).setValue(currTransit + 1);
+            break;
+          }
+        }
       }
 
       result.order_id = orderId;
@@ -1834,13 +1836,11 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
       result.vehicle = vehiclePlate;
       result.loaded_boxes = loadedBoxes;
       result.balance_due = balanceDue;
-      result.message = "Order #" + orderId + " successfully dispatched with " + driverName + "! 5/5 boxes marked loaded in Google Sheets.";
+      result.carpenter = carpenterName;
+      result.carpenter_payout = carpenterPayout;
+      result.message = "🚀 Gate Pass Generated! Order #" + orderId + " marked DISPATCHED with " + driverName + " & " + carpenterName + " in Google Sheets!";
     }
 
-
-    
-    
-    // ==========================================================================================
     // ❤️ HEART ENGINE 1: 3-TIER PRICING & PROFIT MARGIN MATRIX ENGINE
     // ==========================================================================================
     else if (action === "SAVE_TIER_PRICING" || action === "UPDATE_3_TIER_PRICING") {
@@ -2089,7 +2089,7 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
     // ==========================================================================================
     // 📢 500-CUSTOMER MULTI-LANGUAGE BULK BOT BROADCAST DISPATCHER
     // ==========================================================================================
-    else if (action === "DISPATCH_BULK_BOT_CAMPAIGN" || action === "BULK_BOT_BROADCAST") {
+    else if (action === "DISPATCH_BULK_BOT_CAMPAIGN" || action === "BULK_BOT_BROADCAST" || action === "DISPATCH_BULK_BOT_BROADCAST") {
       var campaignId = params.campaign_id || ("CAMP-BULK-" + Utilities.getUuid().substring(0, 6).toUpperCase());
       var botId = params.bot_id || "BOT-07";
       var botName = params.bot_name || "Festive WhatsApp VIP Broadcast Bot";
@@ -2542,7 +2542,7 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
     // ==========================================================================================
     // 🏢 HEART ENGINE 11: INSTITUTIONAL B2B COMMERCIAL & OFFICE TURNKEY QUOTATOR
     // ==========================================================================================
-    else if (action === "GENERATE_B2B_TURNKEY_TENDER" || action === "B2B_TURNKEY_PROPOSAL") {
+    else if (action === "GENERATE_B2B_TURNKEY_TENDER" || action === "B2B_TURNKEY_PROPOSAL" || action === "GENERATE_B2B_TURNKEY_PROPOSAL") {
       var tenderNo = params.tender_no || "TND-GI-" + Utilities.getUuid().substring(0, 6).toUpperCase();
       var orgName = params.org_name || "Odisha Mineral Development Corp (OMDC)";
       var contactPerson = params.contact_person || "Shri B. K. Mohapatra (GM Admin)";
@@ -2698,7 +2698,7 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
     // ==========================================================================================
     // 🌙 4. 9 PM DAILY SHOWROOM CLOSING & EOD CASH LOCK ENGINE
     // ==========================================================================================
-    else if (action === "LOCK_9PM_EOD_REGISTER" || action === "EOD_CASH_LOCK" || action === "CLOSE_REGISTER_EOD") {
+    else if (action === "LOCK_9PM_EOD_REGISTER" || action === "EOD_CASH_LOCK" || action === "CLOSE_REGISTER_EOD" || action === "DISPATCH_DIRECTOR_EOD_WHATSAPP") {
       var closingId = "EOD-" + currentDateStr.replace(/-/g, "") + "-RAYAGADA";
       var cashDrawer = Number(params.cash_drawer_inr) || 45000;
       var upiSettled = Number(params.upi_settled_inr) || 124000;
@@ -2962,6 +2962,89 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
 
       result.sheets_provisioned = created;
       result.message = "All enterprise tables and schemas successfully provisioned in Google Sheets!";
+    }
+
+        // ==========================================================================================
+    // 🎯 STORE SALES TARGETS & MONTHLY QUOTA ENGINE
+    // ==========================================================================================
+    else if (action === "UPDATE_SALES_TARGETS" || action === "UPDATE_STORE_TARGETS" || action === "STORE_TARGETS") {
+      var monthlyTarget = Number(params.monthly_revenue_target || params.monthly_target) || 2500000;
+      var targetMonth = params.target_month || "Sep-2026";
+      var footfallTarget = Number(params.target_footfall) || 450;
+      var conversionRate = Number(params.target_conversion_rate) || 28;
+
+      var tgtSheet = getOrCreateSheet(ss, "Store_Sales_Targets", [
+        "Target_ID", "Target_Month", "Monthly_Revenue_Target_INR", "Target_Footfall_Visitors", 
+        "Target_Conversion_Pct", "Last_Updated_By", "Updated_Timestamp"
+      ], "#1E3A8A");
+
+      if (tgtSheet) {
+        tgtSheet.appendRow([
+          "TGT-" + Date.now().toString().slice(-6),
+          targetMonth,
+          monthlyTarget,
+          footfallTarget,
+          conversionRate + "%",
+          "Director Rakesh (PIN 8899)",
+          currentDateTimeStr
+        ]);
+        applyStandardFormat(tgtSheet);
+      }
+
+      result.monthly_target = monthlyTarget;
+      result.target_month = targetMonth;
+      result.message = "Monthly Sales Target for " + targetMonth + " (₹" + monthlyTarget.toLocaleString('en-IN') + ") updated in Store_Sales_Targets!";
+    }
+
+    // ==========================================================================================
+    // 💬 CRM LEAD INQUIRY & MOBILE CHAT BOT INGESTION ENGINE
+    // ==========================================================================================
+    else if (action === "LOG_INQUIRY" || action === "LOG_NEW_INQUIRY" || action === "NEW_LEAD_INQUIRY") {
+      var inqId = params.inquiry_id || ("INQ-" + Math.floor(1000 + Math.random() * 9000));
+      var custName = params.customer_name || params.name || "Showroom Visitor";
+      var custPhone = (params.customer_phone || params.phone || "9437188291").toString().replace(/[^0-9]/g, "");
+      var address = params.address || "Rayagada";
+      var category = params.category || "Bedroom Luxury";
+      var budget = Number(params.budget_inr || params.budget) || 50000;
+      var intentScore = params.intent_score || params.ai_intent_score || "95%";
+      var channel = params.channel || "WhatsApp Mobile Bot";
+
+      var inqSheet = getOrCreateSheet(ss, "Inquiries_Log", [
+        "Inquiry_ID", "Inquiry_Date_Time", "Customer_Name", "Customer_Phone", "Address", 
+        "Channel", "Category_Models", "Budget_INR", "AI_Intent_Score", "Follow_Up_Date", "Status", "Assigned_Staff"
+      ], "#0F172A");
+
+      if (inqSheet) {
+        inqSheet.appendRow([
+          inqId,
+          currentDateTimeStr,
+          custName,
+          custPhone,
+          address,
+          channel,
+          category,
+          budget,
+          intentScore,
+          formatDateIndian(new Date(Date.now() + 86400000)),
+          "HOT_LEAD",
+          "Rakesh (Store Director)"
+        ]);
+        applyStandardFormat(inqSheet);
+      }
+
+      result.inquiry_id = inqId;
+      result.customer_name = custName;
+      result.message = "Customer inquiry #" + inqId + " (" + custName + ") logged to Inquiries_Log!";
+    }
+
+    // ==========================================================================================
+    // 🔄 SYSTEM STATUS & TABLE SITEMAP HEALTHCHECK
+    // ==========================================================================================
+    else if (action === "GET_ALL_STATUS" || action === "PING_STATUS" || action === "CHECK_HEALTH") {
+      result.server_status = "ONLINE";
+      result.active_sheets = ss.getSheets().map(function(s) { return s.getName(); });
+      result.timestamp = currentDateTimeStr;
+      result.message = "OmniBuild OS™ Master Webhook Online & Synchronized with " + result.active_sheets.length + " master tables.";
     }
 
     else {

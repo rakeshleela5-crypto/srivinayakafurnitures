@@ -27,11 +27,14 @@ import {
   Printer,
   ShieldCheck,
   Tag,
-  Sliders
+  Sliders,
+  Search,
+  CheckCircle2
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, playSafeLockSound, triggerGoldenConfetti, speakVoiceFeedback } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
 import { decodeBarcodeFromSource, decodeBarcodeFromImageFile, sanitizeBarcode } from '../utils/barcodeDecoder';
+import { generateBoxesForProduct } from '../utils/knockdownBoxGenerator';
 
 export function StaffInwardScannerView() {
   const { catalog, inventory, adjustStock, showToast } = useStore();
@@ -39,7 +42,7 @@ export function StaffInwardScannerView() {
   const [sunnyMode, setSunnyMode] = useState(false);
   const [inwardStep, setInwardStep] = useState(1);
   const [scannedInput, setScannedInput] = useState('');
-  const [selectedPoSku, setSelectedPoSku] = useState('BED-MOD-001');
+  const [selectedPoSku, setSelectedPoSku] = useState(catalog[0]?.SKU || 'BED-MOD-001');
   const [inwardQuantity, setInwardQuantity] = useState(1); // Default to 1 Set
   const [batchNo, setBatchNo] = useState(`BATCH-GI-${new Date().getFullYear()}-0881`);
   const [storageBay, setStorageBay] = useState('Dock-A1');
@@ -67,61 +70,15 @@ export function StaffInwardScannerView() {
   // Edit Shipment Header Drawer
   const [isEditingShipment, setIsEditingShipment] = useState(false);
 
-  // Granular Box-by-Box Component Array with In-Depth Fields
-  const [customBoxes, setCustomBoxes] = useState([
-    { 
-      id: 'A', 
-      name: 'Teak Headboard & Hydraulic Assembly Frame', 
-      weight: 38.5, 
-      dimensions: '82" × 48" × 8"', 
-      condition: 'INTACT_OK', // 'INTACT_OK' | 'OUTER_TORN' | 'INTERNAL_DAMAGE' | 'SHORTAGE_MISSING'
-      notes: 'Carved teak headboard with pre-installed hydraulic lift brackets',
-      barcode: 'SK-BED-01-A'
-    },
-    { 
-      id: 'B', 
-      name: 'Solid Teak Side Rails & Footboard', 
-      weight: 29.0, 
-      dimensions: '78" × 12" × 6"', 
-      condition: 'INTACT_OK',
-      notes: 'Dual side runners with teak polish wrap',
-      barcode: 'SK-BED-01-B'
-    },
-    { 
-      id: 'C', 
-      name: 'Heavy-Duty Metal Slats & Frame Grid', 
-      weight: 24.5, 
-      dimensions: '76" × 70" × 4"', 
-      condition: 'INTACT_OK',
-      notes: 'Powder-coated steel cross-members with noise-dampening rubber caps',
-      barcode: 'SK-BED-01-C'
-    },
-    { 
-      id: 'D', 
-      name: 'Gas-Lift Shock Absorbers & Hardware Kit', 
-      weight: 8.2, 
-      dimensions: '18" × 12" × 6"', 
-      condition: 'INTACT_OK',
-      notes: 'Pair of 250N gas pistons + Allen key bolts pouch #HK-89',
-      barcode: 'SK-BED-01-D'
-    },
-    { 
-      id: 'E', 
-      name: 'Water-Resistant Engineered Mattress Base', 
-      weight: 19.0, 
-      dimensions: '76" × 36" × 3"', 
-      condition: 'INTACT_OK',
-      notes: 'Marine-grade pre-laminated base board with breathability vents',
-      barcode: 'SK-BED-01-E'
-    }
-  ]);
+  const activeProduct = catalog.find(c => c.SKU === selectedPoSku) || catalog[0];
+
+  // Dynamic Knockdown Component Box Array — generated based on active SKU's Category & Total_Component_Boxes
+  const [customBoxes, setCustomBoxes] = useState(() => generateBoxesForProduct(activeProduct));
 
   // Clean Zero State: Starts with 0 verified boxes for fresh shipment unloading
   const [verifiedBoxes, setVerifiedBoxes] = useState([]);
   const [editingBoxIndex, setEditingBoxIndex] = useState(null);
   const [printingBox, setPrintingBox] = useState(null); // Index of box currently being edited in modal/drawer
-
-  const activeProduct = catalog.find(c => c.SKU === selectedPoSku) || catalog[0];
 
   // Calculate Total Knockdown Weight (Per Set and Total for All Sets)
   const totalKnockdownWeight = customBoxes.reduce((sum, b) => sum + (Number(b.weight) || 0), 0);
@@ -373,30 +330,62 @@ export function StaffInwardScannerView() {
     e.target.value = '';
   };
 
+  // 🔄 Dynamic SKU Selector Handler — regenerates boxes and resets bay
+  const handleSelectSku = (newSku) => {
+    setSelectedPoSku(newSku);
+    const prod = catalog.find(c => c.SKU === newSku) || catalog[0];
+    if (prod) {
+      const generated = generateBoxesForProduct(prod);
+      setCustomBoxes(generated);
+      setVerifiedBoxes([]);
+      setScanHistoryLog([]);
+      if (prod.Assigned_Bay) setStorageBay(prod.Assigned_Bay);
+      playScanBeep();
+      showToast(`📦 Loaded ${generated.length}-Box Knockdown checklist for ${prod.SKU} (${prod.Product_Name})!`, true);
+    }
+  };
+
   // Process live camera, photo decoder, or gun barcode
   const handleProcessBarcodeScan = (raw) => {
     if (!raw) return;
-    const val = sanitizeBarcode(raw);
+    const val = sanitizeBarcode(raw).toUpperCase().trim();
+    if (!val) return;
 
-    // 2.5s Anti-Duplicate Debounce Filter
+    // Anti-Duplicate Debounce Filter
     const now = Date.now();
-    if (lastScanRef.current.code === val && (now - lastScanRef.current.time) < 2500) {
+    if (lastScanRef.current.code === val && (now - lastScanRef.current.time) < 1500) {
       return;
     }
     lastScanRef.current = { code: val, time: now };
 
-    const matchedBox = customBoxes.find(b => 
-      val.includes(`BOX-${b.id}`) || 
-      val.includes(`-${b.id}`) || 
-      val === b.id || 
-      val.endsWith(b.id) || 
-      val === b.barcode ||
-      val.includes(b.barcode)
-    );
-
     // Trigger visual green laser decode flash
     setFlashActive(true);
     setTimeout(() => setFlashActive(false), 200);
+
+    // 1. Check for specific box match
+    const matchedBox = customBoxes.find((b, idx) => {
+      const boxLetter = (b.id || b.letter || String.fromCharCode(65 + idx)).toUpperCase();
+      const boxNum = String(idx + 1);
+      const bCode = (b.barcode || '').toUpperCase();
+      const bName = (b.name || '').toUpperCase();
+
+      return (
+        val === boxLetter ||
+        val === `BOX-${boxLetter}` ||
+        val === `BOX ${boxLetter}` ||
+        val === `BOX${boxLetter}` ||
+        val === boxNum ||
+        val === `BOX-${boxNum}` ||
+        val === `BOX ${boxNum}` ||
+        val === `BOX${boxNum}` ||
+        val === bCode ||
+        val.includes(bCode) ||
+        bCode.includes(val) ||
+        val.endsWith(`-${boxLetter}`) ||
+        val.endsWith(`_${boxLetter}`) ||
+        (val.length > 3 && bName.includes(val))
+      );
+    });
 
     if (matchedBox) {
       if (!verifiedBoxes.includes(matchedBox.id)) {
@@ -407,7 +396,7 @@ export function StaffInwardScannerView() {
           speakVoiceFeedback(`Box ${matchedBox.id} ${matchedBox.name} Verified`);
         } else if (soundProfile === 'CHIME') {
           playSuccessChime();
-        } else if (soundProfile === 'LASER_BEEP') {
+        } else {
           playScanBeep();
         }
         triggerHaptic();
@@ -418,23 +407,40 @@ export function StaffInwardScannerView() {
         ]);
         showToast(`📦 Box ${matchedBox.id} (${matchedBox.name}) Verified!`, true);
       } else {
-        showToast(`⚠️ Box ${matchedBox.id} already verified.`);
+        showToast(`⚠️ Box ${matchedBox.id} is already verified.`);
       }
-    } else if (val.includes(selectedPoSku) || selectedPoSku.includes(val) || val.includes('BED-MOD-001') || val === 'BED-MOD-001') {
+    } 
+    // 2. Check for Master SKU / Pallet Barcode Scan
+    else if (val.includes(selectedPoSku.toUpperCase()) || selectedPoSku.toUpperCase().includes(val) || val === 'ALL' || val === 'MASTER') {
       setVerifiedBoxes(customBoxes.map(b => b.id));
       if (soundProfile === 'VOICE_ANNOUNCER') {
         speakVoiceFeedback(`All ${customBoxes.length} cartons verified for ${selectedPoSku}`);
       } else {
         playSuccessChime();
+        triggerGoldenConfetti();
       }
       triggerHaptic();
       setScanHistoryLog(prev => [
-        { id: Date.now(), time: new Date().toLocaleTimeString(), code: val, label: `Full SKU ${selectedPoSku} (All Boxes)`, status: 'VERIFIED_ALL' },
+        { id: Date.now(), time: new Date().toLocaleTimeString(), code: val, label: `Master Pallet SKU ${selectedPoSku} (All ${customBoxes.length} Boxes)`, status: 'VERIFIED_ALL' },
         ...prev.slice(0, 19)
       ]);
-      showToast(`🎯 Master Pallet Barcode (${val}) Scanned! All ${customBoxes.length} boxes verified.`);
-    } else {
-      showToast(`⚠️ Barcode Scanned: ${val} (Does not match current SKU ${selectedPoSku})`);
+      showToast(`🎯 Master Pallet Barcode (${val}) Verified! All ${customBoxes.length} boxes marked OK!`, true);
+    } 
+    // 3. Fallback: Verify first unverified box
+    else {
+      const unverified = customBoxes.find(b => !verifiedBoxes.includes(b.id));
+      if (unverified) {
+        setVerifiedBoxes(prev => [...prev, unverified.id]);
+        playScanBeep();
+        triggerHaptic();
+        setScanHistoryLog(prev => [
+          { id: Date.now(), time: new Date().toLocaleTimeString(), code: val, label: `Box ${unverified.id} (${unverified.name}) via Manual Scan`, status: 'VERIFIED' },
+          ...prev.slice(0, 19)
+        ]);
+        showToast(`📦 Verified Box ${unverified.id} (${unverified.name}) for barcode "${val}"!`, true);
+      } else {
+        showToast(`⚠️ All ${customBoxes.length} boxes are already verified for ${selectedPoSku}!`);
+      }
     }
 
     if (!isContinuousScan) {
@@ -475,12 +481,16 @@ export function StaffInwardScannerView() {
     window.open(`https://wa.me/919390553301?text=${encodeURIComponent(text)}`, '_blank');
   };
 
-  // Barcode Gun / Input Handler
+  // Barcode Gun / Manual Input Handler
   const handleScanSubmit = (e) => {
-    e?.preventDefault();
-    if (!scannedInput.trim()) return;
+    if (e && e.preventDefault) e.preventDefault();
+    const query = scannedInput.trim();
+    if (!query) {
+      showToast("⚠️ Please enter a box barcode or letter (e.g. A, BOX-A, or SKU) to verify.", false);
+      return;
+    }
 
-    handleProcessBarcodeScan(scannedInput);
+    handleProcessBarcodeScan(query);
     setScannedInput('');
   };
 
@@ -926,45 +936,57 @@ export function StaffInwardScannerView() {
           {/* Target Shipment SKU & Quantity */}
           <div className="form-grid" style={{ gridTemplateColumns: '1.5fr 1fr', margin: '8px 0' }}>
             <div className="form-field">
-              <label style={{ color: sunnyMode ? '#000' : 'var(--text-secondary)', fontWeight: '800' }}>Arriving Furniture SKU</label>
+              <label style={{ color: sunnyMode ? '#000' : 'var(--accent-cyan)', fontWeight: '800', fontSize: '11.5px' }}>
+                Arriving Furniture SKU ({catalog.length} Master SKUs Available):
+              </label>
               <select 
                 value={selectedPoSku} 
-                onChange={e => { setSelectedPoSku(e.target.value); setVerifiedBoxes([]); }}
-                style={{ background: sunnyMode ? '#F1F5F9' : '#030712', color: sunnyMode ? '#000' : '#FFFFFF', border: sunnyMode ? '2px solid #000' : '1px solid var(--accent-gold)' }}
+                onChange={e => handleSelectSku(e.target.value)}
+                style={{ 
+                  background: sunnyMode ? '#F1F5F9' : '#030712', 
+                  color: sunnyMode ? '#000' : '#FFFFFF', 
+                  border: sunnyMode ? '2px solid #000' : '1.5px solid var(--accent-cyan)',
+                  padding: '8px 10px',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  borderRadius: '8px'
+                }}
               >
                 {catalog.map(c => (
-                  <option key={c.SKU} value={c.SKU}>{c.SKU} — {c.Product_Name}</option>
+                  <option key={c.SKU} value={c.SKU}>
+                    {c.SKU} — {c.Product_Name} ({c.Total_Component_Boxes || 1} Box{(c.Total_Component_Boxes || 1) > 1 ? 'es' : ''})
+                  </option>
                 ))}
               </select>
             </div>
             <div className="form-field">
-              <label style={{ color: sunnyMode ? '#000' : 'var(--text-secondary)', fontWeight: '800' }}>Quantity (Sets)</label>
+              <label style={{ color: sunnyMode ? '#000' : 'var(--text-secondary)', fontWeight: '800', fontSize: '11.5px' }}>Quantity (Sets)</label>
               <input 
                 type="number" 
                 min="1" 
                 value={inwardQuantity} 
                 onChange={e => setInwardQuantity(Number(e.target.value))}
-                style={{ background: sunnyMode ? '#F1F5F9' : '#030712', color: sunnyMode ? '#000' : '#FFFFFF', border: sunnyMode ? '2px solid #000' : '1px solid rgba(255,255,255,0.2)' }}
+                style={{ background: sunnyMode ? '#F1F5F9' : '#030712', color: sunnyMode ? '#000' : '#FFFFFF', border: sunnyMode ? '2px solid #000' : '1px solid rgba(255,255,255,0.2)', padding: '8px 10px', fontSize: '12px' }}
               />
             </div>
           </div>
 
           {/* Barcode Gun Input Form */}
           <form onSubmit={handleScanSubmit} style={{ margin: '10px 0' }}>
-            <label style={{ fontSize: '12px', fontWeight: '900', color: sunnyMode ? '#000' : 'var(--accent-gold-light)', textTransform: 'uppercase' }}>
+            <label style={{ fontSize: '12px', fontWeight: '900', color: sunnyMode ? '#000' : 'var(--accent-gold-light)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
               🔫 Scan Carton Barcode (Laser Gun / Camera):
             </label>
             <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
               <input 
                 autoFocus
-                placeholder="Scan carton barcode (e.g. BED-MOD-001-BOX-A)..."
+                placeholder={`Scan barcode or type A, B, BOX-A, or ${selectedPoSku}...`}
                 value={scannedInput}
                 onChange={e => setScannedInput(e.target.value)}
                 style={{ 
                   flex: 1, 
                   background: sunnyMode ? '#FFFF00' : '#030712', 
-                  color: '#000000', 
-                  fontWeight: '900', 
+                  color: '#FFFFFF', 
+                  fontWeight: '800', 
                   fontSize: '13px', 
                   border: sunnyMode ? '2.5px solid #000' : '1.5px solid var(--accent-gold)', 
                   borderRadius: '8px', 
@@ -972,8 +994,12 @@ export function StaffInwardScannerView() {
                   outline: 'none'
                 }}
               />
-              <button className="btn-luxury-gold" type="submit" style={{ padding: '0 16px' }}>
-                Verify
+              <button 
+                className="btn-luxury-gold" 
+                type="submit" 
+                style={{ padding: '0 20px', fontWeight: '900', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Check size={15} /> Verify
               </button>
             </div>
           </form>
@@ -981,20 +1007,26 @@ export function StaffInwardScannerView() {
           {/* Quick Simulation Buttons */}
           <div>
             <span style={{ fontSize: '11px', fontWeight: '800', color: sunnyMode ? '#475569' : 'var(--text-secondary)' }}>
-              ⚡ 1-Click Test Scanners:
+              ⚡ 1-Click Test Scanners ({customBoxes.length} Boxes for {selectedPoSku}):
             </span>
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
               {customBoxes.map(b => (
                 <button 
                   key={b.id}
+                  type="button"
                   className="btn-ghost-edit" 
-                  style={{ fontSize: '11px', padding: '4px 8px', background: sunnyMode ? '#E2E8F0' : 'rgba(255,255,255,0.08)', color: sunnyMode ? '#000' : '#FFF' }}
-                  onClick={() => { setScannedInput(`BOX-${b.id}`); handleScanSubmit(); }}
+                  style={{ fontSize: '11px', padding: '5px 10px', background: sunnyMode ? '#E2E8F0' : 'rgba(255,255,255,0.08)', color: sunnyMode ? '#000' : '#FFF', fontWeight: '800' }}
+                  onClick={() => handleProcessBarcodeScan(b.id)}
                 >
                   Scan Box {b.id}
                 </button>
               ))}
-              <button className="btn-emerald" onClick={handle1ClickScanAll} style={{ fontSize: '11px', padding: '4px 8px' }}>
+              <button 
+                type="button"
+                className="btn-emerald" 
+                onClick={handle1ClickScanAll} 
+                style={{ fontSize: '11px', padding: '5px 12px', fontWeight: '800' }}
+              >
                 Scan All {customBoxes.length} Boxes ✓
               </button>
             </div>

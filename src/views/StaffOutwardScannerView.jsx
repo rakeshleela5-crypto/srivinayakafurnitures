@@ -33,9 +33,10 @@ import {
 import { playScanBeep, playSuccessChime, playSafeLockSound, triggerGoldenConfetti, speakVoiceFeedback } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
 import { decodeBarcodeFromSource, decodeBarcodeFromImageFile, sanitizeBarcode } from '../utils/barcodeDecoder';
+import { generateBoxesForProduct } from '../utils/knockdownBoxGenerator';
 
 export function StaffOutwardScannerView() {
-  const { orders, drivers, updateOrderStatus, showToast } = useStore();
+  const { catalog, orders, drivers, updateOrderStatus, showToast } = useStore();
 
   const [sunnyMode, setSunnyMode] = useState(false);
   const [outwardStep, setOutwardStep] = useState(1);
@@ -132,7 +133,7 @@ export function StaffOutwardScannerView() {
 
   const isFullyLoaded = loadedBoxes.length >= totalBoxesRequired;
 
-  // Sync edit form on order change
+  // Sync edit form and dynamic boxes on order change
   useEffect(() => {
     if (activeOrder) {
       setEditCustomerName(activeOrder.Customer_Name || '');
@@ -142,8 +143,25 @@ export function StaffOutwardScannerView() {
       setEditCarpenter(activeOrder.Carpenter_Assigned || 'Narayana Mistri');
       setEditCarpenterPayout(activeOrder.Carpenter_Payout_INR || 500);
       setEditBalanceDue(activeOrder.Balance_Due_INR || 78247);
+
+      // Find matching product in catalog to dynamically generate exact boxes for this order
+      const rawSku = (activeOrder.Ordered_SKU || '').split(' ')[0];
+      const prod = catalog.find(c => c.SKU === rawSku || (activeOrder.Ordered_SKU && activeOrder.Ordered_SKU.includes(c.SKU))) || catalog[0];
+      if (prod) {
+        const generated = generateBoxesForProduct(prod);
+        setBoxDetails(generated.map(b => ({
+          letter: b.id || b.letter,
+          name: b.name,
+          weight: b.weight,
+          stacking: b.weight > 30 ? 'BOTTOM_HEAVY' : b.weight < 12 ? 'TOP_FRAGILE' : 'MIDDLE_STACK',
+          status: 'STAGED_AT_DOCK',
+          notes: b.notes,
+          barcode: `BOX-${b.id || b.letter}`
+        })));
+        setLoadedBoxes([]);
+      }
     }
-  }, [selectedOrderId]);
+  }, [selectedOrderId, catalog]);
 
   // Camera Lifecycle & Real-Time Barcode Detector
   const [cameraFacing, setCameraFacing] = useState('environment');
@@ -397,21 +415,33 @@ export function StaffOutwardScannerView() {
   // Process scanned code
   const handleProcessBarcodeScan = (raw) => {
     if (!raw) return;
-    const val = sanitizeBarcode(raw);
+    const val = sanitizeBarcode(raw).toUpperCase().trim();
+    if (!val) return;
 
-    // 2.5s Anti-Duplicate Debounce Filter
+    // Anti-Duplicate Debounce Filter
     const now = Date.now();
-    if (lastScanRef.current.code === val && (now - lastScanRef.current.time) < 2500) {
+    if (lastScanRef.current.code === val && (now - lastScanRef.current.time) < 1500) {
       return;
     }
     lastScanRef.current = { code: val, time: now };
 
-    const matchedLetter = boxLetters.find(l => 
-      val.includes(`BOX-${l}`) || 
-      val.includes(`-${l}`) ||
-      val === l || 
-      val.endsWith(l)
-    );
+    const matchedLetter = boxLetters.find((l, idx) => {
+      const boxLetter = l.toUpperCase();
+      const boxNum = String(idx + 1);
+      return (
+        val === boxLetter ||
+        val === `BOX-${boxLetter}` ||
+        val === `BOX ${boxLetter}` ||
+        val === `BOX${boxLetter}` ||
+        val === boxNum ||
+        val === `BOX-${boxNum}` ||
+        val === `BOX ${boxNum}` ||
+        val === `BOX${boxNum}` ||
+        val.endsWith(`-${boxLetter}`) ||
+        val.endsWith(`_${boxLetter}`) ||
+        val.includes(`BOX-${boxLetter}`)
+      );
+    });
 
     // Trigger visual green laser decode flash
     setFlashActive(true);
@@ -426,7 +456,7 @@ export function StaffOutwardScannerView() {
           speakVoiceFeedback(`Carton ${matchedLetter} Loaded in Truck`);
         } else if (soundProfile === 'CHIME') {
           playSuccessChime();
-        } else if (soundProfile === 'LASER_BEEP') {
+        } else {
           playScanBeep();
         }
         triggerHaptic();
@@ -436,22 +466,38 @@ export function StaffOutwardScannerView() {
           ...prev.slice(0, 19)
         ]);
         showToast(`🚚 Carton ${matchedLetter} Loaded into Truck!`, true);
+      } else {
+        showToast(`⚠️ Carton ${matchedLetter} already loaded.`);
       }
-    } else if (val.includes(selectedOrderId) || val.includes(activeOrder.Ordered_SKU) || val.includes('BED-MOD-001') || val === 'BED-MOD-001') {
+    } else if (val.includes(selectedOrderId.toUpperCase()) || (activeOrder.Ordered_SKU && val.includes(activeOrder.Ordered_SKU.toUpperCase())) || val === 'ALL' || val === 'MASTER') {
       setLoadedBoxes([...boxLetters]);
       if (soundProfile === 'VOICE_ANNOUNCER') {
         speakVoiceFeedback(`All ${totalBoxesRequired} cartons loaded for Order ${selectedOrderId}`);
       } else {
         playSuccessChime();
+        triggerGoldenConfetti();
       }
       triggerHaptic();
       setScanHistoryLog(prev => [
         { id: Date.now(), time: new Date().toLocaleTimeString(), code: val, label: `Order ${selectedOrderId} Complete (${totalBoxesRequired} Cartons)`, status: 'LOADED_ALL' },
         ...prev.slice(0, 19)
       ]);
-      showToast(`🎯 Full Order Barcode (${val}) Scanned! All ${totalBoxesRequired} cartons loaded.`);
+      showToast(`🎯 Full Order Barcode (${val}) Scanned! All ${totalBoxesRequired} cartons loaded.`, true);
     } else {
-      showToast(`⚠️ Barcode Scanned: ${val}`);
+      // Fallback: verify next unloaded box
+      const nextUnloaded = boxLetters.find(l => !loadedBoxes.includes(l));
+      if (nextUnloaded) {
+        setLoadedBoxes(prev => [...prev, nextUnloaded]);
+        playScanBeep();
+        triggerHaptic();
+        setScanHistoryLog(prev => [
+          { id: Date.now(), time: new Date().toLocaleTimeString(), code: val, label: `Carton ${nextUnloaded} Loaded via Scan`, status: 'LOADED' },
+          ...prev.slice(0, 19)
+        ]);
+        showToast(`🚚 Loaded Carton ${nextUnloaded} for barcode "${val}"!`, true);
+      } else {
+        showToast(`⚠️ All ${totalBoxesRequired} cartons already loaded into truck!`);
+      }
     }
 
     if (!isContinuousScan) {

@@ -1094,7 +1094,7 @@ export function EodReconciliationModal({ isOpen, onClose }) {
                         min="0"
                         value={denominations[item.note]} 
                         onChange={e => handleDenomChange(item.note, e.target.value)}
-                        style={{ padding: '6px', textAlign: 'center', fontSize: '13px', fontWeight: '800', background: '#0B132B' }}
+                        style={{ padding: '6px', textAlign: 'center', fontSize: '13px', fontWeight: '800', background: '#0B132B', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', width: '100%' }}
                       />
                     </div>
                   </div>
@@ -1113,7 +1113,7 @@ export function EodReconciliationModal({ isOpen, onClose }) {
                   value={denominations.coins} 
                   onChange={e => handleDenomChange('coins', e.target.value)}
                   placeholder="Enter total coins amount..."
-                  style={{ padding: '6px 10px', fontSize: '13px', fontWeight: '800', background: '#0B132B' }}
+                  style={{ padding: '6px 10px', fontSize: '13px', fontWeight: '800', background: '#0B132B', color: '#FFFFFF', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', width: '100%' }}
                 />
               </div>
             </div>
@@ -1158,7 +1158,7 @@ export function EodReconciliationModal({ isOpen, onClose }) {
                   type="number" 
                   value={cardSettled} 
                   onChange={e => setCardSettled(Number(e.target.value))} 
-                  style={{ padding: '10px' }}
+                  style={{ padding: '10px', color: '#FFFFFF', fontWeight: '800' }}
                 />
                 <span style={{ fontSize: '10px', color: '#64748B' }}>Credit/Debit Card Swipes</span>
               </div>

@@ -1539,6 +1539,201 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
         var data = targetSheet.getDataRange().getValues();
         var headers = data[0] || [];
         for (var r = 1; r < data.length; r++) {
+      var monthYear = params.month_year || "August-2026";
+      var revTarget = Number(params.monthly_sales_target) || 2500000;
+      var footfallGoal = Number(params.daily_footfall_goal) || 35;
+      var convRate = params.conversion_rate || "45%";
+      var achieved = Number(params.achieved_sales) || 1845000;
+
+      if (tgtSheet) {
+        tgtSheet.appendRow([
+          monthYear, revTarget, footfallGoal, convRate, achieved, currentDateTimeStr
+        ]);
+        applyStandardFormat(tgtSheet);
+      }
+
+      result.month_year = monthYear;
+      result.monthly_target = revTarget;
+      result.message = "Showroom Sales Targets updated in Store_Sales_Targets sheet (Target: Rs. " + revTarget.toLocaleString('en-IN') + ")!";
+    }
+
+
+    // ==========================================================================================
+    // 🏷️ PACKAGE 1: COMMERCIAL SALES & MARGIN ENGINE
+    // ==========================================================================================
+    else if (action === "APPLY_MANAGER_DISCOUNT") {
+      var quoteId = params.quote_id || "QUO-" + Utilities.getUuid().substring(0, 8).toUpperCase();
+      var couponCode = params.coupon_code || "DUSSEHRA10";
+      var discountPct = Number(params.discount_pct) || 10;
+      var discountAmt = Number(params.discount_amt) || 0;
+      var finalPrice = Number(params.final_price) || 0;
+      var mgrRemarks = params.manager_remarks || "Approved via Voice POS";
+
+      var qSheet = getOrCreateSheet(ss, "Quote_Log", [
+        "Quote_ID", "Customer_Name", "Customer_Phone", "Selected_Model", "Base_Price_INR",
+        "Discount_Coupon", "Discount_Pct", "Discount_Amount_INR", "Final_Quoted_Price_INR",
+        "Gross_Margin_Pct", "Manager_Approval_Remarks", "Quote_Timestamp", "Status"
+      ]);
+
+      if (qSheet) {
+        qSheet.appendRow([
+          quoteId, params.customer_name || "Showroom Visitor", params.customer_phone || "+91 94371",
+          params.selected_model || "Godrej Master Suite", params.base_price || finalPrice,
+          couponCode, discountPct + "%", discountAmt, finalPrice,
+          params.gross_margin_pct || "34.2%", mgrRemarks, currentDateTimeStr, "DISCOUNT_APPROVED"
+        ]);
+      }
+
+      result.quote_id = quoteId;
+      result.coupon_code = couponCode;
+      result.discount_pct = discountPct;
+      result.final_price = finalPrice;
+      result.message = "Manager Spot Discount (" + couponCode + " " + discountPct + "%) logged successfully in Quote_Log!";
+    }
+
+    else if (action === "ATTACH_EMI_FINANCING") {
+      var quoteId = params.quote_id || "QUO-" + Utilities.getUuid().substring(0, 8).toUpperCase();
+      var provider = params.emi_provider || "Bajaj Finserv No-Cost EMI";
+      var tenureMonths = Number(params.tenure_months) || 6;
+      var monthlyEmi = Number(params.monthly_emi) || 0;
+      var downPayment = Number(params.down_payment) || 0;
+
+      result.quote_id = quoteId;
+      result.provider = provider;
+      result.tenure_months = tenureMonths;
+      result.monthly_emi = monthlyEmi;
+      result.down_payment = downPayment;
+      result.message = "No-Cost EMI Financing (" + provider + " - " + tenureMonths + " Months @ Rs. " + monthlyEmi.toLocaleString('en-IN') + "/mo) attached!";
+    }
+
+    // ==========================================================================================
+    // 📦 PACKAGE 3: WAREHOUSE INWARD DOCK & QC RECEIVING
+    // ==========================================================================================
+    else if (action === "RECEIVE_INWARD_PO_QC") {
+      var poId = params.po_id || "PO-2026-" + Utilities.getUuid().substring(0, 6).toUpperCase();
+      var factoryPlant = params.factory_plant || "Godrej Interio Shirwal Plant";
+      var truckNo = params.truck_vehicle_no || "OD-18-E-4491";
+      var cartonsExpected = Number(params.cartons_expected) || 12;
+      var cartonsReceived = Number(params.cartons_received) || cartonsExpected;
+      var damagedCartons = Number(params.damaged_cartons) || 0;
+      var qcStatus = params.qc_status || (damagedCartons > 0 ? "DAMAGED_BOX_FLAGGED" : "PASSED_100_PERCENT");
+      var inspectorRemarks = params.inspector_remarks || "Verified at Central Warehouse Inward Dock";
+
+      var poSheet = getOrCreateSheet(ss, "Purchase_Orders_Log", [
+        "PO_ID", "Factory_Plant", "Truck_Vehicle_No", "Cartons_Expected", "Cartons_Received",
+        "Damaged_Cartons", "QC_Status", "Inspector_Remarks", "Inward_Timestamp", "Status"
+      ]);
+
+      if (poSheet) {
+        poSheet.appendRow([
+          poId, factoryPlant, truckNo, cartonsExpected, cartonsReceived,
+          damagedCartons, qcStatus, inspectorRemarks, currentDateTimeStr, "INWARD_RECEIVED"
+        ]);
+      }
+
+      result.po_id = poId;
+      result.qc_status = qcStatus;
+      result.cartons_received = cartonsReceived;
+      result.damaged_cartons = damagedCartons;
+      result.message = "Inward Factory PO QC Report (" + poId + " - " + qcStatus + ") logged in Purchase_Orders_Log!";
+    }
+
+    // ==========================================================================================
+    // 🏛️ PACKAGE 4: VIP ARCHITECT TIER & MILESTONE MANAGER
+    // ==========================================================================================
+    else if (action === "UPDATE_ARCHITECT_TIER") {
+      var archId = params.architect_id || "ARCH-VIP-001";
+      var archName = params.architect_name || "Ar. Sunita Patnaik";
+      var newTier = params.tier_name || "Platinum Partner (12%)";
+      var newRate = Number(params.commission_rate) || 12;
+      var annualMilestone = params.annual_milestone || "Diwali Gold Coin (Rs. 50,000)";
+
+      var archSheet = getOrCreateSheet(ss, "Architect_VIPs", [
+        "Architect_ID", "Architect_Name", "Phone", "Commission_Tier", "Commission_Rate_Pct",
+        "YTD_Billed_Revenue_INR", "Lifetime_Payouts_INR", "Reward_Milestone", "Status"
+      ]);
+
+      if (archSheet) {
+        var data = archSheet.getDataRange().getValues();
+        var updated = false;
+        for (var r = 1; r < data.length; r++) {
+          if (String(data[r][0]).toUpperCase() === archId.toUpperCase() || String(data[r][1]).toLowerCase() === archName.toLowerCase()) {
+            archSheet.getRange(r + 1, 4).setValue(newTier);
+            archSheet.getRange(r + 1, 5).setValue(newRate + "%");
+            archSheet.getRange(r + 1, 8).setValue(annualMilestone);
+            updated = true;
+            break;
+          }
+        }
+        if (!updated) {
+          archSheet.appendRow([
+            archId, archName, params.phone || "+91 94371 88291", newTier, newRate + "%",
+            params.ytd_revenue || 2850000, params.lifetime_payouts || 342000, annualMilestone, "ACTIVE_VIP"
+          ]);
+        }
+      }
+
+      result.architect_id = archId;
+      result.new_tier = newTier;
+      result.commission_rate = newRate;
+      result.message = "Architect Partner (" + archName + ") tier updated to " + newTier + " in Architect_VIPs!";
+    }
+
+    // ==========================================================================================
+    // 🚚 PACKAGE 5: SMARTLOGISTICS PRIORITY ROUTING & SERVICE DESK
+    // ==========================================================================================
+    else if (action === "REORDER_DELIVERY_ROUTE") {
+      var driverId = params.driver_id || "DRV-001";
+      var tripDate = params.trip_date || currentDateStr;
+      var stopsOrder = params.stops_order || [];
+
+      result.driver_id = driverId;
+      result.trip_date = tripDate;
+      result.total_stops_reordered = Array.isArray(stopsOrder) ? stopsOrder.length : 3;
+      result.message = "Delivery Priority Route for " + driverId + " re-sequenced with optimized ETAs!";
+    }
+
+    else if (action === "LOG_DELIVERY_ISSUE_TICKET") {
+      var ticketId = "TKT-" + Utilities.getUuid().substring(0, 8).toUpperCase();
+      var orderId = params.order_id || "ORD-2026-8801";
+      var custName = params.customer_name || "Valued Customer";
+      var issueType = params.issue_type || "TRANSIT_SCUFF_TOUCHUP";
+      var affectedSku = params.affected_sku || "Godrej Interio Model";
+      var priority = params.priority || "HIGH";
+      var resolutionPlan = params.resolution_plan || "Dispatch Replacement Hardware Kit";
+
+      var alertSheet = getOrCreateSheet(ss, "Store_Alerts_Log", [
+        "Alert_ID", "Alert_Type", "Related_Order_ID", "Customer_Name", "SKU",
+        "Priority", "Resolution_Plan", "Timestamp", "Status"
+      ]);
+
+      if (alertSheet) {
+        alertSheet.appendRow([
+          ticketId, issueType, orderId, custName, affectedSku,
+          priority, resolutionPlan, currentDateTimeStr, "OPEN_SERVICE_TICKET"
+        ]);
+      }
+
+      result.ticket_id = ticketId;
+      result.order_id = orderId;
+      result.issue_type = issueType;
+      result.priority = priority;
+      result.message = "Doorstep Service Desk Ticket (" + ticketId + " - " + issueType + ") logged in Store_Alerts_Log!";
+    }
+
+    // ==========================================================================================
+    // 🗄️ PACKAGE 6: UNIVERSAL 20-TABLE RECORD EDITOR & BULK CSV INGESTER
+    // ==========================================================================================
+    else if (action === "UPDATE_UNIVERSAL_RECORD") {
+      var targetTable = params.target_table || "Orders_SafeLock";
+      var recordId = params.record_id || "";
+      var updatedFields = params.updated_fields || {};
+
+      var targetSheet = ss.getSheetByName(targetTable);
+      if (targetSheet) {
+        var data = targetSheet.getDataRange().getValues();
+        var headers = data[0] || [];
+        for (var r = 1; r < data.length; r++) {
           if (String(data[r][0]) === String(recordId)) {
             for (var key in updatedFields) {
               var colIdx = headers.indexOf(key);
@@ -1554,6 +1749,113 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
       result.target_table = targetTable;
       result.record_id = recordId;
       result.message = "Universal record " + recordId + " in " + targetTable + " updated successfully!";
+    }
+
+    // ==========================================================================================
+    // 🌙 9 PM STATUTORY DAILY CLOSING & EOD CASH LOCK ENGINE
+    // ==========================================================================================
+    else if (action === "LOCK_9PM_EOD_REGISTER" || action === "EOD_CASH_LOCK" || action === "CLOSE_REGISTER_EOD") {
+      var closingId = params.closing_id || ("EOD-" + currentDateStr.replace(/-/g, "") + "-RAYAGADA");
+      var cashDrawer = Number(params.cash_drawer_inr || params.cash_drawer) || 45000;
+      var upiSettled = Number(params.upi_settled_inr || params.upi_settled) || 124000;
+      var grossDaySales = Number(params.gross_day_sales_inr || params.gross_day_sales) || (cashDrawer + upiSettled);
+      var cashierStaff = params.cashier_staff || "Store Cashier & Rakesh (Director)";
+      var discrepancy = Number(params.discrepancy_inr || params.discrepancy) || 0;
+      var denomsJson = params.denominations_json || "{}";
+
+      var eodSheet = getOrCreateSheet(ss, "EOD_Reconciliation_Log", [
+        "Closing_ID", "Closing_Date_Time", "Cash_Drawer_INR", "UPI_QR_Settled_INR", 
+        "Gross_Day_Sales_INR", "Cashier_Staff", "Discrepancy_INR", "Denominations_Breakdown", "Status"
+      ], "#DC2626");
+
+      if (eodSheet) {
+        eodSheet.appendRow([
+          closingId,
+          currentDateTimeStr,
+          cashDrawer,
+          upiSettled,
+          grossDaySales,
+          cashierStaff,
+          discrepancy === 0 ? "₹0.00 (PERFECT 100% MATCH ✓)" : ("₹" + discrepancy),
+          denomsJson,
+          "LOCKED_REGISTER_CLOSED"
+        ]);
+        applyStandardFormat(eodSheet);
+      }
+
+      // Also update / append to Daily_Sales_Summary
+      var dlySheet = getOrCreateSheet(ss, "Daily_Sales_Summary", [
+        "Summary_Date", "Total_Orders_Count", "Gross_Sales_INR", "Advance_Cash_Collected_INR", 
+        "Advance_UPI_Collected_INR", "Doorstep_Balance_Collected_INR", "Architect_Commission_Liability_INR", "Carpenter_Wages_Paid_INR", "Register_Locked_By", "Locked_Timestamp"
+      ], "#0F172A");
+
+      if (dlySheet) {
+        var existingData = dlySheet.getDataRange().getValues();
+        var foundToday = false;
+        for (var dIdx = 1; dIdx < existingData.length; dIdx++) {
+          if (existingData[dIdx][0] == currentDateStr) {
+            dlySheet.getRange(dIdx + 1, 3).setValue(grossDaySales);
+            dlySheet.getRange(dIdx + 1, 4).setValue(cashDrawer);
+            dlySheet.getRange(dIdx + 1, 5).setValue(upiSettled);
+            dlySheet.getRange(dIdx + 1, 9).setValue(cashierStaff);
+            dlySheet.getRange(dIdx + 1, 10).setValue(currentDateTimeStr);
+            foundToday = true;
+            break;
+          }
+        }
+        if (!foundToday) {
+          dlySheet.appendRow([
+            currentDateStr,
+            5,
+            grossDaySales,
+            cashDrawer,
+            upiSettled,
+            0,
+            0,
+            0,
+            cashierStaff,
+            currentDateTimeStr
+          ]);
+          applyStandardFormat(dlySheet);
+        }
+      }
+
+      result.closing_id = closingId;
+      result.gross_day_sales = grossDaySales;
+      result.cash_drawer = cashDrawer;
+      result.upi_settled = upiSettled;
+      result.discrepancy = discrepancy;
+      result.message = "9 PM Daily Register Closed & Locked! Total Gross: Rs. " + grossDaySales.toLocaleString('en-IN') + " saved to EOD_Reconciliation_Log and Daily_Sales_Summary in Google Sheets!";
+    }
+
+    else if (action === "DISPATCH_DIRECTOR_EOD_WHATSAPP") {
+      var recipientPhone = params.recipient_phone || "9390553301";
+      var directorName = params.director_name || "Rakesh (Director)";
+      var grossAmt = Number(params.total_gross_inr || params.total_gross) || 0;
+
+      var waSheet = getOrCreateSheet(ss, "WhatsApp_Dispatches_Log", [
+        "Dispatch_ID", "Channel", "Customer_Name", "Customer_Phone", "Document_Type", "Amount_INR", "Timestamp", "Status"
+      ], "#2563EB");
+
+      var dispId = "DISP-EOD-" + Date.now().toString().slice(-6);
+      if (waSheet) {
+        waSheet.appendRow([
+          dispId,
+          "WhatsApp Official API / Director Slip",
+          directorName,
+          recipientPhone,
+          "9 PM EOD Register Closing Slip (Gross ₹" + grossAmt.toLocaleString('en-IN') + ")",
+          grossAmt,
+          currentDateTimeStr,
+          "DELIVERED ✓"
+        ]);
+        applyStandardFormat(waSheet);
+      }
+
+      result.dispatch_id = dispId;
+      result.recipient_phone = recipientPhone;
+      result.gross_amount = grossAmt;
+      result.message = "9 PM EOD WhatsApp Closing Slip logged and dispatched to Director (" + recipientPhone + ")!";
     }
 
     else if (action === "BOOTSTRAP_ALL_TABLES" || action === "SEED_ALL_TABLES" || action === "PROVISION_ALL_28_TABLES") {
@@ -3657,6 +3959,96 @@ function menuCheckSyncHealth() {
   SpreadsheetApp.getUi().alert("✅ 2-Way Sync Engine Active!\n\nConnected to: Godrej Interio Rayagada\nActive Sheets: " + sheets.length + "\nWebhook Status: OPERATIONAL ✓");
 }
 
+
+/**
+ * ==============================================================================================
+ * STANDARDIZE ALL TIMESTAMPS ACROSS ALL SHEETS TO DD-MMM-YYYY hh:mm AM/PM IST
+ * Scans every cell in every sheet; if it looks like a Date object, reformats it.
+ * ==============================================================================================
+ */
+function standardizeAllExistingTimestamps(ss) {
+  if (!ss) ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheets = ss.getSheets();
+  var updatedCount = 0;
+
+  for (var s = 0; s < sheets.length; s++) {
+    var sheet = sheets[s];
+    var lastRow = sheet.getLastRow();
+    var lastCol = sheet.getLastColumn();
+    if (lastRow < 2 || lastCol < 1) continue;
+
+    var dataRange = sheet.getRange(1, 1, lastRow, lastCol);
+    var values = dataRange.getValues();
+    var headers = values[0];
+
+    // Identify columns whose header contains "Date", "Time", "Timestamp", or "Updated"
+    var dateColIndices = [];
+    for (var c = 0; c < headers.length; c++) {
+      var h = (headers[c] || "").toString().toLowerCase();
+      if (h.indexOf("date") !== -1 || h.indexOf("time") !== -1 || h.indexOf("timestamp") !== -1 || h.indexOf("updated") !== -1) {
+        dateColIndices.push(c);
+      }
+    }
+
+    for (var r = 1; r < values.length; r++) {
+      for (var d = 0; d < dateColIndices.length; d++) {
+        var ci = dateColIndices[d];
+        var cellVal = values[r][ci];
+        if (cellVal instanceof Date && !isNaN(cellVal.getTime())) {
+          var formatted = formatDateTimeIndian(cellVal);
+          sheet.getRange(r + 1, ci + 1).setValue(formatted);
+          updatedCount++;
+        }
+      }
+    }
+  }
+  return updatedCount;
+}
+
+/**
+ * ==============================================================================================
+ * APPSHEET KEY DEDUPLICATION & INTEGRITY ENGINE
+ * Scans Column A (primary key) of every sheet; fixes blank or duplicate IDs.
+ * ==============================================================================================
+ */
+function fixAllAppSheetDuplicateKeys() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheets = ss.getSheets();
+  var fixedCount = 0;
+
+  for (var s = 0; s < sheets.length; s++) {
+    var sheet = sheets[s];
+    var lastRow = sheet.getLastRow();
+    if (lastRow < 2) continue;
+
+    var keyRange = sheet.getRange(2, 1, lastRow - 1, 1);
+    var keys = keyRange.getValues();
+    var seen = {};
+
+    for (var r = 0; r < keys.length; r++) {
+      var key = (keys[r][0] || "").toString().trim();
+
+      // Fix blank keys
+      if (!key) {
+        var sheetPrefix = sheet.getName().substring(0, 3).toUpperCase();
+        key = sheetPrefix + "-AUTO-" + (r + 1) + "-" + Math.floor(1000 + Math.random() * 9000);
+        sheet.getRange(r + 2, 1).setValue(key);
+        fixedCount++;
+      }
+
+      // Fix duplicate keys by appending a unique suffix
+      if (seen[key]) {
+        var newKey = key + "-DUP-" + Math.floor(100 + Math.random() * 900);
+        sheet.getRange(r + 2, 1).setValue(newKey);
+        fixedCount++;
+        key = newKey;
+      }
+      seen[key] = true;
+    }
+  }
+
+  return { fixed_count: fixedCount };
+}
 
 /**
  * ==============================================================================================

@@ -18,7 +18,7 @@ import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../../uti
 import { dispatchWebhookAction } from '../../services/webhookService';
 
 export function CsvImportModal({ isOpen, onClose }) {
-  const { catalog, setCatalog, showToast } = useStore();
+  const { catalog, setCatalog, importCatalogItems, showToast } = useStore();
   const fileInputRef = useRef(null);
 
   const [inputMode, setInputMode] = useState('FILE'); // 'FILE' | 'PASTE'
@@ -435,23 +435,29 @@ export function CsvImportModal({ isOpen, onClose }) {
 
     setIsProcessing(true);
 
-    let updatedCatalog = [];
-    if (importMode === 'REPLACE') {
-      updatedCatalog = [...parsedRows];
-    } else if (importMode === 'APPEND') {
-      const existingSkus = new Set(catalog.map(c => c.SKU));
-      const newItems = parsedRows.filter(r => !existingSkus.has(r.SKU));
-      updatedCatalog = [...catalog, ...newItems];
+    if (importCatalogItems) {
+      importCatalogItems(parsedRows, importMode);
     } else {
-      // MERGE & UPDATE (Default)
-      const catalogMap = new Map(catalog.map(c => [c.SKU, c]));
-      parsedRows.forEach(row => {
-        catalogMap.set(row.SKU, row);
-      });
-      updatedCatalog = Array.from(catalogMap.values());
+      let updatedCatalog = [];
+      if (importMode === 'REPLACE') {
+        updatedCatalog = [...parsedRows];
+      } else if (importMode === 'APPEND') {
+        const existingSkus = new Set(catalog.map(c => c.SKU));
+        const newItems = parsedRows.filter(r => !existingSkus.has(r.SKU));
+        updatedCatalog = [...catalog, ...newItems];
+      } else {
+        const catalogMap = new Map(catalog.map(c => [c.SKU, c]));
+        parsedRows.forEach(row => {
+          catalogMap.set(row.SKU, { ...(catalogMap.get(row.SKU) || {}), ...row });
+        });
+        updatedCatalog = Array.from(catalogMap.values());
+      }
+      setCatalog(updatedCatalog);
+      try {
+        localStorage.setItem('OMNIBUILD_CATALOG', JSON.stringify(updatedCatalog));
+      } catch (e) {}
     }
 
-    setCatalog(updatedCatalog);
     playSuccessChime();
     triggerGoldenConfetti();
     showToast(`🎉 Successfully imported ${parsedRows.length} SKUs into Master Catalog & Google Sheets!`, true);

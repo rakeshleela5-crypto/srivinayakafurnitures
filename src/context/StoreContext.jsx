@@ -133,7 +133,7 @@ export function StoreProvider({ children }) {
   };
 
   // Core Persistent 21-Table Data Stores
-  const [catalog, setCatalog] = useState(FURNITURE_CATALOG);
+  const [catalog, setCatalog] = useState(() => getStored('OMNIBUILD_CATALOG', FURNITURE_CATALOG));
   const [orders, setOrders] = useState(() => getStored('OMNIBUILD_ORDERS', INITIAL_ORDERS));
   const [inventory, setInventory] = useState(() => getStored('OMNIBUILD_INVENTORY', INITIAL_INVENTORY));
   const [smartKitBoxes, setSmartKitBoxes] = useState(() => getStored('OMNIBUILD_SMARTKIT_BOXES', INITIAL_SMARTKIT_BOXES));
@@ -253,6 +253,64 @@ export function StoreProvider({ children }) {
     localStorage.removeItem('OMNIBUILD_AUTH_USER');
     playSafeLockSound();
     showToast("🔒 Screen locked. Enter PIN to resume.", false);
+  };
+
+  // 📥 Universal Multi-Module Catalog Ingestion & Permanent Sync Engine
+  const importCatalogItems = (newItems = [], mode = 'MERGE') => {
+    if (!newItems || newItems.length === 0) return [];
+
+    let updatedCatalog = [];
+    setCatalog(prevCatalog => {
+      if (mode === 'REPLACE') {
+        updatedCatalog = [...newItems];
+      } else if (mode === 'APPEND') {
+        const existingSkus = new Set(prevCatalog.map(c => c.SKU));
+        const toAdd = newItems.filter(r => !existingSkus.has(r.SKU));
+        updatedCatalog = [...prevCatalog, ...toAdd];
+      } else {
+        // MERGE & UPDATE (Default)
+        const catalogMap = new Map(prevCatalog.map(c => [c.SKU, c]));
+        newItems.forEach(row => {
+          catalogMap.set(row.SKU, { ...(catalogMap.get(row.SKU) || {}), ...row });
+        });
+        updatedCatalog = Array.from(catalogMap.values());
+      }
+
+      try {
+        localStorage.setItem('OMNIBUILD_CATALOG', JSON.stringify(updatedCatalog));
+      } catch (e) {
+        console.warn('[localStorage] Catalog save error:', e);
+      }
+
+      return updatedCatalog;
+    });
+
+    // Auto-provision inventory slots for new SKUs
+    setInventory(prevInv => {
+      const invMap = new Map(prevInv.map(i => [i.SKU, i]));
+      newItems.forEach(item => {
+        if (!invMap.has(item.SKU)) {
+          invMap.set(item.SKU, {
+            SKU: item.SKU,
+            Product_Name: item.Product_Name,
+            Category: item.Main_Category || 'General',
+            Showroom_Stock: Number(item.In_Stock_Warehouse) || 4,
+            Central_Warehouse_Stock: 12,
+            Reserved_SafeLock: 0,
+            Reorder_Threshold: 2,
+            Supplier_Lead_Days: 7,
+            Status: 'HEALTHY_STOCK'
+          });
+        }
+      });
+      const updatedInv = Array.from(invMap.values());
+      try {
+        localStorage.setItem('OMNIBUILD_INVENTORY', JSON.stringify(updatedInv));
+      } catch (e) {}
+      return updatedInv;
+    });
+
+    return updatedCatalog;
   };
 
   // 1. SafeLock Action: Atomic Reservation
@@ -688,6 +746,7 @@ export function StoreProvider({ children }) {
       showToast,
       isSyncing,
       syncWithGoogleSheets,
+      importCatalogItems,
       triggerSafeLockOrder,
       convertInquiryToOrder,
       adjustStock,

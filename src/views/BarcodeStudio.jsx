@@ -204,6 +204,17 @@ export function BarcodeStudio() {
             <ShieldCheck size={13} /> {bearerBars ? '📦 Bearer Guard Lines ON' : 'Bearer Lines OFF'}
           </button>
 
+          <button 
+            className="btn-ghost-edit" 
+            onClick={() => {
+              openModal('csv_import');
+              playScanBeep();
+            }}
+            style={{ fontSize: '11.5px', padding: '6px 12px', color: 'var(--accent-gold-light)', border: '1px solid var(--accent-gold)' }}
+          >
+            <FileText size={13} /> 📁 Import CSV Catalog
+          </button>
+
           <button className="btn-emerald" onClick={handleSaveToCatalog} style={{ fontSize: '11.5px', padding: '6px 12px' }}>
             <Save size={13} /> 💾 Save to Google Sheets
           </button>
@@ -223,7 +234,17 @@ export function BarcodeStudio() {
             <h3 style={{ fontSize: '16px', fontWeight: '900', color: 'var(--accent-cyan)' }}>
               ⚙️ GS1 Code-128 Barcode Line Parameters
             </h3>
-            <span className="badge badge-purple">{catalog.length} SKUs</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button 
+                type="button"
+                onClick={() => openModal('csv_import')} 
+                className="btn-ghost-edit" 
+                style={{ fontSize: '10.5px', padding: '4px 8px', color: 'var(--accent-cyan)' }}
+              >
+                <Download size={11} /> 📁 Import CSV
+              </button>
+              <span className="badge badge-purple">{catalog.length} SKUs</span>
+            </div>
           </div>
 
           {/* 3-Step Navigation Tabs */}
@@ -267,6 +288,26 @@ export function BarcodeStudio() {
           {barcodeStep === 1 && (
             <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               
+              {/* Quick CSV Import Banner in Step 1 */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(212,175,55,0.08)', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(212,175,55,0.2)' }}>
+                <div>
+                  <div style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--accent-gold-light)' }}>
+                    📥 Inward Factory Stock CSV / WhatsApp Data:
+                  </div>
+                  <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>
+                    Upload supplier batches or paste raw text to auto-generate box barcodes
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="btn-luxury-gold"
+                  onClick={() => openModal('csv_import')}
+                  style={{ fontSize: '10.5px', padding: '5px 12px', fontWeight: '800' }}
+                >
+                  <FileText size={12} /> 📁 Import CSV
+                </button>
+              </div>
+
               {/* Source Switcher: Supplier Catalog (Default) ⇋ Customer Dispatch Order */}
               <div style={{ display: 'flex', gap: '6px', background: '#030712', padding: '4px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.12)' }}>
                 <button

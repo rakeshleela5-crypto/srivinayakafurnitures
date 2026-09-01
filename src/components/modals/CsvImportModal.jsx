@@ -275,9 +275,29 @@ export function CsvImportModal({ isOpen, onClose }) {
     showToast(`⚡ Loaded ${pack.rows.length} SKUs from ${pack.name}! Ready to import.`, true);
   };
 
+  // Download Standard Formatted Sample CSV Template
+  const downloadSampleTemplate = () => {
+    const header = "SKU,Product_Name,Main_Category,Sub_Category,Material_Spec,Dimensions,MRP_INR,Selling_Price_INR,Warranty_Years,Total_Component_Boxes,Default_Supplier\n";
+    const sample = `"BED-CSV-101","Royal Teak Master Hydraulic King Bed","Bedroom","Wooden Bed","100% Solid CP Teak Wood","78x60x40 in",95000,74999,10,5,"Royal Teak Crafts, Saharanpur (UP)"\n` +
+      `"SOF-CSV-102","Imperial 7-Seater Velvet Sectional Sofa","Living Room","Sectional Sofa","Sal Wood Frame + High-Density Foam","120x88x34 in",148000,118400,7,3,"Godrej Upholstery Works"\n` +
+      `"DIN-CSV-103","Italian Statuario White Marble 6-Seater Dining","Dining & Study","Dining Table","Imported Marble + PVD Gold Brass","72x42x30 in",135000,108000,10,4,"Makrana Stone Works"\n`;
+
+    const blob = new Blob([header + sample], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', "Godrej_Interio_Master_Catalog_Template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    playSuccessChime();
+    showToast(`📥 Downloaded Godrej Interio Master Catalog Template (.csv)!`, true);
+  };
+
   // Download General Pre-Formatted Sample CSV Template
   const handleDownloadSampleCsv = () => {
-    downloadPackCsv('bedroom');
+    downloadSampleTemplate();
   };
 
   // Commit Import & Sync to Google Sheets

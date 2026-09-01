@@ -1371,15 +1371,24 @@ export function AddVipProjectModal({ isOpen, onClose }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!name.trim()) return;
-    addVipProject({
+
+    const payload = {
+      project_id: `VIP-VILLA-2026-${Math.floor(100 + Math.random() * 900)}`,
       name,
       phone: phone || '+91 94370 88990',
       location: location || 'Rayagada Villa',
       value: Number(value) || 250000,
       stage,
       status: stage,
-      architect
-    });
+      architect: architect || 'Ar. Sunita Patnaik'
+    };
+
+    addVipProject(payload);
+    dispatchWebhookAction('ADD_VIP_VILLA_PROJECT', payload);
+
+    playSuccessChime();
+    triggerGoldenConfetti();
+    showToast(`👑 VIP Turnkey Villa Project for ${name} saved & synced to VIP_Villa_Projects!`, true);
     onClose();
   };
 
@@ -1488,17 +1497,27 @@ export function EditVipProjectModal({ isOpen, onClose, project }) {
   if (!isOpen || !project) return null;
 
   const handleSave = () => {
-    updateVipProject(project.id, {
+    const updatedPayload = {
+      project_id: project.id,
+      name: project.name,
+      phone: phone || project.phone,
+      location: loc || project.location,
       value: Number(val),
       stage,
       status: stage,
-      phone,
-      location: loc,
+      architect: project.architect || 'Ar. Sunita Patnaik',
       stage1Paid: stage1,
       stage2Paid: stage2,
       stage3Paid: stage3,
       advance: stage1 ? Math.round(Number(val) * 0.5) : 0
-    });
+    };
+
+    updateVipProject(project.id, updatedPayload);
+    dispatchWebhookAction('UPDATE_VIP_VILLA_PROJECT', updatedPayload);
+
+    playSuccessChime();
+    triggerGoldenConfetti();
+    showToast(`👑 VIP Account ${project.name} updated & synced to VIP_Villa_Projects!`, true);
     onClose();
   };
 

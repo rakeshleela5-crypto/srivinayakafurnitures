@@ -1678,6 +1678,52 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
       result.message = "Payment #" + paymentId + " of ₹" + amount.toLocaleString() + " for Order #" + orderId + " verified & logged to Payments_Log on " + currentDateTimeStr + "!";
     }
 
+    // ------------------------------------------------------------------------------------------
+    // 👑 VIP TURNKEY VILLA CLIENT RADAR ENGINE (VIP_Villa_Projects)
+    // ------------------------------------------------------------------------------------------
+    else if (action === "ADD_VIP_VILLA_PROJECT" || action === "UPDATE_VIP_VILLA_PROJECT" || action === "LOG_VIP_PROJECT") {
+      var vipSheet = getOrCreateSheet(ss, "VIP_Villa_Projects", [
+        "Project_ID", "Date_Time", "Client_Name", "Phone_Number", "Villa_Location", 
+        "Project_Value_INR", "Account_Stage", "Assigned_Architect", 
+        "Milestone_50Pct_Token", "Milestone_40Pct_Dispatch", "Status"
+      ], "#8B5CF6");
+
+      var projId = params.project_id || ("VIP-VILLA-2026-" + Math.floor(100 + Math.random() * 900));
+      var clientName = params.name || params.client_name || "Dr. Subhashish Jena";
+      var phone = (params.phone || params.customer_phone || "9437088990").toString().replace(/[^0-9]/g, "");
+      var location = params.location || "Raniguda Farmhouse Villa, Rayagada";
+      var value = Number(params.value || params.project_value) || 250000;
+      var stage = params.stage || params.status || "PROPOSAL DELIVERED";
+      var arch = params.architect || params.assigned_architect || "Ar. Sunita Patnaik";
+      var tokenPaid = params.stage1Paid ? "PAID ✓" : "DUE (50%)";
+      var dispatchPaid = params.stage2Paid ? "PAID ✓" : "DUE (40%)";
+      var statusStr = params.status || stage;
+
+      if (vipSheet) {
+        vipSheet.appendRow([
+          projId,
+          currentDateTimeStr,
+          clientName,
+          Number(phone) || 9437088990,
+          location,
+          value,
+          stage,
+          arch,
+          tokenPaid,
+          dispatchPaid,
+          statusStr
+        ]);
+        applyStandardFormat(vipSheet);
+      }
+
+      result.project_id = projId;
+      result.date_time = currentDateTimeStr;
+      result.client = clientName;
+      result.value = value;
+      result.stage = stage;
+      result.message = "VIP Turnkey Villa Project #" + projId + " for " + clientName + " (₹" + value.toLocaleString() + ") saved to VIP_Villa_Projects on " + currentDateTimeStr + "!";
+    }
+
     else if (action === "LOG_WALKIN_LEAD" || action === "ADD_INQUIRY" || action === "SYSTEM_1_WALKIN_INQUIRY") {
       var inqId = params.inquiry_id || ("INQ-" + currentDateStr.replace(/-/g, "") + "-" + Math.floor(100 + Math.random() * 900));
       var custName = params.customer_name || params.name || "Walk-In Visitor";

@@ -1557,6 +1557,49 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
       result.message = "Showroom Sales Targets updated in Store_Sales_Targets sheet (Target: Rs. " + revTarget.toLocaleString('en-IN') + ")!";
     }
 
+    // ==========================================================================================
+    // 👥 SHOWROOM FOOTFALL & WALKIN LEAD INGESTION ENGINE
+    // ==========================================================================================
+    else if (action === "LOG_WALKIN_LEAD" || action === "ADD_INQUIRY" || action === "SYSTEM_1_WALKIN_INQUIRY") {
+      var inqId = params.inquiry_id || ("INQ-" + currentDateStr.replace(/-/g, "") + "-" + Math.floor(100 + Math.random() * 900));
+      var custName = params.customer_name || params.name || "Walk-In Visitor";
+      var custPhone = params.customer_phone || params.phone || "+91 94371";
+      var address = params.address || params.locality || "Rayagada Town";
+      var categoryModels = params.category_models || params.category || "Living & Bedroom Furniture";
+      var budgetInr = Number(params.budget_inr || params.budget) || 85000;
+      var aiScore = Number(params.ai_intent_score || params.score) || 88;
+      var staff = params.assigned_staff || params.staff || "Rakesh (Store Manager)";
+      var status = params.status || (aiScore >= 80 ? "HOT_LEAD 🔥" : "WARM_LEAD ⚡");
+
+      var inqSheet = getOrCreateSheet(ss, "Inquiries_Log", [
+        "Inquiry_ID", "Inquiry_Date_Time", "Customer_Name", "Customer_Phone", "Locality_Address", 
+        "Category_Interest", "Budget_INR", "AI_Intent_Score", "Assigned_Staff", "Follow_Up_Date", "Status"
+      ], "#D946EF");
+
+      if (inqSheet) {
+        inqSheet.appendRow([
+          inqId,
+          currentDateTimeStr,
+          custName,
+          custPhone,
+          address,
+          categoryModels,
+          budgetInr,
+          aiScore + "%",
+          staff,
+          "Tomorrow",
+          status
+        ]);
+        applyStandardFormat(inqSheet);
+      }
+
+      result.inquiry_id = inqId;
+      result.customer_name = custName;
+      result.budget_inr = budgetInr;
+      result.ai_score = aiScore;
+      result.message = "Showroom Walk-in Lead (" + inqId + " - " + custName + ") saved successfully to Inquiries_Log sheet!";
+    }
+
 
     // ==========================================================================================
     // 🏷️ PACKAGE 1: COMMERCIAL SALES & MARGIN ENGINE

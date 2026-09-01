@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { X, Check, Calculator, Sparkles } from 'lucide-react';
+import { dispatchWebhookAction } from '../../services/webhookService';
 
 export function ShowroomAdvanceModal({ isOpen, onClose, data = {} }) {
   const { triggerSafeLockOrder, storeMeta } = useStore();
@@ -18,16 +19,16 @@ export function ShowroomAdvanceModal({ isOpen, onClose, data = {} }) {
   const advanceAmount = Math.round(discountedTotal * (advancePct / 100));
   const balanceDue = discountedTotal - advanceAmount;
 
-  const handleConfirm = () => {
+  const handleConfirmAdvance = () => {
     triggerSafeLockOrder({
-      Customer_Name: customerName,
-      Customer_Phone: phone,
-      Project_Address: address,
-      Ordered_SKU: items,
-      Total_Amount_INR: discountedTotal,
-      Advance_Paid_INR: advanceAmount,
-      Balance_Due_INR: balanceDue,
-      Delivery_Schedule: "Today, Express 04:30 PM"
+      customerName,
+      phone,
+      address,
+      items,
+      totalAmount: discountedTotal,
+      advancePaid: advanceAmount,
+      balanceDue,
+      paymentMode: "50% Advance Cash/UPI"
     });
     onClose();
   };
@@ -36,61 +37,62 @@ export function ShowroomAdvanceModal({ isOpen, onClose, data = {} }) {
     <div className="modal-overlay">
       <div className="modal-card">
         <div className="modal-header">
-          <h3><Calculator size={18} color="var(--accent-gold)" /> Edit Quotation & 50% Advance Token</h3>
+          <h3><Calculator size={18} color="var(--accent-gold)" /> 💵 Record Showroom Booking Advance</h3>
           <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
         </div>
 
         <div className="form-grid">
           <div className="form-field">
-            <label>Customer Full Name</label>
+            <label>Customer Name</label>
             <input value={customerName} onChange={e => setCustomerName(e.target.value)} />
           </div>
           <div className="form-field">
-            <label>WhatsApp Phone</label>
+            <label>WhatsApp / Mobile Phone</label>
             <input value={phone} onChange={e => setPhone(e.target.value)} />
           </div>
           <div className="form-field" style={{ gridColumn: '1 / -1' }}>
-            <label>Project / Delivery Address</label>
+            <label>Delivery Site / Address</label>
             <input value={address} onChange={e => setAddress(e.target.value)} />
           </div>
           <div className="form-field" style={{ gridColumn: '1 / -1' }}>
-            <label>Quoted Furniture Models</label>
+            <label>Selected Furniture Packages</label>
             <input value={items} onChange={e => setItems(e.target.value)} />
           </div>
           <div className="form-field">
-            <label>Showroom MRP (₹)</label>
+            <label>Standard MRP Total (₹)</label>
             <input type="number" value={totalAmount} onChange={e => setTotalAmount(Number(e.target.value))} />
           </div>
           <div className="form-field">
-            <label>Showroom Discount ({discountPct}%)</label>
-            <select value={discountPct} onChange={e => setDiscountPct(Number(e.target.value))}>
-              <option value="0">0% (Standard MRP)</option>
-              <option value="5">5% (Spot Deal)</option>
-              <option value="8">8% (VIP Suite Combo)</option>
-              <option value="10">10% (Festive Offer)</option>
-              <option value="12">12% (Bulk Project)</option>
-              <option value="15">15% (Store Manager Approved)</option>
-            </select>
+            <label>Spot Discount (%)</label>
+            <input type="number" value={discountPct} onChange={e => setDiscountPct(Number(e.target.value))} />
+          </div>
+          <div className="form-field">
+            <label>Advance Deposit Ratio (%)</label>
+            <input type="number" value={advancePct} onChange={e => setAdvancePct(Number(e.target.value))} />
+          </div>
+          <div className="form-field">
+            <label>Calculated Advance (₹)</label>
+            <input type="text" value={`₹${advanceAmount.toLocaleString()}`} disabled style={{ fontWeight: 'bold', color: 'var(--accent-green)' }} />
           </div>
         </div>
 
-        <div style={{ background: '#030712', padding: '14px', borderRadius: '12px', border: '1px solid rgba(212,175,55,0.25)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-            <span>Final Negotiated Price:</span>
-            <strong style={{ color: 'var(--accent-gold-light)', fontSize: '15px' }}>₹{discountedTotal.toLocaleString()}</strong>
+        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+            <span>Final Quoted Price:</span>
+            <strong>₹{discountedTotal.toLocaleString()}</strong>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-            <span>50% Advance Token (Dynamic UPI QR):</span>
-            <strong style={{ color: 'var(--accent-emerald)', fontSize: '15px' }}>₹{advanceAmount.toLocaleString()}</strong>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+            <span>Advance Received:</span>
+            <strong style={{ color: 'var(--accent-green)' }}>₹{advanceAmount.toLocaleString()}</strong>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-secondary)' }}>
-            <span>Balance on Doorstep ePOD:</span>
-            <span>₹{balanceDue.toLocaleString()}</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>Doorstep Balance Due:</span>
+            <strong style={{ color: 'var(--accent-gold)' }}>₹{balanceDue.toLocaleString()}</strong>
           </div>
         </div>
 
-        <button className="btn-luxury-gold" onClick={handleConfirm} style={{ width: '100%', justifyContent: 'center', padding: '12px' }}>
-          <Check size={16} /> Confirm & Lock SafeLock Stock (₹{advanceAmount.toLocaleString()} Token)
+        <button className="btn-luxury-gold" onClick={handleConfirmAdvance} style={{ width: '100%', justifyContent: 'center', padding: '12px' }}>
+          <Check size={16} /> Save & SafeLock Booking (50% Advance)
         </button>
       </div>
     </div>
@@ -110,8 +112,9 @@ export function NewInquiryModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   const handleSubmit = () => {
+    const inqId = `INQ-2026-${Math.floor(900 + Math.random() * 99)}`;
     const newInq = {
-      Inquiry_ID: `INQ-2026-${Math.floor(900 + Math.random() * 99)}`,
+      Inquiry_ID: inqId,
       Inquiry_Date: "Today, Just Now",
       Customer_Name: name || "Walk-In Visitor",
       Customer_Phone: phone || "9437100000",
@@ -124,8 +127,23 @@ export function NewInquiryModal({ isOpen, onClose }) {
       Status: "HOT_LEAD",
       Assigned_Staff: staff
     };
+
     setInquiries([newInq, ...inquiries]);
-    showToast(`➕ New Showroom Lead logged for ${newInq.Customer_Name} (AI Score: ${score}%)!`, true);
+
+    dispatchWebhookAction('LOG_WALKIN_LEAD', {
+      inquiry_id: inqId,
+      customer_name: newInq.Customer_Name,
+      customer_phone: newInq.Customer_Phone,
+      address: address,
+      category_models: category,
+      budget_inr: Number(budget),
+      ai_intent_score: Number(score),
+      intent_badge: newInq.Intent_Badge,
+      assigned_staff: staff,
+      timestamp: new Date().toISOString()
+    });
+
+    showToast(`➕ New Showroom Lead logged for ${newInq.Customer_Name} (AI Score: ${score}%) & synced to Google Sheets!`, true);
     onClose();
   };
 

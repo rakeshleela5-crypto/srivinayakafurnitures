@@ -3691,14 +3691,30 @@ function formatAndBorderCatalogSheet(sheet) {
   sheet.getRange(2, 6, lastRow - 1, 1).setHorizontalAlignment("left").setWrap(true);
   // Col G: Dimensions (Center)
   sheet.getRange(2, 7, lastRow - 1, 1).setHorizontalAlignment("center");
-  // Col H: MRP_INR (Right, Currency format ₹#,##0)
-  sheet.getRange(2, 8, lastRow - 1, 1).setHorizontalAlignment("right").setNumberFormat('₹#,##0');
-  // Col I: Selling_Price_INR (Right, Bold Currency format ₹#,##0)
-  sheet.getRange(2, 9, lastRow - 1, 1).setHorizontalAlignment("right").setFontWeight("bold").setNumberFormat('₹#,##0');
+  // Col H: MRP_INR (Right, Currency format)
+  try {
+    sheet.getRange(2, 8, lastRow - 1, 1).setHorizontalAlignment("right").setNumberFormat('₹#,##0');
+  } catch(e) {
+    try { sheet.getRange(2, 8, lastRow - 1, 1).setHorizontalAlignment("right"); } catch(e2) {}
+  }
+  // Col I: Selling_Price_INR (Right, Bold Currency format)
+  try {
+    sheet.getRange(2, 9, lastRow - 1, 1).setHorizontalAlignment("right").setFontWeight("bold").setNumberFormat('₹#,##0');
+  } catch(e) {
+    try { sheet.getRange(2, 9, lastRow - 1, 1).setHorizontalAlignment("right").setFontWeight("bold"); } catch(e2) {}
+  }
   // Col J: Warranty_Years (Center, "X Yrs")
-  sheet.getRange(2, 10, lastRow - 1, 1).setHorizontalAlignment("center").setNumberFormat('0" Yrs"');
+  try {
+    sheet.getRange(2, 10, lastRow - 1, 1).setHorizontalAlignment("center").setNumberFormat('0" Yrs"');
+  } catch(e) {
+    try { sheet.getRange(2, 10, lastRow - 1, 1).setHorizontalAlignment("center"); } catch(e2) {}
+  }
   // Col K: Total_Component_Boxes (Center, "X Boxes")
-  sheet.getRange(2, 11, lastRow - 1, 1).setHorizontalAlignment("center").setNumberFormat('0" Boxes"');
+  try {
+    sheet.getRange(2, 11, lastRow - 1, 1).setHorizontalAlignment("center").setNumberFormat('0" Boxes"');
+  } catch(e) {
+    try { sheet.getRange(2, 11, lastRow - 1, 1).setHorizontalAlignment("center"); } catch(e2) {}
+  }
   // Col L: Default_Supplier (Left)
   sheet.getRange(2, 12, lastRow - 1, 1).setHorizontalAlignment("left");
 

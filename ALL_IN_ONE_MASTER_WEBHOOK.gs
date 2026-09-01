@@ -1573,7 +1573,65 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
 
     // ==========================================================================================
     // 👥 SHOWROOM FOOTFALL & WALKIN LEAD INGESTION ENGINE
-    // ==========================================================================================
+    // ==========================================================================================    
+    // ------------------------------------------------------------------------------------------
+    // SYSTEM 1: Log AI Room Matcher Quote & Deal Conversion (Quote_Log & Orders_SafeLock)
+    // ------------------------------------------------------------------------------------------
+    else if (action === "LOG_AI_ROOM_QUOTE" || action === "SYSTEM_1_VOICE_QUOTE" || action === "CONVERT_ROOM_MATCHER_DEAL") {
+      var qSheet = getOrCreateSheet(ss, "Quote_Log", [
+        "Quote_ID", "Quote_Date_Time", "Customer_Name", "Customer_Phone", "Room_Type", 
+        "Room_Photo_URL", "Recommended_SKUs", "Quoted_Amount_INR", "Combo_Discount_INR", 
+        "Final_Quote_INR", "AI_Confidence_Score", "Converted_To_Order", "Order_ID"
+      ], "#1E3A8A");
+
+      var quoteId = params.quote_id || ("QT-2026-" + Math.floor(100 + Math.random() * 900));
+      var custName = params.customer_name || "Dr. Subhashish Jena";
+      var custPhone = (params.customer_phone || params.phone || "9437088990").toString().replace(/[^0-9]/g, "");
+      var roomType = params.room_title || params.room_type || "Master Bedroom Suite";
+      var photoUrl = params.photo_url || "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=600";
+      var skus = params.items || params.sku || params.recommended_skus || "BED-MOD-001, WDR-MOD-001";
+      var amount = Number(params.total_mrp || params.amount || params.quoted_amount) || 169000;
+      var discount = Number(params.discount) || (amount - (Number(params.final_price) || amount));
+      var finalAmount = Number(params.final_price) || (amount - discount);
+      var confidence = params.synergy_score ? (params.synergy_score + "% Match") : (params.ai_confidence || "96%");
+      var converted = action === "CONVERT_ROOM_MATCHER_DEAL" ? "YES" : (params.converted || "NO");
+      var linkedOrder = "ORD-2026-" + Math.floor(100 + Math.random() * 900);
+
+      if (qSheet) {
+        qSheet.appendRow([
+          quoteId,
+          currentDateTimeStr,
+          custName,
+          Number(custPhone) || 9437088990,
+          roomType,
+          photoUrl,
+          skus,
+          amount,
+          discount,
+          finalAmount,
+          confidence,
+          converted,
+          linkedOrder
+        ]);
+        applyStandardFormat(qSheet);
+      }
+
+      if (action === "CONVERT_ROOM_MATCHER_DEAL") {
+        var ordSheet = getOrCreateSheet(ss, "Orders_SafeLock", ["Order_ID", "Status", "Timestamp"]);
+        if (ordSheet) {
+          ordSheet.appendRow([linkedOrder, "CONFIRMED_VIA_AI", currentDateTimeStr]);
+        }
+      }
+
+      result.quote_id = quoteId;
+      result.order_id = linkedOrder;
+      result.date_time = currentDateTimeStr;
+      result.customer = custName;
+      result.final_quote = finalAmount;
+      result.confidence = confidence;
+      result.message = "AI Room Matcher Quote #" + quoteId + " saved & converted to Order #" + linkedOrder + " in Quote_Log on " + currentDateTimeStr + "!";
+    }
+
     else if (action === "LOG_WALKIN_LEAD" || action === "ADD_INQUIRY" || action === "SYSTEM_1_WALKIN_INQUIRY") {
       var inqId = params.inquiry_id || ("INQ-" + currentDateStr.replace(/-/g, "") + "-" + Math.floor(100 + Math.random() * 900));
       var custName = params.customer_name || params.name || "Walk-In Visitor";

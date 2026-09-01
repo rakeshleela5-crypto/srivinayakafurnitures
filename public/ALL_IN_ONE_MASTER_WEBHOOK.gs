@@ -94,6 +94,15 @@ function handleWebhookRequest(params) {
     }
 
     // ------------------------------------------------------------------------------------------
+    // 🪄 AUTONOMOUS 12-COLUMN CATALOG AUTO-ALIGNMENT & RE-STRUCTURING ENGINE
+    // ------------------------------------------------------------------------------------------
+    else if (action === "AUTO_ALIGN_CATALOG" || action === "ALIGN_CATALOG_DATA") {
+      var alignRes = autoAlignCatalogRows(ss);
+      result.aligned_count = alignRes.alignedRows;
+      result.message = "Successfully auto-aligned and structured " + alignRes.alignedRows + " rows into the 12-column catalog format!";
+    }
+
+    // ------------------------------------------------------------------------------------------
     // SYSTEM 1: AI Room Matcher & Suite Combo Deal
     // ------------------------------------------------------------------------------------------
     
@@ -3485,3 +3494,193 @@ function fixAllAppSheetDuplicateKeys() {
   Logger.log("✅ Fixed " + totalFixed + " duplicate keys across all sheets!");
   return { status: "SUCCESS", fixed_count: totalFixed };
 }
+
+/**
+ * ==============================================================================================
+ * 🪄 AUTONOMOUS 12-COLUMN FURNITURE CATALOG ALIGNMENT & STRUCTURING ENGINE
+ * ==============================================================================================
+ * Automatically detects messy, un-split, or raw pasted lines in Furniture_Catalog,
+ * parses every token (SKU, Product Name, Category, Specs, Dims, MRP, Offer Price, Warranty,
+ * Boxes, Supplier), removes dirty symbols (₹, timestamps, tabs), and writes into exact
+ * Columns A through L with zero human intervention!
+ */
+function autoAlignCatalogRows(ss) {
+  if (!ss) ss = SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById("14TqQ7LR5xSNppufWFhXDGo9hANC0JV_wRukc7HlIpaI");
+  var sheet = ss.getSheetByName("Furniture_Catalog");
+  if (!sheet) return { success: false, message: "Furniture_Catalog sheet not found", alignedRows: 0 };
+
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return { success: true, alignedRows: 0 };
+
+  var data = sheet.getRange(2, 1, lastRow - 1, 15).getValues();
+  var alignedCount = 0;
+
+  for (var i = 0; i < data.length; i++) {
+    var row = data[i];
+    var colA = String(row[0] || "").trim();
+    var colB = String(row[1] || "").trim();
+
+    // Condition: Column A has combined tokens or Column B/C is blank while Col A has text
+    if (colA && (!colB || colA.includes(" ") || colA.includes(",") || colA.includes("\t"))) {
+      var fullLine = colA;
+      // Also combine remaining columns if data was randomly staggered
+      for (var c = 1; c < row.length; c++) {
+        if (row[c]) fullLine += " " + String(row[c]).trim();
+      }
+
+      var parsed = parseRawFurnitureText(fullLine);
+      if (parsed) {
+        sheet.getRange(i + 2, 1, 1, 12).setValues([[
+          parsed.sku,
+          parsed.product_name,
+          parsed.main_category,
+          parsed.sub_category,
+          parsed.price_tier,
+          parsed.material_spec,
+          parsed.dimensions,
+          parsed.mrp,
+          parsed.selling_price,
+          parsed.warranty_years,
+          parsed.box_count,
+          parsed.supplier
+        ]]);
+        // Clean leftover trailing columns (M, N, O)
+        sheet.getRange(i + 2, 13, 1, 3).clearContent();
+        alignedCount++;
+      }
+    }
+  }
+
+  Logger.log("🪄 Successfully auto-aligned " + alignedCount + " catalog rows into 12 columns!");
+  return { success: true, alignedRows: alignedCount };
+}
+
+/**
+ * Intelligent Multi-Pattern Parser for Furniture Lines
+ */
+function parseRawFurnitureText(text) {
+  if (!text) return null;
+
+  // 1. Clean string: remove timestamps like 46266.40139 and clean tabs/multiple spaces
+  var cleaned = text.replace(/\b4\d{4}\.\d+\b/g, '') // remove excel numeric timestamps
+                    .replace(/[₹,]/g, ' ')             // remove ₹ and commas
+                    .replace(/\s+/g, ' ')
+                    .trim();
+
+  // 2. Extract SKU (e.g. OFFICE-CSV-10, BED-MOD-01, GDJ-001, etc.)
+  var skuMatch = cleaned.match(/\b([A-Z]{2,8}(?:-[A-Z0-9]+)+|\bSKU-[A-Z0-9]+)\b/i);
+  var sku = skuMatch ? skuMatch[1].toUpperCase() : "GI-SKU-" + Math.floor(1000 + Math.random() * 9000);
+
+  // Remove SKU from working text
+  var working = cleaned.replace(sku, '').trim();
+
+  // 3. Extract Dimensions (e.g., 24x24x40 in, 78x60x40 in, 84x72x24)
+  var dimMatch = working.match(/\b(\d{2,3}x\d{2,3}x\d{2,3}(?:\s*(?:in|cm|mm))?)\b/i);
+  var dimensions = dimMatch ? dimMatch[1] : "Standard Dimensions";
+  if (dimMatch) working = working.replace(dimMatch[0], ' ');
+
+  // 4. Extract Category & Sub-Category
+  var mainCategory = "Living Room";
+  var subCategory = "Furniture";
+
+  if (/office|commercial|institutional|mesh|workstation|desk|chair/i.test(cleaned)) {
+    mainCategory = "Office & Institutional";
+    subCategory = /chair/i.test(cleaned) ? "Task Chairs" : /desk|table/i.test(cleaned) ? "Executive Desks" : "Commercial Furniture";
+  } else if (/bedroom|bed|mattress|wardrobe|dresser|nightstand/i.test(cleaned)) {
+    mainCategory = "Bedroom";
+    subCategory = /bed/i.test(cleaned) ? "Wooden Bed" : /wardrobe/i.test(cleaned) ? "Wardrobes" : "Bedroom Suites";
+  } else if (/living|sofa|sectional|recliner|couch|coffee\s*table/i.test(cleaned)) {
+    mainCategory = "Living Room";
+    subCategory = /sofa|sectional|recliner/i.test(cleaned) ? "Sectional Sofa" : "Living Furniture";
+  } else if (/dining|study|marble\s*dining|buffet|crockery/i.test(cleaned)) {
+    mainCategory = "Dining & Study";
+    subCategory = /dining/i.test(cleaned) ? "Dining Table" : "Study & Dining";
+  } else if (/kitchen|acrylic|cabinet|pantry/i.test(cleaned)) {
+    mainCategory = "Modular Kitchen";
+    subCategory = "Kitchen Modular Units";
+  } else if (/storage|almirah|cupboard/i.test(cleaned)) {
+    mainCategory = "Storage & Wardrobes";
+    subCategory = "Steel & Wooden Storage";
+  }
+
+  // 5. Extract Numbers (Prices, Warranty, Boxes)
+  var allNumbers = working.match(/\b\d+\b/g) || [];
+  var numericValues = allNumbers.map(function(n) { return parseInt(n, 10); });
+
+  // Filter numbers >= 1000 for prices
+  var prices = numericValues.filter(function(n) { return n >= 1000; }).sort(function(a, b) { return b - a; });
+  var mrp = prices.length > 0 ? prices[0] : 45000;
+  var sellingPrice = prices.length > 1 ? prices[1] : Math.round(mrp * 0.82);
+
+  // Filter single digits (1 to 15) for warranty and box count
+  var smallNums = numericValues.filter(function(n) { return n >= 1 && n <= 15 && n !== mrp && n !== sellingPrice; });
+  var warrantyYears = smallNums.length > 0 ? smallNums[0] : 5;
+  var boxCount = smallNums.length > 1 ? smallNums[1] : 3;
+
+  // 6. Extract Supplier
+  var supplier = "Godrej Interio Hub";
+  if (/featherlite/i.test(cleaned)) supplier = "Featherlite Seating, Hyderabad";
+  else if (/royal\s*teak|saharanpur/i.test(cleaned)) supplier = "Royal Teak Crafts, Saharanpur (UP)";
+  else if (/jodhpur|sheesham/i.test(cleaned)) supplier = "Sheesham Wood Hub, Jodhpur (RJ)";
+  else if (/makrana|marble/i.test(cleaned)) supplier = "Makrana Stone Works, Rajasthan";
+  else if (/bangalore/i.test(cleaned)) supplier = "Bangalore Modular Plant";
+  else if (/shirwal/i.test(cleaned)) supplier = "Godrej Interio Shirwal Hub (MH)";
+
+  // 7. Extract Material Spec & Product Name from remaining words
+  var words = working.replace(/\b\d+\b/g, ' ')
+                     .replace(/office\s*&\s*institutional/i, '')
+                     .replace(/bedroom|living\s*room|dining\s*&\s*study/i, '')
+                     .replace(/featherlite|seating|hyderabad|godrej|interio|saharanpur|jodhpur/ig, '')
+                     .replace(/\s+/g, ' ')
+                     .trim();
+
+  var productName = "Godrej " + (words.split(' ').slice(0, 5).join(' ') || "Executive Furniture");
+  var materialSpec = words.split(' ').slice(5).join(' ') || "Solid Hardwood & CRCA Steel Spec";
+
+  var priceTier = mrp >= 90000 ? "Luxury" : mrp >= 45000 ? "Premium" : "Executive";
+
+  return {
+    sku: sku,
+    product_name: productName,
+    main_category: mainCategory,
+    sub_category: subCategory,
+    price_tier: priceTier,
+    material_spec: materialSpec,
+    dimensions: dimensions,
+    mrp: mrp,
+    selling_price: sellingPrice,
+    warranty_years: warrantyYears,
+    box_count: boxCount,
+    supplier: supplier
+  };
+}
+
+/**
+ * Custom UI Menu for Google Sheets
+ */
+function onOpen() {
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu("👑 OmniBuild OS™")
+    .addItem("🪄 Auto-Align & Clean Catalog Data (A to L)", "menuAutoAlignCatalog")
+    .addItem("🔑 Deduplicate All AppSheet Keys", "menuFixDuplicateKeys")
+    .addItem("📅 Standardize All Timestamps", "menuStandardizeTimestamps")
+    .addToUi();
+}
+
+function menuAutoAlignCatalog() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var res = autoAlignCatalogRows(ss);
+  SpreadsheetApp.getUi().alert("🪄 Auto-Alignment Complete!\n\nAligned & structured " + res.alignedRows + " rows into the official 12-column catalog (Cols A to L).");
+}
+
+function menuFixDuplicateKeys() {
+  var res = fixAllAppSheetDuplicateKeys();
+  SpreadsheetApp.getUi().alert("🔑 AppSheet Key Deduplication Complete!\n\nVerified and updated " + res.fixed_count + " keys across all tables.");
+}
+
+function menuStandardizeTimestamps() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var count = standardizeAllExistingTimestamps(ss);
+  SpreadsheetApp.getUi().alert("📅 Timestamp Standardization Complete!\n\nUpdated " + count + " date/time cells to DD-MMM-YYYY hh:mm AM/PM IST.");
+}
+

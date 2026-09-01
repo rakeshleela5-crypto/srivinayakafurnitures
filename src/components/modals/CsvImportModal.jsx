@@ -21,6 +21,8 @@ export function CsvImportModal({ isOpen, onClose }) {
   const { catalog, setCatalog, showToast } = useStore();
   const fileInputRef = useRef(null);
 
+  const [inputMode, setInputMode] = useState('FILE'); // 'FILE' | 'PASTE'
+  const [pastedRawText, setPastedRawText] = useState('');
   const [dragActive, setDragActive] = useState(false);
   const [parsedRows, setParsedRows] = useState([]);
   const [fileName, setFileName] = useState('');
@@ -29,6 +31,118 @@ export function CsvImportModal({ isOpen, onClose }) {
   const [importStep, setImportStep] = useState(1);
 
   if (!isOpen) return null;
+
+  // 🪄 Intelligent Multi-Pattern Parser for Messy Raw Text / WhatsApp / Gemini Output
+  const parseRawMessyText = (rawInput) => {
+    if (!rawInput || !rawInput.trim()) {
+      showToast("⚠️ Please paste some text to parse.", false);
+      return [];
+    }
+
+    const lines = rawInput.split(/\r\n|\n/).map(l => l.trim()).filter(l => l.length > 5);
+    if (lines.length === 0) {
+      showToast("⚠️ No valid rows found in pasted text.", false);
+      return [];
+    }
+
+    const items = [];
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+
+      // Clean string: remove timestamps like 46266.40139 and clean tabs/multiple spaces
+      const cleaned = line.replace(/\b4\d{4}\.\d+\b/g, '')
+                          .replace(/[₹,]/g, ' ')
+                          .replace(/\s+/g, ' ')
+                          .trim();
+
+      // Extract SKU
+      const skuMatch = cleaned.match(/\b([A-Z]{2,8}(?:-[A-Z0-9]+)+|\bSKU-[A-Z0-9]+)\b/i);
+      const sku = skuMatch ? skuMatch[1].toUpperCase() : `GI-PASTE-${1000 + i + 1}`;
+      let working = cleaned.replace(sku, '').trim();
+
+      // Extract Dimensions
+      const dimMatch = working.match(/\b(\d{2,3}x\d{2,3}x\d{2,3}(?:\s*(?:in|cm|mm))?)\b/i);
+      const dimensions = dimMatch ? dimMatch[1] : "78x60x40 in";
+      if (dimMatch) working = working.replace(dimMatch[0], ' ');
+
+      // Extract Category & Sub-Category
+      let mainCategory = "Living Room";
+      let subCategory = "Furniture";
+
+      if (/office|commercial|institutional|mesh|workstation|desk|chair/i.test(cleaned)) {
+        mainCategory = "Office & Institutional";
+        subCategory = /chair/i.test(cleaned) ? "Task Chairs" : /desk|table/i.test(cleaned) ? "Executive Desks" : "Commercial Furniture";
+      } else if (/bedroom|bed|mattress|wardrobe|dresser|nightstand/i.test(cleaned)) {
+        mainCategory = "Bedroom";
+        subCategory = /bed/i.test(cleaned) ? "Wooden Bed" : /wardrobe/i.test(cleaned) ? "Wardrobes" : "Bedroom Suites";
+      } else if (/living|sofa|sectional|recliner|couch|coffee\s*table/i.test(cleaned)) {
+        mainCategory = "Living Room";
+        subCategory = /sofa|sectional|recliner/i.test(cleaned) ? "Sectional Sofa" : "Living Furniture";
+      } else if (/dining|study|marble\s*dining|buffet|crockery/i.test(cleaned)) {
+        mainCategory = "Dining & Study";
+        subCategory = /dining/i.test(cleaned) ? "Dining Table" : "Study & Dining";
+      } else if (/kitchen|acrylic|cabinet|pantry/i.test(cleaned)) {
+        mainCategory = "Modular Kitchen";
+        subCategory = "Kitchen Modular Units";
+      } else if (/storage|almirah|cupboard/i.test(cleaned)) {
+        mainCategory = "Storage & Wardrobes";
+        subCategory = "Steel & Wooden Storage";
+      }
+
+      // Extract Numbers (Prices, Warranty, Boxes)
+      const allNumbers = working.match(/\b\d+\b/g) || [];
+      const numericValues = allNumbers.map(n => parseInt(n, 10));
+
+      // Filter numbers >= 1000 for prices
+      const prices = numericValues.filter(n => n >= 1000).sort((a, b) => b - a);
+      const mrp = prices.length > 0 ? prices[0] : 45000;
+      const sellingPrice = prices.length > 1 ? prices[1] : Math.round(mrp * 0.82);
+
+      // Filter single digits (1 to 15) for warranty and box count
+      const smallNums = numericValues.filter(n => n >= 1 && n <= 15 && n !== mrp && n !== sellingPrice);
+      const warrantyYears = smallNums.length > 0 ? smallNums[0] : 5;
+      const boxCount = smallNums.length > 1 ? smallNums[1] : 3;
+
+      // Extract Supplier
+      let supplier = "Godrej Interio Hub";
+      if (/featherlite/i.test(cleaned)) supplier = "Featherlite Seating, Hyderabad";
+      else if (/royal\s*teak|saharanpur/i.test(cleaned)) supplier = "Royal Teak Crafts, Saharanpur (UP)";
+      else if (/jodhpur|sheesham/i.test(cleaned)) supplier = "Sheesham Wood Hub, Jodhpur (RJ)";
+      else if (/makrana|marble/i.test(cleaned)) supplier = "Makrana Stone Works, Rajasthan";
+      else if (/bangalore/i.test(cleaned)) supplier = "Bangalore Modular Plant";
+      else if (/shirwal/i.test(cleaned)) supplier = "Godrej Interio Shirwal Hub (MH)";
+
+      // Extract Material Spec & Product Name from remaining words
+      const words = working.replace(/\b\d+\b/g, ' ')
+                           .replace(/office\s*&\s*institutional/i, '')
+                           .replace(/bedroom|living\s*room|dining\s*&\s*study/i, '')
+                           .replace(/featherlite|seating|hyderabad|godrej|interio|saharanpur|jodhpur/ig, '')
+                           .replace(/\s+/g, ' ')
+                           .trim();
+
+      const wordsArr = words.split(' ').filter(w => w.length > 1);
+      const productName = wordsArr.length > 0 ? wordsArr.slice(0, 5).join(' ') : "Godrej Solid Furniture";
+      const materialSpec = wordsArr.length > 5 ? wordsArr.slice(5).join(' ') : "Solid Hardwood & CRCA Steel Spec";
+
+      items.push({
+        SKU: sku,
+        Product_Name: productName,
+        Main_Category: mainCategory,
+        Sub_Category: subCategory,
+        Material_Spec: materialSpec,
+        Dimensions: dimensions,
+        MRP_INR: mrp,
+        Selling_Price_INR: sellingPrice,
+        Warranty_Years: warrantyYears,
+        Total_Component_Boxes: boxCount,
+        Default_Supplier: supplier,
+        Price_Tier: mrp >= 90000 ? "Luxury" : mrp >= 45000 ? "Premium" : "Executive",
+        Image_URL: "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=600"
+      });
+    }
+
+    return items;
+  };
 
   // Simple, Robust Client-Side CSV Parser
   const parseCsvContent = (text) => {
@@ -128,6 +242,18 @@ export function CsvImportModal({ isOpen, onClose }) {
       }
     };
     reader.readAsText(file);
+  };
+
+  const handleSmartPasteParse = () => {
+    const rows = parseRawMessyText(pastedRawText);
+    if (rows.length > 0) {
+      setParsedRows(rows);
+      setFileName(`Smart_AutoAligned_${rows.length}_SKUs.csv`);
+      playSuccessChime();
+      triggerGoldenConfetti();
+      showToast(`🪄 Auto-aligned & structured ${rows.length} furniture items into 12 columns!`, true);
+      setImportStep(2);
+    }
   };
 
   // Drag & Drop Handlers
@@ -453,39 +579,145 @@ export function CsvImportModal({ isOpen, onClose }) {
               </div>
             </div>
 
-            {/* Drag & Drop Upload Zone */}
-            <div 
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-              style={{
-                border: dragActive ? '2.5px dashed var(--accent-cyan)' : '2px dashed rgba(212,175,55,0.5)',
-                background: dragActive ? 'rgba(56,189,248,0.1)' : 'rgba(3,7,18,0.6)',
-                borderRadius: '16px',
-                padding: '36px 20px',
-                textAlign: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                marginBottom: '14px'
-              }}
-            >
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleFileSelect} 
-                accept=".csv, .tsv, .txt" 
-                style={{ display: 'none' }} 
-              />
-              <FileText size={42} style={{ color: 'var(--accent-gold)', margin: '0 auto 10px auto' }} />
-              <div style={{ fontSize: '14px', fontWeight: '900', color: '#FFFFFF' }}>
-                {fileName ? `Selected File: ${fileName} (${parsedRows.length} SKUs Parsed)` : 'Drag & Drop Furniture CSV Here, or Click to Browse'}
-              </div>
-              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                Supports standard CSV, TSV, or comma-delimited text exports from Excel, Google Sheets, or ERPs
-              </div>
+            {/* 🔀 Input Source Switcher: File Upload ⇋ Smart Raw Text Paste */}
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', background: '#030712', padding: '4px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <button
+                type="button"
+                onClick={() => setInputMode('FILE')}
+                style={{
+                  flex: 1,
+                  padding: '9px 12px',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  fontWeight: '800',
+                  background: inputMode === 'FILE' ? 'linear-gradient(135deg, #0284C7, #0369A1)' : 'transparent',
+                  color: inputMode === 'FILE' ? '#FFFFFF' : '#94A3B8',
+                  border: inputMode === 'FILE' ? '1px solid #FFFFFF' : 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                <UploadCloud size={14} /> 📁 Option A: Upload CSV / Excel File
+              </button>
+              <button
+                type="button"
+                onClick={() => setInputMode('PASTE')}
+                style={{
+                  flex: 1,
+                  padding: '9px 12px',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  fontWeight: '800',
+                  background: inputMode === 'PASTE' ? 'linear-gradient(135deg, #D4AF37, #B45309)' : 'transparent',
+                  color: inputMode === 'PASTE' ? '#000000' : '#94A3B8',
+                  border: inputMode === 'PASTE' ? '1px solid #D4AF37' : 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Sparkles size={14} /> 📋 Option B: Paste Raw Text / WhatsApp / Gemini (Auto-Align)
+              </button>
             </div>
+
+            {/* Option A: Drag & Drop Upload Zone */}
+            {inputMode === 'FILE' && (
+              <div 
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  border: dragActive ? '2.5px dashed var(--accent-cyan)' : '2px dashed rgba(212,175,55,0.5)',
+                  background: dragActive ? 'rgba(56,189,248,0.1)' : 'rgba(3,7,18,0.6)',
+                  borderRadius: '16px',
+                  padding: '36px 20px',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  marginBottom: '14px'
+                }}
+              >
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleFileSelect} 
+                  accept=".csv, .tsv, .txt" 
+                  style={{ display: 'none' }} 
+                />
+                <FileText size={42} style={{ color: 'var(--accent-gold)', margin: '0 auto 10px auto' }} />
+                <div style={{ fontSize: '14px', fontWeight: '900', color: '#FFFFFF' }}>
+                  {fileName ? `Selected File: ${fileName} (${parsedRows.length} SKUs Parsed)` : 'Drag & Drop Furniture CSV Here, or Click to Browse'}
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                  Supports standard CSV, TSV, or comma-delimited text exports from Excel, Google Sheets, or ERPs
+                </div>
+              </div>
+            )}
+
+            {/* Option B: Smart Raw Text Paste Area */}
+            {inputMode === 'PASTE' && (
+              <div style={{ background: '#030712', borderRadius: '14px', padding: '16px', border: '1.5px solid var(--accent-gold)', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-gold-light)' }}>
+                    📋 Paste Raw Furniture Rows (From WhatsApp, Gemini, or Supplier Catalog):
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPastedRawText(`OFFICE-CSV-10 WorkSmart Mid-Back Mesh Task Chair Office & Institutional Breathable Nylon Mesh + Pneumatic Lift 24x24x40 in 14000 11200 ₹5 ₹1 Featherlite Seating Hyderabad 46266.40139\n` +
+                        `BED-CSV-11 Royal Burma Teak Hydraulic King Bed Bedroom 100% Solid Burma Teak Wood 82x76x48 in 115000 92000 ₹10 ₹5 Royal Teak Crafts Saharanpur\n` +
+                        `DIN-CSV-12 Statuario Italian White Marble 6-Seater Dining Dining & Study Imported Marble + Brass Base 72x42x30 in 135000 108000 ₹10 ₹4 Makrana Stone Works`);
+                      playScanBeep();
+                      showToast(`⚡ Filled 3 sample messy lines! Click Auto-Align to parse.`);
+                    }}
+                    style={{ background: 'rgba(212,175,55,0.15)', border: '1px solid var(--accent-gold)', color: 'var(--accent-gold-light)', borderRadius: '6px', padding: '3px 8px', fontSize: '10.5px', fontWeight: '800', cursor: 'pointer' }}
+                  >
+                    ⚡ Load Gemini Example
+                  </button>
+                </div>
+
+                <textarea
+                  rows={6}
+                  value={pastedRawText}
+                  onChange={(e) => setPastedRawText(e.target.value)}
+                  placeholder={`Paste raw lines here, e.g.:\nOFFICE-CSV-10 WorkSmart Mid-Back Mesh Task Chair Office & Institutional Breathable Nylon Mesh + Pneumatic Lift 24x24x40 in 14000 11200 ₹5 ₹1 Featherlite Seating Hyderabad 46266.40139`}
+                  style={{
+                    width: '100%',
+                    background: '#0B132B',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    color: '#FFFFFF',
+                    fontSize: '12px',
+                    fontFamily: 'JetBrains Mono, monospace',
+                    lineHeight: '1.5',
+                    outline: 'none',
+                    resize: 'vertical'
+                  }}
+                />
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '10px' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--accent-cyan)' }}>
+                    ✨ AI Pattern Matcher automatically separates SKU, Name, Category, Dims, MRP, Offer Price, Warranty, and Supplier into 12 Columns!
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSmartPasteParse}
+                    className="btn-luxury-gold"
+                    style={{ padding: '8px 18px', fontSize: '12px', fontWeight: '900' }}
+                  >
+                    <Sparkles size={14} /> 🪄 Auto-Align & Structure 12 Columns
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px' }}>
               <button 

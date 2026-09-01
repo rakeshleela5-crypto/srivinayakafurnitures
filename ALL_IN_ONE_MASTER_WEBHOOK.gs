@@ -1556,6 +1556,60 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
       result.message = "Universal record " + recordId + " in " + targetTable + " updated successfully!";
     }
 
+    else if (action === "SEED_INVENTORY_STOCK" || action === "RESET_INVENTORY_TABLE") {
+      var invSheet = getOrCreateSheet(ss, "Inventory_Stock", [
+        "SKU", "Item_Code", "Product_Name", "Category", "Warehouse_Stock_Qty", 
+        "Reserved_SafeLock_Qty", "In_Transit_Qty", "Safety_Buffer_Qty", "Reorder_Point", 
+        "Storage_Bay", "Last_Inward_Date", "Last_Audit_Timestamp"
+      ], "#1E3A8A");
+
+      var items = [];
+      if (params.items_json) {
+        try { items = JSON.parse(params.items_json); } catch(e) { items = []; }
+      } else if (Array.isArray(params.items)) {
+        items = params.items;
+      }
+
+      var importMode = params.import_mode || "MERGE";
+      if (invSheet && items.length > 0) {
+        if (importMode === "REPLACE" && invSheet.getLastRow() > 1) {
+          invSheet.deleteRows(2, invSheet.getLastRow() - 1);
+        }
+
+        var existingData = invSheet.getDataRange().getValues();
+        var skuMap = {};
+        for (var r = 1; r < existingData.length; r++) {
+          if (existingData[r][0]) skuMap[existingData[r][0].toString().trim().toUpperCase()] = r + 1;
+        }
+
+        for (var i = 0; i < items.length; i++) {
+          var it = items[i];
+          var sKey = (it.SKU || it.sku || "GI-SKU-" + (1000 + i)).toString().trim().toUpperCase();
+          var pName = it.Product_Name || it.product_name || "Solid Furniture Model";
+          var cat = it.Category || it.Main_Category || "Living Room";
+          var whQty = Number(it.Warehouse_Stock_Qty || it.Warehouse_Qty || it.Showroom_Stock) || 5;
+          var resQty = Number(it.Reserved_SafeLock_Qty || it.Reserved_SafeLock) || 0;
+          var inTrans = Number(it.In_Transit_Qty) || 0;
+          var safety = Number(it.Safety_Buffer_Qty || it.Buffer_Threshold) || 2;
+          var reorder = Number(it.Reorder_Point) || 2;
+          var bay = it.Storage_Bay || it.Bay || ("Bay " + ((i % 6) + 1));
+
+          var rowData = [sKey, sKey, pName, cat, whQty, resQty, inTrans, safety, reorder, bay, currentDateTimeStr, currentDateTimeStr];
+
+          if (skuMap[sKey] && importMode !== "APPEND") {
+            invSheet.getRange(skuMap[sKey], 1, 1, rowData.length).setValues([rowData]);
+          } else {
+            invSheet.appendRow(rowData);
+            skuMap[sKey] = invSheet.getLastRow();
+          }
+        }
+        applyStandardFormat(invSheet);
+      }
+
+      result.processed_count = items.length;
+      result.message = "Successfully synchronized " + items.length + " pristine inventory stock records to Google Sheets [Inventory_Stock]!";
+    }
+
     else if (action === "BULK_CATALOG_IMPORT" || action === "BULK_INGEST_CATALOG_RECORDS" || action === "IMPORT_CSV_CATALOG") {
       var targetTable = params.target_table || "Furniture_Catalog";
       var catSheet = getSheetByNameFlexible(ss, [targetTable, "02_Furniture_Catalog", "01_Furniture_Catalog", "Furniture Catalog", "02_Catalog"]);

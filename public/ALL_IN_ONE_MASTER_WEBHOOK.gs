@@ -3702,13 +3702,18 @@ function formatAndBorderCatalogSheet(sheet) {
   // Col L: Default_Supplier (Left)
   sheet.getRange(2, 12, lastRow - 1, 1).setHorizontalAlignment("left");
 
-  // Apply clean row heights (28px)
-  for (var r = 2; r <= lastRow; r++) {
-    sheet.setRowHeight(r, 28);
-  }
+  // Apply clean row heights (28px) safely
+  try {
+    sheet.setRowHeight(1, 36);
+    for (var r = 2; r <= Math.min(lastRow, 300); r++) {
+      sheet.setRowHeight(r, 28);
+    }
+  } catch(e) {}
 
-  // 3. Auto-fit column widths
-  sheet.autoResizeColumns(1, 12);
+  // 3. Auto-fit column widths safely
+  try {
+    sheet.autoResizeColumns(1, 12);
+  } catch(e) {}
 }
 
 /**

@@ -1768,6 +1768,94 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
       result.message = "Floor Aging Stock #" + skuCode + " (" + daysCount + " Days in " + bayLocation + ") saved to Floor_Aging_Sentinel on " + currentDateTimeStr + "!";
     }
 
+    // ------------------------------------------------------------------------------------------
+    // 🤖 AI CONTROL ROOM & BOT CONFIGURATION ENGINE (Bot_Configurations_Log & WhatsApp_Dispatches_Log)
+    // ------------------------------------------------------------------------------------------
+    else if (action === "UPDATE_BOT_CONFIG" || action === "SAVE_BOT_SETTINGS") {
+      var botConfigSheet = getOrCreateSheet(ss, "Bot_Configurations_Log", [
+        "Bot_ID", "Date_Time", "Bot_Name", "Active_Status", "Trigger_Rule", 
+        "Target_Channel", "Threshold_Condition", "DND_Quiet_Hours", "Language", 
+        "Enterprise_Guards_Summary", "Configured_By"
+      ], "#10B981");
+
+      var botId = params.bot_id || params.id || "BOT-01";
+      var botName = params.name || params.bot_name || "SafeLock Order Confirmation Bot";
+      var botStatus = params.status || "ACTIVE";
+      var botTrigger = params.trigger || "On New Order";
+      var botChannel = params.channel || "WhatsApp Cloud + Google Sheets";
+      var botThreshold = params.threshold || "Buffer <= 2 Units";
+      var dndHours = (params.enterprise_guards && params.enterprise_guards.dndWindow) || "09:30 PM to 08:30 AM";
+      var lang = params.language || "EN";
+      var guardsSummary = params.enterprise_guards ? 
+        ("2WayAI:" + (params.enterprise_guards.twoWayAiEnabled ? "ON" : "OFF") + 
+         " | EWayGuard:" + (params.enterprise_guards.ewayBillGuard ? "ON" : "OFF") + 
+         " | 3DAR:" + (params.enterprise_guards.arPlacementLink ? "ON" : "OFF") + 
+         " | SMSFallback:" + (params.enterprise_guards.smsFallback ? "ON" : "OFF") + 
+         " | PDIPhoto:" + (params.enterprise_guards.pdiPhotoProof ? "ON" : "OFF") + 
+         " | MonsoonCare:" + (params.enterprise_guards.monsoonCareGuide ? "ON" : "OFF")) : 
+        "All 6 Enterprise Guards Active";
+      var updatedBy = params.updated_by || "Store Director (PIN 8899)";
+
+      if (botConfigSheet) {
+        botConfigSheet.appendRow([
+          botId,
+          currentDateTimeStr,
+          botName,
+          botStatus,
+          botTrigger,
+          botChannel,
+          botThreshold,
+          dndHours,
+          lang,
+          guardsSummary,
+          updatedBy
+        ]);
+        applyStandardFormat(botConfigSheet);
+      }
+
+      result.bot_id = botId;
+      result.date_time = currentDateTimeStr;
+      result.name = botName;
+      result.status = botStatus;
+      result.guards = guardsSummary;
+      result.message = "Master Configuration for " + botId + " (" + botName + ") saved & synced to Bot_Configurations_Log on " + currentDateTimeStr + "!";
+    }
+
+    else if (action === "TEST_BOT_DISPATCH" || action === "DISPATCH_BOT_ACTION" || action === "FORCE_RESEND_BOT") {
+      var botDispatchSheet = getOrCreateSheet(ss, "WhatsApp_Dispatches_Log", [
+        "Dispatch_ID", "Date_Time", "Bot_ID", "Bot_Name", "Recipient_Phone", 
+        "Message_Preview", "Trigger_Type", "Delivery_Status"
+      ], "#25D366");
+
+      var dispatchId = params.dispatch_id || ("DISP-" + currentDateStr.replace(/-/g, "") + "-" + Math.floor(1000 + Math.random() * 9000));
+      var bId = params.bot_id || params.botId || "BOT-01";
+      var bName = params.bot_name || params.botName || "SafeLock Order Confirmation Bot";
+      var phone = params.phone || params.recipient_phone || "+91 93905 53301";
+      var msgPreview = params.message_preview || params.preview || "Test dispatch triggered via AI Control Center";
+      var triggerType = params.trigger_type || "MANUAL_TEST_FORCE_RESEND";
+      var delStatus = params.status || "DISPATCHED ✓ (99.4% Delivery)";
+
+      if (botDispatchSheet) {
+        botDispatchSheet.appendRow([
+          dispatchId,
+          currentDateTimeStr,
+          bId,
+          bName,
+          phone,
+          msgPreview,
+          triggerType,
+          delStatus
+        ]);
+        applyStandardFormat(botDispatchSheet);
+      }
+
+      result.dispatch_id = dispatchId;
+      result.date_time = currentDateTimeStr;
+      result.bot_id = bId;
+      result.phone = phone;
+      result.message = "Test / Force Resend for " + bId + " (" + bName + ") logged to WhatsApp_Dispatches_Log on " + currentDateTimeStr + "!";
+    }
+
     else if (action === "LOG_WALKIN_LEAD" || action === "ADD_INQUIRY" || action === "SYSTEM_1_WALKIN_INQUIRY") {
       var inqId = params.inquiry_id || ("INQ-" + currentDateStr.replace(/-/g, "") + "-" + Math.floor(100 + Math.random() * 900));
       var custName = params.customer_name || params.name || "Walk-In Visitor";

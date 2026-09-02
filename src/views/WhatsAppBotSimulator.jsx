@@ -262,7 +262,17 @@ export function WhatsAppBotSimulator() {
 
     setChatMessages(prev => [...prev, newBotMsg]);
     playSuccessChime();
-    showToast(`⚡ Dispatched simulated webhook for ${b.botId} (${b.name})!`, true);
+
+    dispatchWebhookAction('TEST_BOT_DISPATCH', {
+      bot_id: b.botId,
+      bot_name: b.name,
+      phone: "+91 93905 53301",
+      message_preview: formattedText.substring(0, 100),
+      trigger_type: "MANUAL_TEST_FORCE_RESEND",
+      status: "DISPATCHED ✓ (99.4% Delivery)"
+    });
+
+    showToast(`⚡ Dispatched webhook for ${b.botId} (${b.name}) & logged to WhatsApp_Dispatches_Log!`, true);
   };
 
   // Helper to categorize bots

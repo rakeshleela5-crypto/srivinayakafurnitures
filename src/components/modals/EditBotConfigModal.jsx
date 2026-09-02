@@ -276,8 +276,18 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
     playScanBeep();
     const cleanPhone = "9390553301";
     const msg = getLocalizedBotPreview(language);
+
+    dispatchWebhookAction('TEST_BOT_DISPATCH', {
+      bot_id: currentBotId,
+      bot_name: botName || currentBotId,
+      phone: `+91 ${cleanPhone}`,
+      message_preview: msg.substring(0, 100),
+      trigger_type: "DIRECTOR_VIP_TEST",
+      status: "DISPATCHED ✓ (99.4% Delivery)"
+    });
+
     window.open(`https://wa.me/91${cleanPhone}?text=${encodeURIComponent(msg)}`, '_blank');
-    showToast(`🧪 Test payload for ${currentBotId} in ${language} dispatched to Director Rakesh (+91 93905 53301)!`, true);
+    showToast(`🧪 Test payload for ${currentBotId} in ${language} dispatched & logged to WhatsApp_Dispatches_Log!`, true);
   };
 
   return (

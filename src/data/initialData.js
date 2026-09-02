@@ -16,7 +16,7 @@ export const STORE_METADATA = {
   accountNo: "50200088991234",
   ifsc: "HDFC0001824",
   appSheetAppId: "ebd76f5e-5611-4de4-96a4-95e71288f147",
-  defaultWebhookUrl: "https://script.google.com/macros/s/AKfycbyfH5TocJpK-p_SQ-iGxK-r0juia3ppbkE1cvj3oWXmdvgnTuhzvKbhgFKCu3nGoTAN/exec",
+  defaultWebhookUrl: "https://script.google.com/macros/s/AKfycbxMyADYcU8nyWR_9a77jae7HSnx_29jgM5u7mZ1ef7Yx5cEhMtZsJoDddrOZQQAZKca/exec",
   spreadsheetId: "14TqQ7LR5xSNppufWFhXDGo9hANC0JV_wRukc7HlIpaI"
 };
 

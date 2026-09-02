@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../../context/StoreContext';
 import { X, Check, Landmark, DollarSign, Send, Award, QrCode, FileText, Printer, Barcode, Copy, Share2, MapPin, Wrench } from 'lucide-react';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../../utils/audioUtils';
@@ -392,16 +392,29 @@ export function ArchitectPayoutModal({ isOpen, onClose, architect = {} }) {
   );
 }
 
-export function CarpenterDispatchModal({ isOpen, onClose }) {
-  const { showToast } = useStore();
+export function CarpenterDispatchModal({ isOpen, onClose, order = null }) {
+  const { orders, showToast } = useStore();
+  const activeOrder = order || orders[0] || {};
+
   const [carpenter, setCarpenter] = useState('Narayana Mistri');
-  const [orderId, setOrderId] = useState('ORD-8921');
-  const [customerName, setCustomerName] = useState('Dr. Subhashish Jena');
-  const [customerPhone, setCustomerPhone] = useState('9437188291');
-  const [address, setAddress] = useState('Gayatri Nagar Villa, Lane 3, Rayagada');
-  const [items, setItems] = useState('1x Royal Teak King Bed (Hydraulic Storage) + 1x 4-Door Wardrobe');
-  const [payout, setPayout] = useState(500);
+  const [orderId, setOrderId] = useState(activeOrder.Order_ID || 'ORD-8921');
+  const [customerName, setCustomerName] = useState(activeOrder.Customer_Name || 'Valued Client');
+  const [customerPhone, setCustomerPhone] = useState(activeOrder.Customer_Phone || '9390553301');
+  const [address, setAddress] = useState(activeOrder.Project_Address || activeOrder.Delivery_Address || 'Rayagada, Odisha');
+  const [items, setItems] = useState(activeOrder.Ordered_SKU || activeOrder.Item_Names || 'Solid King Bed + 4-Door Wardrobe');
+  const [payout, setPayout] = useState(activeOrder.Carpenter_Payout_INR || 500);
   const [lang, setLang] = useState('EN');
+
+  useEffect(() => {
+    if (activeOrder && isOpen) {
+      setOrderId(activeOrder.Order_ID || 'ORD-8921');
+      setCustomerName(activeOrder.Customer_Name || 'Valued Client');
+      setCustomerPhone(activeOrder.Customer_Phone || '9390553301');
+      setAddress(activeOrder.Project_Address || activeOrder.Delivery_Address || 'Rayagada, Odisha');
+      setItems(activeOrder.Ordered_SKU || activeOrder.Item_Names || 'Solid King Bed + 4-Door Wardrobe');
+      setPayout(activeOrder.Carpenter_Payout_INR || 500);
+    }
+  }, [isOpen, order]);
 
   if (!isOpen) return null;
 
@@ -595,9 +608,13 @@ export function CarpenterDispatchModal({ isOpen, onClose }) {
   );
 }
 
-export function UniversalPaymentCheckoutModal({ isOpen, onClose, amount = 78247, orderId = "ORD-8921" }) {
-  const { storeMeta, showToast } = useStore();
+export function UniversalPaymentCheckoutModal({ isOpen, onClose, amount = 78247, orderId = "ORD-8921", customerName = "", customerPhone = "" }) {
+  const { orders, storeMeta, showToast } = useStore();
   if (!isOpen) return null;
+
+  const activeOrd = orders.find(o => o.Order_ID === orderId) || {};
+  const targetCustName = customerName || activeOrd.Customer_Name || "Valued Customer";
+  const targetCustPhone = customerPhone || activeOrd.Customer_Phone || "9390553301";
 
   const upiUri = `upi://pay?pa=${storeMeta.upiVpa}&pn=${encodeURIComponent(storeMeta.merchantName)}&am=${amount}&tr=${orderId}&cu=INR`;
 
@@ -607,19 +624,19 @@ export function UniversalPaymentCheckoutModal({ isOpen, onClose, amount = 78247,
     dispatchWebhookAction('RECORD_UPI_PAYMENT', {
       payment_id: `PAY-2026-${Math.floor(1000 + Math.random() * 9000)}`,
       order_id: orderId,
-      customer_name: "Dr. Subhashish Jena",
-      customer_phone: "9437088990",
+      customer_name: targetCustName,
+      customer_phone: targetCustPhone,
       amount: Number(amount) || 10000,
       payment_method: "UPI QR (GPay / PhonePe / Paytm)",
       upi_ref: paymentTxnRef,
       merchant_vpa: storeMeta.upiVpa || "9390553301@ybl",
       status: "VERIFIED & SETTLED ✓",
-      notes: "Auto-verified via Dynamic Indian UPI QR POS Terminal"
+      notes: `Auto-verified via Dynamic Indian UPI QR POS Terminal for ${targetCustName}`
     });
 
     playSuccessChime();
     triggerGoldenConfetti();
-    showToast(`✅ Payment of ₹${Number(amount).toLocaleString()} Verified & Logged into Payments_Log! Ref: ${paymentTxnRef}`, true);
+    showToast(`✅ Payment of ₹${Number(amount).toLocaleString()} for ${targetCustName} Verified & Logged into Payments_Log! Ref: ${paymentTxnRef}`, true);
     onClose();
   };
 

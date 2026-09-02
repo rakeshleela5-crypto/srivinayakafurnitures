@@ -11,31 +11,99 @@ import {
   Award, 
   Lock,
   Sparkles,
-  QrCode
+  QrCode,
+  RefreshCw,
+  Mic,
+  Landmark
 } from 'lucide-react';
 
 export function DocumentStudio() {
-  const { storeMeta, orders, openModal } = useStore();
+  const { 
+    storeMeta, 
+    orders, 
+    openModal,
+    showToast,
+    setActiveTab,
+    syncWithGoogleSheets,
+    isSyncing
+  } = useStore();
   const [selectedDocType, setSelectedDocType] = useState('tax_invoice');
   const [selectedOrder, setSelectedOrder] = useState(orders[0] || {});
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
-      {/* Top Action Ribbon */}
-      <div className="tab-action-ribbon">
+      {/* 🌟 Top Action Ribbon & Command Hub */}
+      <div className="tab-action-ribbon" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        
+        {/* Left Action Badges */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className="badge badge-cyan">🧾 CENTRAL DOCUMENT & PRINT STUDIO</span>
-          <button className="btn-luxury-gold no-print" onClick={() => openModal('b2b_turnkey')}>
+          
+          <button className="btn-luxury-gold no-print" onClick={() => openModal('b2b_turnkey')} style={{ fontSize: '11px', padding: '5px 10px' }}>
             🏢 Generate B2B Turnkey Proposal (₹15L–₹50L)
           </button>
-          <button className="btn-ghost-edit no-print" onClick={() => window.print()}>
-            <Printer size={14} /> Print Active Legal Document (A4)
+          
+          <button className="btn-ghost-edit no-print" onClick={() => window.print()} style={{ fontSize: '11px', padding: '5px 10px' }}>
+            <Printer size={13} /> <span>Print Active Legal Document (A4)</span>
           </button>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span className="badge badge-emerald">GST COMPLIANT (18%/28%)</span>
+
+        {/* Right Cross-Tab Quick Handoffs */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+          <button 
+            className="btn-cyan no-print" 
+            onClick={() => {
+              setActiveTab('voice_pos');
+              showToast("🎙️ Switched to Voice POS & Quote Studio!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <Mic size={12} /> <span>Voice POS (Tab 2)</span>
+          </button>
+
+          <button 
+            className="btn-emerald no-print" 
+            onClick={() => {
+              setActiveTab('safelock');
+              showToast("🔒 Switched to SafeLock Inventory Terminal!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <ShieldCheck size={12} /> <span>SafeLock (Tab 4)</span>
+          </button>
+
+          <button 
+            className="btn-purple no-print" 
+            onClick={() => {
+              setActiveTab('logistics_epod');
+              showToast("🚚 Switched to Logistics Fleet & ePOD!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <Truck size={12} /> <span>Fleet (Tab 6)</span>
+          </button>
+
+          <button 
+            className="btn-amber no-print" 
+            onClick={() => {
+              setActiveTab('architects');
+              showToast("🏛️ Switched to Architect VIP Referral Network!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <Landmark size={12} /> <span>Architects (Tab 7)</span>
+          </button>
+
+          <button 
+            className="btn-ghost-edit no-print" 
+            onClick={() => syncWithGoogleSheets()}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <RefreshCw size={12} className={isSyncing ? 'spin-anim' : ''} /> <span>2-Way Sync</span>
+          </button>
         </div>
+
       </div>
 
       {/* Order Selector & Document Switcher Ribbon */}

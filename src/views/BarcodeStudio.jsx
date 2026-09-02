@@ -30,13 +30,28 @@ import {
   Download,
   Search,
   X,
-  Filter
+  Filter,
+  Truck,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Shield,
+  Mic
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
 
 export function BarcodeStudio() {
-  const { catalog, setCatalog, orders, storeMeta, openModal, showToast } = useStore();
+  const { 
+    catalog, 
+    setCatalog, 
+    orders, 
+    storeMeta, 
+    openModal, 
+    showToast,
+    setActiveTab,
+    syncWithGoogleSheets,
+    isSyncing
+  } = useStore();
 
   const [sourceMode, setSourceMode] = useState('SUPPLIER_CATALOG'); // 'SUPPLIER_CATALOG' (default) | 'CUSTOMER_ORDER'
   const [selectedSku, setSelectedSku] = useState(catalog[0]?.SKU || 'BED-MOD-001');
@@ -220,25 +235,27 @@ export function BarcodeStudio() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
-      {/* Top Action Ribbon */}
-      <div className="tab-action-ribbon no-print">
+      {/* 🌟 Top Action Ribbon & Command Hub */}
+      <div className="tab-action-ribbon no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        
+        {/* Left Action Badges */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <span className="badge badge-cyan">🏷️ GS1 CODE-128 1D BARCODE GENERATION STUDIO</span>
+          <span className="badge badge-cyan">🏷️ GS1 CODE-128 BARCODE STUDIO</span>
           
           <button 
             className={`btn-ghost-edit ${isLaserSweeping ? 'badge-rose' : ''}`}
             onClick={() => setIsLaserSweeping(!isLaserSweeping)}
-            style={{ fontSize: '11.5px', padding: '6px 12px' }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
           >
-            <Activity size={13} /> {isLaserSweeping ? '🔴 Red Laser Scan Line ON' : 'Laser Line OFF'}
+            <Activity size={12} /> {isLaserSweeping ? '🔴 Laser Line ON' : 'Laser OFF'}
           </button>
 
           <button 
             className={`btn-ghost-edit ${bearerBars ? 'badge-gold' : ''}`}
             onClick={() => setBearerBars(!bearerBars)}
-            style={{ fontSize: '11.5px', padding: '6px 12px' }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
           >
-            <ShieldCheck size={13} /> {bearerBars ? '📦 Bearer Guard Lines ON' : 'Bearer Lines OFF'}
+            <ShieldCheck size={12} /> {bearerBars ? '📦 Bearer Guard ON' : 'Bearer OFF'}
           </button>
 
           <button 
@@ -247,19 +264,64 @@ export function BarcodeStudio() {
               openModal('csv_import');
               playScanBeep();
             }}
-            style={{ fontSize: '11.5px', padding: '6px 12px', color: 'var(--accent-gold-light)', border: '1px solid var(--accent-gold)' }}
+            style={{ fontSize: '11px', padding: '5px 10px', color: 'var(--accent-gold-light)', border: '1px solid var(--accent-gold)' }}
           >
-            <FileText size={13} /> 📁 Import CSV Catalog
+            <FileText size={12} /> 📁 Import CSV
           </button>
 
-          <button className="btn-emerald" onClick={handleSaveToCatalog} style={{ fontSize: '11.5px', padding: '6px 12px' }}>
-            <Save size={13} /> 💾 Save to Google Sheets
+          <button className="btn-emerald" onClick={handleSaveToCatalog} style={{ fontSize: '11px', padding: '5px 10px' }}>
+            <Save size={12} /> 💾 Save Specs
           </button>
         </div>
 
-        <button className="btn-cyan" onClick={handlePrint}>
-          <Printer size={14} /> 🖨️ Print Barcode Labels
-        </button>
+        {/* Right Cross-Tab Terminal Handoffs */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+          <button 
+            className="btn-cyan" 
+            onClick={() => {
+              setActiveTab('inward_scanner');
+              showToast("📥 Switched to Dock 1 Inward Scanner!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <ArrowDownLeft size={12} /> <span>Dock 1 Inward (Tab 14)</span>
+          </button>
+
+          <button 
+            className="btn-purple" 
+            onClick={() => {
+              setActiveTab('outward_scanner');
+              showToast("📤 Switched to Dock 2 Outward Staging Scanner!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <ArrowUpRight size={12} /> <span>Dock 2 Outward (Tab 15)</span>
+          </button>
+
+          <button 
+            className="btn-emerald" 
+            onClick={() => {
+              setActiveTab('safelock');
+              showToast("🔒 Switched to SafeLock Inventory Terminal!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <ShieldCheck size={12} /> <span>SafeLock (Tab 4)</span>
+          </button>
+
+          <button 
+            className="btn-ghost-edit" 
+            onClick={() => syncWithGoogleSheets()}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <RefreshCw size={12} className={isSyncing ? 'spin-anim' : ''} /> <span>2-Way Sync</span>
+          </button>
+
+          <button className="btn-luxury-gold" onClick={handlePrint} style={{ fontSize: '11px', padding: '5px 10px' }}>
+            <Printer size={13} /> <span>🖨️ Print Labels</span>
+          </button>
+        </div>
+
       </div>
 
       {/* Main Studio Grid: Barcode Configurator + Live Printable Preview */}

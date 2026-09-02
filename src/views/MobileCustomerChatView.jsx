@@ -22,13 +22,27 @@ import {
   ShoppingCart,
   Grid,
   Filter,
-  Tag
+  Tag,
+  RefreshCw,
+  Mic,
+  Users
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
 
 export function MobileCustomerChatView() {
-  const { catalog, storeMeta, showToast, openModal, triggerSafeLockOrder, inquiries, setInquiries } = useStore();
+  const { 
+    catalog, 
+    storeMeta, 
+    showToast, 
+    openModal, 
+    triggerSafeLockOrder, 
+    inquiries, 
+    setInquiries,
+    setActiveTab,
+    syncWithGoogleSheets,
+    isSyncing
+  } = useStore();
 
   // Extract SKU from URL parameters (e.g. #chat?sku=BED-MOD-001 or ?sku=BED-MOD-001)
   const getInitialSku = () => {
@@ -495,6 +509,59 @@ export function MobileCustomerChatView() {
   return (
     <div style={{ minHeight: '100vh', background: '#070D18', color: '#FFFFFF', display: 'flex', flexDirection: 'column', fontFamily: 'Inter, system-ui, sans-serif' }}>
       
+      {/* 🌟 Top Command Ribbon & Cross-Terminal Handoffs */}
+      <div style={{ background: '#030712', borderBottom: '1px solid rgba(212,175,55,0.3)', padding: '6px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span className="badge badge-gold" style={{ fontSize: '10.5px', padding: '3px 8px' }}>
+            📱 MOBILE AI CONCIERGE
+          </span>
+          <span style={{ fontSize: '11px', color: '#94A3B8' }}>• Scan & Fit Hub</span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+          <button 
+            className="btn-purple"
+            onClick={() => {
+              setActiveTab('room_matcher');
+              showToast("🛋️ Switched to 2D Spatial AI Room Matcher!", true);
+            }}
+            style={{ fontSize: '10.5px', padding: '3px 8px' }}
+          >
+            <Layers size={11} /> <span>2D Fit (Tab 13)</span>
+          </button>
+
+          <button 
+            className="btn-cyan"
+            onClick={() => {
+              setActiveTab('voice_pos');
+              showToast("🎙️ Switched to Voice POS & Quote Studio!", true);
+            }}
+            style={{ fontSize: '10.5px', padding: '3px 8px' }}
+          >
+            <Mic size={11} /> <span>Voice POS (Tab 2)</span>
+          </button>
+
+          <button 
+            className="btn-amber"
+            onClick={() => {
+              setActiveTab('showroom_crm');
+              showToast("👥 Switched to Showroom CRM Leads!", true);
+            }}
+            style={{ fontSize: '10.5px', padding: '3px 8px' }}
+          >
+            <Users size={11} /> <span>CRM (Tab 8)</span>
+          </button>
+
+          <button 
+            className="btn-ghost-edit" 
+            onClick={() => syncWithGoogleSheets()}
+            style={{ fontSize: '10.5px', padding: '3px 8px' }}
+          >
+            <RefreshCw size={11} className={isSyncing ? 'spin-anim' : ''} /> <span>Sync</span>
+          </button>
+        </div>
+      </div>
+
       {/* Top Mobile Header */}
       <div style={{ background: '#0F1A2E', borderBottom: '1px solid rgba(212,175,55,0.3)', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

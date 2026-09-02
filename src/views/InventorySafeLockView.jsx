@@ -12,9 +12,16 @@ import {
   Plus, 
   Minus,
   Sparkles,
-  Barcode
+  Barcode,
+  Truck,
+  ArrowDownToLine,
+  RefreshCw,
+  Clock,
+  Flame,
+  FileSpreadsheet
 } from 'lucide-react';
-import { playScanBeep, playSuccessChime, playSafeLockSound } from '../utils/audioUtils';
+import { playScanBeep, playSuccessChime, playSafeLockSound, triggerGoldenConfetti } from '../utils/audioUtils';
+import { dispatchWebhookAction } from '../services/webhookService';
 
 export function InventorySafeLockView() {
   const { 
@@ -24,7 +31,10 @@ export function InventorySafeLockView() {
     adjustStock, 
     verifySmartKitBox, 
     openModal, 
-    showToast 
+    showToast,
+    setActiveTab,
+    syncWithGoogleSheets,
+    isSyncing
   } = useStore();
 
   const [selectedSku, setSelectedSku] = useState('BED-MOD-001');
@@ -34,7 +44,7 @@ export function InventorySafeLockView() {
   const [isLaserSweeping, setIsLaserSweeping] = useState(false);
 
   // Token Hold Expiry & Display Piece Tagging State
-  const [tokenHoldHours, setTokenHoldHours] = useState(72); // 48h, 72h, 168h (7 days)
+  const [tokenHoldHours, setTokenHoldHours] = useState(72); // 48h, 72h, 120h, 168h
   const [floorDisplaySkus, setFloorDisplaySkus] = useState(['BED-MOD-001']);
   const [showConfigModal, setShowConfigModal] = useState(false);
 
@@ -73,51 +83,100 @@ export function InventorySafeLockView() {
       setIsLaserSweeping(false);
       playSuccessChime();
       playSafeLockSound();
-      showToast("🔒 5/5 Boxes Staged & Verified! Gate-Pass Dispatch Lock Released.", true);
-    }, 1200);
+      triggerGoldenConfetti();
+      
+      dispatchWebhookAction('SMARTKIT_BOX_STAGED', {
+        order_id: selectedOrderObj?.Order_ID || 'ORD-2026-001',
+        customer_name: selectedOrderObj?.Customer_Name || 'Dr. Subhashish Jena',
+        product: selectedSku,
+        staged_status: '5/5_STAGED_DOCK_GATEPASS_ISSUED',
+        driver: 'Tophan Gouda (Tata Ace OD-18-A-1234)'
+      });
+
+      showToast("🔒 5/5 Boxes Staged & Verified! Gate-Pass Dispatch Lock Released & Synced to Google Sheets.", true);
+    }, 1000);
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
-      {/* Top Action Ribbon */}
-      <div className="tab-action-ribbon">
+      {/* 🌟 Top Command Ribbon */}
+      <div className="tab-action-ribbon" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        
+        {/* Left Action Badges & Triggers */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className="badge badge-emerald">🔒 SAFELOCK™ REAL-TIME INVENTORY</span>
-          <button className="btn-luxury-gold" onClick={() => openModal('aging_stock')}>
+          
+          <button className="btn-luxury-gold" onClick={() => openModal('aging_stock')} style={{ fontSize: '11px', padding: '5px 10px' }}>
             📉 Aging Stock Radar (90+ Days)
           </button>
-          <button className="btn-cyan" onClick={() => setShowConfigModal(true)}>
-            ⏳ Token Hold: {tokenHoldHours / 24} Days
+          
+          <button className="btn-cyan" onClick={() => setShowConfigModal(true)} style={{ fontSize: '11px', padding: '5px 10px' }}>
+            <Clock size={13} /> Token Hold: {tokenHoldHours / 24} Days
           </button>
-          <button className="btn-ghost-edit" onClick={() => openModal('csv_import')} style={{ fontWeight: '800' }}>
-            📥 Import CSV / Excel
+
+          <button className="btn-ghost-edit" onClick={() => openModal('csv_import')} style={{ fontSize: '11px', padding: '5px 10px' }}>
+            <FileSpreadsheet size={13} /> 📥 Import Excel
           </button>
-          <button className="btn-ghost-edit" onClick={() => openModal('stock_override', { sku: selectedSku })}>
-            ✏️ Emergency Stock Override
-          </button>
-          <button className="btn-ghost-edit" onClick={() => openModal('barcode_studio')}>
-            🏷️ Barcode & Standee Studio
-          </button>
-          <button className="btn-ghost-edit" onClick={() => openModal('warehouse_wall_poster')}>
-            🖨️ Printable Wall QR Poster
+
+          <button className="btn-ghost-edit" onClick={() => openModal('stock_override', { sku: selectedSku })} style={{ fontSize: '11px', padding: '5px 10px' }}>
+            ✏️ Stock Override
           </button>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span className="badge badge-cyan">21 TABLES SYNCHRONIZED</span>
+
+        {/* Right Cross-Tab Quick Handoffs */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+          <button 
+            className="btn-amber" 
+            onClick={() => {
+              setActiveTab('autoprocure');
+              showToast("🚚 Switched to AutoProcure to raise Factory Purchase Orders!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <Truck size={12} /> <span>Factory POs (Tab 5)</span>
+          </button>
+
+          <button 
+            className="btn-cyan" 
+            onClick={() => {
+              setActiveTab('inward_scanner');
+              showToast("📥 Switched to Dock 1 Inward Scanner!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <ArrowDownToLine size={12} /> <span>Dock Inward (Tab 14)</span>
+          </button>
+
+          <button 
+            className="btn-ghost-edit" 
+            onClick={() => openModal('warehouse_wall_poster')}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <Printer size={12} /> <span>Wall QR Poster</span>
+          </button>
+
+          <button 
+            className="btn-ghost-edit" 
+            onClick={() => syncWithGoogleSheets()}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <RefreshCw size={12} className={isSyncing ? 'spin-anim' : ''} /> <span>2-Way Sync</span>
+          </button>
         </div>
+
       </div>
 
-      {/* SmartKit™ 5-Box Staging Bay */}
+      {/* 📦 SmartKit™ 5-Box Staging Bay */}
       <div className="glass-panel">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span className="badge badge-purple">KNOCK-DOWN COMPONENT DEFENSE</span>
-              <h3 style={{ fontSize: '17px', fontWeight: '800' }}>SmartKit™ 5-Box Staging Bay ({selectedSku})</h3>
+              <h3 style={{ fontSize: '17px', fontWeight: '800', margin: 0 }}>SmartKit™ 5-Box Staging Bay ({selectedSku})</h3>
             </div>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-              Prevents partial delivery disasters. All 5 component cartons must be staged before vehicle loading.
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+              Prevents partial delivery disasters. All 5 component cartons must be verified before vehicle gatepass is issued.
             </p>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -131,8 +190,8 @@ export function InventorySafeLockView() {
         </div>
 
         {/* 5-Box Component Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
-          {smartKitBoxes.map((box, idx) => (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginTop: '14px' }}>
+          {smartKitBoxes.map((box) => (
             <div 
               key={box.Box_ID} 
               style={{
@@ -172,11 +231,11 @@ export function InventorySafeLockView() {
         </div>
       </div>
 
-      {/* 115-SKU SafeLock Stock Matrix */}
+      {/* 🏷️ 115-SKU SafeLock Stock Matrix */}
       <div className="glass-panel">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
           <div>
-            <h3 style={{ fontSize: '17px', fontWeight: '800' }}>115-SKU SafeLock Inventory Defense Matrix</h3>
+            <h3 style={{ fontSize: '17px', fontWeight: '800', margin: 0 }}>115-SKU SafeLock Inventory Defense Matrix</h3>
             <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Atomic warehouse reservation preventing double-selling</span>
           </div>
 
@@ -311,8 +370,16 @@ export function InventorySafeLockView() {
                 </select>
               </div>
             </div>
-            <button className="btn-luxury-gold" onClick={() => { setShowConfigModal(false); showToast(`⏳ Token Hold Expiry updated to ${tokenHoldHours} hours (${tokenHoldHours / 24} days)!`); }} style={{ width: '100%', justifyContent: 'center' }}>
-              <Check size={16} /> Save Token Policy
+            <button 
+              className="btn-luxury-gold" 
+              onClick={() => { 
+                setShowConfigModal(false); 
+                dispatchWebhookAction('UPDATE_TOKEN_HOLD_POLICY', { token_hold_hours: tokenHoldHours });
+                showToast(`⏳ Token Hold Expiry updated to ${tokenHoldHours} hours (${tokenHoldHours / 24} days)!`, true); 
+              }} 
+              style={{ width: '100%', justifyContent: 'center' }}
+            >
+              <Check size={16} /> Save Token Policy & Sync
             </button>
           </div>
         </div>

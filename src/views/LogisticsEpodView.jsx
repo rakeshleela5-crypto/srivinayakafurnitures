@@ -15,12 +15,27 @@ import {
   Send,
   Navigation,
   ShieldCheck,
-  Sparkles
+  Sparkles,
+  RefreshCw,
+  Clock,
+  Printer,
+  FileText,
+  Boxes
 } from 'lucide-react';
-import { playScanBeep, playSuccessChime } from '../utils/audioUtils';
+import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
+import { dispatchWebhookAction } from '../services/webhookService';
 
 export function LogisticsEpodView() {
-  const { drivers, orders, openModal, showToast, updateOrderStatus } = useStore();
+  const { 
+    drivers, 
+    orders, 
+    openModal, 
+    showToast, 
+    updateOrderStatus, 
+    setActiveTab, 
+    syncWithGoogleSheets, 
+    isSyncing 
+  } = useStore();
 
   const [driverMobileMode, setDriverMobileMode] = useState(false);
   const [selectedDriverFilter, setSelectedDriverFilter] = useState('ALL');
@@ -64,22 +79,33 @@ export function LogisticsEpodView() {
   const handleMarkInTransit = (orderId, driverName) => {
     playScanBeep();
     updateOrderStatus(orderId, `DISPATCHED_IN_TRANSIT (${driverName || 'Tata Ace OD-18-A-1234'})`);
-    showToast(`🚚 Order #${orderId} marked IN-TRANSIT on Tata Ace! OTP dispatched to customer.`);
+    
+    dispatchWebhookAction('DISPATCH_VEHICLE_TRANSIT', {
+      order_id: orderId,
+      driver: driverName || 'Tophan Gouda (Tata Ace OD-18-A-1234)'
+    });
+
+    showToast(`🚚 Order #${orderId} marked IN-TRANSIT on Tata Ace! Synced to Google Sheets.`, true);
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
-      {/* Top Action Ribbon */}
-      <div className="tab-action-ribbon">
+      {/* 🌟 Top Action Ribbon & Dispatch Cockpit */}
+      <div className="tab-action-ribbon" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        
+        {/* Left Action Badges */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className="badge badge-amber">🚚 LIVE LOGISTICS FLEET & DIGITAL ePOD</span>
-          <button className="btn-luxury-gold" onClick={() => openModal('edit_fleet_driver', {})}>
+          
+          <button className="btn-luxury-gold" onClick={() => openModal('edit_fleet_driver', {})} style={{ fontSize: '11px', padding: '5px 10px' }}>
             ➕ Add Fleet Driver
           </button>
-          <button className="btn-ghost-edit" onClick={() => setDriverMobileMode(!driverMobileMode)}>
-            <Smartphone size={14} /> {driverMobileMode ? 'Switch to Desktop Cockpit' : '📱 Driver Mobile Viewport'}
+          
+          <button className="btn-ghost-edit" onClick={() => setDriverMobileMode(!driverMobileMode)} style={{ fontSize: '11px', padding: '5px 10px' }}>
+            <Smartphone size={13} /> {driverMobileMode ? 'Desktop Cockpit' : '📱 Driver Mobile View'}
           </button>
+          
           <button 
             className="btn-cyan"
             onClick={() => {
@@ -89,17 +115,59 @@ export function LogisticsEpodView() {
               window.open(`https://wa.me/919437155667?text=${encodeURIComponent(text)}`, '_blank');
               showToast("📲 Trip Sheet sent to Driver Tophan Gouda via WhatsApp!", true);
             }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
           >
-            <Send size={13} /> 📲 Send WhatsApp Trip Sheet
+            <Send size={12} /> 📲 Send WhatsApp Trip Sheet
           </button>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span className="badge badge-emerald">GPS GEO-LOCK ACTIVE</span>
-          <span className="badge badge-purple">{filteredStops.length} Active Delivery Stops</span>
+
+        {/* Right Cross-Tab Handoffs */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+          <button 
+            className="btn-purple" 
+            onClick={() => {
+              setActiveTab('outward_scanner');
+              showToast("📦 Switched to Dock 2 Outward Scanner to issue vehicle gatepasses!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <Boxes size={12} /> <span>Dock 2 Outward (Tab 15)</span>
+          </button>
+
+          <button 
+            className="btn-emerald" 
+            onClick={() => {
+              setActiveTab('safelock');
+              showToast("🔒 Switched to SafeLock Inventory to check staging boxes!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <ShieldCheck size={12} /> <span>SafeLock Stock (Tab 4)</span>
+          </button>
+
+          <button 
+            className="btn-ghost-edit" 
+            onClick={() => {
+              setActiveTab('documents');
+              showToast("📄 Switched to Document Studio to print Delivery Challans!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <Printer size={12} /> <span>Delivery Invoice (Tab 10)</span>
+          </button>
+
+          <button 
+            className="btn-ghost-edit" 
+            onClick={() => syncWithGoogleSheets()}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <RefreshCw size={12} className={isSyncing ? 'spin-anim' : ''} /> <span>2-Way Sync</span>
+          </button>
         </div>
+
       </div>
 
-      {/* Fleet Driver Cards */}
+      {/* 🚛 Fleet Driver Performance & Vehicle Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
         {drivers.map(driver => {
           const driverStopsCount = activeManifestStops.filter(s => s.Driver.includes(driver.Name)).length;
@@ -108,8 +176,8 @@ export function LogisticsEpodView() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <span className="badge badge-cyan">{driver.Driver_ID}</span>
-                  <h4 style={{ fontSize: '15px', fontWeight: '800', marginTop: '4px' }}>{driver.Name}</h4>
-                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>📞 {driver.Phone}</div>
+                  <h4 style={{ fontSize: '15px', fontWeight: '800', marginTop: '4px', margin: 0 }}>{driver.Name}</h4>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>📞 {driver.Phone}</div>
                 </div>
                 <span className={`badge ${driver.Status === 'ON_ROUTE' ? 'badge-amber' : 'badge-emerald'}`}>
                   {driver.Status} ({driverStopsCount} Stops)
@@ -123,16 +191,16 @@ export function LogisticsEpodView() {
               </div>
 
               <div style={{ display: 'flex', gap: '6px' }}>
-                <button className="btn-ghost-edit" style={{ flex: 1, justifyContent: 'center' }} onClick={() => openModal('edit_fleet_driver', { driver })}>
+                <button className="btn-ghost-edit" style={{ flex: 1, justifyContent: 'center', fontSize: '11px' }} onClick={() => openModal('edit_fleet_driver', { driver })}>
                   ✏️ Edit Driver
                 </button>
                 <button 
                   className="btn-emerald" 
-                  style={{ flex: 1, justifyContent: 'center' }} 
+                  style={{ flex: 1, justifyContent: 'center', fontSize: '11px' }} 
                   onClick={() => {
                     const text = `📋 *DAILY DISPATCH MANIFEST FOR ${driver.Name.toUpperCase()}*\nVehicle: ${driver.Vehicle}\n\n` +
                       activeManifestStops.filter(s => s.Driver.includes(driver.Name)).map(s => `• Stop #${s.Stop_No}: ${s.Customer_Name} | ${s.Time_Slot}\n  📍 ${s.Address}\n  📦 ${s.Items}\n  💰 Due: ₹${s.Amount_Due.toLocaleString()}\n`).join('\n');
-                    window.open(`https://wa.me/91${driver.Phone}?text=${encodeURIComponent(text)}`, '_blank');
+                    window.open(`https://wa.me/91${driver.Phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
                     showToast(`📲 Trip Sheet dispatched to ${driver.Name}!`, true);
                   }}
                 >
@@ -144,11 +212,11 @@ export function LogisticsEpodView() {
         })}
       </div>
 
-      {/* Delivery Manifest & Route Stops Table */}
+      {/* 🗺️ Delivery Manifest & Route Stops Table */}
       <div className="glass-panel">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
           <div>
-            <h3 style={{ fontSize: '16px', fontWeight: '800' }}>🗺️ Live Delivery Manifest & Doorstep ePOD Verification</h3>
+            <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0 }}>🗺️ Live Delivery Manifest & Doorstep ePOD Verification</h3>
             <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
               Connected to SafeLock Engine • Customer OTP, Signature Pad & GPS Geotag Lock
             </span>
@@ -287,4 +355,3 @@ export function LogisticsEpodView() {
     </div>
   );
 }
-

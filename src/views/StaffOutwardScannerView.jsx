@@ -30,7 +30,8 @@ import {
   Sliders,
   Layers,
   Maximize2,
-  RotateCcw
+  RotateCcw,
+  RefreshCw
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, playSafeLockSound, triggerGoldenConfetti, speakVoiceFeedback } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
@@ -38,7 +39,16 @@ import { decodeBarcodeFromSource, decodeBarcodeFromImageFile, sanitizeBarcode } 
 import { generateBoxesForProduct } from '../utils/knockdownBoxGenerator';
 
 export function StaffOutwardScannerView() {
-  const { catalog, orders, drivers, updateOrderStatus, showToast } = useStore();
+  const { 
+    catalog, 
+    orders, 
+    drivers, 
+    updateOrderStatus, 
+    showToast,
+    setActiveTab,
+    syncWithGoogleSheets,
+    isSyncing
+  } = useStore();
 
   const [sunnyMode, setSunnyMode] = useState(false);
   const [outwardStep, setOutwardStep] = useState(1);
@@ -163,7 +173,7 @@ export function StaffOutwardScannerView() {
         setLoadedBoxes([]);
       }
     }
-  }, [selectedOrderId, catalog]);
+  }, [selectedOrderId, activeOrder, catalog]);
 
   // Camera Lifecycle & Real-Time Barcode Detector
   const [cameraFacing, setCameraFacing] = useState('environment');
@@ -637,36 +647,79 @@ export function StaffOutwardScannerView() {
       borderRadius: sunnyMode ? '16px' : '0'
     }}>
       
-      {/* Top Action Ribbon */}
-      <div className="tab-action-ribbon" style={{ background: sunnyMode ? '#FFFFFF' : 'rgba(15,23,42,0.7)', border: sunnyMode ? '2px solid #000000' : '1px solid rgba(255,255,255,0.1)' }}>
+      {/* 🌟 Top Action Ribbon & Command Hub */}
+      <div className="tab-action-ribbon" style={{ background: sunnyMode ? '#FFFFFF' : 'rgba(15,23,42,0.7)', border: sunnyMode ? '2px solid #000000' : '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        
+        {/* Left Action Badges */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <span className={`badge ${sunnyMode ? 'badge-rose' : 'badge-amber'}`} style={{ fontSize: '12px' }}>
-            🚚 DEDICATED STAFF OUTWARD DOCK DISPATCH SCANNER
+          <span className={`badge ${sunnyMode ? 'badge-rose' : 'badge-amber'}`} style={{ fontSize: '11px' }}>
+            🚚 OUTWARD GATEPASS SCANNER
           </span>
           <button 
             className="btn-luxury-gold"
             onClick={() => setSunnyMode(!sunnyMode)}
-            style={{ fontWeight: '800' }}
+            style={{ fontSize: '11px', padding: '5px 10px', fontWeight: '800' }}
           >
-            {sunnyMode ? <Moon size={14} /> : <Sun size={14} />} 
-            {sunnyMode ? 'Switch to Dark Mode' : '☀️ Sunny Dock Outdoor Mode (High Visibility)'}
+            {sunnyMode ? <Moon size={12} /> : <Sun size={12} />} 
+            {sunnyMode ? 'Dark Mode' : '☀️ Sunny Dock Mode'}
           </button>
-          <button className="btn-ghost-edit" onClick={() => setIsEditingDispatch(!isEditingDispatch)}>
-            <Edit size={14} /> {isEditingDispatch ? '✕ Close Dispatch Details' : '✏️ Edit Dispatch, Driver & Carpenter Details'}
+          <button className="btn-ghost-edit" onClick={() => setIsEditingDispatch(!isEditingDispatch)} style={{ fontSize: '11px', padding: '5px 10px' }}>
+            <Edit size={12} /> {isEditingDispatch ? '✕ Close Dispatch' : '✏️ Dispatch Details'}
           </button>
           <button 
             className="btn-ghost-edit" 
-            style={{ color: 'var(--accent-rose)', border: '1px solid var(--accent-rose)' }}
+            style={{ color: 'var(--accent-rose)', border: '1px solid var(--accent-rose)', fontSize: '11px', padding: '5px 10px' }}
             onClick={() => { setLoadedBoxes([]); setScanHistoryLog([]); showToast("🔄 Outward Truck Loading reset to 0/5 cartons!"); }}
             title="Reset loaded cartons to start fresh truck loading"
           >
-            🔄 Reset Truck Loading
+            🔄 Reset
           </button>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span className="badge badge-gold">TRUCK LOAD: {totalPayloadWeight} KG ({payloadPercentage}% CAPACITY)</span>
-          <span className="badge badge-emerald">ANTI-PARTIAL LOAD DEFENSE ACTIVE</span>
+
+        {/* Right Cross-Terminal Handoffs */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+          <button 
+            className="btn-cyan" 
+            onClick={() => {
+              setActiveTab('logistics_epod');
+              showToast("🚚 Switched to Logistics Fleet & Driver ePOD!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <Truck size={12} /> <span>Logistics ePOD (Tab 6)</span>
+          </button>
+
+          <button 
+            className="btn-emerald" 
+            onClick={() => {
+              setActiveTab('safelock');
+              showToast("🔒 Switched to SafeLock Inventory Terminal!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <ShieldCheck size={12} /> <span>SafeLock (Tab 4)</span>
+          </button>
+
+          <button 
+            className="btn-purple" 
+            onClick={() => {
+              setActiveTab('documents');
+              showToast("📄 Switched to Document Studio to print Gatepass!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <Printer size={12} /> <span>Gatepass PDF (Tab 10)</span>
+          </button>
+
+          <button 
+            className="btn-ghost-edit" 
+            onClick={() => syncWithGoogleSheets()}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <RefreshCw size={12} className={isSyncing ? 'spin-anim' : ''} /> <span>2-Way Sync</span>
+          </button>
         </div>
+
       </div>
 
       {/* Edit Dispatch Order Details Modal / Drawer */}

@@ -8,19 +8,33 @@ import {
   Phone, 
   FileSpreadsheet, 
   Send, 
-  Sparkles,
-  Search,
-  Filter,
-  Edit,
-  QrCode,
-  Printer,
-  ChevronDown,
-  ChevronRight,
-  ShieldCheck
+  Sparkles, 
+  Search, 
+  Filter, 
+  Edit, 
+  QrCode, 
+  Printer, 
+  ChevronDown, 
+  ChevronRight, 
+  ShieldCheck,
+  RefreshCw,
+  Mic,
+  Camera,
+  FileText
 } from 'lucide-react';
+import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
+import { dispatchWebhookAction } from '../services/webhookService';
 
 export function ArchitectPortalView() {
-  const { architects, orders, openModal, showToast } = useStore();
+  const { 
+    architects, 
+    orders, 
+    openModal, 
+    showToast, 
+    setActiveTab, 
+    syncWithGoogleSheets, 
+    isSyncing 
+  } = useStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [tierFilter, setTierFilter] = useState('ALL'); // 'ALL' | 'Platinum' | 'Gold' | 'Silver' | 'DUE_ONLY'
@@ -49,21 +63,65 @@ export function ArchitectPortalView() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
-      {/* Top Action Ribbon */}
-      <div className="tab-action-ribbon">
+      {/* 🌟 Top Action Ribbon & Command Hub */}
+      <div className="tab-action-ribbon" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        
+        {/* Left Action Badges */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className="badge badge-purple">🏛️ ARCHITECT VIP PARTNER NETWORK</span>
-          <button className="btn-luxury-gold" onClick={() => openModal('register_architect')}>
-            <UserPlus size={14} /> ➕ Register VIP Partner
+          
+          <button className="btn-luxury-gold" onClick={() => openModal('register_architect')} style={{ fontSize: '11px', padding: '5px 10px' }}>
+            <UserPlus size={13} /> ➕ Register VIP Partner
           </button>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span className="badge badge-emerald">INSTANT UPI SETTLEMENT READY</span>
-          <span className="badge badge-gold">TIERED SLABS: 5.0% — 8.5%</span>
+
+        {/* Right Cross-Tab Quick Handoffs */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+          <button 
+            className="btn-cyan" 
+            onClick={() => {
+              setActiveTab('voice_pos');
+              showToast("🎙️ Switched to Voice POS to tag an architect on a commercial quote!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <Mic size={12} /> <span>Voice POS (Tab 2)</span>
+          </button>
+
+          <button 
+            className="btn-amber" 
+            onClick={() => {
+              setActiveTab('room_matcher');
+              showToast("📸 Switched to 2D Room Matcher to co-design client floor plans!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <Camera size={12} /> <span>2D Matcher (Tab 3)</span>
+          </button>
+
+          <button 
+            className="btn-ghost-edit" 
+            onClick={() => {
+              setActiveTab('documents');
+              showToast("📄 Switched to Document Studio to print Architect Certificates!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <Printer size={12} /> <span>Doc Studio (Tab 10)</span>
+          </button>
+
+          <button 
+            className="btn-ghost-edit" 
+            onClick={() => syncWithGoogleSheets()}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <RefreshCw size={12} className={isSyncing ? 'spin-anim' : ''} /> <span>2-Way Sync</span>
+          </button>
         </div>
+
       </div>
 
-      {/* Partner Performance Summary Cards */}
+      {/* 👑 4-Pillar Performance Ledger Cards */}
       <div className="kpi-grid">
         <div className="kpi-card">
           <div className="kpi-label"><Landmark size={14} color="var(--accent-purple)" /> Total Referred Sales</div>
@@ -90,7 +148,7 @@ export function ArchitectPortalView() {
         </div>
       </div>
 
-      {/* Search & Tier Filter Controls */}
+      {/* 🔍 Search & Tier Filter Controls */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
         
         {/* Search Box */}
@@ -135,11 +193,11 @@ export function ArchitectPortalView() {
 
       </div>
 
-      {/* Architect Directory Table with Complete Edit & Loyalty Tools */}
+      {/* 🏛️ Architect Directory Table with Complete Edit & Loyalty Tools */}
       <div className="glass-panel">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
           <div>
-            <h3 style={{ fontSize: '16px', fontWeight: '800' }}>VIP Architect Partners & Tiered Commission Ledger</h3>
+            <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0 }}>VIP Architect Partners & Tiered Commission Ledger</h3>
             <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
               Showing {filteredArchitects.length} of {architects.length} Empaneled Design Partners
             </span>
@@ -147,7 +205,7 @@ export function ArchitectPortalView() {
           <span className="badge badge-cyan">REAL-TIME WEBHOOK SYNC ACTIVE</span>
         </div>
 
-        <div className="data-table-wrapper" style={{ marginTop: '12px' }}>
+        <div className="data-table-wrapper">
           <table className="luxury-table">
             <thead>
               <tr>

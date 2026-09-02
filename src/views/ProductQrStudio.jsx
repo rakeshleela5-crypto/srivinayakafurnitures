@@ -18,13 +18,25 @@ import {
   Send,
   ShieldCheck,
   Box,
-  Share2
+  Share2,
+  Barcode,
+  MessageSquare,
+  Mic
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
 
 export function ProductQrStudio() {
-  const { catalog, setCatalog, storeMeta, showToast, openModal } = useStore();
+  const { 
+    catalog, 
+    setCatalog, 
+    storeMeta, 
+    showToast, 
+    openModal,
+    setActiveTab,
+    syncWithGoogleSheets,
+    isSyncing
+  } = useStore();
 
   const [selectedSku, setSelectedSku] = useState(catalog[0]?.SKU || 'BED-MOD-001');
   const [printLayout, setPrintLayout] = useState('frame_sticker'); // frame_sticker | acrylic_standee | 5_box_labels | a4_24up
@@ -169,27 +181,74 @@ export function ProductQrStudio() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
-      {/* Top Action Ribbon */}
-      <div className="tab-action-ribbon no-print">
+      {/* 🌟 Top Action Ribbon & Command Hub */}
+      <div className="tab-action-ribbon no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        
+        {/* Left Action Badges */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <span className="badge badge-gold">📱 FURNITURE PRODUCT QR CODE GENERATION STUDIO</span>
+          <span className="badge badge-gold">📱 PRODUCT QR & ACRYLIC STANDEE STUDIO</span>
 
-          <button className="btn-cyan" onClick={() => openModal('csv_import')} style={{ fontWeight: '800' }}>
-            📥 Bulk CSV Catalog Upload
+          <button className="btn-cyan" onClick={() => openModal('csv_import')} style={{ fontSize: '11px', padding: '5px 10px' }}>
+            📥 Bulk CSV
           </button>
 
-          <button className="btn-luxury-gold" onClick={handleNewSkuBlank}>
-            <Plus size={14} /> ➕ Add New Furniture SKU
+          <button className="btn-luxury-gold" onClick={handleNewSkuBlank} style={{ fontSize: '11px', padding: '5px 10px' }}>
+            <Plus size={12} /> <span>+ New SKU</span>
           </button>
           
-          <button className="btn-emerald" onClick={handleSaveToCatalog}>
-            <Save size={14} /> 💾 Save to Master Catalog & Sheets
+          <button className="btn-emerald" onClick={handleSaveToCatalog} style={{ fontSize: '11px', padding: '5px 10px' }}>
+            <Save size={12} /> <span>💾 Save Specs</span>
           </button>
         </div>
 
-        <button className="btn-cyan" onClick={handlePrint}>
-          <Printer size={14} /> 🖨️ Print Physical Labels
-        </button>
+        {/* Right Cross-Tab Quick Handoffs */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+          <button 
+            className="btn-cyan" 
+            onClick={() => {
+              setActiveTab('voice_pos');
+              showToast("🎙️ Switched to Voice POS & Quote Studio!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <Mic size={12} /> <span>Voice POS (Tab 2)</span>
+          </button>
+
+          <button 
+            className="btn-purple" 
+            onClick={() => {
+              setActiveTab('whatsapp_bots');
+              showToast("💬 Switched to WhatsApp AI Bots & Telemetry!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <MessageSquare size={12} /> <span>WhatsApp Bots (Tab 9)</span>
+          </button>
+
+          <button 
+            className="btn-amber" 
+            onClick={() => {
+              setActiveTab('barcode_studio');
+              showToast("🏷️ Switched to Barcode & Knockdown Studio!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <Barcode size={12} /> <span>Barcodes (Tab 11)</span>
+          </button>
+
+          <button 
+            className="btn-ghost-edit" 
+            onClick={() => syncWithGoogleSheets()}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <RefreshCw size={12} className={isSyncing ? 'spin-anim' : ''} /> <span>2-Way Sync</span>
+          </button>
+
+          <button className="btn-luxury-gold" onClick={handlePrint} style={{ fontSize: '11px', padding: '5px 10px' }}>
+            <Printer size={13} /> <span>🖨️ Print Standee</span>
+          </button>
+        </div>
+
       </div>
 
       {/* Main Studio Grid: In-Place Product Editor + Live Sticker Customizer & Preview */}

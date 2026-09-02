@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '../../context/StoreContext';
-import { ShowroomAdvanceModal, NewInquiryModal } from './CrmModals';
+import { ShowroomAdvanceModal, NewInquiryModal, ScheduleMistriVisitModal } from './CrmModals';
 import { EditInquiryModal, ConvertInquiryModal, ManageOrderModal, StockOverrideModal, EmiCalculatorModal } from './OrderModals';
 import { DigitalEpodModal, SmsDispatchModal, EditFleetDriverModal, WarehouseWallPosterModal } from './LogisticsModals';
 import { 
@@ -36,6 +36,8 @@ import {
 import { BulkBotBroadcastModal } from './BulkBotBroadcastModal';
 import { FurnitureFollowUpModal } from './FurnitureFollowUpModal';
 import { SmartKitStagingModal } from './SmartKitStagingModal';
+import { EditFactoryPoModal } from './EditFactoryPoModal';
+import { FactoryPaymentVoucherModal, VendorSourcingModal } from './FactoryProcureModals';
 
 export function ModalContainer() {
   const { activeModal, modalProps, closeModal } = useStore();
@@ -64,8 +66,8 @@ export function ModalContainer() {
       <ArchitectCertificateModal isOpen={activeModal === 'architect_certificate'} onClose={closeModal} architect={modalProps.architect} />
       <ArchitectLedgerStatementModal isOpen={activeModal === 'architect_statement'} onClose={closeModal} architect={modalProps.architect} />
 
-      <CarpenterDispatchModal isOpen={activeModal === 'carpenter_dispatch'} onClose={closeModal} />
-      <UniversalPaymentCheckoutModal isOpen={activeModal === 'universal_payment'} onClose={closeModal} amount={modalProps.amount} orderId={modalProps.orderId} />
+      <CarpenterDispatchModal isOpen={activeModal === 'carpenter_dispatch'} onClose={closeModal} order={modalProps.order} />
+      <UniversalPaymentCheckoutModal isOpen={activeModal === 'universal_payment'} onClose={closeModal} amount={modalProps.amount} orderId={modalProps.orderId} customerName={modalProps.customerName} customerPhone={modalProps.customerPhone} />
       <BarcodeStudioModal isOpen={activeModal === 'barcode_studio'} onClose={closeModal} />
       <OrderInvoiceModal isOpen={activeModal === 'order_invoice'} onClose={closeModal} order={modalProps.order} />
       <EodReconciliationModal isOpen={activeModal === 'eod_reconciliation'} onClose={closeModal} />
@@ -77,7 +79,7 @@ export function ModalContainer() {
       <EditFloorAgingModal isOpen={activeModal === 'edit_floor_aging'} onClose={closeModal} item={modalProps.item} />
 
       {/* New Proposals & Finance Modals */}
-      <WhatsAppProposalModal isOpen={activeModal === 'whatsapp_proposal'} onClose={closeModal} proposalData={modalProps} />
+      <WhatsAppProposalModal isOpen={activeModal === 'whatsapp_proposal' || activeModal === 'customer_proposal'} onClose={closeModal} proposalData={modalProps} />
       <EmiSchemeModal isOpen={activeModal === 'emi_scheme'} onClose={closeModal} amount={modalProps.amount} customerPhone={modalProps.customerPhone} />
       <FurnitureExchangeModal isOpen={activeModal === 'furniture_exchange'} onClose={closeModal} onApplyDiscount={modalProps.onApplyDiscount} />
       
@@ -108,6 +110,10 @@ export function ModalContainer() {
       <GodrejCareAmcModal isOpen={activeModal === 'godrej_care_amc'} onClose={closeModal} customer={modalProps.customer} />
       <B2bTurnkeyModal isOpen={activeModal === 'b2b_turnkey'} onClose={closeModal} />
       <SmartKitStagingModal isOpen={activeModal === 'smartkit_staging'} onClose={closeModal} order={modalProps.order} />
+      <EditFactoryPoModal isOpen={activeModal === 'edit_factory_po'} onClose={closeModal} po={modalProps.po} onSave={modalProps.onSave} />
+      <FactoryPaymentVoucherModal isOpen={activeModal === 'factory_payment_voucher'} onClose={closeModal} po={modalProps.po} />
+      <VendorSourcingModal isOpen={activeModal === 'vendor_sourcing'} onClose={closeModal} />
+      <ScheduleMistriVisitModal isOpen={activeModal === 'schedule_mistri_visit'} onClose={closeModal} lead={modalProps.lead} />
     </>
   );
 }

@@ -7,7 +7,7 @@ import { STORE_METADATA } from '../data/initialData';
 // FIX 2: Hardcoded fallback URL — even if localStorage AND STORE_METADATA fail,
 // the webhook will ALWAYS fire to the correct endpoint
 // ============================================================================
-const HARDCODED_FALLBACK_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbyfH5TocJpK-p_SQ-iGxK-r0juia3ppbkE1cvj3oWXmdvgnTuhzvKbhgFKCu3nGoTAN/exec';
+const HARDCODED_FALLBACK_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxMyADYcU8nyWR_9a77jae7HSnx_29jgM5u7mZ1ef7Yx5cEhMtZsJoDddrOZQQAZKca/exec';
 
 export function formatDateTimeIndian(date = new Date()) {
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -31,10 +31,12 @@ export function formatDateIndian(date = new Date()) {
 }
 
 export async function dispatchWebhookAction(actionName, payload = {}, customWebhookUrl = null) {
-  // FIX 2: Triple-layer URL resolution (localStorage → STORE_METADATA → hardcoded constant)
+  // Auto-heal stale localStorage URL if it contains an outdated deployment ID
+  const storedUrl = localStorage.getItem('OMNIBUILD_WEBHOOK_URL');
+  const validStoredUrl = (storedUrl && storedUrl.includes('script.google.com') && !storedUrl.includes('H5TocJpK') && !storedUrl.includes('AKfycbwX-EUfdD55')) ? storedUrl : null;
+  
   const webhookUrl = customWebhookUrl
-    || localStorage.getItem('OMNIBUILD_WEBHOOK_URL')
-    || (STORE_METADATA && STORE_METADATA.defaultWebhookUrl)
+    || validStoredUrl
     || HARDCODED_FALLBACK_WEBHOOK_URL;
 
   const currentTimestamp = formatDateTimeIndian();

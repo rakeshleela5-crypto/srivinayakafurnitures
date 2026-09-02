@@ -186,7 +186,7 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
         return `🛡️ *OFFICIAL ${warrantyYears}-YEAR GODREJ DIGITAL WARRANTY CERTIFICATE*\nHologram Serial: ${warrantyHologramSerial} | 5-Point Assembly QC & Seasonal Teak Care Guide Included ✓.`;
 
       case 'BOT-16':
-        return `🔥 *HOT LEAD 48-HOUR SMART FURNITURE DRIP*\nCustomer: Dr. Subhashish Jena | Hesitation Reason: ${hesitationReason} | Follow-Up Delay: ${delayDays} Days | Anti-Spam: Max 1 Msg/24h.`;
+        return `🔥 *HOT LEAD 48-HOUR SMART FURNITURE DRIP*\nCustomer: {Customer_Name} | Hesitation Reason: ${hesitationReason} | Follow-Up Delay: ${delayDays} Days | Anti-Spam: Max 1 Msg/24h.`;
 
       case 'BOT-17':
         return `⚙️ *UNIVERSAL 21-TABLE DEDUPLICATION BOT*\nHourly Cron Active | Deduplicated Primary Keys across Orders_SafeLock, Inventory_Stock, Inquiries_Log. Zero collisions.`;

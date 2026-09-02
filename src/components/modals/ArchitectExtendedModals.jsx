@@ -380,3 +380,241 @@ export function ArchitectLedgerStatementModal({ isOpen, onClose, architect = {} 
     </div>
   );
 }
+
+// =========================================================================
+// 5. ➕ REGISTER NEW ARCHITECT / INTERIOR DESIGNER MODAL
+// =========================================================================
+export function RegisterArchitectModal({ isOpen, onClose }) {
+  const { architects, setArchitects, showToast } = useStore();
+
+  const [name, setName] = useState('');
+  const [firm, setFirm] = useState('');
+  const [phone, setPhone] = useState('');
+  const [tier, setTier] = useState('Platinum');
+  const [customRate, setCustomRate] = useState('10.0%');
+  const [gstin, setGstin] = useState('21AAAAA0000A1Z5');
+  const [upi, setUpi] = useState('partner@okhdfcbank');
+
+  if (!isOpen) return null;
+
+  const handleTierChange = (newTier) => {
+    setTier(newTier);
+    if (newTier === 'Platinum') setCustomRate('12.0%');
+    else if (newTier === 'Gold') setCustomRate('10.0%');
+    else if (newTier === 'Silver') setCustomRate('8.0%');
+  };
+
+  const handleSave = () => {
+    if (!name.trim() || !phone.trim()) {
+      showToast("⚠️ Please enter Architect Name and WhatsApp Number.", false);
+      return;
+    }
+
+    const newArchId = `ARC-${Math.floor(100 + Math.random() * 900)}`;
+    const newPartner = {
+      Architect_ID: newArchId,
+      Full_Name: name.trim(),
+      Firm_Name: firm.trim() || 'Independent Studio',
+      Phone_Number: phone.trim(),
+      Tier_Slab: tier,
+      Commission_Rate: customRate,
+      Commission_Earned_INR: 0,
+      Total_Sales_INR: 0,
+      Paid_Out_INR: 0,
+      Balance_Due_INR: 0,
+      GSTIN_PAN: gstin.trim(),
+      UPI_Bank: upi.trim()
+    };
+
+    setArchitects([newPartner, ...architects]);
+    playSuccessChime();
+    triggerGoldenConfetti();
+    showToast(`🏛️ Onboarded VIP Architect ${name} (${tier} Tier - ${customRate})!`, true);
+
+    dispatchWebhookAction('REGISTER_ARCHITECT_PARTNER', {
+      name: name.trim(),
+      firm: firm.trim() || 'Independent Studio',
+      phone: phone.trim(),
+      commission_pct: parseFloat(customRate) || 10,
+      tier: tier,
+      bank_upi: upi.trim()
+    });
+
+    onClose();
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-card glass-panel" style={{ maxWidth: '560px', width: '95%', border: '2px solid var(--accent-purple)' }}>
+        <div className="modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="badge badge-purple">VIP PARTNER ONBOARDING</span>
+            <h3 style={{ margin: 0, fontSize: '17px' }}>➕ Register VIP Architect / Designer</h3>
+          </div>
+          <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
+        </div>
+
+        <div className="form-grid" style={{ marginTop: '12px' }}>
+          <div className="form-field">
+            <label>Architect / Designer Full Name *</label>
+            <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Ar. Pradeep Mohapatra" />
+          </div>
+          <div className="form-field">
+            <label>Architecture Studio / Firm Name</label>
+            <input value={firm} onChange={e => setFirm(e.target.value)} placeholder="e.g. Rayagada Design Studio" />
+          </div>
+          <div className="form-field">
+            <label>WhatsApp Contact Number *</label>
+            <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="e.g. 9861011223" />
+          </div>
+          <div className="form-field">
+            <label>Partnership Tier Slab</label>
+            <select value={tier} onChange={e => handleTierChange(e.target.value)}>
+              <option value="Platinum">Platinum (12.0% Commission)</option>
+              <option value="Gold">Gold (10.0% Commission)</option>
+              <option value="Silver">Silver (8.0% Commission)</option>
+            </select>
+          </div>
+          <div className="form-field">
+            <label>Commission Rate (%)</label>
+            <input value={customRate} onChange={e => setCustomRate(e.target.value)} />
+          </div>
+          <div className="form-field">
+            <label>GSTIN / PAN</label>
+            <input value={gstin} onChange={e => setGstin(e.target.value)} />
+          </div>
+          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+            <label>Instant Settlement UPI VPA / Bank RTGS ID</label>
+            <input value={upi} onChange={e => setUpi(e.target.value)} placeholder="e.g. partner@okhdfcbank" />
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+          <button className="btn-ghost-edit" onClick={onClose} style={{ flex: 1 }}>Cancel</button>
+          <button className="btn-purple" onClick={handleSave} style={{ flex: 2, justifyContent: 'center' }}>
+            <Save size={14} /> ➕ Onboard Partner & Sync to Google Sheets
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =========================================================================
+// 6. 💳 COMMISSION PAYOUT VOUCHER & TDS SETTLEMENT MODAL
+// =========================================================================
+export function ArchitectPayoutModal({ isOpen, onClose, architect = {} }) {
+  const { architects, setArchitects, showToast } = useStore();
+
+  const [payoutAmount, setPayoutAmount] = useState(architect.Balance_Due_INR || 15000);
+  const [paymentMode, setPaymentMode] = useState('RTGS_NEFT_ONLINE');
+  const [txnRef, setTxnRef] = useState(`RTGS-${Math.floor(100000 + Math.random() * 900000)}`);
+
+  if (!isOpen) return null;
+
+  const grossAmount = Number(payoutAmount) || 0;
+  const tdsDeduction = Math.round(grossAmount * 0.05); // 5% TDS under Section 194H
+  const netDisbursed = grossAmount - tdsDeduction;
+
+  const handleDisburse = () => {
+    if (grossAmount <= 0) {
+      showToast("⚠️ Please enter a valid payout amount.", false);
+      return;
+    }
+
+    const updatedList = architects.map(a => {
+      if (a.Architect_ID === architect.Architect_ID) {
+        const currentPaid = a.Paid_Out_INR || 0;
+        const currentDue = a.Balance_Due_INR || 0;
+        return {
+          ...a,
+          Paid_Out_INR: currentPaid + grossAmount,
+          Balance_Due_INR: Math.max(0, currentDue - grossAmount)
+        };
+      }
+      return a;
+    });
+
+    setArchitects(updatedList);
+    playSuccessChime();
+    triggerGoldenConfetti();
+    showToast(`💳 Disbursed ₹${netDisbursed.toLocaleString()} (₹${tdsDeduction.toLocaleString()} 5% TDS) to ${architect.Full_Name}!`, true);
+
+    dispatchWebhookAction('LOG_ARCHITECT_COMMISSION_PAYOUT', {
+      architect_id: architect.Architect_ID,
+      architect_name: architect.Full_Name,
+      gross_amount: grossAmount,
+      payment_mode: paymentMode,
+      txn_ref: txnRef
+    });
+
+    onClose();
+  };
+
+  return (
+    <div className="modal-overlay">
+      <div className="modal-card glass-panel" style={{ maxWidth: '520px', width: '95%', border: '2px solid var(--accent-emerald)' }}>
+        <div className="modal-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="badge badge-emerald">COMMISSION DISBURSEMENT</span>
+            <h3 style={{ margin: 0, fontSize: '17px' }}>💳 Issue Commission Payout Voucher</h3>
+          </div>
+          <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
+        </div>
+
+        <div style={{ background: '#030712', borderRadius: '12px', padding: '14px', border: '1px solid rgba(255,255,255,0.1)', margin: '12px 0' }}>
+          <div style={{ fontSize: '14px', fontWeight: '900', color: '#FFFFFF' }}>{architect.Full_Name}</div>
+          <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>🏛️ {architect.Firm_Name} • 📞 {architect.Phone_Number} • 💳 {architect.UPI_Bank || 'HDFC Bank RTGS'}</div>
+        </div>
+
+        <div className="form-grid">
+          <div className="form-field">
+            <label>Gross Commission Amount (₹)</label>
+            <input 
+              type="number" 
+              value={payoutAmount} 
+              onChange={e => setPayoutAmount(e.target.value)} 
+            />
+          </div>
+
+          <div className="form-field">
+            <label>Payment Mode</label>
+            <select value={paymentMode} onChange={e => setPaymentMode(e.target.value)}>
+              <option value="RTGS_NEFT_ONLINE">Bank RTGS / NEFT Transfer</option>
+              <option value="UPI_INSTANT">Instant Merchant UPI</option>
+              <option value="CHEQUE_HDFC">Account Payee Cheque (HDFC)</option>
+            </select>
+          </div>
+
+          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+            <label>Transaction UTR / Cheque Ref #</label>
+            <input value={txnRef} onChange={e => setTxnRef(e.target.value)} />
+          </div>
+        </div>
+
+        {/* Financial Breakdown Card */}
+        <div style={{ background: 'rgba(16,185,129,0.08)', border: '1.5px solid rgba(16,185,129,0.4)', borderRadius: '12px', padding: '14px', margin: '14px 0' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#CBD5E1', marginBottom: '6px' }}>
+            <span>Gross Commission:</span>
+            <span style={{ fontWeight: '800', color: '#FFFFFF' }}>₹{grossAmount.toLocaleString()}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--accent-amber)', marginBottom: '6px' }}>
+            <span>TDS Deduction (5% Sec 194H):</span>
+            <span style={{ fontWeight: '800' }}>- ₹{tdsDeduction.toLocaleString()}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', fontWeight: '900', color: 'var(--accent-emerald)', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px' }}>
+            <span>Net Disbursed to Bank:</span>
+            <span>₹{netDisbursed.toLocaleString()}</span>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button className="btn-ghost-edit" onClick={onClose} style={{ flex: 1 }}>Cancel</button>
+          <button className="btn-emerald" onClick={handleDisburse} style={{ flex: 2, justifyContent: 'center' }}>
+            <DollarSign size={14} /> Disburse ₹{netDisbursed.toLocaleString()} & Log Voucher
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

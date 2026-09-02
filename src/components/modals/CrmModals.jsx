@@ -202,3 +202,110 @@ export function NewInquiryModal({ isOpen, onClose }) {
     </div>
   );
 }
+
+export function ScheduleMistriVisitModal({ isOpen, onClose, lead = {} }) {
+  const { inquiries, setInquiries, showToast } = useStore();
+  const [mistri, setMistri] = useState("Narayana Mistri (Master Carpenter)");
+  const [slot, setSlot] = useState("Tomorrow 04:30 PM");
+  const [serviceType, setServiceType] = useState("FREE_ROOM_MEASUREMENT_VISIT");
+  const [remarks, setRemarks] = useState("Bring Solid Teak Swatches & Laser Room Meter");
+
+  if (!isOpen) return null;
+
+  const handleConfirmVisit = () => {
+    const woId = `WO-MISTRI-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    // Update local lead state
+    setInquiries(prev => prev.map(item => {
+      if (item.Inquiry_ID === lead.Inquiry_ID) {
+        return {
+          ...item,
+          Follow_Up_Date: `Mistri: ${slot}`,
+          Status: "MISTRI_VISIT_SCHEDULED"
+        };
+      }
+      return item;
+    }));
+
+    // Webhook dispatch to Google Sheets Carpenter_Work_Orders + Inquiries_Log
+    dispatchWebhookAction("SCHEDULE_MISTRI_VISIT", {
+      inquiry_id: lead.Inquiry_ID,
+      customer_name: lead.Customer_Name,
+      customer_phone: lead.Customer_Phone,
+      address: lead.Address || lead.Locality_Address || "Rayagada Town",
+      service_type: serviceType,
+      assigned_mistri: mistri,
+      scheduled_time: slot,
+      remarks: remarks,
+      timestamp: new Date().toISOString()
+    });
+
+    playSuccessChime();
+    showToast(`📐 Free Mistri Home Visit #${woId} booked with ${mistri} for ${lead.Customer_Name}!`, true);
+    onClose();
+  };
+
+  return (
+    <div className="modal-overlay" style={{ zIndex: 9999 }}>
+      <div className="modal-card" style={{ maxWidth: '580px', background: '#0B132B', border: '2px solid var(--accent-purple)' }}>
+        <div className="modal-header" style={{ borderBottom: '1px solid rgba(168,85,247,0.2)', paddingBottom: '12px' }}>
+          <div>
+            <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#FFFFFF', margin: 0 }}>
+              📐 Schedule Free Mistri Room Measurement
+            </h3>
+            <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
+              Dispatch Godrej certified carpenter to {lead.Customer_Name}'s site for 3D room laser mapping
+            </p>
+          </div>
+          <button className="btn-close-modal" onClick={onClose}>✕</button>
+        </div>
+
+        <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '12px', margin: '14px 0' }}>
+          <div className="form-field">
+            <label style={{ fontSize: '11px', color: 'var(--accent-purple)' }}>Customer Name</label>
+            <input value={lead.Customer_Name || ''} disabled style={{ opacity: 0.8 }} />
+          </div>
+          <div className="form-field">
+            <label style={{ fontSize: '11px', color: 'var(--accent-cyan)' }}>Contact Phone</label>
+            <input value={lead.Customer_Phone || ''} disabled style={{ opacity: 0.8 }} />
+          </div>
+          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+            <label style={{ fontSize: '11px', color: '#CBD5E1' }}>Site Address / Locality</label>
+            <input value={lead.Address || lead.Locality_Address || 'Rayagada Town'} disabled style={{ opacity: 0.8 }} />
+          </div>
+          <div className="form-field">
+            <label style={{ fontSize: '11px', color: '#CBD5E1' }}>Assigned Master Carpenter</label>
+            <select value={mistri} onChange={e => setMistri(e.target.value)}>
+              <option value="Narayana Mistri (Master Carpenter)">Narayana Mistri (15 Yrs Exp)</option>
+              <option value="Bishnu Mistri (Modular Specialist)">Bishnu Mistri (Modular Specialist)</option>
+              <option value="Tophan Gouda (Installation Tech)">Tophan Gouda (Installation Tech)</option>
+            </select>
+          </div>
+          <div className="form-field">
+            <label style={{ fontSize: '11px', color: '#CBD5E1' }}>Home Visit Date & Time</label>
+            <input value={slot} onChange={e => setSlot(e.target.value)} placeholder="e.g. Tomorrow 04:30 PM" />
+          </div>
+          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+            <label style={{ fontSize: '11px', color: '#CBD5E1' }}>Service Type</label>
+            <select value={serviceType} onChange={e => setServiceType(e.target.value)}>
+              <option value="FREE_ROOM_MEASUREMENT_VISIT">Free 3D Room Laser Measurement & Site Survey</option>
+              <option value="WALL_STRENGTH_CHECK">Modular Kitchen Wall Strength & Plumbing Inspection</option>
+              <option value="EXCHANGE_FURNITURE_EVALUATION">Old Furniture Buyback Physical Evaluation</option>
+            </select>
+          </div>
+          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+            <label style={{ fontSize: '11px', color: '#CBD5E1' }}>Special Instructions</label>
+            <input value={remarks} onChange={e => setRemarks(e.target.value)} />
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(168,85,247,0.2)', paddingTop: '12px' }}>
+          <button className="btn-ghost-edit" onClick={onClose}>Cancel</button>
+          <button className="btn-purple" onClick={handleConfirmVisit} style={{ padding: '8px 22px' }}>
+            <Check size={16} /> Confirm & Dispatch Carpenter Work Order
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

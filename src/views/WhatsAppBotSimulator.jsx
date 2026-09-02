@@ -21,12 +21,29 @@ import {
   LayoutGrid,
   Columns,
   Layers,
-  ArrowRight
+  ArrowRight,
+  RefreshCw,
+  Mic,
+  ShieldCheck,
+  Truck,
+  Landmark
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
 
 export function WhatsAppBotSimulator() {
-  const { bots, catalog, inventory, orders, storeMeta, triggerAppSheetBot, openModal, showToast } = useStore();
+  const { 
+    bots, 
+    catalog, 
+    inventory, 
+    orders, 
+    storeMeta, 
+    triggerAppSheetBot, 
+    openModal, 
+    showToast,
+    setActiveTab,
+    syncWithGoogleSheets,
+    isSyncing
+  } = useStore();
 
   const [viewMode, setViewMode] = useState('SPLIT'); // Default to 'SPLIT' for best demo experience
   const [callerMode, setCallerMode] = useState('CUSTOMER'); // 'CUSTOMER' | 'DIRECTOR'
@@ -210,65 +227,96 @@ export function WhatsAppBotSimulator() {
     }
 
     // Default rich template mapping for all 20 bots
+    // Default rich template mapping with dynamic placeholders for all 22 bots
     const defaultBotTemplates = {
-      'BOT-01': "Namaskar Dr. Subhashish Jena! 🙏\nYour Godrej Interio order ORD-8921 is SAFELOCKED.\n• Item: Solid King Bed (BED-MOD-001)\n• Advance Token: ₹78,247\n• Est Delivery: Today 04:30 PM\nShowroom Helpline: +91 93905 53301.",
-      'BOT-02': "⚡ ATOMIC INVENTORY HOLD:\nSKU BED-MOD-001 locked in Dock-A1.\nStock decremented across all 16 terminals in <50ms.",
-      'BOT-03': "📦 DOCK-A1 GATEPASS VERIFIED\nOrder: ORD-8921 (Dr. Jena)\nSKU: BED-MOD-001 (119.2 KG Total)\n• Box A (Headboard): VERIFIED ✓\n• Box B (Hydraulic): VERIFIED ✓\n• Box C (Rails): VERIFIED ✓\n• Box D (Hardware): VERIFIED ✓\nStatus: APPROVED FOR TRUCK LOADING.",
-      'BOT-04': "🚚 OUT FOR DELIVERY!\nNamaskar Dr. Jena, your order ORD-8921 is on route!\n• Driver: Tophan Gouda (+91 94371 55667)\n• Vehicle: Tata Ace (OD-18-A-1234)\n• 🔒 Your Secure Delivery OTP: 849201",
-      'BOT-05': "📍 DIGITAL ePOD PROOF LOCKED\nOrder: ORD-8921\nCustomer Signature: Verified (Dr. Subhashish Jena)\nGeotag: Lat 19.1672, Long 83.4156 (Rayagada)\nProof synced to Google Drive & Sheet 7 ✓",
-      'BOT-06': "💳 PAYMENT SETTLEMENT CONFIRMED\nOrder: ORD-8921 (Dr. Jena)\nBalance Amount Paid: ₹78,247 via Dynamic UPI\nTransaction: UPI-ORD-8921-SUCCESS\nOutstanding Due: ₹0.00 (Fully Settled ✓)",
-      'BOT-07': "🏛️ VIP ARCHITECT COMMISSION LEDGER\nPartner: Ar. Studio Design (Platinum Tier - 8.5%)\nReferred Order: ORD-8921 (Dr. Jena)\nCommission Earned: ₹6,651\nPayout Status: CREDITED TO UPI (partner@upi) ✓",
-      'BOT-08': "🏭 AUTOPROCURE REORDER PO #PO-2026-881\nTo: Royal Teak Crafts, Saharanpur (UP)\nItem: Solid King Bed (BED-MOD-001)\nQty: 5 Sets (5-Box Kits) | Factory Cost: ₹3,10,000\nPO Logged in Sheet 9 ➔ Supplier Notified ✓",
-      'BOT-09': "🔨 CARPENTER WORK ORDER DISPATCH\nCarpenter: Ramesh Mistri\nCustomer: Dr. Jena, Gayatri Nagar, Rayagada\nTask: Solid King Bed Hydraulic Assembly (5 Boxes)\nWage Voucher: ₹500 (Credited upon sign-off)",
-      'BOT-10': "🔄 FURNITURE EXCHANGE VALUATION\nCustomer: Smt. Minati Pradhan\nOld Furniture: Solid Wood Double Bed\nApproved Buyback Voucher: ₹6,500\nApplied against new King Bed booking ORD-8922 ✓",
-      'BOT-11': "✨ GODREJ INTERIO RAYAGADA FESTIVE EXCLUSIVE ✨\nNamaskar VIP Client! Upgrade your bedroom this season.\nGet up to ₹21,000 Showroom Savings + Free Hydraulic Installation on Solid Teak Suites!\nShowroom Helpline: +91 93905 53301.",
+      'BOT-01': "Namaskar {Customer_Name}! 🙏\nYour Godrej Interio order {Order_ID} is SAFELOCKED.\n• Item: {Product_Name} ({SKU})\n• Advance Token: ₹{Advance_Amount}\n• Est Delivery: {Delivery_Date}\nShowroom Helpline: +91 93905 53301.",
+      'BOT-02': "⚡ ATOMIC INVENTORY HOLD:\nSKU {SKU} locked in Dock-A1 for order {Order_ID} ({Customer_Name}).\nStock decremented across all 16 terminals in <50ms.",
+      'BOT-03': "📦 DOCK-A1 GATEPASS VERIFIED\nOrder: {Order_ID} ({Customer_Name})\nSKU: {SKU} (119.2 KG Total)\n• Box A (Headboard): VERIFIED ✓\n• Box B (Hydraulic): VERIFIED ✓\n• Box C (Rails): VERIFIED ✓\n• Box D (Hardware): VERIFIED ✓\nStatus: APPROVED FOR TRUCK LOADING.",
+      'BOT-04': "🚚 OUT FOR DELIVERY!\nNamaskar {Customer_Name}, your order {Order_ID} is on route!\n• Driver: {Driver_Name} ({Driver_Phone})\n• Vehicle: {Vehicle_Number}\n• 🔒 Your Secure Delivery OTP: {OTP}",
+      'BOT-05': "📍 DIGITAL ePOD PROOF LOCKED\nOrder: {Order_ID}\nCustomer Signature: Verified ({Customer_Name})\nGeotag: Lat 19.1672, Long 83.4156 (Rayagada)\nProof synced to Google Drive & Sheet 7 ✓",
+      'BOT-06': "💳 PAYMENT SETTLEMENT CONFIRMED\nOrder: {Order_ID} ({Customer_Name})\nBalance Amount Paid: ₹{Balance_Amount} via Dynamic UPI\nTransaction: UPI-{Order_ID}-SUCCESS\nOutstanding Due: ₹0.00 (Fully Settled ✓)",
+      'BOT-07': "🏛️ VIP ARCHITECT COMMISSION LEDGER\nPartner: {Architect_Name}\nReferred Order: {Order_ID} ({Customer_Name})\nCommission Earned: ₹6,651\nPayout Status: CREDITED TO UPI (partner@upi) ✓",
+      'BOT-08': "🏭 AUTOPROCURE REORDER PO #PO-2026-881\nTo: {Supplier_Name}\nItem: {Product_Name} ({SKU})\nQty: 5 Sets (5-Box Kits) | Factory Cost: ₹3,10,000\nPO Logged in Sheet 9 ➔ Supplier Notified ✓",
+      'BOT-09': "🔨 CARPENTER WORK ORDER DISPATCH\nCarpenter: Ramesh Mistri\nCustomer: {Customer_Name}, {Address}\nTask: {Product_Name} Hydraulic Assembly (5 Boxes)\nWage Voucher: ₹500 (Credited upon sign-off)",
+      'BOT-10': "🔄 FURNITURE EXCHANGE VALUATION\nCustomer: {Customer_Name}\nOld Furniture: Solid Wood Double Bed\nApproved Buyback Voucher: ₹6,500\nApplied against new King Bed booking {Order_ID} ✓",
+      'BOT-11': "✨ GODREJ INTERIO RAYAGADA FESTIVE EXCLUSIVE ✨\nNamaskar {Customer_Name}! Upgrade your bedroom this season.\nGet up to ₹21,000 Showroom Savings + Free Hydraulic Installation on Solid Teak Suites!\nShowroom Helpline: +91 93905 53301.",
       'BOT-12': "👑 9:00 PM SHOWROOM EXECUTIVE CLOSING SLIP\nStore: Godrej Interio Rayagada (Shree Ganesh Enterprises)\n• Total Today Billing: ₹4,82,500\n• Cash in Drawer: ₹1,15,000\n• UPI & Bank Collections: ₹3,67,500\n• Gross Profit Margin: 30.8% (₹1,48,610)\nSheet 11 (Daily_Sales_Summary) Locked ✓",
-      'BOT-13': "📐 CLEARANCE & FITMENT AUDIT\nOrder: ORD-8921 (Dr. Jena)\nDoorway Clearance: 38\" Verified Safe ✓\nPackaging: 5-Box Flatpack Knockdown Safe for Stairways.",
-      'BOT-14': "🎉 0% NO-COST EMI FINANCING OPTIONS\nOrder: ORD-8921 (₹89,790)\n• 3 Months: ₹29,930/mo\n• 6 Months: ₹14,965/mo\n• 9 Months: ₹9,976/mo\nZero Down-Payment with Bajaj Finserv at Rayagada Store!",
-      'BOT-15': "🛡️ OFFICIAL 10-YEAR WARRANTY CERTIFICATE\nDear Dr. Jena, congratulations on your new Solid King Bed!\n• Serial No: GI-RAY-2026-881\n• Coverage: 10 Years Comprehensive Godrej Warranty\nPDF Certificate: https://godrejinterio.com/warranty/ORD-8921",
-      'BOT-16': "🔥 WALK-IN HOT LEAD ALERT\nLead: Dr. Subhashish Jena (Gayatri Nagar)\nProduct Scanned: Solid King Bed (BED-MOD-001)\nAI Interest Score: 94% (Hot Buyer)\nFollow-up Task Assigned to Sales Desk ✓",
+      'BOT-13': "📐 CLEARANCE & FITMENT AUDIT\nOrder: {Order_ID} ({Customer_Name})\nDoorway Clearance: 38\" Verified Safe ✓\nPackaging: 5-Box Flatpack Knockdown Safe for Stairways.",
+      'BOT-14': "🎉 0% NO-COST EMI FINANCING OPTIONS\nOrder: {Order_ID} ({Customer_Name} - ₹{Amount})\n• 3 Months: ₹{EMI_3M}/mo\n• 6 Months: ₹{EMI_6M}/mo\n• 9 Months: ₹{EMI_9M}/mo\nZero Down-Payment with Bajaj Finserv at Rayagada Store!",
+      'BOT-15': "🛡️ OFFICIAL 10-YEAR WARRANTY CERTIFICATE\nDear {Customer_Name}, congratulations on your new {Product_Name}!\n• Serial No: GI-RAY-2026-881\n• Coverage: 10 Years Comprehensive Godrej Warranty\nPDF Certificate: https://godrejinterio.com/warranty/{Order_ID}",
+      'BOT-16': "🔥 WALK-IN HOT LEAD ALERT\nLead: {Customer_Name} ({Address})\nProduct Scanned: {Product_Name} ({SKU})\nAI Interest Score: 94% (Hot Buyer)\nFollow-up Task Assigned to Sales Desk ✓",
       'BOT-17': "🛡️ DATABASE INTEGRITY & DEDUPLICATION\nScanned all 21 Google Sheets tables.\n0 duplicate rows found. Index integrity 100% verified.",
-      'BOT-18': "🏭 FACTORY SHIPMENT INWARD QC\nSupplier: Royal Teak Crafts (Saharanpur)\nPO: #PO-2026-881 | Cartons: 10/10 Verified\nZero Transit Damage ➔ Stock Added to Dock-A1 ✓",
+      'BOT-18': "🏭 FACTORY SHIPMENT INWARD QC\nSupplier: {Supplier_Name}\nPO: #PO-2026-881 | Cartons: 10/10 Verified\nZero Transit Damage ➔ Stock Added to Dock-A1 ✓",
       'BOT-19': "📊 STORE TARGET PACING GAUGE\nToday Achieved: ₹1,69,000 (112% of Daily Target)\nMonthly Run-Rate: ₹38.45L / ₹45.00L (85.4% Achieved) ✓",
       'BOT-20': "🔄 MASTER 2-WAY CLOUD WEBHOOK ENGINE\nLive Bi-Directional Webhook Active with Google Apps Script.\nAll 21 tables synchronized in real-time.",
-      'BOT-21': "🚨 FLOOR AGING DISPLAY ALERT — GODREJ INTERIO RAYAGADA\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nModel: 4-Door Solid Teak Wardrobe (ALM-MOD-001)\n⏱️ Display Age: 52 Days in Bay 3 (₹78,000 Capital Locked)\n\n⚡ Recommended Action:\n1. Launch 20% Flash Clearance Flyer (₹62,400)\n2. Swap display piece with fresh warehouse carton stock.",
-      'BOT-22': "👑 VIP TURNKEY VILLA MILESTONE CONFIRMATION\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nNamaskar Dr. Subhashish Jena! 🙏\nYour Raniguda Farmhouse Villa Bedroom Suite is 100% staged!\n\n• Total Project Value: ₹1,56,494\n• Stage 1 (50% Booking Advance): ₹78,247 [PAID ✓]\n• Stage 2 (40% Factory Dispatch): ₹62,598 [DUE ON LOADING]\n• Stage 3 (10% Final Assembly): ₹15,649 [UPON MISTRI SIGN-OFF]\n\nShowroom Helpline: +91 93905 53301 | Shree Ganesh Enterprises"
+      'BOT-21': "🚨 FLOOR AGING DISPLAY ALERT — GODREJ INTERIO RAYAGADA\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nModel: {Product_Name} ({SKU})\n⏱️ Display Age: 52 Days in Bay 3 (₹78,000 Capital Locked)\n\n⚡ Recommended Action:\n1. Launch 20% Flash Clearance Flyer\n2. Swap display piece with fresh warehouse carton stock.",
+      'BOT-22': "👑 VIP TURNKEY VILLA MILESTONE CONFIRMATION\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nNamaskar {Customer_Name}! 🙏\nYour {Address} Villa Bedroom Suite is 100% staged!\n\n• Total Project Value: ₹{Amount}\n• Stage 1 (50% Booking Advance): ₹{Advance_Amount} [PAID ✓]\n• Stage 2 (40% Factory Dispatch): ₹{Stage2_Amount} [DUE ON LOADING]\n• Stage 3 (10% Final Assembly): ₹{Stage3_Amount} [UPON MISTRI SIGN-OFF]\n\nShowroom Helpline: +91 93905 53301 | Shree Ganesh Enterprises"
     };
 
-    // Resolve the active order based on the selected customer filter (if any)
-    const activeOrder = selectedCustomerFilter !== 'ALL' ? orders.find(o => o.Order_ID === selectedCustomerFilter) : null;
-    let formattedText = b.customTemplate || defaultBotTemplates[b.botId] || `⚡ Automated Cloud Trigger Executed: Target [${b.target}]. Status: EXECUTED_SUCCESS ✓`;
+    // Resolve the active order dynamically based on the selected customer/order filter
+    const activeOrder = (selectedCustomerFilter && selectedCustomerFilter !== 'ALL')
+      ? (orders.find(o => o.Order_ID === selectedCustomerFilter || o.Customer_Name === selectedCustomerFilter) || {
+          Customer_Name: selectedCustomerFilter,
+          Order_ID: "ORD-9988",
+          Total_Amount_INR: 156494,
+          Advance_Paid_INR: 78247,
+          Balance_Due_INR: 78247,
+          Ordered_SKU: "Solid King Bed (Hydraulic Storage)",
+          SKU: "BED-MOD-001",
+          Estimated_Delivery: "Today 04:30 PM",
+          Project_Address: "Rayagada, Odisha",
+          Assigned_Driver: "Tophan Gouda",
+          Driver_Phone: "+91 94371 55667",
+          Vehicle_Number: "Tata Ace (OD-18-A-1234)",
+          Delivery_OTP: "849201"
+        })
+      : (orders[0] || {});
 
-    // If we have an active order, inject its data into the template; otherwise fall back to static placeholders
-    if (activeOrder) {
-      formattedText = formattedText
-        .replace(/{Customer_Name}/g, activeOrder.Customer_Name || 'Customer')
-        .replace(/{Order_ID}/g, activeOrder.Order_ID || 'ORD-XXXX')
-        .replace(/{Advance_Amount}/g, activeOrder.Advance_Paid_INR?.toLocaleString() || '0')
-        .replace(/{Amount}/g, activeOrder.Total_Amount?.toLocaleString() || '0')
-        .replace(/{Delivery_Date}/g, activeOrder.Estimated_Delivery || 'TBD')
-        .replace(/{Product_Name}/g, activeOrder.Product_Name || 'Item')
-        .replace(/{SKU}/g, activeOrder.SKU || 'SKU')
-        .replace(/{Driver_Name}/g, activeOrder.Driver_Name || 'Driver')
-        .replace(/{Driver_Phone}/g, activeOrder.Driver_Phone || '+91 XXXXX XXXXX')
-        .replace(/{Vehicle_Number}/g, activeOrder.Vehicle_Number || 'Vehicle')
-        .replace(/{OTP}/g, activeOrder.Delivery_OTP || '000000')
-        .replace(/{UPI_ID}/g, activeOrder.UPI_ID || 'upi@example.com');
-    } else {
-      formattedText = formattedText
-        .replace(/{Customer_Name}/g, 'Dr. Subhashish Jena')
-        .replace(/{Order_ID}/g, 'ORD-8921')
-        .replace(/{Advance_Amount}/g, '78,247')
-        .replace(/{Amount}/g, '78,247')
-        .replace(/{Delivery_Date}/g, 'Today 04:30 PM')
-        .replace(/{Product_Name}/g, 'Solid King Bed (Hydraulic Storage)')
-        .replace(/{SKU}/g, 'BED-MOD-001')
-        .replace(/{Driver_Name}/g, 'Tophan Gouda')
-        .replace(/{Driver_Phone}/g, '+91 94371 55667')
-        .replace(/{Vehicle_Number}/g, 'Tata Ace (OD-18-A-1234)')
-        .replace(/{OTP}/g, '849201')
-        .replace(/{UPI_ID}/g, '9390553301@ybl');
-    }
+    const custName = activeOrder.Customer_Name || 'Valued Client';
+    const ordId = activeOrder.Order_ID || 'ORD-8921';
+    const totAmount = Number(activeOrder.Total_Amount_INR || activeOrder.Total_Amount || 156494);
+    const advAmount = Number(activeOrder.Advance_Paid_INR || activeOrder.Advance_Paid || Math.round(totAmount * 0.5));
+    const balAmount = Number(activeOrder.Balance_Due_INR || (totAmount - advAmount));
+    const st2Amount = Math.round(totAmount * 0.4);
+    const st3Amount = totAmount - advAmount - st2Amount;
+    const emi3Val = Math.round(totAmount / 3);
+    const emi6Val = Math.round(totAmount / 6);
+    const emi9Val = Math.round(totAmount / 9);
+    const prodName = activeOrder.Ordered_SKU || activeOrder.Product_Name || activeOrder.Item_Names || 'Solid King Bed (Hydraulic Storage)';
+    const skuCode = activeOrder.SKU || 'BED-MOD-001';
+    const estDelivery = activeOrder.Estimated_Delivery || activeOrder.Delivery_Schedule || 'Today 04:30 PM';
+    const projAddress = activeOrder.Project_Address || activeOrder.Delivery_Address || 'Gayatri Nagar, Rayagada';
+    const drvName = activeOrder.Assigned_Driver || 'Tophan Gouda';
+    const drvPhone = activeOrder.Driver_Phone || '+91 94371 55667';
+    const vehNumber = activeOrder.Vehicle_Number || 'Tata Ace (OD-18-A-1234)';
+    const delOtp = activeOrder.Delivery_OTP || activeOrder.OTP_Code || '849201';
+    const arcName = activeOrder.Architect_Name || 'Ar. Sunita Patnaik (Studio Vastu)';
+    const supName = activeOrder.Supplier || 'Royal Teak Crafts, Saharanpur (UP)';
+
+    let rawTemplate = b.customTemplate || defaultBotTemplates[b.botId] || `⚡ Automated Cloud Trigger Executed for ${b.botId}: Target [${b.target}]. Status: EXECUTED_SUCCESS ✓`;
+
+    let formattedText = rawTemplate
+      .replace(/{Customer_Name}/g, custName)
+      .replace(/{Order_ID}/g, ordId)
+      .replace(/{Product_Name}/g, prodName)
+      .replace(/{SKU}/g, skuCode)
+      .replace(/{Amount}/g, totAmount.toLocaleString())
+      .replace(/{Advance_Amount}/g, advAmount.toLocaleString())
+      .replace(/{Balance_Amount}/g, balAmount.toLocaleString())
+      .replace(/{Stage2_Amount}/g, st2Amount.toLocaleString())
+      .replace(/{Stage3_Amount}/g, st3Amount.toLocaleString())
+      .replace(/{EMI_3M}/g, emi3Val.toLocaleString())
+      .replace(/{EMI_6M}/g, emi6Val.toLocaleString())
+      .replace(/{EMI_9M}/g, emi9Val.toLocaleString())
+      .replace(/{Delivery_Date}/g, estDelivery)
+      .replace(/{Address}/g, projAddress)
+      .replace(/{Driver_Name}/g, drvName)
+      .replace(/{Driver_Phone}/g, drvPhone)
+      .replace(/{Vehicle_Number}/g, vehNumber)
+      .replace(/{OTP}/g, delOtp)
+      .replace(/{Architect_Name}/g, arcName)
+      .replace(/{Supplier_Name}/g, supName)
+      .replace(/{UPI_ID}/g, '9390553301@ybl');
 
     const newBotMsg = {
       id: Date.now(),
@@ -323,42 +371,90 @@ export function WhatsAppBotSimulator() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
-      {/* Top Action Ribbon & View Mode Selector */}
-      <div className="tab-action-ribbon">
+      {/* 🌟 Top Action Ribbon & Command Hub */}
+      <div className="tab-action-ribbon" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        
+        {/* Left Action Badges */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <span className="badge badge-emerald">💬 WHATSAPP & 20 APPSHEET AUTOMATION BOTS</span>
+          <span className="badge badge-emerald">🤖 WHATSAPP & 22 APPSHEET CLOUD BOTS</span>
           <span className="badge badge-purple">{bots.filter(b => b.status !== 'PAUSED').length}/{bots.length} ACTIVE</span>
-          <button className="btn-luxury-gold" onClick={() => openModal('bulk_bot_broadcast')}>
-            📢 Bulk 500-Customer Bot Broadcast
+          
+          <button className="btn-luxury-gold" onClick={() => openModal('bulk_bot_broadcast')} style={{ fontSize: '11px', padding: '5px 10px' }}>
+            📢 Bulk 500 Broadcast
           </button>
         </div>
 
-        {/* View Mode Switcher */}
-        <div style={{ display: 'flex', gap: '6px' }}>
+        {/* Center View Mode Switcher */}
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           <button 
             className={`btn-ghost-edit ${viewMode === 'GRID' ? 'badge-gold' : ''}`}
             onClick={() => setViewMode('GRID')}
-            style={{ fontSize: '11px', padding: '6px 12px' }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
           >
-            <LayoutGrid size={13} /> 🎛️ 20-Bot Control Tower
+            <LayoutGrid size={12} /> 🎛️ Control Tower
           </button>
           
           <button 
             className={`btn-ghost-edit ${viewMode === 'SPLIT' ? 'badge-gold' : ''}`}
             onClick={() => setViewMode('SPLIT')}
-            style={{ fontSize: '11px', padding: '6px 12px' }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
           >
-            <Columns size={13} /> ⚡ Side-by-Side Dual View
+            <Columns size={12} /> ⚡ Dual View
           </button>
 
           <button 
             className={`btn-ghost-edit ${viewMode === 'PHONE' ? 'badge-gold' : ''}`}
             onClick={() => setViewMode('PHONE')}
-            style={{ fontSize: '11px', padding: '6px 12px' }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
           >
-            <Smartphone size={13} /> 📱 Phone Simulator Focus
+            <Smartphone size={12} /> 📱 Phone Simulator
           </button>
         </div>
+
+        {/* Right Cross-Tab Quick Handoffs */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+          <button 
+            className="btn-cyan" 
+            onClick={() => {
+              setActiveTab('voice_pos');
+              showToast("🎙️ Switched to Voice POS & Quote Studio!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <Mic size={12} /> <span>Voice POS (Tab 2)</span>
+          </button>
+
+          <button 
+            className="btn-emerald" 
+            onClick={() => {
+              setActiveTab('safelock');
+              showToast("🔒 Switched to SafeLock Inventory Terminal!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <ShieldCheck size={12} /> <span>SafeLock (Tab 4)</span>
+          </button>
+
+          <button 
+            className="btn-purple" 
+            onClick={() => {
+              setActiveTab('logistics_epod');
+              showToast("🚚 Switched to Logistics Fleet & ePOD!", true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <Truck size={12} /> <span>Fleet (Tab 6)</span>
+          </button>
+
+          <button 
+            className="btn-ghost-edit" 
+            onClick={() => syncWithGoogleSheets()}
+            style={{ fontSize: '11px', padding: '5px 10px' }}
+          >
+            <RefreshCw size={12} className={isSyncing ? 'spin-anim' : ''} /> <span>2-Way Sync</span>
+          </button>
+        </div>
+
       </div>
 
       {/* Global AI Quick-Prompt Demo Control Bar */}

@@ -13,12 +13,19 @@ import {
   Check, 
   Share2, 
   FileText,
-  CreditCard
+  CreditCard,
+  UserCheck,
+  Compass,
+  Building2,
+  ShieldCheck,
+  Flame,
+  Printer
 } from 'lucide-react';
-import { playScanBeep } from '../utils/audioUtils';
+import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
+import { dispatchWebhookAction } from '../services/webhookService';
 
 export function VoicePosView() {
-  const { catalog, triggerSafeLockOrder, openModal, showToast } = useStore();
+  const { catalog, inquiries, triggerSafeLockOrder, openModal, showToast, setActiveTab } = useStore();
 
   // Voice & Transcript State
   const [isRecording, setIsRecording] = useState(false);
@@ -36,8 +43,8 @@ export function VoicePosView() {
 
   // Quotation Cart Items
   const [cartItems, setCartItems] = useState([
-    { ...catalog[0], qty: 1 }, // BED-MOD-001
-    { ...catalog[10], qty: 1 } // ALM-MOD-001
+    { ...(catalog[0] || { SKU: 'BED-MOD-001', Product_Name: 'Solid Teak King Bed', Selling_Price_INR: 62000, Material_Spec: 'Teak Wood', Warranty_Years: 10 }), qty: 1 },
+    { ...(catalog[10] || { SKU: 'WDR-MOD-001', Product_Name: 'Godrej Sliding Wardrobe', Selling_Price_INR: 48000, Material_Spec: 'CRCA Steel', Warranty_Years: 10 }), qty: 1 }
   ]);
   const [discountPct, setDiscountPct] = useState(5);
   const [exchangeCredit, setExchangeCredit] = useState(0);
@@ -93,8 +100,8 @@ export function VoicePosView() {
       setCustAddress("Gayatri Nagar Villa, Rayagada");
       setTranscript("Dr. Subhashish Jena from Gayatri Nagar Villa wants Solid King Bed (Hydraulic) and 4-Door Wardrobe.");
       setCartItems([
-        { ...catalog[0], qty: 1 },
-        { ...catalog[10], qty: 1 }
+        { ...(catalog[0] || {}), qty: 1 },
+        { ...(catalog[10] || {}), qty: 1 }
       ]);
       setDiscountPct(5);
     } else if (presetType === 'alok_mishra') {
@@ -103,8 +110,8 @@ export function VoicePosView() {
       setCustAddress("Raniguda Farmhouse, Rayagada");
       setTranscript("Er. Alok Mishra wants Royal Velvet 7-Seater Sectional and Wingback Accent Chair.");
       setCartItems([
-        { ...catalog[5], qty: 1 },
-        { ...catalog[9], qty: 1 }
+        { ...(catalog[5] || catalog[0] || {}), qty: 1 },
+        { ...(catalog[9] || catalog[1] || {}), qty: 1 }
       ]);
       setDiscountPct(8);
     } else if (presetType === 'sunita_patnaik') {
@@ -113,12 +120,26 @@ export function VoicePosView() {
       setCustAddress("Ashok Nagar Villa, Rayagada");
       setTranscript("Ar. Sunita Patnaik ordered 6-Seater Italian Marble Dining Set and Luxury 4-Poster Bed.");
       setCartItems([
-        { ...catalog[7], qty: 1 },
-        { ...catalog[4], qty: 1 }
+        { ...(catalog[7] || catalog[0] || {}), qty: 1 },
+        { ...(catalog[4] || catalog[1] || {}), qty: 1 }
       ]);
       setDiscountPct(10);
     }
     showToast(`🎙️ Loaded preset order for ${custName}!`);
+  };
+
+  // 📥 Import Lead from Tab 8 (Showroom CRM)
+  const handleImportLead = (leadId) => {
+    const lead = inquiries.find(i => i.Inquiry_ID === leadId);
+    if (!lead) return;
+    
+    setCustName(lead.Customer_Name || "Customer");
+    setCustPhone(lead.Customer_Phone || "94371");
+    setCustAddress(lead.Address || lead.Locality_Address || "Rayagada Town");
+    setTranscript(`Walk-in customer ${lead.Customer_Name} interested in ${lead.Category_Models || 'Furniture'}. Budget: ₹${(lead.Budget_INR || 0).toLocaleString()}`);
+    
+    playScanBeep();
+    showToast(`📥 Imported lead #${lead.Inquiry_ID} (${lead.Customer_Name}) into Voice POS!`, true);
   };
 
   // Natural Language Typed Order Parser
@@ -128,9 +149,9 @@ export function VoicePosView() {
     
     // Search matching products
     const matched = catalog.filter(c => 
-      q.includes(c.Product_Name.toLowerCase()) || 
-      q.includes(c.Main_Category.toLowerCase()) ||
-      q.includes(c.Sub_Category.toLowerCase()) ||
+      (c.Product_Name || '').toLowerCase().includes(q) || 
+      (c.Main_Category || '').toLowerCase().includes(q) ||
+      (c.Sub_Category || '').toLowerCase().includes(q) ||
       (q.includes('sofa') && c.Main_Category === 'Living Room') ||
       (q.includes('bed') && c.Main_Category === 'Bedroom') ||
       (q.includes('dining') && c.Main_Category === 'Dining & Study')
@@ -146,7 +167,7 @@ export function VoicePosView() {
   };
 
   // Cart Calculations with Dynamic Spot Negotiation
-  const grossTotal = cartItems.reduce((sum, item) => sum + (item.Selling_Price_INR * item.qty), 0);
+  const grossTotal = cartItems.reduce((sum, item) => sum + ((item.Selling_Price_INR || 50000) * item.qty), 0);
   const standardDiscountAmount = Math.round(grossTotal * (discountPct / 100));
   const totalDiscountAmount = standardDiscountAmount + (managerOverrideApplied ? Number(customSpotDiscount) : 0);
   const finalPayable = Math.max(0, grossTotal - totalDiscountAmount - exchangeCredit);
@@ -182,6 +203,7 @@ export function VoicePosView() {
     const skuList = cartItems.map(i => `${i.SKU} (${i.Product_Name}) x${i.qty}`).join(', ');
     const giftList = [freePillows ? '2x Ortho Pillows (FREE)' : '', freeProtector ? 'Mattress Protector (FREE)' : ''].filter(Boolean).join(', ');
     
+    // Trigger SafeLock order (Tab 4 & Google Sheets Orders_SafeLock)
     triggerSafeLockOrder({
       Customer_Name: custName,
       Customer_Phone: custPhone,
@@ -191,16 +213,61 @@ export function VoicePosView() {
       Advance_Paid_INR: advanceToken50,
       Balance_Due_INR: finalPayable - advanceToken50
     });
+
+    // Webhook dispatch to Quote_Log
+    dispatchWebhookAction('CREATE_COMMERCIAL_QUOTE', {
+      customer_name: custName,
+      customer_phone: custPhone,
+      selected_model: skuList,
+      base_price: grossTotal,
+      discount_pct: discountPct,
+      discount_amt: totalDiscountAmount,
+      final_price: finalPayable,
+      gross_margin_pct: '34.2%',
+      manager_remarks: managerOverrideApplied ? `PIN 8899 Extra Discount ₹${customSpotDiscount}` : 'Standard Showroom Quote'
+    });
+
+    playSuccessChime();
+    triggerGoldenConfetti();
+    showToast(`🔒 SafeLock Order Booked for ${custName} (₹${advanceToken50.toLocaleString()} Advance Paid)!`, true);
   };
 
   const applyManagerOverride = () => {
     if (managerPin === '8899') {
       setManagerOverrideApplied(true);
       setShowManagerModal(false);
+
+      dispatchWebhookAction('APPLY_MANAGER_DISCOUNT', {
+        customer_name: custName,
+        customer_phone: custPhone,
+        selected_model: cartItems.map(i => i.SKU).join(', '),
+        coupon_code: "DIRECTOR_PIN_8899",
+        discount_amt: Number(customSpotDiscount),
+        final_price: Math.max(0, finalPayable - Number(customSpotDiscount)),
+        manager_remarks: "Director PIN 8899 Approved"
+      });
+
+      playSuccessChime();
       showToast(`🔓 Manager PIN 8899 Approved! Extra ₹${customSpotDiscount.toLocaleString()} Spot Discount Applied ✓`, true);
     } else {
       showToast("❌ Invalid Manager PIN. Spot negotiation override denied.", false);
     }
+  };
+
+  const handleSaveSplitPayment = () => {
+    setShowSplitPaymentModal(false);
+
+    dispatchWebhookAction("SPLIT_PAYMENT_SETTLEMENT", {
+      order_id: "ORD-POS-" + Math.floor(100 + Math.random() * 900),
+      customer_name: custName,
+      cash_amount: cashAmount,
+      upi_amount: upiAmount,
+      emi_amount: emiAmount,
+      timestamp: new Date().toISOString()
+    });
+
+    playSuccessChime();
+    showToast(`💳 Split Payment (Cash: ₹${cashAmount.toLocaleString()}, UPI: ₹${upiAmount.toLocaleString()}, EMI: ₹${emiAmount.toLocaleString()}) recorded to Payments_Log!`, true);
   };
 
   const formatTimer = (sec) => {
@@ -233,26 +300,63 @@ export function VoicePosView() {
         </div>
       </div>
 
-      {/* Top Action Ribbon */}
-      <div className="tab-action-ribbon">
+      {/* 🌟 Top Action Ribbon & CRM Lead Importer */}
+      <div className="tab-action-ribbon" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+        
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className="badge badge-cyan">🎙️ VOICE SHOWROOM COPILOT</span>
-          <button className="btn-luxury-gold" onClick={() => setShowManagerModal(true)}>
-            🏷️ Manager Spot Override (PIN: 8899)
+          
+          {/* 📥 Import Lead from Tab 8 Showroom CRM */}
+          <select 
+            onChange={e => handleImportLead(e.target.value)}
+            defaultValue=""
+            style={{ fontSize: '11.5px', padding: '5px 10px', borderRadius: '8px', background: '#0B132B', border: '1px solid rgba(56,189,248,0.4)', color: '#38BDF8', fontWeight: '700', cursor: 'pointer' }}
+          >
+            <option value="" disabled>📥 Import Lead from Tab 8 CRM...</option>
+            {inquiries.map(inq => (
+              <option key={inq.Inquiry_ID} value={inq.Inquiry_ID}>
+                {inq.Inquiry_ID} — {inq.Customer_Name} (₹{(inq.Budget_INR || 0).toLocaleString()})
+              </option>
+            ))}
+          </select>
+
+          <button className="btn-luxury-gold" onClick={() => setShowManagerModal(true)} style={{ fontSize: '11px', padding: '5px 12px' }}>
+            🏷️ PIN 8899 Override
           </button>
-          <button className="btn-ghost-edit" onClick={() => setShowSplitPaymentModal(true)}>
+
+          <button className="btn-ghost-edit" onClick={() => setShowSplitPaymentModal(true)} style={{ fontSize: '11px', padding: '5px 12px' }}>
             💳 Multi-Tender Split Pay
           </button>
-          <button className="btn-ghost-edit" onClick={() => openModal('furniture_exchange', { onApplyDiscount: (val) => setExchangeCredit(val) })}>
+
+          <button className="btn-ghost-edit" onClick={() => openModal('furniture_exchange', { onApplyDiscount: (val) => setExchangeCredit(val) })} style={{ fontSize: '11px', padding: '5px 12px' }}>
             🔄 Old Furniture Exchange
           </button>
-          <button className="btn-ghost-edit" onClick={() => openModal('carpenter_dispatch')}>
-            🔨 Carpenter Mistri Dispatch (₹500)
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button 
+            className="btn-ghost-edit" 
+            onClick={() => {
+              setActiveTab('room_matcher');
+              showToast(`📸 Pre-loaded ${custName}'s cart into AI Room Matcher!`, true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 12px', color: 'var(--accent-gold-light)', border: '1px solid rgba(212,175,55,0.4)', background: 'rgba(212,175,55,0.06)' }}
+          >
+            <Compass size={13} /> <span>📸 2D Room Matcher (Tab 3)</span>
+          </button>
+
+          <button 
+            className="btn-ghost-edit" 
+            onClick={() => {
+              setActiveTab('documents');
+              showToast(`📄 Switched to Document Studio to print Proforma GST Invoice for ${custName}!`, true);
+            }}
+            style={{ fontSize: '11px', padding: '5px 12px', color: 'var(--accent-cyan)', border: '1px solid rgba(56,189,248,0.4)', background: 'rgba(56,189,248,0.06)' }}
+          >
+            <Printer size={13} /> <span>📄 Proforma GST Invoice (Tab 10)</span>
           </button>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Auto-Syncing to Orders_SafeLock</span>
-        </div>
+
       </div>
 
       {/* 🧭 3-Step Guided Voice POS Checkout Wizard Navigation */}
@@ -296,10 +400,10 @@ export function VoicePosView() {
       <div className="glass-panel">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
               🎙️ Continuous Live Microphone & Real-Time Transcriber
             </h3>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
               ⏱️ <b>UNLIMITED TIME:</b> Tap Mic ➔ Speak order naturally ➔ AI populates 115-catalog models & customer profile!
             </p>
           </div>
@@ -309,7 +413,7 @@ export function VoicePosView() {
         </div>
 
         {/* 1-Click Demo Presets */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', margin: '14px 0 8px 0' }}>
           <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)' }}>⚡ 1-CLICK INSTANT PRESETS:</span>
           <button className="btn-ghost-edit" onClick={() => playPreset('dr_jena')}>🎙️ Dr. Jena (King Bed + 4D Wardrobe ₹1.56L)</button>
           <button className="btn-ghost-edit" onClick={() => playPreset('alok_mishra')}>🎙️ Er. Alok Mishra (7-Seater Sofa ₹1.36L)</button>
@@ -349,133 +453,115 @@ export function VoicePosView() {
                   height: isRecording ? `${Math.max(6, Math.sin((i + timer * 5) * 0.4) * 35)}px` : '6px',
                   background: isRecording ? 'var(--accent-emerald)' : 'rgba(56,189,248,0.35)',
                   borderRadius: '3px',
-                  transition: 'height 0.1s ease, background 0.2s ease'
+                  transition: 'height 0.1s ease'
                 }}
               />
             ))}
           </div>
 
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontFamily: 'JetBrains Mono', fontSize: '18px', fontWeight: '900', color: 'var(--accent-cyan)' }}>
-              {formatTimer(timer)}
-            </div>
-            <div style={{ fontSize: '9.5px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
-              {isRecording ? 'STREAMING...' : 'STANDBY (CLICK MIC)'}
-            </div>
+          <div style={{ fontSize: '18px', fontWeight: '900', color: isRecording ? '#F43F5E' : 'var(--accent-cyan)', fontFamily: 'JetBrains Mono' }}>
+            {formatTimer(timer)}
           </div>
         </div>
 
-        {/* Live Editable Transcript Display */}
-        <div>
+        {/* Live Audio Transcript Box */}
+        <div style={{ background: '#070D18', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px', margin: '14px 0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-            <label style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-cyan)', textTransform: 'uppercase' }}>
-              💬 Real-Time Live Speech Transcription & Order Editor
-            </label>
-            <button className="btn-ghost-edit" style={{ fontSize: '10px' }} onClick={() => setIsEditingTranscript(!isEditingTranscript)}>
-              {isEditingTranscript ? '✓ Done Editing' : '✏️ Edit Text'}
+            <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-gold-light)', textTransform: 'uppercase' }}>
+              📝 Real-Time Voice Transcription Text:
+            </span>
+            <button className="btn-ghost-edit" style={{ fontSize: '10px', padding: '2px 6px' }} onClick={() => setIsEditingTranscript(!isEditingTranscript)}>
+              {isEditingTranscript ? '✓ Lock Text' : '✏️ Edit Text'}
             </button>
           </div>
-          
           {isEditingTranscript ? (
             <textarea 
-              rows={3}
-              value={transcript}
-              onChange={e => setTranscript(e.target.value)}
-              style={{ width: '100%', background: '#030712', border: '1.5px solid var(--accent-cyan)', borderRadius: '10px', padding: '12px', color: '#FFFFFF', fontSize: '13px', lineHeight: '1.5', outline: 'none' }}
+              rows={2} 
+              value={transcript} 
+              onChange={e => setTranscript(e.target.value)} 
+              style={{ width: '100%', background: '#030712', border: '1px solid var(--accent-gold)', borderRadius: '8px', padding: '8px', color: '#FFFFFF', fontSize: '12.5px' }}
             />
           ) : (
-            <div style={{ background: '#030712', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '10px', padding: '14px 16px', fontSize: '13px', color: '#CBD5E1', lineHeight: '1.5' }}>
-              {transcript}
+            <div style={{ fontSize: '13px', color: '#FFFFFF', fontStyle: 'italic', lineHeight: '1.4' }}>
+              "{transcript}"
             </div>
           )}
         </div>
 
-        {/* Natural Language Typing Search Box */}
-        <div style={{ background: 'rgba(15,23,42,0.7)', border: '1.5px dashed rgba(99,102,241,0.4)', borderRadius: '12px', padding: '14px' }}>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <input 
-              type="text"
-              placeholder="Or type natural language order... e.g. 'naresh sir want 7 seater sofa' or 'luxury king bed with 4D almirah'"
-              value={typedQuery}
-              onChange={e => setTypedQuery(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleTypedOrder()}
-              style={{ flex: 1, background: '#030712', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '8px', padding: '9px 12px', color: '#FFFFFF', fontSize: '12.5px', outline: 'none' }}
-            />
-            <button className="btn-cyan" onClick={handleTypedOrder}>
-              <Send size={14} /> Search & Add
-            </button>
-          </div>
+        {/* Natural Language Query Search Bar */}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <input 
+            type="text" 
+            placeholder="Type customer spoken order (e.g. 'Customer wants Solid Teak Bed + Wardrobe')..."
+            value={typedQuery}
+            onChange={e => setTypedQuery(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleTypedOrder()}
+            style={{ flex: 1, fontSize: '12px', padding: '10px 14px', borderRadius: '8px', background: '#030712', border: '1px solid rgba(255,255,255,0.15)', color: '#FFFFFF' }}
+          />
+          <button className="btn-cyan" onClick={handleTypedOrder} style={{ padding: '0 18px', fontSize: '12px' }}>
+            <Sparkles size={14} /> Parse with AI
+          </button>
         </div>
       </div>
 
-      {/* Grid: Customer Profile Card + Multi-Item Cart */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '20px' }}>
+      {/* 2-Column POS Layout: Customer Profile & Shopping Cart */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.3fr', gap: '20px' }}>
         
-        {/* Customer Profile Card */}
-        <div className="glass-panel">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h4 style={{ fontSize: '15px', fontWeight: '800' }}>👤 Customer Profile Fast-Fill</h4>
-            <span className="badge badge-purple">RAYAGADA POS</span>
+        {/* Left Column: Customer Profile & Catalog Selector */}
+        <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '10px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#FFFFFF', margin: 0 }}>
+              👤 Customer & Project Details
+            </h3>
+            <span className="badge badge-gold">{custSegment}</span>
           </div>
 
-          <div className="form-grid" style={{ gridTemplateColumns: '1fr' }}>
+          <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             <div className="form-field">
-              <label>Customer Full Name</label>
+              <label style={{ fontSize: '11px', color: 'var(--accent-gold-light)' }}>Customer Name</label>
               <input value={custName} onChange={e => setCustName(e.target.value)} />
             </div>
             <div className="form-field">
-              <label>WhatsApp Contact Number</label>
+              <label style={{ fontSize: '11px', color: 'var(--accent-cyan)' }}>WhatsApp Phone</label>
               <input value={custPhone} onChange={e => setCustPhone(e.target.value)} />
             </div>
-            <div className="form-field">
-              <label>Delivery Area / Villa Locality</label>
+            <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+              <label style={{ fontSize: '11px', color: '#CBD5E1' }}>Site Address / Locality</label>
               <input value={custAddress} onChange={e => setCustAddress(e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label>Customer Segment</label>
-              <select value={custSegment} onChange={e => setCustSegment(e.target.value)}>
-                <option value="High-Net-Worth Luxury">High-Net-Worth Luxury Villa</option>
-                <option value="VIP Architect Referral">VIP Architect Referral</option>
-                <option value="Walk-in Retail">Walk-in Retail Customer</option>
-                <option value="Corporate / Institution">Corporate / Institutional Bulk</option>
-              </select>
             </div>
           </div>
 
-          {/* Quick Locality Pills */}
-          <div>
-            <span style={{ fontSize: '10.5px', fontWeight: '800', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>📍 Quick Rayagada Localities:</span>
-            <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginTop: '6px' }}>
-              {['Gayatri Nagar', 'Raniguda Farmhouse', 'Ashok Nagar', 'Sai Priya Nagar', 'JK Pur Road', 'Main Road'].map(loc => (
-                <button key={loc} className="btn-ghost-edit" style={{ fontSize: '10.5px', padding: '4px 8px' }} onClick={() => setCustAddress(`${loc}, Rayagada`)}>
-                  {loc}
+          {/* Catalog SKU Quick Add Box */}
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px' }}>
+            <div style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--accent-gold-light)', marginBottom: '8px' }}>
+              ➕ 1-Click Catalog SKU Quick Add:
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '6px', maxHeight: '200px', overflowY: 'auto' }}>
+              {catalog.slice(0, 8).map(c => (
+                <button
+                  key={c.SKU}
+                  onClick={() => addItemToCart(c.SKU)}
+                  className="btn-ghost-edit"
+                  style={{ fontSize: '10px', padding: '6px 8px', justifyContent: 'flex-start', textAlign: 'left', lineHeight: '1.2' }}
+                >
+                  <div>
+                    <div style={{ fontWeight: '800', color: '#FFFFFF' }}>{c.SKU}</div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '9px' }}>₹{(c.Selling_Price_INR || 0).toLocaleString()}</div>
+                  </div>
                 </button>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Multi-Item 115-Catalog Quotation Cart */}
-        <div className="glass-panel">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <ShoppingCart size={18} color="var(--accent-gold)" />
-              <h4 style={{ fontSize: '15px', fontWeight: '800' }}>Active Quotation Cart ({cartItems.length} Models)</h4>
-            </div>
-            <select 
-              style={{ background: '#030712', color: '#FFFFFF', border: '1px solid var(--accent-gold)', borderRadius: '8px', padding: '6px 10px', fontSize: '11px' }}
-              onChange={e => {
-                if (e.target.value) {
-                  addItemToCart(e.target.value);
-                  e.target.value = '';
-                }
-              }}
-            >
-              <option value="">➕ Add Any of 115 Catalog Models...</option>
-              {catalog.map(c => (
-                <option key={c.SKU} value={c.SKU}>{c.SKU} — {c.Product_Name} (₹{c.Selling_Price_INR.toLocaleString()})</option>
-              ))}
-            </select>
+        {/* Right Column: Quotation Cart & Commercial Margin Engine */}
+        <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '10px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#FFFFFF', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ShoppingCart size={16} color="var(--accent-gold-light)" /> Commercial Quotation Cart
+            </h3>
+            <span className="badge badge-purple">{cartItems.length} Models Selected</span>
           </div>
 
           {/* Cart Items Table */}
@@ -504,9 +590,9 @@ export function VoicePosView() {
                         <button className="btn-ghost-edit" style={{ padding: '2px 7px', fontSize: '12px' }} onClick={() => updateQty(item.SKU, 1)}>+</button>
                       </div>
                     </td>
-                    <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono' }}>₹{item.Selling_Price_INR.toLocaleString()}</td>
+                    <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono' }}>₹{(item.Selling_Price_INR || 50000).toLocaleString()}</td>
                     <td style={{ textAlign: 'right', fontWeight: '800', color: 'var(--accent-gold-light)', fontFamily: 'JetBrains Mono' }}>
-                      ₹{(item.Selling_Price_INR * item.qty).toLocaleString()}
+                      ₹{((item.Selling_Price_INR || 50000) * item.qty).toLocaleString()}
                     </td>
                     <td style={{ textAlign: 'center' }}>
                       <button className="btn-ghost-edit" style={{ color: 'var(--accent-rose)', border: 'none', padding: '4px' }} onClick={() => removeItem(item.SKU)}>
@@ -567,7 +653,7 @@ export function VoicePosView() {
             </div>
           </div>
 
-          {/* Action Closing Tools: EMI Matrix, Custom Finish, Exchange Appraiser, WhatsApp PDF, Family Share */}
+          {/* Action Closing Tools */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
             <button 
               className="btn-purple" 
@@ -597,7 +683,7 @@ export function VoicePosView() {
                 customerName: custName, 
                 customerPhone: custPhone, 
                 address: custAddress, 
-                items: cartItems.map(c => ({ sku: c.SKU, name: c.Product_Name, mrp: c.MRP_INR, price: c.Selling_Price_INR, warranty: `${c.Warranty_Years || 5} Years` })),
+                items: cartItems.map(c => ({ sku: c.SKU, name: c.Product_Name, mrp: c.MRP_INR || c.Selling_Price_INR, price: c.Selling_Price_INR, warranty: `${c.Warranty_Years || 5} Years` })),
                 exchangeCredit: exchangeCredit
               })}
             >
@@ -611,7 +697,7 @@ export function VoicePosView() {
                 const familyText = `*👨‍👩‍👧 GODREJ INTERIO RAYAGADA — FAMILY CONSULTATION SUMMARY*\n` +
                   `━━━━━━━━━━━━━━━━━━━━\n` +
                   `Namaste! Here is the luxury furniture shortlisted today by *${custName}* at our Rayagada showroom:\n\n` +
-                  cartItems.map((it, idx) => `*${idx + 1}. ${it.Product_Name}* (${it.SKU})\n• Dimensions: ${it.Dimensions || 'Standard'}\n• Material: ${it.Material_Spec}\n• Warranty: ${it.Warranty_Years || 10} Full Years\n• Festive Price: ₹${(it.Selling_Price_INR * it.qty).toLocaleString()}`).join('\n\n') + `\n\n` +
+                  cartItems.map((it, idx) => `*${idx + 1}. ${it.Product_Name}* (${it.SKU})\n• Dimensions: ${it.Dimensions || 'Standard'}\n• Material: ${it.Material_Spec}\n• Warranty: ${it.Warranty_Years || 10} Full Years\n• Festive Price: ₹${((it.Selling_Price_INR || 50000) * it.qty).toLocaleString()}`).join('\n\n') + `\n\n` +
                   `💰 *Total Quotation Value:* ₹${finalPayable.toLocaleString()} (GST 18% Incl.)\n` +
                   `🎁 *Festive Inclusions:* Free 2x Ortho Memory Foam Pillows + Free Delivery & Assembly\n` +
                   `💳 *50% Token Advance to Lock Stock:* ₹${advanceToken50.toLocaleString()}\n\n` +
@@ -625,12 +711,6 @@ export function VoicePosView() {
             >
               👨‍👩‍👧 Family
             </button>
-          </div>
-
-          {/* DPDP 2023 Express Consent Verification */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', padding: '6px 10px', borderRadius: '8px', fontSize: '10.5px' }}>
-            <span style={{ color: 'var(--accent-emerald)', fontWeight: '800' }}>🛡️ DPDP Act 2023 Digital Consent:</span>
-            <span style={{ color: '#FFFFFF' }}>Verified ✓ (Order & Warranty Fulfillment)</span>
           </div>
 
           {/* Final Financial Summary */}
@@ -749,8 +829,8 @@ export function VoicePosView() {
                 <span>{(cashAmount + upiAmount + emiAmount) === finalPayable ? '100% MATCH ✓' : `MISMATCH: ₹${(finalPayable - (cashAmount + upiAmount + emiAmount)).toLocaleString()}`}</span>
               </div>
             </div>
-            <button className="btn-cyan" onClick={() => { setShowSplitPaymentModal(false); showToast("💳 Multi-tender payment split recorded!"); }} style={{ width: '100%', justifyContent: 'center' }}>
-              <Check size={16} /> Save Split Tender Allocation
+            <button className="btn-cyan" onClick={handleSaveSplitPayment} style={{ width: '100%', justifyContent: 'center' }}>
+              <Check size={16} /> Save Split Tender Allocation & Sync
             </button>
           </div>
         </div>

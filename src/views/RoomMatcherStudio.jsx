@@ -28,14 +28,24 @@ import {
   Eye,
   AlertTriangle,
   ChevronRight,
-  CreditCard
+  CreditCard,
+  Mic
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
 import { calculateRoomSpatialSynergy, getFilteredCatalogForMode } from '../utils/spatialMath';
 
 export function RoomMatcherStudio() {
-  const { catalog, triggerSafeLockOrder, showToast, openModal } = useStore();
+  const { 
+    catalog, 
+    inquiries, 
+    triggerSafeLockOrder, 
+    showToast, 
+    openModal, 
+    setActiveTab,
+    syncWithGoogleSheets,
+    isSyncing
+  } = useStore();
 
   const fileInputRef = useRef(null);
   const canvasRef = useRef(null);
@@ -97,6 +107,22 @@ export function RoomMatcherStudio() {
   const [scanProgress, setScanProgress] = useState(100);
   const [isEditingParams, setIsEditingParams] = useState(false);
 
+  // 📥 1-Click Import Lead from Tab 8 (Showroom CRM)
+  const handleImportLead = (leadId) => {
+    const lead = inquiries.find(i => i.Inquiry_ID === leadId);
+    if (!lead) return;
+
+    setCustomerName(lead.Customer_Name || "Customer");
+    setCustomerPhone(lead.Customer_Phone || "94371");
+    setCustomerAddress(lead.Address || lead.Locality_Address || "Rayagada Town");
+    if (lead.Budget_INR) {
+      setCustomerBudget(lead.Budget_INR);
+      handleAutoAssembleBudget(lead.Budget_INR);
+    }
+    playScanBeep();
+    showToast(`📥 Imported lead #${lead.Inquiry_ID} (${lead.Customer_Name}) into 2D Room Matcher!`, true);
+  };
+
   // Sample Presets
   const samplePresets = [
     {
@@ -146,10 +172,10 @@ export function RoomMatcherStudio() {
   ];
 
   // Resolve Products based on mode
-  const piece1 = catalog.find(c => c.SKU === item1Sku) || catalog[0];
-  const piece2 = catalog.find(c => c.SKU === item2Sku) || catalog[1] || catalog[0];
-  const piece3 = catalog.find(c => c.SKU === item3Sku) || catalog[2] || catalog[0];
-  const singlePiece = catalog.find(c => c.SKU === singleSku) || catalog.find(c => c.Main_Category?.includes('Living') || c.Product_Name?.includes('Sofa')) || catalog[0];
+  const piece1 = catalog.find(c => c.SKU === item1Sku) || catalog[0] || {};
+  const piece2 = catalog.find(c => c.SKU === item2Sku) || catalog[1] || catalog[0] || {};
+  const piece3 = catalog.find(c => c.SKU === item3Sku) || catalog[2] || catalog[0] || {};
+  const singlePiece = catalog.find(c => c.SKU === singleSku) || catalog.find(c => (c.Main_Category || '').includes('Living') || (c.Product_Name || '').includes('Sofa')) || catalog[0] || {};
 
   const activeItems = categoryMode === 'ALL' ? [piece1, piece2, piece3] : [singlePiece];
 
@@ -161,12 +187,12 @@ export function RoomMatcherStudio() {
 
   // Financial Calculations
   const totalMRP = categoryMode === 'ALL' 
-    ? (piece1.MRP_INR + piece2.MRP_INR + piece3.MRP_INR)
-    : singlePiece.MRP_INR;
+    ? ((piece1.MRP_INR || 75000) + (piece2.MRP_INR || 55000) + (piece3.MRP_INR || 35000))
+    : (singlePiece.MRP_INR || 60000);
 
   const totalSelling = categoryMode === 'ALL'
-    ? (piece1.Selling_Price_INR + piece2.Selling_Price_INR + piece3.Selling_Price_INR)
-    : singlePiece.Selling_Price_INR;
+    ? ((piece1.Selling_Price_INR || 62000) + (piece2.Selling_Price_INR || 48000) + (piece3.Selling_Price_INR || 28000))
+    : (singlePiece.Selling_Price_INR || 50000);
 
   const comboSavings = categoryMode === 'ALL' ? Math.round(totalMRP * (comboDiscountPct / 100)) : 0;
   const suiteFinalPrice = categoryMode === 'ALL' ? (totalMRP - comboSavings) : totalSelling;
@@ -196,9 +222,9 @@ export function RoomMatcherStudio() {
 
   // ⚡ 1-Click Budget-to-Suite Auto-Assembler Logic
   const handleAutoAssembleBudget = (targetBudget = customerBudget) => {
-    const beds = catalog.filter(c => c.Main_Category?.includes('Bedroom') || c.Product_Name?.includes('Bed') || c.SKU?.startsWith('BED'));
-    const almirahs = catalog.filter(c => c.Main_Category?.includes('Storage') || c.Product_Name?.includes('Almirah') || c.SKU?.startsWith('ALM'));
-    const accents = catalog.filter(c => c.Main_Category?.includes('Seating') || c.Product_Name?.includes('Chair') || c.SKU?.startsWith('CHR') || c.SKU?.startsWith('SOF'));
+    const beds = catalog.filter(c => (c.Main_Category || '').includes('Bedroom') || (c.Product_Name || '').includes('Bed') || (c.SKU || '').startsWith('BED'));
+    const almirahs = catalog.filter(c => (c.Main_Category || '').includes('Storage') || (c.Product_Name || '').includes('Almirah') || (c.SKU || '').startsWith('ALM'));
+    const accents = catalog.filter(c => (c.Main_Category || '').includes('Seating') || (c.Product_Name || '').includes('Chair') || (c.SKU || '').startsWith('CHR') || (c.SKU || '').startsWith('SOF'));
 
     let bestCombo = null;
     let maxSpend = 0;
@@ -211,7 +237,7 @@ export function RoomMatcherStudio() {
     for (const b of bList) {
       for (const a of aList) {
         for (const c of cList) {
-          const comboMRP = b.MRP_INR + a.MRP_INR + c.MRP_INR;
+          const comboMRP = (b.MRP_INR || 70000) + (a.MRP_INR || 55000) + (c.MRP_INR || 30000);
           const comboPrice = Math.round(comboMRP * discountFactor);
           if (comboPrice <= targetBudget && comboPrice > maxSpend) {
             maxSpend = comboPrice;
@@ -296,24 +322,20 @@ export function RoomMatcherStudio() {
   // 1-Click Convert Suite to SafeLock Order
   const handleLockSuiteCombo = () => {
     triggerSafeLockOrder({
-      customerName: customerName,
-      customerPhone: customerPhone,
-      address: customerAddress,
-      designerId: "VIP-ARC-001 (Ar. Sunita Patnaik)",
-      sku: categoryMode === 'ALL' 
+      Customer_Name: customerName,
+      Customer_Phone: customerPhone,
+      Project_Address: customerAddress,
+      Ordered_SKU: categoryMode === 'ALL' 
         ? `${piece1.SKU} + ${piece2.SKU} + ${piece3.SKU} (3-Item Suite)`
         : `${singlePiece.SKU} (${singlePiece.Product_Name})`,
-      totalAmount: suiteFinalPrice,
-      advancePaid: tokenAdvance50Pct,
-      driver: "Tophan Gouda (Tata Ace OD-18-A-1234)",
-      schedule: "Tomorrow Express 11:00 AM",
-      carpenter: "Narayana Mistri",
-      carpenterPayout: 750
+      Total_Amount_INR: suiteFinalPrice,
+      Advance_Paid_INR: tokenAdvance50Pct,
+      Balance_Due_INR: suiteFinalPrice - tokenAdvance50Pct
     });
 
     dispatchWebhookAction('CONVERT_ROOM_MATCHER_DEAL', {
       customer_name: customerName,
-      phone: customerPhone,
+      customer_phone: customerPhone,
       address: customerAddress,
       room_title: roomTitle,
       dimensions: dimensions,
@@ -322,10 +344,12 @@ export function RoomMatcherStudio() {
       total_mrp: totalMRP,
       final_price: suiteFinalPrice,
       advance_token: tokenAdvance50Pct,
-      synergy_score: spatialMetrics.synergyScore
+      synergy_score: `${spatialMetrics.synergyScore}%`
     });
 
-    showToast(`🔒 ${categoryMode === 'ALL' ? '3-Piece Bedroom Suite' : singlePiece.Product_Name} SafeLocked! 50% Token ₹${tokenAdvance50Pct.toLocaleString()} logged.`, true);
+    playSuccessChime();
+    triggerGoldenConfetti();
+    showToast(`🔒 ${categoryMode === 'ALL' ? '3-Piece Bedroom Suite' : singlePiece.Product_Name} SafeLocked! 50% Token ₹${tokenAdvance50Pct.toLocaleString()} logged to Google Sheets.`, true);
   };
 
   // Dynamic filter lighting styles
@@ -343,18 +367,78 @@ export function RoomMatcherStudio() {
 
       {/* Top Notification Bar & Quick Action Controls */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#0B132B', border: '1px solid rgba(212,175,55,0.3)', padding: '10px 16px', borderRadius: '12px', flexWrap: 'wrap', gap: '10px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <div className="badge badge-gold">
-            <Sparkles size={13} /> 2D MULTIMODAL AI ROOM FITTER & FITMENT ENGINE
+            <Sparkles size={13} /> 2D MULTIMODAL AI ROOM FITTER
           </div>
-          <span style={{ fontSize: '12.5px', color: '#CBD5E1' }}>
-            Real-time Spatial Clearance, 8-Point Vastu Alignment & Budget-to-Suite Assembler
-          </span>
+          
+          {/* 📥 Import Lead from Tab 8 Showroom CRM */}
+          <select 
+            onChange={e => handleImportLead(e.target.value)}
+            defaultValue=""
+            style={{ fontSize: '11px', padding: '4px 8px', borderRadius: '8px', background: '#030712', border: '1px solid rgba(56,189,248,0.4)', color: '#38BDF8', fontWeight: '700', cursor: 'pointer' }}
+          >
+            <option value="" disabled>📥 Import Lead from Tab 8 CRM...</option>
+            {inquiries.map(inq => (
+              <option key={inq.Inquiry_ID} value={inq.Inquiry_ID}>
+                {inq.Inquiry_ID} — {inq.Customer_Name} (₹{(inq.Budget_INR || 0).toLocaleString()})
+              </option>
+            ))}
+          </select>
+
+          <button 
+            className="btn-purple" 
+            onClick={() => openModal('schedule_mistri_visit', { lead: { Customer_Name: customerName, Customer_Phone: customerPhone, Address: customerAddress } })}
+            style={{ fontSize: '11px', padding: '4px 10px' }}
+          >
+            📐 Free Mistri Visit
+          </button>
         </div>
 
         {/* Quick Budget & Vastu Action Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           
+          <button 
+            className="btn-cyan" 
+            onClick={() => {
+              setActiveTab('voice_pos');
+              showToast(`🎙️ Transferred ${customerName}'s suite into Voice POS to book token deposit!`, true);
+            }}
+            style={{ fontSize: '11px', padding: '4px 8px' }}
+          >
+            <Mic size={12} /> <span>Voice POS (Tab 2)</span>
+          </button>
+
+          <button 
+            className="btn-emerald" 
+            onClick={() => {
+              setActiveTab('safelock');
+              showToast(`🔒 Switched to SafeLock Inventory Terminal!`, true);
+            }}
+            style={{ fontSize: '11px', padding: '4px 8px' }}
+          >
+            <ShieldCheck size={12} /> <span>SafeLock (Tab 4)</span>
+          </button>
+
+          <button 
+            className="btn-ghost-edit" 
+            onClick={() => {
+              setActiveTab('documents');
+              showToast(`📄 Switched to Document Studio to print 2D Layout Certificate for ${customerName}!`, true);
+            }}
+            style={{ fontSize: '11px', padding: '4px 8px', color: 'var(--accent-gold-light)', border: '1px solid rgba(212,175,55,0.4)', background: 'rgba(212,175,55,0.06)' }}
+          >
+            <Printer size={12} /> <span>Layout PDF (Tab 10)</span>
+          </button>
+
+          <button 
+            className="btn-ghost-edit" 
+            onClick={() => syncWithGoogleSheets()}
+            style={{ fontSize: '11px', padding: '4px 8px' }}
+          >
+            <RefreshCw size={12} className={isSyncing ? 'spin-anim' : ''} /> <span>2-Way Sync</span>
+          </button>
+
           {/* 🕉️ Live Vastu Score Badge */}
           <div 
             onClick={handleAutoAlignVastu}
@@ -373,9 +457,9 @@ export function RoomMatcherStudio() {
             <span style={{ fontSize: '13px' }}>🕉️</span>
             <div>
               <div style={{ fontSize: '10.5px', fontWeight: '900', color: vastuScore >= 90 ? 'var(--accent-emerald)' : '#F59E0B' }}>
-                {vastuScore}% VASTU APPROVED
+                {vastuScore}% VASTU
               </div>
-              <div style={{ fontSize: '8.5px', color: '#94A3B8' }}>Tap to Auto-Align ⚡</div>
+              <div style={{ fontSize: '8.5px', color: '#94A3B8' }}>Auto-Align ⚡</div>
             </div>
           </div>
 
@@ -403,7 +487,7 @@ export function RoomMatcherStudio() {
               onClick={() => handleAutoAssembleBudget(customerBudget)}
               style={{ fontSize: '10px', padding: '4px 8px' }}
             >
-              Auto-Assemble
+              Assemble
             </button>
           </div>
 

@@ -1,78 +1,149 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../../context/StoreContext';
-import { X, Check, ArrowRight, ShieldCheck, Tag, Percent, RefreshCw } from 'lucide-react';
+import { X, Check, ArrowRight, ShieldCheck, Tag, Percent, RefreshCw, Flame, User } from 'lucide-react';
+import { dispatchWebhookAction } from '../../services/webhookService';
+import { playSuccessChime } from '../../utils/audioUtils';
 
 export function EditInquiryModal({ isOpen, onClose, inquiry = {} }) {
   const { inquiries, setInquiries, showToast } = useStore();
+  const [name, setName] = useState(inquiry.Customer_Name || "");
+  const [phone, setPhone] = useState(inquiry.Customer_Phone || "");
+  const [address, setAddress] = useState(inquiry.Address || "Rayagada Town");
   const [status, setStatus] = useState(inquiry.Status || "HOT_LEAD");
   const [budget, setBudget] = useState(inquiry.Budget_INR || 85000);
+  const [aiScore, setAiScore] = useState(inquiry.AI_Intent_Score || 88);
   const [followUp, setFollowUp] = useState(inquiry.Follow_Up_Date || "Tomorrow");
   const [staff, setStaff] = useState(inquiry.Assigned_Staff || "Rakesh (Store Manager)");
   const [notes, setNotes] = useState(inquiry.Category_Models || "");
 
+  useEffect(() => {
+    if (isOpen && inquiry) {
+      setName(inquiry.Customer_Name || "");
+      setPhone(inquiry.Customer_Phone || "");
+      setAddress(inquiry.Address || "Rayagada Town");
+      setStatus(inquiry.Status || "HOT_LEAD");
+      setBudget(inquiry.Budget_INR || 85000);
+      setAiScore(inquiry.AI_Intent_Score || 88);
+      setFollowUp(inquiry.Follow_Up_Date || "Tomorrow");
+      setStaff(inquiry.Assigned_Staff || "Rakesh (Store Manager)");
+      setNotes(inquiry.Category_Models || "");
+    }
+  }, [isOpen, inquiry]);
+
   if (!isOpen) return null;
 
   const handleSave = () => {
-    setInquiries(prev => prev.map(item => {
-      if (item.Inquiry_ID === inquiry.Inquiry_ID) {
-        return {
-          ...item,
-          Status: status,
-          Budget_INR: Number(budget),
-          Follow_Up_Date: followUp,
-          Assigned_Staff: staff,
-          Category_Models: notes
-        };
-      }
-      return item;
-    }));
-    showToast(`Lead #${inquiry.Inquiry_ID} updated successfully!`);
+    const updatedLead = {
+      ...inquiry,
+      Customer_Name: name,
+      Customer_Phone: phone,
+      Address: address,
+      Status: status,
+      Budget_INR: Number(budget),
+      AI_Intent_Score: Number(aiScore),
+      Intent_Badge: Number(aiScore) >= 80 ? "HOT_LEAD 🔥" : "WARM_LEAD ⚡",
+      Follow_Up_Date: followUp,
+      Assigned_Staff: staff,
+      Category_Models: notes
+    };
+
+    setInquiries(prev => prev.map(item => item.Inquiry_ID === inquiry.Inquiry_ID ? updatedLead : item));
+
+    // Webhook 2-way sync to Google Sheets Inquiries_Log
+    dispatchWebhookAction('UPDATE_INQUIRY_LEAD', {
+      inquiry_id: inquiry.Inquiry_ID,
+      customer_name: name,
+      customer_phone: phone,
+      address: address,
+      category_models: notes,
+      budget_inr: Number(budget),
+      ai_intent_score: Number(aiScore),
+      assigned_staff: staff,
+      follow_up_date: followUp,
+      status: status,
+      timestamp: new Date().toISOString()
+    });
+
+    playSuccessChime();
+    showToast(`✅ Lead #${inquiry.Inquiry_ID} (${name}) updated & synced to Google Sheets!`, true);
     onClose();
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-card">
-        <div className="modal-header">
-          <h3>✏️ Edit Inquiry Lead #{inquiry.Inquiry_ID}</h3>
-          <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
+    <div className="modal-overlay" style={{ zIndex: 9999 }}>
+      <div className="modal-card" style={{ maxWidth: '640px', background: '#0B132B', border: '2px solid var(--accent-gold)' }}>
+        <div className="modal-header" style={{ borderBottom: '1px solid rgba(212,175,55,0.2)', paddingBottom: '12px' }}>
+          <div>
+            <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#FFFFFF', margin: 0 }}>
+              ✏️ Edit Showroom Lead (#{inquiry.Inquiry_ID})
+            </h3>
+            <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
+              Update customer requirements, buying intent score, budget & follow-up schedule
+            </p>
+          </div>
+          <button className="btn-close-modal" onClick={onClose}>✕</button>
         </div>
 
-        <div className="form-grid">
+        <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '12px', margin: '14px 0' }}>
           <div className="form-field">
-            <label>Customer Name</label>
-            <input value={inquiry.Customer_Name || ''} disabled style={{ opacity: 0.7 }} />
+            <label style={{ fontSize: '11px', color: 'var(--accent-gold-light)' }}>Customer Full Name</label>
+            <input value={name} onChange={e => setName(e.target.value)} />
           </div>
           <div className="form-field">
-            <label>Lead Status</label>
+            <label style={{ fontSize: '11px', color: 'var(--accent-cyan)' }}>WhatsApp / Mobile Phone</label>
+            <input value={phone} onChange={e => setPhone(e.target.value)} />
+          </div>
+          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+            <label style={{ fontSize: '11px', color: '#CBD5E1' }}>Locality / Project Site</label>
+            <input value={address} onChange={e => setAddress(e.target.value)} />
+          </div>
+          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+            <label style={{ fontSize: '11px', color: '#CBD5E1' }}>Requirement Notes & Models</label>
+            <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="e.g. Solid Teak Bed + Sliding Wardrobe" />
+          </div>
+          <div className="form-field">
+            <label style={{ fontSize: '11px', color: 'var(--accent-gold-light)' }}>Budget (₹)</label>
+            <input type="number" value={budget} onChange={e => setBudget(Number(e.target.value))} />
+          </div>
+          <div className="form-field">
+            <label style={{ fontSize: '11px', color: 'var(--accent-rose)' }}>AI Buying Intent ({aiScore}%)</label>
+            <select value={aiScore} onChange={e => setAiScore(Number(e.target.value))}>
+              <option value="95">95% 🔥 Hot (Ready to Buy)</option>
+              <option value="85">85% 🔥 Hot (Comparing Models)</option>
+              <option value="70">70% ⚡ Warm (House Construction)</option>
+              <option value="50">50% ❄️ Cold (Browsing Catalog)</option>
+            </select>
+          </div>
+          <div className="form-field">
+            <label style={{ fontSize: '11px', color: '#CBD5E1' }}>Lead Status</label>
             <select value={status} onChange={e => setStatus(e.target.value)}>
               <option value="HOT_LEAD">HOT LEAD 🔥 (Ready to Book)</option>
               <option value="WARM_LEAD">WARM LEAD ⚡ (Needs Room Matcher)</option>
               <option value="FOLLOW_UP">FOLLOW UP 📅 (Call Scheduled)</option>
+              <option value="CONVERTED_TO_ORDER ✓">CONVERTED TO ORDER ✓</option>
               <option value="COLD_LEAD">COLD LEAD ❄️ (Future Reference)</option>
             </select>
           </div>
           <div className="form-field">
-            <label>Budget (₹)</label>
-            <input type="number" value={budget} onChange={e => setBudget(Number(e.target.value))} />
-          </div>
-          <div className="form-field">
-            <label>Follow-Up Schedule</label>
-            <input value={followUp} onChange={e => setFollowUp(e.target.value)} />
+            <label style={{ fontSize: '11px', color: '#CBD5E1' }}>Follow-Up Schedule</label>
+            <input value={followUp} onChange={e => setFollowUp(e.target.value)} placeholder="e.g. Tomorrow 05:00 PM" />
           </div>
           <div className="form-field" style={{ gridColumn: '1 / -1' }}>
-            <label>Assigned Showroom Executive</label>
-            <input value={staff} onChange={e => setStaff(e.target.value)} />
-          </div>
-          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
-            <label>Requirement Notes / Models</label>
-            <textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} />
+            <label style={{ fontSize: '11px', color: '#CBD5E1' }}>Assigned Showroom Executive</label>
+            <select value={staff} onChange={e => setStaff(e.target.value)}>
+              <option value="Rakesh (Store Manager)">Rakesh (Store Manager)</option>
+              <option value="Sunil (Senior Sales Rep)">Sunil (Senior Sales Rep)</option>
+              <option value="Pooja (Interior Specialist)">Pooja (Interior Specialist)</option>
+            </select>
           </div>
         </div>
 
-        <button className="btn-luxury-gold" onClick={handleSave} style={{ width: '100%', justifyContent: 'center' }}>
-          <Check size={16} /> Save Lead Updates
-        </button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(212,175,55,0.2)', paddingTop: '12px' }}>
+          <button className="btn-ghost-edit" onClick={onClose}>Cancel</button>
+          <button className="btn-luxury-gold" onClick={handleSave} style={{ padding: '8px 22px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Check size={16} /> Save Changes & Sync to Google Sheets
+          </button>
+        </div>
       </div>
     </div>
   );

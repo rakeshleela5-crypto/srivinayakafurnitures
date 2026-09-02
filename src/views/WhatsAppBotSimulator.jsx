@@ -235,21 +235,40 @@ export function WhatsAppBotSimulator() {
       'BOT-22': "👑 VIP TURNKEY VILLA MILESTONE CONFIRMATION\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nNamaskar Dr. Subhashish Jena! 🙏\nYour Raniguda Farmhouse Villa Bedroom Suite is 100% staged!\n\n• Total Project Value: ₹1,56,494\n• Stage 1 (50% Booking Advance): ₹78,247 [PAID ✓]\n• Stage 2 (40% Factory Dispatch): ₹62,598 [DUE ON LOADING]\n• Stage 3 (10% Final Assembly): ₹15,649 [UPON MISTRI SIGN-OFF]\n\nShowroom Helpline: +91 93905 53301 | Shree Ganesh Enterprises"
     };
 
+    // Resolve the active order based on the selected customer filter (if any)
+    const activeOrder = selectedCustomerFilter !== 'ALL' ? orders.find(o => o.Order_ID === selectedCustomerFilter) : null;
     let formattedText = b.customTemplate || defaultBotTemplates[b.botId] || `⚡ Automated Cloud Trigger Executed: Target [${b.target}]. Status: EXECUTED_SUCCESS ✓`;
 
-    formattedText = formattedText
-      .replace(/{Customer_Name}/g, 'Dr. Subhashish Jena')
-      .replace(/{Order_ID}/g, 'ORD-8921')
-      .replace(/{Advance_Amount}/g, '78,247')
-      .replace(/{Amount}/g, '78,247')
-      .replace(/{Delivery_Date}/g, 'Today 04:30 PM')
-      .replace(/{Product_Name}/g, 'Solid King Bed (Hydraulic Storage)')
-      .replace(/{SKU}/g, 'BED-MOD-001')
-      .replace(/{Driver_Name}/g, 'Tophan Gouda')
-      .replace(/{Driver_Phone}/g, '+91 94371 55667')
-      .replace(/{Vehicle_Number}/g, 'Tata Ace (OD-18-A-1234)')
-      .replace(/{OTP}/g, '849201')
-      .replace(/{UPI_ID}/g, '9390553301@ybl');
+    // If we have an active order, inject its data into the template; otherwise fall back to static placeholders
+    if (activeOrder) {
+      formattedText = formattedText
+        .replace(/{Customer_Name}/g, activeOrder.Customer_Name || 'Customer')
+        .replace(/{Order_ID}/g, activeOrder.Order_ID || 'ORD-XXXX')
+        .replace(/{Advance_Amount}/g, activeOrder.Advance_Paid_INR?.toLocaleString() || '0')
+        .replace(/{Amount}/g, activeOrder.Total_Amount?.toLocaleString() || '0')
+        .replace(/{Delivery_Date}/g, activeOrder.Estimated_Delivery || 'TBD')
+        .replace(/{Product_Name}/g, activeOrder.Product_Name || 'Item')
+        .replace(/{SKU}/g, activeOrder.SKU || 'SKU')
+        .replace(/{Driver_Name}/g, activeOrder.Driver_Name || 'Driver')
+        .replace(/{Driver_Phone}/g, activeOrder.Driver_Phone || '+91 XXXXX XXXXX')
+        .replace(/{Vehicle_Number}/g, activeOrder.Vehicle_Number || 'Vehicle')
+        .replace(/{OTP}/g, activeOrder.Delivery_OTP || '000000')
+        .replace(/{UPI_ID}/g, activeOrder.UPI_ID || 'upi@example.com');
+    } else {
+      formattedText = formattedText
+        .replace(/{Customer_Name}/g, 'Dr. Subhashish Jena')
+        .replace(/{Order_ID}/g, 'ORD-8921')
+        .replace(/{Advance_Amount}/g, '78,247')
+        .replace(/{Amount}/g, '78,247')
+        .replace(/{Delivery_Date}/g, 'Today 04:30 PM')
+        .replace(/{Product_Name}/g, 'Solid King Bed (Hydraulic Storage)')
+        .replace(/{SKU}/g, 'BED-MOD-001')
+        .replace(/{Driver_Name}/g, 'Tophan Gouda')
+        .replace(/{Driver_Phone}/g, '+91 94371 55667')
+        .replace(/{Vehicle_Number}/g, 'Tata Ace (OD-18-A-1234)')
+        .replace(/{OTP}/g, '849201')
+        .replace(/{UPI_ID}/g, '9390553301@ybl');
+    }
 
     const newBotMsg = {
       id: Date.now(),

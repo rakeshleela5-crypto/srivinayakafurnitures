@@ -14,7 +14,13 @@ import {
   AddVipProjectModal,
   EditVipProjectModal,
   AddFloorAgingSkuModal,
-  EditFloorAgingModal
+  EditFloorAgingModal,
+  ExecutiveRevenueLedgerModal,
+  ExecutiveSafeLocksDrilldownModal,
+  ExecutiveDeliveriesDrilldownModal,
+  ExecutiveHotLeadsDrilldownModal,
+  ExecutiveArchitectsDrilldownModal,
+  CustomDateRangeModal
 } from './ExecutiveModals';
 import { WhatsAppProposalModal, EmiSchemeModal, FurnitureExchangeModal } from './ProposalAndFinanceModals';
 import { DpdpComplianceModal } from './DpdpComplianceModal';
@@ -38,6 +44,8 @@ import { FurnitureFollowUpModal } from './FurnitureFollowUpModal';
 import { SmartKitStagingModal } from './SmartKitStagingModal';
 import { EditFactoryPoModal } from './EditFactoryPoModal';
 import { FactoryPaymentVoucherModal, VendorSourcingModal } from './FactoryProcureModals';
+import { ShowroomProfitRadarModal } from './ShowroomProfitRadarModal';
+import { GeminiConfigModal } from './GeminiConfigModal';
 
 export function ModalContainer() {
   const { activeModal, modalProps, closeModal } = useStore();
@@ -78,6 +86,19 @@ export function ModalContainer() {
       <AddFloorAgingSkuModal isOpen={activeModal === 'add_floor_aging'} onClose={closeModal} />
       <EditFloorAgingModal isOpen={activeModal === 'edit_floor_aging'} onClose={closeModal} item={modalProps.item} />
 
+      {/* 📊 Executive Command Tower 5-Pillar Drill-Down Modals */}
+      <ExecutiveRevenueLedgerModal isOpen={activeModal === 'executive_revenue_ledger'} onClose={closeModal} />
+      <ExecutiveSafeLocksDrilldownModal isOpen={activeModal === 'executive_safelocks_drilldown'} onClose={closeModal} />
+      <ExecutiveDeliveriesDrilldownModal isOpen={activeModal === 'executive_deliveries_drilldown'} onClose={closeModal} />
+      <ExecutiveHotLeadsDrilldownModal isOpen={activeModal === 'executive_hotleads_drilldown'} onClose={closeModal} />
+      <ExecutiveArchitectsDrilldownModal isOpen={activeModal === 'executive_architects_drilldown'} onClose={closeModal} />
+      <CustomDateRangeModal 
+        isOpen={activeModal === 'custom_date_range'} 
+        onClose={closeModal} 
+        customRange={modalProps?.customRange} 
+        onApplyCustomRange={modalProps?.onApplyCustomRange} 
+      />
+
       {/* New Proposals & Finance Modals */}
       <WhatsAppProposalModal isOpen={activeModal === 'whatsapp_proposal' || activeModal === 'customer_proposal'} onClose={closeModal} proposalData={modalProps} />
       <EmiSchemeModal isOpen={activeModal === 'emi_scheme'} onClose={closeModal} amount={modalProps.amount} customerPhone={modalProps.customerPhone} />
@@ -114,6 +135,12 @@ export function ModalContainer() {
       <FactoryPaymentVoucherModal isOpen={activeModal === 'factory_payment_voucher'} onClose={closeModal} po={modalProps.po} />
       <VendorSourcingModal isOpen={activeModal === 'vendor_sourcing'} onClose={closeModal} />
       <ScheduleMistriVisitModal isOpen={activeModal === 'schedule_mistri_visit'} onClose={closeModal} lead={modalProps.lead} />
+      
+      {/* 💰 SHOWROOM PROFIT & MARGIN RADAR (HEART ENGINE) */}
+      <ShowroomProfitRadarModal isOpen={activeModal === 'showroom_profit_radar'} onClose={closeModal} />
+
+      {/* 🧠 GOOGLE GEMINI AI CONFIGURATION MODAL */}
+      <GeminiConfigModal isOpen={activeModal === 'gemini_config'} onClose={closeModal} />
     </>
   );
 }

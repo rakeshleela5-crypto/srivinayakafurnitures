@@ -16,7 +16,7 @@ export const STORE_METADATA = {
   accountNo: "50200088991234",
   ifsc: "HDFC0001824",
   appSheetAppId: "ebd76f5e-5611-4de4-96a4-95e71288f147",
-  defaultWebhookUrl: "https://script.google.com/macros/s/AKfycbxMyADYcU8nyWR_9a77jae7HSnx_29jgM5u7mZ1ef7Yx5cEhMtZsJoDddrOZQQAZKca/exec",
+  defaultWebhookUrl: "https://script.google.com/macros/s/AKfycbx-4MH9Dnpvgy0vSoOE42P97U1q00r9eiUz6Md-IXkPEEoJT3KdIae20diAOjNj7RTd/exec",
   spreadsheetId: "14TqQ7LR5xSNppufWFhXDGo9hANC0JV_wRukc7HlIpaI"
 };
 
@@ -2227,6 +2227,8 @@ export const INITIAL_SMARTKIT_BOXES = [
 
 // Initial Inquiries CRM Leads
 export const INITIAL_INQUIRIES = [
+  { Inquiry_ID: "INQ-AI-905", Inquiry_Date: "05-Sep-2026 01:10 AM", Customer_Name: "K. Venkat Rao (Gunupur)", Customer_Phone: "9390553301", Address: "Main Road Gunupur", Category_Models: "Grand Royal Teakwood King Bed Suite [💍 Wedding Suite]", Budget_INR: 245000, AI_Intent_Score: "99% (👑 ULTRA-VIP DIRECTOR CALL > 1.5L)", Intent_Badge: "👑 ULTRA-VIP", Follow_Up_Date: "Immediate (5 Mins)", Status: "ENGAGED_ON_MOBILE_AI", Urgency: "DIRECTOR_URGENT", Assigned_Staff: "Rakesh (Store Director)" },
+  { Inquiry_ID: "INQ-AI-904", Inquiry_Date: "04-Sep-2026 09:40 PM", Customer_Name: "Smt. Manjula Sahu", Customer_Phone: "9390553301", Address: "Gayatri Nagar, Rayagada", Category_Models: "Sereno Velvet 3-Seater Recliner Sofa [🏠 Griha Pravesh]", Budget_INR: 89000, AI_Intent_Score: "92% (HOT CONCIERGE LEAD)", Intent_Badge: "🔥 HOT CONCIERGE", Follow_Up_Date: "Tomorrow 11:00 AM", Status: "ENGAGED_ON_MOBILE_AI", Urgency: "HIGH_HOT_LEAD", Assigned_Staff: "24/7 AI Concierge" },
   { Inquiry_ID: "INQ-2026-901", Inquiry_Date: "28-Aug-2026 10:30 AM", Customer_Name: "Prof. Ananya Mishra", Customer_Phone: "9390553301", Address: "Raniguda Farmhouse, Rayagada", Category_Models: "Luxury Solid Teak Bedroom Suite", Budget_INR: 180000, AI_Intent_Score: 92, Intent_Badge: "HOT_LEAD 🔥", Follow_Up_Date: "29-Aug-2026", Status: "HOT_LEAD", Assigned_Staff: "Rakesh (Store Manager)" },
   { Inquiry_ID: "INQ-2026-902", Inquiry_Date: "28-Aug-2026 11:15 AM", Customer_Name: "Sri Tarun Patnaik (Advocate)", Customer_Phone: "9390553301", Address: "Sai Priya Nagar, Rayagada", Category_Models: "7-Seater Recliner Leatherette Sofa", Budget_INR: 110000, AI_Intent_Score: 84, Intent_Badge: "HOT_LEAD 🔥", Follow_Up_Date: "30-Aug-2026", Status: "HOT_LEAD", Assigned_Staff: "Sunil (Sales Rep)" },
   { Inquiry_ID: "INQ-2026-903", Inquiry_Date: "27-Aug-2026 04:45 PM", Customer_Name: "Dr. B. K. Padhy (Clinic)", Customer_Phone: "9390553301", Address: "JK Pur Road, Rayagada", Category_Models: "Executive Ergonomic Office Chairs & Desk", Budget_INR: 65000, AI_Intent_Score: 68, Intent_Badge: "WARM_LEAD ⚡", Follow_Up_Date: "01-Sep-2026", Status: "FOLLOW_UP", Assigned_Staff: "Rakesh (Store Manager)" }
@@ -2274,7 +2276,14 @@ export const APPSHEET_BOTS = [
   { botId: "BOT-19", name: "Showroom Sales Target vs Actual Pacer", trigger: "Real-Time Transaction", target: "Store_Sales_Targets ➔ Gauge Dial", color: "#F59E0B" },
   { botId: "BOT-20", name: "Master Apps Script Webhook 2-Way Sync Engine", trigger: "Continuous Polling / Push", target: "Google Sheets 2-Way Live Reflection", color: "#06B6D4" },
   { botId: "BOT-21", name: "Floor Aging Stock & Liquidity Sentinel Bot", trigger: "Daily 09:30 IST / Display > 45 Days", target: "Floor_Aging_Sentinel ➔ Director WhatsApp Alert", color: "#F43F5E" },
-  { botId: "BOT-22", name: "VIP Turnkey Villa Milestone Payment Bot", trigger: "On VIP Project Stage Change", target: "VIP_Villa_Projects ➔ VIP WhatsApp Receipt", color: "#8B5CF6" }
+  { botId: "BOT-22", name: "VIP Turnkey Villa Milestone Payment Bot", trigger: "On VIP Project Stage Change", target: "VIP_Villa_Projects ➔ VIP WhatsApp Receipt", color: "#8B5CF6" },
+  { botId: "BOT-23", name: "Factory PO & LR Sync Bot", trigger: "On LR Bilty Dispatched / Truck Gatepass", target: "Purchase_Orders_Log ➔ Inward_Truck_Receipts_Log (LR Sync)", color: "#D97706" },
+  { botId: "BOT-24", name: "Multi-Tender Payment & Doorstep Cash/UPI Settlement Bot", trigger: "On Split Settlement", target: "Payments_Log ➔ Daily Reconciliation", color: "#06B6D4" },
+  { botId: "BOT-25", name: "Post-Assembly 5-Star Feedback & Google Review Bot", trigger: "24h After Installation Completed", target: "Carpenter_Work_Orders ➔ VIP WhatsApp 5-Star Review & Photos", color: "#10B981" },
+  { botId: "BOT-26", name: "Abandoned Commercial Quote Follow-Up Bot", trigger: "48h–72h After Quote Generated Without SafeLock", target: "Commercial_Quotations_Log ➔ WhatsApp VIP Price-Lock Nudge & Call Task", color: "#E11D48" },
+  { botId: "BOT-27", name: "24/7 AI Concierge Abandoned Lead Recovery Bot", trigger: "2h–24h After Visitor Drops Off Without SafeLock", target: "Inquiries_Log ➔ WhatsApp Native Floor Video & Value-Add Nudge", color: "#8B5CF6" },
+  { botId: "BOT-28", name: "Showroom Profit & Margin Radar Sentinel Bot", trigger: "Daily 21:30 IST / Webhook Reconcile", target: "Profit_Radar_Audit_Log ➔ Net Margin Health Slip", color: "#10B981" },
+  { botId: "BOT-29", name: "Dealer Gross Margin & Discount Guard", trigger: "On Manager Spot Discount / Quote Saved", target: "Quote_Log ➔ Discounts_Override_Log (Floor 15% Margin Protection)", color: "#F59E0B" }
 ];
 
 // Target Sales

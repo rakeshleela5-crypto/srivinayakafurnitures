@@ -110,7 +110,7 @@ export function LogisticsEpodView() {
             className="btn-cyan"
             onClick={() => {
               const text = `📋 *GODREJ INTERIO RAYAGADA — DAILY DRIVER DISPATCH TRIP SHEET*\n\n` +
-                filteredStops.map(s => `• Stop #${s.Stop_No}: ${s.Customer_Name} (${s.Time_Slot})\n  📍 ${s.Address}\n  📦 ${s.Items}\n  💰 Balance Due: ₹${s.Amount_Due.toLocaleString()} (OTP: ${s.OTP_Code})\n`).join('\n') +
+                filteredStops.map(s => `• Stop #${s.Stop_No}: ${s.Customer_Name} (${s.Time_Slot})\n  📍 ${s.Address}\n  📦 ${s.Items}\n  💰 Balance Due: ₹${(Number(s?.Amount_Due) || 0).toLocaleString()} (OTP: ${s.OTP_Code})\n`).join('\n') +
                 `\n📞 Store Hotline: +91 9390553301`;
               window.open(`https://wa.me/919437155667?text=${encodeURIComponent(text)}`, '_blank');
               showToast("📲 Trip Sheet sent to Driver Tophan Gouda via WhatsApp!", true);
@@ -199,7 +199,7 @@ export function LogisticsEpodView() {
                   style={{ flex: 1, justifyContent: 'center', fontSize: '11px' }} 
                   onClick={() => {
                     const text = `📋 *DAILY DISPATCH MANIFEST FOR ${driver.Name.toUpperCase()}*\nVehicle: ${driver.Vehicle}\n\n` +
-                      activeManifestStops.filter(s => s.Driver.includes(driver.Name)).map(s => `• Stop #${s.Stop_No}: ${s.Customer_Name} | ${s.Time_Slot}\n  📍 ${s.Address}\n  📦 ${s.Items}\n  💰 Due: ₹${s.Amount_Due.toLocaleString()}\n`).join('\n');
+                      activeManifestStops.filter(s => s.Driver.includes(driver.Name)).map(s => `• Stop #${s.Stop_No}: ${s.Customer_Name} | ${s.Time_Slot}\n  📍 ${s.Address}\n  📦 ${s.Items}\n  💰 Due: ₹${(Number(s?.Amount_Due) || 0).toLocaleString()}\n`).join('\n');
                     window.open(`https://wa.me/91${driver.Phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
                     showToast(`📲 Trip Sheet dispatched to ${driver.Name}!`, true);
                   }}
@@ -286,7 +286,7 @@ export function LogisticsEpodView() {
                   </td>
                   <td>
                     <strong style={{ color: 'var(--accent-gold-light)', fontFamily: 'JetBrains Mono' }}>
-                      ₹{stop.Amount_Due.toLocaleString()}
+                      ₹{(Number(stop?.Amount_Due) || 0).toLocaleString()}
                     </strong>
                     <div style={{ fontSize: '9.5px', color: 'var(--accent-emerald)', fontWeight: '700' }}>
                       {stop.Payment_Mode}

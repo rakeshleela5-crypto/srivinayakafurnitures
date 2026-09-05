@@ -124,6 +124,33 @@ export function CsvImportModal({ isOpen, onClose }) {
       const productName = wordsArr.length > 0 ? wordsArr.slice(0, 5).join(' ') : "Godrej Solid Furniture";
       const materialSpec = wordsArr.length > 5 ? wordsArr.slice(5).join(' ') : "Solid Hardwood & CRCA Steel Spec";
 
+      // Extract Image URL or smart auto-match fallback photo
+      const smartImageFallback = (name, cat, spec) => {
+        const text = `${name} ${cat} ${spec}`.toLowerCase();
+        if (text.includes('bed') || text.includes('mattress') || text.includes('hydraulic')) {
+          return "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=600";
+        }
+        if (text.includes('sofa') || text.includes('couch') || text.includes('recliner') || text.includes('sectional') || text.includes('lounge')) {
+          return "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600";
+        }
+        if (text.includes('dining') || text.includes('marble') || text.includes('buffet')) {
+          return "https://images.unsplash.com/photo-1617806118233-18e1de247200?w=600";
+        }
+        if (text.includes('wardrobe') || text.includes('almirah') || text.includes('cupboard') || text.includes('closet')) {
+          return "https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=600";
+        }
+        if (text.includes('chair') || text.includes('mesh') || text.includes('office') || text.includes('desk') || text.includes('workstation')) {
+          return "https://images.unsplash.com/photo-1580481077197-9b2997172863?w=600";
+        }
+        if (text.includes('coffee') || text.includes('center table') || text.includes('end table')) {
+          return "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=600";
+        }
+        if (text.includes('dresser') || text.includes('dressing') || text.includes('mirror')) {
+          return "https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=600";
+        }
+        return "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=600";
+      };
+
       items.push({
         SKU: sku,
         Product_Name: productName,
@@ -137,7 +164,7 @@ export function CsvImportModal({ isOpen, onClose }) {
         Total_Component_Boxes: boxCount,
         Default_Supplier: supplier,
         Price_Tier: mrp >= 90000 ? "Luxury" : mrp >= 45000 ? "Premium" : "Executive",
-        Image_URL: "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=600"
+        Image_URL: smartImageFallback(productName, mainCategory, materialSpec)
       });
     }
 
@@ -188,6 +215,34 @@ export function CsvImportModal({ isOpen, onClose }) {
     const warIdx = findIndex(['warranty', 'guarantee', 'years']);
     const boxIdx = findIndex(['box', 'boxes', 'carton', 'knockdown', 'units']);
     const supIdx = findIndex(['supplier', 'vendor', 'factory', 'source']);
+    const imgIdx = findIndex(['image', 'img', 'photo', 'picture', 'url', 'link', 'drive', 'asset']);
+
+    // Smart Category & Keyword Auto-Matcher for 4K HD Furniture Assets
+    const getSmartFallbackImage = (name, cat, spec) => {
+      const text = `${name} ${cat} ${spec}`.toLowerCase();
+      if (text.includes('bed') || text.includes('mattress') || text.includes('hydraulic')) {
+        return "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=600";
+      }
+      if (text.includes('sofa') || text.includes('couch') || text.includes('recliner') || text.includes('sectional') || text.includes('lounge')) {
+        return "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600";
+      }
+      if (text.includes('dining') || text.includes('marble') || text.includes('buffet') || text.includes('dining table')) {
+        return "https://images.unsplash.com/photo-1617806118233-18e1de247200?w=600";
+      }
+      if (text.includes('wardrobe') || text.includes('almirah') || text.includes('cupboard') || text.includes('closet')) {
+        return "https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=600";
+      }
+      if (text.includes('chair') || text.includes('mesh') || text.includes('office') || text.includes('desk') || text.includes('workstation')) {
+        return "https://images.unsplash.com/photo-1580481077197-9b2997172863?w=600";
+      }
+      if (text.includes('coffee') || text.includes('center table') || text.includes('end table')) {
+        return "https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=600";
+      }
+      if (text.includes('dresser') || text.includes('dressing') || text.includes('mirror')) {
+        return "https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=600";
+      }
+      return "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=600";
+    };
 
     const items = [];
     for (let i = 1; i < lines.length; i++) {
@@ -205,6 +260,12 @@ export function CsvImportModal({ isOpen, onClose }) {
       const war = warIdx >= 0 && !isNaN(Number(cols[warIdx])) ? Number(cols[warIdx]) : 5;
       const boxes = boxIdx >= 0 && !isNaN(Number(cols[boxIdx])) ? Number(cols[boxIdx]) : 3;
       const sup = supIdx >= 0 && cols[supIdx] ? cols[supIdx] : 'Godrej Partner Hub';
+      
+      // Direct Image URL or Smart Category Fallback
+      let imageUrl = (imgIdx >= 0 && cols[imgIdx] && cols[imgIdx].trim()) ? cols[imgIdx].trim() : '';
+      if (!imageUrl || !imageUrl.startsWith('http')) {
+        imageUrl = getSmartFallbackImage(name, cat, spec);
+      }
 
       items.push({
         SKU: sku.toUpperCase(),
@@ -219,7 +280,7 @@ export function CsvImportModal({ isOpen, onClose }) {
         Total_Component_Boxes: boxes,
         Default_Supplier: sup,
         Price_Tier: mrp > 90000 ? "Luxury" : mrp > 45000 ? "Premium" : "Executive",
-        Image_URL: "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=600"
+        Image_URL: imageUrl
       });
     }
 

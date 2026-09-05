@@ -31,12 +31,15 @@ import {
   Layers,
   Maximize2,
   RotateCcw,
-  RefreshCw
+  RefreshCw,
+  Radio,
+  Wifi
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, playSafeLockSound, triggerGoldenConfetti, speakVoiceFeedback } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
 import { decodeBarcodeFromSource, decodeBarcodeFromImageFile, sanitizeBarcode } from '../utils/barcodeDecoder';
 import { generateBoxesForProduct } from '../utils/knockdownBoxGenerator';
+import { useHardwareBarcodeScanner } from '../hooks/useHardwareBarcodeScanner';
 
 export function StaffOutwardScannerView() {
   const { 
@@ -517,6 +520,21 @@ export function StaffOutwardScannerView() {
     }
   };
 
+  // ⚡ Universal Zero-Focus Bluetooth / Wireless Laser Scanner Hook
+  const {
+    lastScan: hwLastScan,
+    scanSpeedMs: hwScanSpeedMs,
+    isScanning: isHardwareScanning,
+    simulateScan: simulateHardwareScan
+  } = useHardwareBarcodeScanner({
+    onScan: (code) => {
+      handleProcessBarcodeScan(code);
+      showToast(`⚡ Bluetooth Gun Loaded: ${code} (${hwScanSpeedMs || 20}ms)`, true);
+    },
+    enabled: true,
+    enableVoice: soundProfile === 'VOICE_ANNOUNCER'
+  });
+
   // 1-Tap Fullscreen Kiosk Mode
   const toggleFullscreen = () => {
     try {
@@ -674,6 +692,41 @@ export function StaffOutwardScannerView() {
           >
             🔄 Reset
           </button>
+
+          {/* ⚡ Bluetooth / Wireless Laser Gun Status Pill */}
+          <div 
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              padding: '4px 10px', 
+              borderRadius: '20px', 
+              background: isHardwareScanning ? 'rgba(234, 179, 8, 0.25)' : 'rgba(16, 185, 129, 0.15)', 
+              border: isHardwareScanning ? '1px solid #EAB308' : '1px solid rgba(16, 185, 129, 0.4)',
+              fontSize: '11px',
+              fontWeight: '700',
+              color: isHardwareScanning ? '#EAB308' : '#10B981',
+              cursor: 'pointer'
+            }}
+            title="Bluetooth / 2.4G HID Laser Barcode Scanner is actively listening without screen touch. Tap to test."
+            onClick={() => {
+              const nextUnloaded = boxLetters.find(l => !loadedBoxes.includes(l));
+              const testCode = nextUnloaded ? `BOX-${nextUnloaded}` : `BOX-A`;
+              simulateHardwareScan(testCode);
+              showToast(`🔫 Test Laser Gun Fired: ${testCode}!`, true);
+            }}
+          >
+            <span style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              background: isHardwareScanning ? '#EAB308' : '#10B981',
+              boxShadow: isHardwareScanning ? '0 0 8px #EAB308' : '0 0 8px #10B981'
+            }}></span>
+            <Radio size={12} />
+            <span>{isHardwareScanning ? '⚡ LASER SCANNING...' : '🟢 BLUETOOTH GUN: READY (ZERO-TOUCH)'}</span>
+            {hwScanSpeedMs > 0 && <span style={{ opacity: 0.85, fontSize: '10px' }}>({hwScanSpeedMs}ms)</span>}
+          </div>
         </div>
 
         {/* Right Cross-Terminal Handoffs */}
@@ -686,7 +739,7 @@ export function StaffOutwardScannerView() {
             }}
             style={{ fontSize: '11px', padding: '5px 10px' }}
           >
-            <Truck size={12} /> <span>Logistics ePOD (Tab 6)</span>
+            <Truck size={12} /> <span>Logistics ePOD</span>
           </button>
 
           <button 
@@ -697,7 +750,7 @@ export function StaffOutwardScannerView() {
             }}
             style={{ fontSize: '11px', padding: '5px 10px' }}
           >
-            <ShieldCheck size={12} /> <span>SafeLock (Tab 4)</span>
+            <ShieldCheck size={12} /> <span>SafeLock Stock</span>
           </button>
 
           <button 
@@ -708,7 +761,7 @@ export function StaffOutwardScannerView() {
             }}
             style={{ fontSize: '11px', padding: '5px 10px' }}
           >
-            <Printer size={12} /> <span>Gatepass PDF (Tab 10)</span>
+            <Printer size={12} /> <span>Gatepass PDF</span>
           </button>
 
           <button 

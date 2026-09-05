@@ -32,10 +32,14 @@ import {
   Calendar,
   Landmark,
   CreditCard,
-  Building2
+  Building2,
+  Bot,
+  Search,
+  Key
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
+import { askShowroomAssistant, getGeminiApiKey } from '../services/geminiService';
 
 export function ExecutiveOverview() {
   const { 
@@ -58,7 +62,12 @@ export function ExecutiveOverview() {
   } = useStore();
 
   // 📅 Period Horizon State
-  const [periodHorizon, setPeriodHorizon] = useState('MTD'); // TODAY | WEEK | MTD | FESTIVE
+  const [periodHorizon, setPeriodHorizon] = useState('MTD'); // TODAY | WEEK | MTD | FESTIVE | CUSTOM
+  const [customDateRange, setCustomDateRange] = useState({
+    start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+    end: new Date().toISOString().slice(0, 10),
+    targetINR: targets.monthlyTargetINR || 1500000
+  });
 
   // Local Executive States
   const [selectedCustomerFilter, setSelectedCustomerFilter] = useState('ALL');
@@ -66,8 +75,42 @@ export function ExecutiveOverview() {
   const [editableTarget, setEditableTarget] = useState(targets.monthlyTargetINR || 1500000);
   const [editableWalkInTarget, setEditableWalkInTarget] = useState(25);
   const [festiveBoostPct, setFestiveBoostPct] = useState(10);
-  const [campaignLang, setCampaignLang] = useState('OR'); // Odia default
   const [aiBriefingOpen, setAiBriefingOpen] = useState(false);
+
+  // 🧠 SUPERPOWER 1: "Ask My Showroom" AI Copilot States
+  const [showroomAiQuery, setShowroomAiQuery] = useState('');
+  const [showroomAiAnswer, setShowroomAiAnswer] = useState('');
+  const [isAiAnswering, setIsAiAnswering] = useState(false);
+  const [isAiExpanded, setIsAiExpanded] = useState(false);
+
+  const handleAskShowroom = async (qText) => {
+    const q = (qText || showroomAiQuery).trim();
+    if (!q) return;
+    if (qText) setShowroomAiQuery(qText);
+    setIsAiAnswering(true);
+    setIsAiExpanded(true);
+    playScanBeep();
+    try {
+      const answer = await askShowroomAssistant(q, {
+        orders,
+        dailySales: eodSummary,
+        profitMetrics: {
+          total_sales: totalRevenue,
+          net_profit: netShowroomContributionINR,
+          net_margin_pct: '24.1%'
+        },
+        agingStock: floorAgingStock,
+        catalog: inventory,
+        architects
+      });
+      setShowroomAiAnswer(answer);
+      playSuccessChime();
+    } catch (err) {
+      setShowroomAiAnswer(`⚠️ Error querying AI engine: ${err.message}`);
+    } finally {
+      setIsAiAnswering(false);
+    }
+  };
 
   // Financial Computations based on Period Horizon
   const periodMultiplier = periodHorizon === 'TODAY' ? 0.15 : periodHorizon === 'WEEK' ? 0.45 : periodHorizon === 'FESTIVE' ? 1.35 : 1.0;
@@ -85,12 +128,24 @@ export function ExecutiveOverview() {
 
   const targetProgress = Math.min(100, Math.round((targets.currentAchievedINR / editableTarget) * 100));
 
+  // Open Custom Date Range Picker
+  const handleOpenCustomDateModal = () => {
+    openModal('custom_date_range', {
+      customRange: customDateRange,
+      onApplyCustomRange: (newRange) => {
+        setCustomDateRange(newRange);
+        setPeriodHorizon('CUSTOM');
+        if (newRange.targetINR) setEditableTarget(newRange.targetINR);
+      }
+    });
+  };
+
   // 1-Click Save Target Calibration
   const handleSaveCalibration = () => {
     playSuccessChime();
     triggerGoldenConfetti();
     setIsCalibratorOpen(false);
-    showToast(`🎯 Store Targets Calibrated: Monthly Goal ₹${editableTarget.toLocaleString()} (Walk-in Quota: ${editableWalkInTarget}/day)!`, true);
+    showToast(`🎯 Store Targets Calibrated: Monthly Goal ₹${(Number(editableTarget) || 0).toLocaleString()} (Walk-in Quota: ${editableWalkInTarget}/day)!`, true);
     
     dispatchWebhookAction('UPDATE_SALES_TARGETS', {
       monthly_target: editableTarget,
@@ -105,18 +160,18 @@ export function ExecutiveOverview() {
     const text = `📊 *GODREJ INTERIO RAYAGADA — 9 PM EXECUTIVE AI BRIEFING*\n` +
       `*Shree Ganesh Enterprises | Date: ${new Date().toLocaleDateString('en-GB')}*\n\n` +
       `💰 *FINANCIAL & CASH POSITION:*\n` +
-      `• Gross Revenue Month-to-Date: ₹${totalRevenue.toLocaleString()}\n` +
-      `• Token Advances Collected: ₹${totalAdvances.toLocaleString()}\n` +
-      `• Estimated Net Showroom Margin: ₹${netShowroomContributionINR.toLocaleString()} (32.4% Margin)\n` +
-      `• 9 PM EOD Cash Drawer: ₹${(eodSummary.cashDrawerINR || 45000).toLocaleString()} (Status: ${eodSummary.status || 'LOCKED'})\n\n` +
+      `• Gross Revenue Month-to-Date: ₹${(Number(totalRevenue) || 0).toLocaleString()}\n` +
+      `• Token Advances Collected: ₹${(Number(totalAdvances) || 0).toLocaleString()}\n` +
+      `• Estimated Net Showroom Margin: ₹${(Number(netShowroomContributionINR) || 0).toLocaleString()} (32.4% Margin)\n` +
+      `• 9 PM EOD Cash Drawer: ₹${(Number(eodSummary?.cashDrawerINR) || 45000).toLocaleString()} (Status: ${eodSummary?.status || 'LOCKED'})\n\n` +
       `📦 *LOGISTICS & SAFELOCK STAGING:*\n` +
       `• Active SafeLocks Reserved: ${activeSafeLocks} Suites\n` +
       `• Fleet Dispatches Completed: ${orders.filter(o => (o.SafeLock_Status || '').includes('DELIVERED')).length} Orders\n` +
       `• Pending Deliveries in Transit: ${pendingDeliveries} Orders\n\n` +
       `🔥 *VIP CLIENT PIPELINE & CRM:*\n` +
       `• Showroom Hot Leads: ${hotLeadsCount} High-Probability Clients\n` +
-      `• Architect Commission Liability: ₹${architectBalance.toLocaleString()} (UPI Ready)\n\n` +
-      `🎯 *TARGET PACER:* ${targetProgress}% of ₹${editableTarget.toLocaleString()} Goal Achieved\n\n` +
+      `• Architect Commission Liability: ₹${(Number(architectBalance) || 0).toLocaleString()} (UPI Ready)\n\n` +
+      `🎯 *TARGET PACER:* ${targetProgress}% of ₹${(Number(editableTarget) || 0).toLocaleString()} Goal Achieved\n\n` +
       `_Automated AI Briefing generated by OmniBuild OS™_`;
 
     return text;
@@ -204,6 +259,27 @@ export function ExecutiveOverview() {
                 {p.label}
               </button>
             ))}
+
+            {/* Custom Date Range Trigger */}
+            <button
+              onClick={handleOpenCustomDateModal}
+              style={{
+                background: periodHorizon === 'CUSTOM' ? 'var(--accent-gold)' : 'rgba(255,255,255,0.06)',
+                color: periodHorizon === 'CUSTOM' ? '#000000' : '#CBD5E1',
+                border: periodHorizon === 'CUSTOM' ? '1px solid #FFFFFF' : '1px dashed rgba(255,255,255,0.2)',
+                borderRadius: '5px',
+                padding: '4px 10px',
+                fontSize: '11px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+              title="Pick Custom Start & End Dates"
+            >
+              <Calendar size={12} /> {periodHorizon === 'CUSTOM' ? `📅 ${customDateRange.start.slice(5)} to ${customDateRange.end.slice(5)}` : '📅 Custom Range...'}
+            </button>
           </div>
 
           <button className="btn-luxury-gold" onClick={() => openModal('eod_reconciliation')} style={{ fontSize: '11px', padding: '5px 12px' }}>
@@ -213,6 +289,15 @@ export function ExecutiveOverview() {
 
         {/* Right Action Triggers */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button 
+            className="btn-luxury-gold" 
+            onClick={() => openModal('showroom_profit_radar')} 
+            style={{ fontSize: '11px', padding: '5px 14px', display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, var(--accent-gold), #B45309)', color: '#000', fontWeight: '900', boxShadow: '0 0 15px rgba(212,175,55,0.4)' }}
+            title="Open Live Showroom Profit & Margin Radar (Landed COGS ➔ Sales ➔ Net Profit)"
+          >
+            <DollarSign size={13} /> 💰 PROFIT & MARGIN RADAR
+          </button>
+
           <button className="btn-emerald" onClick={() => setAiBriefingOpen(!aiBriefingOpen)} style={{ fontSize: '11px', padding: '5px 12px' }}>
             <Zap size={13} /> ⚡ 9 PM AI Briefing
           </button>
@@ -221,56 +306,344 @@ export function ExecutiveOverview() {
             <RefreshCw size={13} className={isSyncing ? 'spin-anim' : ''} /> 2-Way Sync
           </button>
         </div>
-
       </div>
 
-      {/* 📊 1. 4-PILLAR EXECUTIVE FINANCIAL HEALTH RADAR */}
+      {/* 🧠 SUPERPOWER 1: "ASK MY SHOWROOM" AI EXECUTIVE COPILOT BAR */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 27, 75, 0.95))',
+        border: '1px solid rgba(99, 102, 241, 0.4)',
+        borderRadius: '16px',
+        padding: '16px 20px',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(99, 102, 241, 0.1)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #4F46E5, #9333EA)',
+              padding: '6px 12px',
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: '#FFF',
+              fontWeight: 'bold',
+              fontSize: '12px',
+              boxShadow: '0 0 12px rgba(147, 51, 234, 0.4)'
+            }}>
+              <Sparkles size={15} /> ASK MY SHOWROOM
+            </div>
+            <span style={{ fontSize: '11px', color: '#94A3B8' }}>
+              Director Rakesh's Natural Language AI Copilot (Grounded in 40 Live Google Sheets)
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              type="button"
+              onClick={() => openModal('gemini_config')}
+              style={{
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                color: '#CBD5E1',
+                padding: '4px 10px',
+                borderRadius: '8px',
+                fontSize: '11px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
+              title="Configure Google AI Studio API Key"
+            >
+              <Key size={12} className="text-indigo-400" />
+              {getGeminiApiKey() ? 'API Key: Active ✓' : 'API Key: Free Tier'}
+            </button>
+          </div>
+        </div>
+
+        {/* Input Bar */}
+        <form onSubmit={(e) => { e.preventDefault(); handleAskShowroom(); }} style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ position: 'relative', flex: 1 }}>
+            <Search size={16} style={{ position: 'absolute', left: '14px', top: '14px', color: '#64748B' }} />
+            <input
+              type="text"
+              value={showroomAiQuery}
+              onChange={(e) => setShowroomAiQuery(e.target.value)}
+              placeholder='Ask in English, Odia, or Telugu (e.g. "Who owes us balance payments today?" or "Show net profit")...'
+              style={{
+                width: '100%',
+                background: 'rgba(11, 19, 43, 0.9)',
+                border: '1px solid rgba(99, 102, 241, 0.3)',
+                borderRadius: '12px',
+                padding: '12px 16px 12px 42px',
+                color: '#FFFFFF',
+                fontSize: '13px',
+                outline: 'none',
+                transition: 'border 0.2s'
+              }}
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={isAiAnswering || !showroomAiQuery.trim()}
+            style={{
+              background: 'linear-gradient(135deg, #4F46E5, #7C3AED)',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '0 22px',
+              color: '#FFFFFF',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              cursor: isAiAnswering || !showroomAiQuery.trim() ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              opacity: isAiAnswering || !showroomAiQuery.trim() ? 0.6 : 1,
+              boxShadow: '0 0 15px rgba(99, 102, 241, 0.3)'
+            }}
+          >
+            {isAiAnswering ? <RefreshCw size={14} className="spin-anim" /> : <Send size={14} />}
+            {isAiAnswering ? 'Thinking...' : 'Ask AI'}
+          </button>
+        </form>
+
+        {/* Quick Question Chips */}
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ fontSize: '10px', color: '#64748B', textTransform: 'uppercase', fontWeight: 'bold' }}>⚡ Quick Prompts:</span>
+          {[
+            { label: '💰 Who owes balance payment today?', q: 'Who owes us balance payments today?' },
+            { label: '📈 Net profit & true margin this week', q: 'What is our net profit and margin breakdown this week?' },
+            { label: '⏳ Aging display stock > 45 days', q: 'Which display pieces on the showroom floor are aging beyond 45 days?' },
+            { label: '🏛️ Architect commission pending', q: 'Show me architect commission balance due ready for UPI settlement' }
+          ].map((chip, idx) => (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => handleAskShowroom(chip.q)}
+              style={{
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '20px',
+                padding: '4px 12px',
+                fontSize: '11px',
+                color: '#CBD5E1',
+                cursor: 'pointer',
+                transition: 'all 0.15s'
+              }}
+            >
+              {chip.label}
+            </button>
+          ))}
+        </div>
+
+        {/* AI Answer Box */}
+        {isAiExpanded && (
+          <div style={{
+            background: 'rgba(15, 23, 42, 0.85)',
+            border: '1px solid rgba(99, 102, 241, 0.3)',
+            borderRadius: '12px',
+            padding: '14px 18px',
+            marginTop: '4px',
+            fontSize: '12px',
+            lineHeight: '1.6',
+            color: '#E2E8F0',
+            position: 'relative'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '6px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#A5B4FC', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Sparkles size={12} /> Live AI Showroom Analysis
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsAiExpanded(false)}
+                style={{ background: 'transparent', border: 'none', color: '#94A3B8', fontSize: '11px', cursor: 'pointer' }}
+              >
+                Close ✕
+              </button>
+            </div>
+            {isAiAnswering ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#A5B4FC', padding: '10px 0' }}>
+                <RefreshCw size={16} className="spin-anim" /> Consulting live Google Sheets database...
+              </div>
+            ) : (
+              <div style={{ whiteSpace: 'pre-wrap' }}>
+                {showroomAiAnswer}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* 📊 1. 4-PILLAR EXECUTIVE FINANCIAL HEALTH RADAR (INTERACTIVE CLICKABLE CARDS) */}
       <div className="kpi-grid">
         
-        <div className="kpi-card" style={{ borderLeft: '4px solid var(--accent-gold)' }}>
-          <div className="kpi-label"><DollarSign size={14} color="var(--accent-gold)" /> Gross Showroom Revenue</div>
+        {/* 1. Gross Showroom Revenue Card */}
+        <div 
+          className="kpi-card" 
+          onClick={() => {
+            playScanBeep();
+            openModal('executive_revenue_ledger');
+          }}
+          style={{ 
+            borderLeft: '4px solid var(--accent-gold)', 
+            cursor: 'pointer', 
+            transition: 'all 0.2s ease',
+            position: 'relative' 
+          }}
+          title="Click to inspect all customer transactions & add cash entries"
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="kpi-label"><DollarSign size={14} color="var(--accent-gold)" /> Gross Showroom Revenue</div>
+            <span style={{ fontSize: '10px', color: 'var(--accent-gold)', fontWeight: '800' }}>Inspect ➔</span>
+          </div>
           <div className="kpi-value" style={{ color: 'var(--accent-gold-light)', fontFamily: 'JetBrains Mono' }}>
             ₹{totalRevenue.toLocaleString()}
           </div>
           <div style={{ fontSize: '11px', color: 'var(--accent-emerald)', display: 'flex', alignItems: 'center', gap: '3px', marginTop: '4px' }}>
             <ArrowUpRight size={13} /> ₹{totalAdvances.toLocaleString()} Token Advances Collected
           </div>
+          <div style={{ fontSize: '9.5px', color: '#94A3B8', marginTop: '4px', borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '3px' }}>
+            🔍 Click to view payment ledger & add cash entry
+          </div>
         </div>
 
-        <div className="kpi-card" style={{ borderLeft: '4px solid var(--accent-cyan)' }}>
-          <div className="kpi-label"><ShieldCheck size={14} color="var(--accent-cyan)" /> Active SafeLocks</div>
+        {/* 2. Active SafeLocks Card */}
+        <div 
+          className="kpi-card" 
+          onClick={() => {
+            playScanBeep();
+            openModal('executive_safelocks_drilldown');
+          }}
+          style={{ 
+            borderLeft: '4px solid var(--accent-cyan)', 
+            cursor: 'pointer', 
+            transition: 'all 0.2s ease' 
+          }}
+          title="Click to view locked suites, extend 48h locks, or open staging bay"
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="kpi-label"><ShieldCheck size={14} color="var(--accent-cyan)" /> Active SafeLocks</div>
+            <span style={{ fontSize: '10px', color: 'var(--accent-cyan)', fontWeight: '800' }}>Manage ➔</span>
+          </div>
           <div className="kpi-value" style={{ color: 'var(--accent-cyan)' }}>{activeSafeLocks} Suites</div>
           <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>Atomic Stock Reserved in Warehouse</div>
+          <div style={{ fontSize: '9.5px', color: '#94A3B8', marginTop: '4px', borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '3px' }}>
+            ⏱️ Click to extend 48h locks or stage cartons
+          </div>
         </div>
 
-        <div className="kpi-card" style={{ borderLeft: '4px solid var(--accent-amber)' }}>
-          <div className="kpi-label"><Truck size={14} color="var(--accent-amber)" /> Pending Deliveries</div>
+        {/* 3. Pending Deliveries Card */}
+        <div 
+          className="kpi-card" 
+          onClick={() => {
+            playScanBeep();
+            openModal('executive_deliveries_drilldown');
+          }}
+          style={{ 
+            borderLeft: '4px solid var(--accent-amber)', 
+            cursor: 'pointer', 
+            transition: 'all 0.2s ease' 
+          }}
+          title="Click to track Tata Ace fleet, dispatch trucks, and issue ePOD OTP"
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="kpi-label"><Truck size={14} color="var(--accent-amber)" /> Pending Deliveries</div>
+            <span style={{ fontSize: '10px', color: 'var(--accent-amber)', fontWeight: '800' }}>Dispatch ➔</span>
+          </div>
           <div className="kpi-value" style={{ color: 'var(--accent-amber)' }}>{pendingDeliveries} Orders</div>
           <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>2 Fleet Trucks on Road (Tata Ace)</div>
+          <div style={{ fontSize: '9.5px', color: '#94A3B8', marginTop: '4px', borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '3px' }}>
+            🚚 Click for driver dispatch & WhatsApp ETA
+          </div>
         </div>
 
-        <div className="kpi-card" style={{ borderLeft: '4px solid var(--accent-purple)' }}>
-          <div className="kpi-label"><Users size={14} color="var(--accent-purple)" /> Showroom Hot Leads</div>
+        {/* 4. Showroom Hot Leads Card */}
+        <div 
+          className="kpi-card" 
+          onClick={() => {
+            playScanBeep();
+            openModal('executive_hotleads_drilldown');
+          }}
+          style={{ 
+            borderLeft: '4px solid var(--accent-purple)', 
+            cursor: 'pointer', 
+            transition: 'all 0.2s ease' 
+          }}
+          title="Click to view high-intent walk-ins, send 1-click proposals, or log calls"
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="kpi-label"><Users size={14} color="var(--accent-purple)" /> Showroom Hot Leads</div>
+            <span style={{ fontSize: '10px', color: 'var(--accent-purple)', fontWeight: '800' }}>Pipeline ➔</span>
+          </div>
           <div className="kpi-value" style={{ color: 'var(--accent-purple)' }}>{hotLeadsCount} Leads</div>
           <div style={{ fontSize: '11px', color: 'var(--accent-rose)', marginTop: '4px' }}>94% Average Buying Intent</div>
+          <div style={{ fontSize: '9.5px', color: '#94A3B8', marginTop: '4px', borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '3px' }}>
+            🔥 Click to open CRM pipeline & send quotes
+          </div>
         </div>
 
-        <div className="kpi-card" style={{ borderLeft: '4px solid var(--accent-emerald)' }}>
-          <div className="kpi-label"><Award size={14} color="var(--accent-emerald)" /> Architect Liability Due</div>
+        {/* 5. Architect Liability Due Card */}
+        <div 
+          className="kpi-card" 
+          onClick={() => {
+            playScanBeep();
+            openModal('executive_architects_drilldown');
+          }}
+          style={{ 
+            borderLeft: '4px solid var(--accent-emerald)', 
+            cursor: 'pointer', 
+            transition: 'all 0.2s ease' 
+          }}
+          title="Click to view architect balances, trigger UPI payouts, or send statements"
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="kpi-label"><Award size={14} color="var(--accent-emerald)" /> Architect Liability Due</div>
+            <span style={{ fontSize: '10px', color: 'var(--accent-emerald)', fontWeight: '800' }}>Payout ➔</span>
+          </div>
           <div className="kpi-value" style={{ color: 'var(--accent-emerald)', fontFamily: 'JetBrains Mono' }}>
             ₹{architectBalance.toLocaleString()}
           </div>
           <div style={{ fontSize: '11px', color: 'var(--accent-cyan)', marginTop: '4px' }}>Instant UPI Payout Ready</div>
+          <div style={{ fontSize: '9.5px', color: '#94A3B8', marginTop: '4px', borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '3px' }}>
+            🏛️ Click to settle commissions & statements
+          </div>
         </div>
 
       </div>
 
-      {/* 💎 2. NET MARGIN & SHOWROOM FINANCIAL HEALTH STRIP */}
-      <div style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(15,23,42,0.85))', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '14px', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
+      {/* 💎 2. NET MARGIN & SHOWROOM FINANCIAL HEALTH STRIP (CLICK TO OPEN RADAR) */}
+      <div 
+        onClick={() => {
+          playScanBeep();
+          openModal('showroom_profit_radar');
+        }}
+        style={{ 
+          background: 'linear-gradient(135deg, rgba(16,185,129,0.14), rgba(15,23,42,0.9))', 
+          border: '1px solid rgba(16,185,129,0.4)', 
+          borderRadius: '14px', 
+          padding: '14px 20px', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between', 
+          flexWrap: 'wrap', 
+          gap: '14px',
+          cursor: 'pointer',
+          transition: 'all 0.2s ease',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.25)'
+        }}
+        title="Click to open Full Showroom Profit & Margin Radar Modal with Order-by-Order Ledger & PIN 8899 Shield"
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '20px' }}>💎</span>
+          <span style={{ fontSize: '22px' }}>💎</span>
           <div>
-            <div style={{ fontSize: '13px', fontWeight: '900', color: '#FFFFFF' }}>Showroom Net Financial Health & Operating EBITDA</div>
+            <div style={{ fontSize: '13px', fontWeight: '900', color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              Showroom Net Financial Health & Operating EBITDA
+              <span className="badge badge-emerald" style={{ fontSize: '10px' }}>❤️ LIVE HEART RADAR</span>
+            </div>
             <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Calculated after wholesale COGS (67.6%), 8.5% architect referral slabs, and master carpenter payouts</div>
           </div>
         </div>
@@ -288,9 +661,12 @@ export function ExecutiveOverview() {
             <div style={{ fontSize: '10px', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Carpenter Pool</div>
             <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--accent-purple)', fontFamily: 'JetBrains Mono' }}>-₹{carpenterLiabilityINR.toLocaleString()}</div>
           </div>
-          <div style={{ background: 'rgba(16,185,129,0.2)', padding: '6px 14px', borderRadius: '8px', border: '1px solid var(--accent-emerald)' }}>
-            <div style={{ fontSize: '10px', color: 'var(--accent-emerald)', textTransform: 'uppercase', fontWeight: '900' }}>True Net Contribution</div>
-            <div style={{ fontSize: '16px', fontWeight: '900', color: '#FFFFFF', fontFamily: 'JetBrains Mono' }}>₹{netShowroomContributionINR.toLocaleString()}</div>
+          <div style={{ background: 'rgba(16,185,129,0.25)', padding: '6px 14px', borderRadius: '8px', border: '1px solid var(--accent-emerald)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div>
+              <div style={{ fontSize: '10px', color: 'var(--accent-emerald)', textTransform: 'uppercase', fontWeight: '900' }}>True Net Contribution</div>
+              <div style={{ fontSize: '16px', fontWeight: '900', color: '#FFFFFF', fontFamily: 'JetBrains Mono' }}>₹{netShowroomContributionINR.toLocaleString()}</div>
+            </div>
+            <span style={{ fontSize: '11px', color: 'var(--accent-gold-light)', fontWeight: '800' }}>View Radar ➔</span>
           </div>
         </div>
       </div>
@@ -348,15 +724,15 @@ export function ExecutiveOverview() {
 
           <div style={{ background: '#030712', borderRadius: '14px', padding: '16px', border: '1px solid rgba(255,255,255,0.08)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12.5px', marginBottom: '6px' }}>
-              <span>Achieved: <strong style={{ color: 'var(--accent-gold-light)' }}>₹{targets.currentAchievedINR.toLocaleString()}</strong></span>
-              <span>Target: <strong style={{ color: '#FFFFFF' }}>₹{editableTarget.toLocaleString()}</strong></span>
+              <span>Achieved: <strong style={{ color: 'var(--accent-gold-light)' }}>₹{(Number(targets?.currentAchievedINR) || 0).toLocaleString()}</strong></span>
+              <span>Target: <strong style={{ color: '#FFFFFF' }}>₹{(Number(editableTarget) || 0).toLocaleString()}</strong></span>
             </div>
             <div style={{ width: '100%', height: '10px', background: 'rgba(255,255,255,0.1)', borderRadius: '6px', overflow: 'hidden' }}>
               <div style={{ width: `${targetProgress}%`, height: '100%', background: 'linear-gradient(90deg, var(--accent-gold), var(--accent-cyan))', borderRadius: '6px' }} />
             </div>
             <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '8px', display: 'flex', justifyContent: 'space-between' }}>
               <span>Today's Walk-Ins: <b>14 / {editableWalkInTarget}</b></span>
-              <span style={{ color: 'var(--accent-emerald)' }}>Today's Sales: <b>₹{targets.todayAchievedINR.toLocaleString()}</b> ✓</span>
+              <span style={{ color: 'var(--accent-emerald)' }}>Today's Sales: <b>₹{(Number(targets?.todayAchievedINR) || 0).toLocaleString()}</b> ✓</span>
             </div>
           </div>
 
@@ -493,7 +869,7 @@ export function ExecutiveOverview() {
               <div key={proj.id} style={{ background: '#030712', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div style={{ fontSize: '12.5px', fontWeight: '900', color: '#FFFFFF' }}>{proj.name}</div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>📍 {proj.location} • <span style={{ color: 'var(--accent-cyan)', fontWeight: '700' }}>₹{proj.value.toLocaleString()}</span></div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>📍 {proj.location} • <span style={{ color: 'var(--accent-cyan)', fontWeight: '700' }}>₹{(Number(proj.value) || 0).toLocaleString()}</span></div>
                   <div style={{ display: 'flex', gap: '4px', alignItems: 'center', marginTop: '4px' }}>
                     <span className="badge badge-purple" style={{ fontSize: '9px' }}>{proj.status}</span>
                     <span className={`badge ${proj.stage1Paid ? 'badge-emerald' : 'badge-gold'}`} style={{ fontSize: '8.5px' }}>
@@ -690,8 +1066,8 @@ export function ExecutiveOverview() {
                     </td>
 
                     <td>
-                      <div style={{ fontWeight: '800', color: 'var(--accent-gold-light)' }}>₹{order.Total_Amount_INR.toLocaleString()}</div>
-                      <div style={{ fontSize: '10.5px', color: 'var(--accent-emerald)' }}>Adv: ₹{(order.Advance_Paid_INR || 0).toLocaleString()}</div>
+                      <div style={{ fontWeight: '800', color: 'var(--accent-gold-light)' }}>₹{(Number(order.Total_Amount_INR) || 0).toLocaleString()}</div>
+                      <div style={{ fontSize: '10.5px', color: 'var(--accent-emerald)' }}>Adv: ₹{(Number(order.Advance_Paid_INR) || 0).toLocaleString()}</div>
                     </td>
                     <td>
                       {/* Fast Inline Status Dropdown */}

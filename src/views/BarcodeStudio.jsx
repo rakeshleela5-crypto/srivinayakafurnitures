@@ -35,7 +35,14 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Shield,
-  Mic
+  Mic,
+  Wand2,
+  Edit3,
+  PlusCircle,
+  Boxes,
+  Calculator,
+  SlidersHorizontal,
+  PackageCheck
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
@@ -50,7 +57,8 @@ export function BarcodeStudio() {
     showToast,
     setActiveTab,
     syncWithGoogleSheets,
-    isSyncing
+    isSyncing,
+    registerNewSku
   } = useStore();
 
   const [sourceMode, setSourceMode] = useState('SUPPLIER_CATALOG'); // 'SUPPLIER_CATALOG' (default) | 'CUSTOMER_ORDER'
@@ -61,6 +69,31 @@ export function BarcodeStudio() {
   const [catalogSearchQuery, setCatalogSearchQuery] = useState('');
   const [catalogCategoryFilter, setCatalogCategoryFilter] = useState('ALL');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // ➕ New Product / Custom SKU Registration Modal State
+  const [isNewSkuModalOpen, setIsNewSkuModalOpen] = useState(false);
+  const [newSkuForm, setNewSkuForm] = useState({
+    sku: '',
+    productName: '',
+    category: 'Living',
+    subCategory: 'Sofas & Recliners',
+    priceTier: 'Luxury',
+    material: 'Premium CRCA Steel & Teak Wood',
+    dimensions: 'Standard Size',
+    mrp: 95000,
+    unitCost: 55000,
+    sellingPrice: 75000,
+    warranty: 5,
+    boxCount: 1,
+    supplier: 'Godrej Interio Flagship',
+    bay: 'Dock-A1',
+    openingStock: 2,
+    bufferThreshold: 2,
+    isHeavy: false,
+    isFragile: false,
+    isThisSideUp: true,
+    isKeepDry: true
+  });
 
   // Filtered Catalog List
   const filteredCatalog = useMemo(() => {
@@ -82,7 +115,8 @@ export function BarcodeStudio() {
       return matchesCat && fullStr.includes(q);
     });
   }, [catalog, catalogSearchQuery, catalogCategoryFilter]);
-  const [printLayout, setPrintLayout] = useState('pallet_label'); // pallet_label | carton_strip | thermal_50x25 | a4_24up | zpl_code
+
+  const [printLayout, setPrintLayout] = useState('pallet_label'); // pallet_label | carton_strip | multibox_grid | thermal_50x25 | a4_24up | zpl_code
   const [barcodeStep, setBarcodeStep] = useState(1);
 
   // Editable Barcode Fields
@@ -113,6 +147,148 @@ export function BarcodeStudio() {
   const [barcodeColor, setBarcodeColor] = useState('#000000');
   const [quietZone, setQuietZone] = useState(true);
 
+  // Auto-SKU Generator Engine
+  const generateSmartSku = (cat, subCat) => {
+    const prefixMap = {
+      'Bedroom': 'GDJ-BED',
+      'Living': 'GDJ-LIV',
+      'Dining': 'GDJ-DIN',
+      'Office': 'GDJ-OFF',
+      'Storage': 'GDJ-STO',
+      'Recliner': 'GDJ-REC',
+      'Kitchen': 'GDJ-KIT',
+      'Custom': 'CUST-FUR'
+    };
+    const basePrefix = prefixMap[cat] || 'GDJ-FUR';
+    const randSuffix = Math.floor(1000 + Math.random() * 9000);
+    let subCode = 'MOD';
+    if (subCat) {
+      subCode = subCat.split(' ')[0].replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 3) || 'MOD';
+    }
+    return `${basePrefix}-${subCode}-${randSuffix}`;
+  };
+
+  // Open Clean New Product Modal
+  const handleOpenNewSkuModal = () => {
+    const defaultCat = 'Living';
+    const defaultSub = 'Sofa';
+    setNewSkuForm({
+      sku: generateSmartSku(defaultCat, defaultSub),
+      productName: '',
+      category: defaultCat,
+      subCategory: defaultSub,
+      priceTier: 'Luxury',
+      material: 'Solid CP Teak Wood & High-Resilience Foam',
+      dimensions: 'Standard Size',
+      mrp: 95000,
+      unitCost: 55000,
+      sellingPrice: 75000,
+      warranty: 5,
+      boxCount: 1,
+      supplier: 'Godrej Interio Flagship',
+      bay: 'Dock-A1',
+      openingStock: 3,
+      bufferThreshold: 2,
+      isHeavy: false,
+      isFragile: false,
+      isThisSideUp: true,
+      isKeepDry: true
+    });
+    setIsNewSkuModalOpen(true);
+    playScanBeep();
+  };
+
+  // 📑 1-Click Clone Current SKU as New Variant
+  const handleCloneVariant = () => {
+    const current = catalog.find(c => c.SKU === selectedSku) || {
+      SKU: skuCode,
+      Product_Name: productName,
+      Main_Category: category,
+      Material_Spec: material,
+      Dimensions: dimensions,
+      MRP_INR: mrp,
+      Selling_Price_INR: sellingPrice,
+      Warranty_Years: warranty,
+      Total_Component_Boxes: boxCount,
+      Assigned_Bay: storageBay
+    };
+
+    const newSkuCode = `${current.SKU}-VAR${Math.floor(10 + Math.random() * 90)}`;
+    setNewSkuForm({
+      sku: newSkuCode,
+      productName: `${current.Product_Name} (Custom Variant)`,
+      category: current.Main_Category || 'Living',
+      subCategory: current.Sub_Category || 'Custom Model',
+      priceTier: current.Price_Tier || 'Luxury',
+      material: `${current.Material_Spec || 'Solid Teak'} (Custom Finish)`,
+      dimensions: current.Dimensions || 'Standard',
+      mrp: current.MRP_INR || 95000,
+      unitCost: Math.round((current.Selling_Price_INR || 75000) * 0.72),
+      sellingPrice: current.Selling_Price_INR || 75000,
+      warranty: current.Warranty_Years || 5,
+      boxCount: current.Total_Component_Boxes || 1,
+      supplier: current.Default_Supplier || 'Godrej Interio Flagship',
+      bay: current.Assigned_Bay || 'Dock-A1',
+      openingStock: 2,
+      bufferThreshold: 2,
+      isHeavy: isHeavyCarton,
+      isFragile: isFragileGlass,
+      isThisSideUp: isThisSideUp,
+      isKeepDry: isKeepDry
+    });
+    setIsNewSkuModalOpen(true);
+    playScanBeep();
+    showToast(`📑 Cloned specs from ${current.SKU}! Adjust finish/pricing and save.`, true);
+  };
+
+  // Save New SKU from Modal
+  const handleSaveNewSku = () => {
+    if (!newSkuForm.sku || !newSkuForm.productName) {
+      showToast("⚠️ Please enter both an SKU Code and Product Title!");
+      return;
+    }
+
+    if (registerNewSku) {
+      registerNewSku({
+        sku: newSkuForm.sku,
+        productName: newSkuForm.productName,
+        category: newSkuForm.category,
+        subCategory: newSkuForm.subCategory,
+        priceTier: newSkuForm.priceTier,
+        material: newSkuForm.material,
+        dimensions: newSkuForm.dimensions,
+        mrp: Number(newSkuForm.mrp),
+        unitCost: Number(newSkuForm.unitCost),
+        sellingPrice: Number(newSkuForm.sellingPrice),
+        warranty: Number(newSkuForm.warranty),
+        boxCount: Number(newSkuForm.boxCount),
+        supplier: newSkuForm.supplier,
+        bay: newSkuForm.bay,
+        openingStock: Number(newSkuForm.openingStock),
+        bufferThreshold: Number(newSkuForm.bufferThreshold)
+      });
+    }
+
+    // Load newly created SKU into Barcode Studio
+    setSelectedSku(newSkuForm.sku);
+    setSkuCode(newSkuForm.sku);
+    setProductName(newSkuForm.productName);
+    setCategory(newSkuForm.category);
+    setMaterial(newSkuForm.material);
+    setDimensions(newSkuForm.dimensions);
+    setMrp(Number(newSkuForm.mrp));
+    setSellingPrice(Number(newSkuForm.sellingPrice));
+    setWarranty(Number(newSkuForm.warranty));
+    setBoxCount(Number(newSkuForm.boxCount));
+    setStorageBay(newSkuForm.bay);
+    setIsHeavyCarton(newSkuForm.isHeavy);
+    setIsFragileGlass(newSkuForm.isFragile);
+    setIsThisSideUp(newSkuForm.isThisSideUp);
+    setIsKeepDry(newSkuForm.isKeepDry);
+
+    setIsNewSkuModalOpen(false);
+  };
+
   // Load from Master Catalog
   const handleSelectCatalogItem = (sku) => {
     setSelectedSku(sku);
@@ -131,7 +307,7 @@ export function BarcodeStudio() {
       setStorageBay(item.Assigned_Bay || 'Dock-A1');
       setIsFragileGlass(item.Material_Spec?.toLowerCase().includes('glass') || item.Material_Spec?.toLowerCase().includes('marble'));
       playScanBeep();
-      showToast(`📦 Loaded Supplier Catalog SKU: ${item.SKU}`);
+      showToast(`📦 Loaded Catalog SKU: ${item.SKU}`);
     }
   };
 
@@ -160,50 +336,68 @@ export function BarcodeStudio() {
     window.print();
   };
 
+  // Save current studio edits to Catalog and SafeLock Inventory
   const handleSaveToCatalog = async () => {
     playSuccessChime();
     triggerGoldenConfetti();
 
-    const updatedItem = {
-      SKU: skuCode,
-      Product_Name: productName,
-      Main_Category: category,
-      Material_Spec: material,
-      Dimensions: dimensions,
-      MRP_INR: Number(mrp),
-      Selling_Price_INR: Number(sellingPrice),
-      Warranty_Years: Number(warranty),
-      Total_Component_Boxes: Number(boxCount),
-      Assigned_Bay: storageBay
-    };
+    if (registerNewSku) {
+      registerNewSku({
+        sku: skuCode,
+        productName: productName,
+        category: category,
+        material: material,
+        dimensions: dimensions,
+        mrp: Number(mrp),
+        sellingPrice: Number(sellingPrice),
+        warranty: Number(warranty),
+        boxCount: Number(boxCount),
+        bay: storageBay,
+        openingStock: 2,
+        bufferThreshold: 2
+      });
+    } else {
+      const updatedItem = {
+        SKU: skuCode,
+        Product_Name: productName,
+        Main_Category: category,
+        Material_Spec: material,
+        Dimensions: dimensions,
+        MRP_INR: Number(mrp),
+        Selling_Price_INR: Number(sellingPrice),
+        Warranty_Years: Number(warranty),
+        Total_Component_Boxes: Number(boxCount),
+        Assigned_Bay: storageBay
+      };
 
-    setCatalog(prev => {
-      const exists = prev.some(c => c.SKU === skuCode);
-      let updated;
-      if (exists) {
-        updated = prev.map(c => c.SKU === skuCode ? { ...c, ...updatedItem } : c);
-      } else {
-        updated = [updatedItem, ...prev];
-      }
-      try { localStorage.setItem('OMNIBUILD_CATALOG', JSON.stringify(updated)); } catch (e) {}
-      return updated;
-    });
+      setCatalog(prev => {
+        const exists = prev.some(c => c.SKU === skuCode);
+        let updated;
+        if (exists) {
+          updated = prev.map(c => c.SKU === skuCode ? { ...c, ...updatedItem } : c);
+        } else {
+          updated = [updatedItem, ...prev];
+        }
+        try { localStorage.setItem('OMNIBUILD_CATALOG', JSON.stringify(updated)); } catch (e) {}
+        return updated;
+      });
 
-    showToast(`💾 Barcode parameters saved for ${skuCode} & synced to Google Sheets!`, true);
+      showToast(`💾 Barcode specs saved for ${skuCode} & synced to Google Sheets!`, true);
 
-    await dispatchWebhookAction('UPDATE_CATALOG_ITEM', {
-      sku: skuCode,
-      product_name: productName,
-      category: category,
-      material: material,
-      dimensions: dimensions,
-      mrp: Number(mrp),
-      selling_price: Number(sellingPrice),
-      warranty: Number(warranty),
-      box_count: Number(boxCount),
-      assigned_bay: storageBay,
-      batch_no: batchNo
-    });
+      await dispatchWebhookAction('UPDATE_CATALOG_ITEM', {
+        sku: skuCode,
+        product_name: productName,
+        category: category,
+        material: material,
+        dimensions: dimensions,
+        mrp: Number(mrp),
+        selling_price: Number(sellingPrice),
+        warranty: Number(warranty),
+        box_count: Number(boxCount),
+        assigned_bay: storageBay,
+        batch_no: batchNo
+      });
+    }
   };
 
   // Generate Raw Zebra ZPL II Command String
@@ -242,6 +436,23 @@ export function BarcodeStudio() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className="badge badge-cyan">🏷️ GS1 CODE-128 BARCODE STUDIO</span>
           
+          <button 
+            className="btn-luxury-gold"
+            onClick={handleOpenNewSkuModal}
+            style={{ fontSize: '11px', padding: '6px 12px', fontWeight: '900', boxShadow: '0 0 15px rgba(212,175,55,0.4)' }}
+          >
+            <Sparkles size={13} /> ➕ Register New SKU Barcode
+          </button>
+
+          <button 
+            className="btn-ghost-edit"
+            onClick={handleCloneVariant}
+            style={{ fontSize: '11px', padding: '5px 10px', color: '#38BDF8', border: '1px solid rgba(56,189,248,0.4)' }}
+            title="Clone current product as a new color/finish variant"
+          >
+            <Copy size={12} /> 📑 Clone Variant
+          </button>
+
           <button 
             className={`btn-ghost-edit ${isLaserSweeping ? 'badge-rose' : ''}`}
             onClick={() => setIsLaserSweeping(!isLaserSweeping)}
@@ -306,7 +517,7 @@ export function BarcodeStudio() {
             }}
             style={{ fontSize: '11px', padding: '5px 10px' }}
           >
-            <ShieldCheck size={12} /> <span>SafeLock (Tab 4)</span>
+            <ShieldCheck size={12} /> <span>SafeLock (Tab 3)</span>
           </button>
 
           <button 
@@ -336,11 +547,11 @@ export function BarcodeStudio() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <button 
                 type="button"
-                onClick={() => openModal('csv_import')} 
-                className="btn-ghost-edit" 
-                style={{ fontSize: '10.5px', padding: '4px 8px', color: 'var(--accent-cyan)' }}
+                onClick={handleOpenNewSkuModal} 
+                className="btn-luxury-gold" 
+                style={{ fontSize: '10.5px', padding: '4px 8px' }}
               >
-                <Download size={11} /> 📁 Import CSV
+                <Plus size={11} /> ➕ New SKU
               </button>
               <span className="badge badge-purple">{catalog.length} SKUs</span>
             </div>
@@ -349,7 +560,7 @@ export function BarcodeStudio() {
           {/* 3-Step Navigation Tabs */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px', marginBottom: '14px', background: '#030712', padding: '6px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
             {[
-              { step: 1, label: '1. 🛋️ Select SKU' },
+              { step: 1, label: '1. 🛋️ Select / Edit SKU' },
               { step: 2, label: '2. 🏷️ Specs & Safety' },
               { step: 3, label: '3. 🎛️ Laser & ZPL' }
             ].map(s => {
@@ -387,24 +598,34 @@ export function BarcodeStudio() {
           {barcodeStep === 1 && (
             <div style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               
-              {/* Quick CSV Import Banner in Step 1 */}
+              {/* Quick Action Banner in Step 1 */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(212,175,55,0.08)', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(212,175,55,0.2)' }}>
                 <div>
                   <div style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--accent-gold-light)' }}>
-                    📥 Inward Factory Stock CSV / WhatsApp Data:
+                    ✨ Add New Product or Custom Furniture Model:
                   </div>
                   <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>
-                    Upload supplier batches or paste raw text to auto-generate box barcodes
+                    Auto-generate GS1 barcode, QR code, and sync to SafeLock stock
                   </div>
                 </div>
-                <button
-                  type="button"
-                  className="btn-luxury-gold"
-                  onClick={() => openModal('csv_import')}
-                  style={{ fontSize: '10.5px', padding: '5px 12px', fontWeight: '800' }}
-                >
-                  <FileText size={12} /> 📁 Import CSV
-                </button>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button
+                    type="button"
+                    className="btn-luxury-gold"
+                    onClick={handleOpenNewSkuModal}
+                    style={{ fontSize: '10.5px', padding: '5px 10px', fontWeight: '800' }}
+                  >
+                    <PlusCircle size={12} /> ➕ Register SKU
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-ghost-edit"
+                    onClick={() => openModal('csv_import')}
+                    style={{ fontSize: '10.5px', padding: '5px 8px' }}
+                  >
+                    <FileText size={11} /> CSV
+                  </button>
+                </div>
               </div>
 
               {/* Source Switcher: Supplier Catalog (Default) ⇋ Customer Dispatch Order */}
@@ -455,7 +676,7 @@ export function BarcodeStudio() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <label style={{ fontWeight: '800', color: 'var(--accent-cyan)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Search size={13} /> Search & Select Furniture Product from Master Catalog ({catalog.length} SKUs):
+                      <Search size={13} /> Search & Select Furniture Product ({catalog.length} SKUs):
                     </label>
                     <span style={{ fontSize: '10.5px', color: '#94A3B8', fontWeight: '700' }}>
                       ✨ Showing <span style={{ color: 'var(--accent-cyan)' }}>{filteredCatalog.length}</span> matches
@@ -467,12 +688,12 @@ export function BarcodeStudio() {
                     {[
                       { id: 'ALL', label: `🌟 All (${catalog.length})` },
                       { id: 'Bedroom', label: '🛏️ Bedroom' },
-                      { id: 'Living', label: '🛋️ Living Room' },
-                      { id: 'Dining', label: '🍽️ Dining & Study' },
+                      { id: 'Living', label: '🛋️ Living' },
+                      { id: 'Dining', label: '🍽️ Dining' },
                       { id: 'Office', label: '🏢 Office' },
                       { id: 'Storage', label: '🗄️ Storage' },
                       { id: 'Kitchen', label: '🍳 Kitchen' },
-                      { id: 'CSV', label: '🆕 CSV Imports' }
+                      { id: 'CSV', label: '🆕 CSV' }
                     ].map(cat => {
                       const isCatActive = catalogCategoryFilter === cat.id;
                       return (
@@ -510,7 +731,7 @@ export function BarcodeStudio() {
                         setIsDropdownOpen(true);
                       }}
                       onFocus={() => setIsDropdownOpen(true)}
-                      placeholder="🔍 Type Dining, Bed, Mesh Chair, Sofa, SKU, Material, Supplier..."
+                      placeholder="🔍 Search SKU, Bed, Dining, Leatherette Sofa, Teak..."
                       style={{
                         width: '100%',
                         padding: '8px 30px 8px 32px',
@@ -556,7 +777,7 @@ export function BarcodeStudio() {
                   }}>
                     {filteredCatalog.length === 0 ? (
                       <div style={{ padding: '12px', textAlign: 'center', fontSize: '11px', color: '#94A3B8' }}>
-                        No furniture products match "{catalogSearchQuery}". Try another keyword or reset filters.
+                        No furniture products match "{catalogSearchQuery}". Click <b>➕ Register New SKU</b> above to create it.
                       </div>
                     ) : (
                       filteredCatalog.map(item => {
@@ -654,22 +875,59 @@ export function BarcodeStudio() {
                 </div>
               )}
 
-              <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              {/* Direct In-Studio Edit & Auto-Gen Fields */}
+              <div className="form-grid" style={{ gridTemplateColumns: '1.2fr 1fr', gap: '10px' }}>
                 <div className="form-field">
-                  <label>SKU Code</label>
-                  <input value={skuCode} onChange={e => setSkuCode(e.target.value)} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <label style={{ margin: 0, fontWeight: '800' }}>SKU Code</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newGen = generateSmartSku(category, productName);
+                        setSkuCode(newGen);
+                        playScanBeep();
+                        showToast(`⚡ Auto-Generated SKU: ${newGen}`);
+                      }}
+                      style={{
+                        background: 'rgba(56,189,248,0.15)',
+                        border: '1px solid var(--accent-cyan)',
+                        color: 'var(--accent-cyan)',
+                        fontSize: '9.5px',
+                        fontWeight: '800',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      <Wand2 size={10} /> Auto-Gen SKU
+                    </button>
+                  </div>
+                  <input value={skuCode} onChange={e => setSkuCode(e.target.value.toUpperCase())} placeholder="e.g. GDJ-BED-001" />
                 </div>
+
                 <div className="form-field">
                   <label>Warehouse Batch</label>
                   <input value={batchNo} onChange={e => setBatchNo(e.target.value)} />
                 </div>
+
                 <div className="form-field" style={{ gridColumn: '1 / -1' }}>
                   <label>Product Full Title</label>
-                  <input value={productName} onChange={e => setProductName(e.target.value)} />
+                  <input value={productName} onChange={e => setProductName(e.target.value)} placeholder="e.g. Solid King Bed (Hydraulic Storage)" />
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+                <button
+                  type="button"
+                  className="btn-ghost-edit"
+                  onClick={handleCloneVariant}
+                  style={{ fontSize: '11px', padding: '8px 12px', color: '#38BDF8' }}
+                >
+                  <Copy size={12} /> 📑 Clone as New Variant
+                </button>
                 <button 
                   type="button" 
                   className="btn-cyan" 
@@ -691,7 +949,15 @@ export function BarcodeStudio() {
               <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                 <div className="form-field">
                   <label>Material Spec</label>
-                  <input value={material} onChange={e => setMaterial(e.target.value)} />
+                  <input value={material} onChange={e => setMaterial(e.target.value)} placeholder="e.g. 100% Solid CP Teak Wood" />
+                </div>
+                <div className="form-field">
+                  <label>Dimensions</label>
+                  <input value={dimensions} onChange={e => setDimensions(e.target.value)} placeholder="e.g. 78x72x48 in" />
+                </div>
+                <div className="form-field">
+                  <label>Gross Catalog MRP (₹)</label>
+                  <input type="number" value={mrp} onChange={e => setMrp(Number(e.target.value))} />
                 </div>
                 <div className="form-field">
                   <label>Selling Rate (₹)</label>
@@ -699,7 +965,7 @@ export function BarcodeStudio() {
                 </div>
                 <div className="form-field">
                   <label>Total Knockdown Boxes</label>
-                  <input type="number" value={boxCount} onChange={e => setBoxCount(Number(e.target.value))} />
+                  <input type="number" min="1" max="8" value={boxCount} onChange={e => setBoxCount(Number(e.target.value))} />
                 </div>
                 <div className="form-field">
                   <label>Assigned Rack Bay</label>
@@ -709,6 +975,7 @@ export function BarcodeStudio() {
                     <option value="Bay-B1">Bay-B1 (Living Sectionals)</option>
                     <option value="Bay-C1">Bay-C1 (Marble Dining)</option>
                     <option value="Mezzanine-1">Mezzanine-1 (Fittings)</option>
+                    <option value="Showroom Floor">Showroom Display Floor</option>
                   </select>
                 </div>
               </div>
@@ -817,13 +1084,14 @@ export function BarcodeStudio() {
                   onClick={handleSaveToCatalog}
                   style={{ flex: 1, marginLeft: '10px', justifyContent: 'center', padding: '10px', fontSize: '12px', fontWeight: '900' }}
                 >
-                  <Save size={14} /> 💾 Save to Google Sheets
+                  <Save size={14} /> 💾 Save to Master OS & Google Sheets
                 </button>
               </div>
             </div>
           )}
         </div>
-{/* Right Column: Physical Print Layouts & Live Preview */}
+
+        {/* Right Column: Physical Print Layouts & Live Preview */}
         <div className="glass-panel">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ fontSize: '16px', fontWeight: '900' }}>🖨️ Physical 1D Barcode Formats</h3>
@@ -831,13 +1099,14 @@ export function BarcodeStudio() {
           </div>
 
           {/* Layout Tabs */}
-          <div className="no-print" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px', margin: '12px 0' }}>
+          <div className="no-print" style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '5px', margin: '12px 0' }}>
             {[
-              { id: 'pallet_label', label: '📦 4"×6" Pallet', desc: 'Warehouse master' },
-              { id: 'carton_strip', label: '🏷️ 2"×4" Cartons', desc: 'All box strips' },
-              { id: 'thermal_50x25', label: '🖨️ Thermal (50x25)', desc: 'Handheld tag' },
-              { id: 'a4_24up', label: '📄 A4 24-Up Sheet', desc: 'Laser paper' },
-              { id: 'zpl_code', label: '⚡ Zebra ZPL II', desc: 'Raw thermal code' }
+              { id: 'pallet_label', label: '📦 Pallet 4"×6"', desc: 'Master Unit' },
+              { id: 'carton_strip', label: '🏷️ 2"×4" Strips', desc: 'Carton list' },
+              { id: 'multibox_grid', label: '📦 Multi-Box', desc: 'Box 1..N Labels' },
+              { id: 'thermal_50x25', label: '🖨️ Thermal 50×25', desc: 'Handheld tag' },
+              { id: 'a4_24up', label: '📄 A4 Sheet', desc: '24-Up Laser' },
+              { id: 'zpl_code', label: '⚡ Zebra ZPL', desc: 'Raw Thermal' }
             ].map(layout => (
               <button
                 key={layout.id}
@@ -853,7 +1122,7 @@ export function BarcodeStudio() {
                   textAlign: 'center'
                 }}
               >
-                <div style={{ fontSize: '10.5px' }}>{layout.label}</div>
+                <div style={{ fontSize: '10px' }}>{layout.label}</div>
                 <div style={{ fontSize: '8px', opacity: 0.8 }}>{layout.desc}</div>
               </button>
             ))}
@@ -950,7 +1219,56 @@ export function BarcodeStudio() {
               </div>
             )}
 
-            {/* ================= LAYOUT 3: THERMAL 50x25 LABEL ================= */}
+            {/* ================= LAYOUT 3: MULTI-BOX KNOCKDOWN GRID ================= */}
+            {printLayout === 'multibox_grid' && (
+              <div style={{ width: '100%', display: 'grid', gridTemplateColumns: boxCount > 2 ? 'repeat(2, 1fr)' : '1fr', gap: '10px' }}>
+                {Array.from({ length: boxCount }).map((_, idx) => {
+                  const letter = String.fromCharCode(65 + idx);
+                  const boxNames = [
+                    'Headboard & Structural Frame',
+                    'Side Rails & Support Slats',
+                    'Hydraulic Piston Mechanism',
+                    'Engineered Mattress Base Board',
+                    'Hardware Fittings & Screws',
+                    'Cushion Padding & Accessories'
+                  ];
+                  const boxDesc = boxNames[idx % boxNames.length];
+                  return (
+                    <div key={letter} style={{ background: '#FFFFFF', color: '#000000', borderRadius: '10px', padding: '12px', border: '2px solid #000', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1.5px solid #000', paddingBottom: '4px' }}>
+                        <span style={{ fontSize: '11.5px', fontWeight: '900' }}>GODREJ INTERIO</span>
+                        <span style={{ fontSize: '10px', fontWeight: '900', background: '#000', color: '#FFF', padding: '1px 6px', borderRadius: '3px' }}>
+                          CARTON {idx + 1} OF {boxCount}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '12px', fontWeight: '900' }}>{productName}</div>
+                      <div style={{ fontSize: '9.5px', color: '#334155', fontWeight: '700' }}>
+                        📦 <b>Component:</b> {boxDesc}
+                      </div>
+                      <div style={{ fontSize: '9px', color: '#64748B' }}>
+                        SKU: <b>{skuCode}-BOX-{letter}</b> • Bay: <b>{storageBay}</b>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'center', margin: '4px 0' }}>
+                        <Code128Barcode 
+                          value={`${skuCode}-BOX-${letter}`} 
+                          moduleWidth={1.1} 
+                          height={36} 
+                          bearerBars={true} 
+                          quietZone={false}
+                          fontSize={9} 
+                        />
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '8.5px', fontWeight: '800', borderTop: '1px dashed #94A3B8', paddingTop: '4px' }}>
+                        <span>Batch: {batchNo}</span>
+                        <span style={{ color: '#059669' }}>QC: VERIFIED ✓</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* ================= LAYOUT 4: THERMAL 50x25 LABEL ================= */}
             {printLayout === 'thermal_50x25' && (
               <div className="printable-card" style={{ background: '#FFFFFF', color: '#000000', borderRadius: '6px', padding: '10px 14px', width: '230px', border: '1.5px solid #000', textAlign: 'center', boxShadow: '0 8px 20px rgba(0,0,0,0.6)' }}>
                 <div style={{ fontSize: '9px', fontWeight: '900', marginBottom: '2px' }}>GODREJ INTERIO RAYAGADA</div>
@@ -969,7 +1287,7 @@ export function BarcodeStudio() {
               </div>
             )}
 
-            {/* ================= LAYOUT 4: A4 24-UP ADHESIVE SHEET ================= */}
+            {/* ================= LAYOUT 5: A4 24-UP ADHESIVE SHEET ================= */}
             {printLayout === 'a4_24up' && (
               <div className="print-grid-a4" style={{ width: '100%', background: '#FFFFFF', padding: '8px', borderRadius: '8px' }}>
                 {Array.from({ length: 24 }).map((_, idx) => (
@@ -991,7 +1309,7 @@ export function BarcodeStudio() {
               </div>
             )}
 
-            {/* ================= LAYOUT 5: ZEBRA ZPL II RAW CODE EXPORTER ================= */}
+            {/* ================= LAYOUT 6: ZEBRA ZPL II RAW CODE EXPORTER ================= */}
             {printLayout === 'zpl_code' && (
               <div style={{ width: '100%', background: '#0F172A', borderRadius: '12px', padding: '16px', border: '1px solid var(--accent-cyan)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
@@ -1022,6 +1340,435 @@ export function BarcodeStudio() {
         </div>
 
       </div>
+
+      {/* ========================================================================= */}
+      {/* 🌟 MODAL: REGISTER NEW PRODUCT SKU & AUTO-GENERATE BARCODE                */}
+      {/* ========================================================================= */}
+      {isNewSkuModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #090E1A 0%, #030712 100%)',
+            border: '2px solid rgba(212,175,55,0.4)',
+            borderRadius: '20px',
+            width: '100%',
+            maxWidth: '850px',
+            maxHeight: '92vh',
+            overflowY: 'auto',
+            padding: '24px',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.9), 0 0 40px rgba(212,175,55,0.15)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '18px',
+            position: 'relative'
+          }}>
+            
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '14px' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span className="badge badge-gold">✨ NEW SKU REGISTRATION</span>
+                  <span className="badge badge-cyan">GS1 COMPLIANT</span>
+                </div>
+                <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#FFFFFF', marginTop: '6px' }}>
+                  Register New Furniture Product & Auto-Generate Barcode
+                </h2>
+                <p style={{ fontSize: '12px', color: '#94A3B8', margin: 0 }}>
+                  Instantly creates Master Catalog entry, seeds SafeLock physical inventory, and generates printable barcodes & QR codes.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsNewSkuModalOpen(false)}
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: '#FFFFFF',
+                  borderRadius: '50%',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Modal Body Form */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              
+              {/* Section 1: Category & Auto-SKU Generator */}
+              <div style={{ background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ fontSize: '12px', fontWeight: '900', color: 'var(--accent-gold-light)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Tag size={13} /> 1. CATEGORY & SMART SKU GENERATOR:
+                </div>
+
+                {/* Category Selector Pills */}
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                  {[
+                    { id: 'Bedroom', label: '🛏️ Bedroom', prefix: 'GDJ-BED' },
+                    { id: 'Living', label: '🛋️ Living Room', prefix: 'GDJ-LIV' },
+                    { id: 'Dining', label: '🍽️ Dining & Study', prefix: 'GDJ-DIN' },
+                    { id: 'Office', label: '🏢 Office Chairs & Desk', prefix: 'GDJ-OFF' },
+                    { id: 'Storage', label: '🗄️ Wardrobes & Storage', prefix: 'GDJ-STO' },
+                    { id: 'Recliner', label: '💺 Motorized Recliners', prefix: 'GDJ-REC' },
+                    { id: 'Kitchen', label: '🍳 Modular Kitchen', prefix: 'GDJ-KIT' },
+                    { id: 'Custom', label: '✨ Custom Craft', prefix: 'CUST-FUR' }
+                  ].map(cat => {
+                    const isSelected = newSkuForm.category === cat.id;
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => {
+                          const newGenSku = generateSmartSku(cat.id, newSkuForm.subCategory);
+                          setNewSkuForm(prev => ({
+                            ...prev,
+                            category: cat.id,
+                            sku: newGenSku
+                          }));
+                          playScanBeep();
+                        }}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: '16px',
+                          fontSize: '11px',
+                          fontWeight: isSelected ? '900' : '600',
+                          background: isSelected ? 'linear-gradient(135deg, var(--accent-gold), #B45309)' : 'rgba(255,255,255,0.05)',
+                          color: isSelected ? '#000000' : '#E2E8F0',
+                          border: isSelected ? '1px solid #FFFFFF' : '1px solid rgba(255,255,255,0.1)',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {cat.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* SKU Code Input with Auto-Gen Button */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '10px' }}>
+                  <div className="form-field">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <label style={{ margin: 0, fontWeight: '800' }}>SKU Code (Unique ID)</label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const gen = generateSmartSku(newSkuForm.category, newSkuForm.subCategory);
+                          setNewSkuForm(prev => ({ ...prev, sku: gen }));
+                          playScanBeep();
+                          showToast(`⚡ Auto-Generated: ${gen}`);
+                        }}
+                        style={{
+                          background: 'rgba(56,189,248,0.15)',
+                          border: '1px solid var(--accent-cyan)',
+                          color: 'var(--accent-cyan)',
+                          fontSize: '10px',
+                          fontWeight: '800',
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}
+                      >
+                        <Wand2 size={11} /> ⚡ Auto-Generate SKU
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={newSkuForm.sku}
+                      onChange={e => setNewSkuForm({ ...newSkuForm, sku: e.target.value.toUpperCase() })}
+                      placeholder="e.g. GDJ-BED-ROYALE-01"
+                      style={{ fontWeight: '800', color: 'var(--accent-cyan)', fontSize: '13px' }}
+                    />
+                  </div>
+
+                  <div className="form-field">
+                    <label>Default Supplier / Brand</label>
+                    <input
+                      type="text"
+                      value={newSkuForm.supplier}
+                      onChange={e => setNewSkuForm({ ...newSkuForm, supplier: e.target.value })}
+                      placeholder="e.g. Godrej Interio Official"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 2: Product Name, Material & Specs */}
+              <div style={{ background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ fontSize: '12px', fontWeight: '900', color: 'var(--accent-cyan)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Box size={13} /> 2. PRODUCT DETAILS & PHYSICAL SPECIFICATIONS:
+                </div>
+
+                <div className="form-grid" style={{ gridTemplateColumns: '2fr 1fr', gap: '10px', marginBottom: '8px' }}>
+                  <div className="form-field">
+                    <label>Product Full Title / Model Name</label>
+                    <input
+                      type="text"
+                      value={newSkuForm.productName}
+                      onChange={e => setNewSkuForm({ ...newSkuForm, productName: e.target.value })}
+                      placeholder="e.g. Royale Teak Hydraulic King Bed (Imperial Finish)"
+                      style={{ fontWeight: '700' }}
+                    />
+                  </div>
+
+                  <div className="form-field">
+                    <label>Sub-Category</label>
+                    <input
+                      type="text"
+                      value={newSkuForm.subCategory}
+                      onChange={e => setNewSkuForm({ ...newSkuForm, subCategory: e.target.value })}
+                      placeholder="e.g. Hydraulic Storage Bed"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-grid" style={{ gridTemplateColumns: '1.5fr 1fr 1fr 1fr', gap: '10px' }}>
+                  <div className="form-field">
+                    <label>Material Spec</label>
+                    <input
+                      type="text"
+                      value={newSkuForm.material}
+                      onChange={e => setNewSkuForm({ ...newSkuForm, material: e.target.value })}
+                      placeholder="e.g. Solid CP Teak Wood"
+                    />
+                  </div>
+
+                  <div className="form-field">
+                    <label>Dimensions</label>
+                    <input
+                      type="text"
+                      value={newSkuForm.dimensions}
+                      onChange={e => setNewSkuForm({ ...newSkuForm, dimensions: e.target.value })}
+                      placeholder="e.g. 78x72x48 in"
+                    />
+                  </div>
+
+                  <div className="form-field">
+                    <label>Price Tier</label>
+                    <select
+                      value={newSkuForm.priceTier}
+                      onChange={e => setNewSkuForm({ ...newSkuForm, priceTier: e.target.value })}
+                    >
+                      <option value="Luxury">Luxury Gold 👑</option>
+                      <option value="Mid-Range">Mid-Range ⚡</option>
+                      <option value="Economy">Economy / Essential</option>
+                    </select>
+                  </div>
+
+                  <div className="form-field">
+                    <label>Warranty (Years)</label>
+                    <select
+                      value={newSkuForm.warranty}
+                      onChange={e => setNewSkuForm({ ...newSkuForm, warranty: Number(e.target.value) })}
+                    >
+                      <option value={10}>10 Years Godrej Warranty</option>
+                      <option value={5}>5 Years Standard</option>
+                      <option value={3}>3 Years</option>
+                      <option value={1}>1 Year Limited</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 3: Commercial Financials & Pricing */}
+              <div style={{ background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ fontSize: '12px', fontWeight: '900', color: 'var(--accent-emerald)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <DollarSign size={13} /> 3. COMMERCIAL PRICING & MARGIN:
+                </div>
+
+                <div className="form-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', alignItems: 'end' }}>
+                  <div className="form-field">
+                    <label>Gross Catalog MRP (₹)</label>
+                    <input
+                      type="number"
+                      value={newSkuForm.mrp}
+                      onChange={e => setNewSkuForm({ ...newSkuForm, mrp: Number(e.target.value) })}
+                    />
+                  </div>
+
+                  <div className="form-field">
+                    <label>Dealer Landing Cost (₹)</label>
+                    <input
+                      type="number"
+                      value={newSkuForm.unitCost}
+                      onChange={e => setNewSkuForm({ ...newSkuForm, unitCost: Number(e.target.value) })}
+                    />
+                  </div>
+
+                  <div className="form-field">
+                    <label>Showroom Selling Rate (₹)</label>
+                    <input
+                      type="number"
+                      value={newSkuForm.sellingPrice}
+                      onChange={e => setNewSkuForm({ ...newSkuForm, sellingPrice: Number(e.target.value) })}
+                      style={{ color: 'var(--accent-emerald)', fontWeight: '900' }}
+                    />
+                  </div>
+
+                  <div style={{ background: '#030712', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(16,185,129,0.3)', textAlign: 'center' }}>
+                    <div style={{ fontSize: '10px', color: '#94A3B8' }}>Gross Margin:</div>
+                    <div style={{ fontSize: '13px', fontWeight: '900', color: 'var(--accent-emerald)' }}>
+                      ₹{(Number(newSkuForm.sellingPrice) - Number(newSkuForm.unitCost)).toLocaleString('en-IN')}
+                      <span style={{ fontSize: '10px', marginLeft: '4px', opacity: 0.8 }}>
+                        ({newSkuForm.sellingPrice > 0 ? Math.round(((newSkuForm.sellingPrice - newSkuForm.unitCost) / newSkuForm.sellingPrice) * 100) : 0}%)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 4: Warehouse Stock, Bay & Packaging */}
+              <div style={{ background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ fontSize: '12px', fontWeight: '900', color: '#38BDF8', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Truck size={13} /> 4. WAREHOUSE STOCK, BAY & KNOCKDOWN PACKAGING:
+                </div>
+
+                <div className="form-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '10px' }}>
+                  <div className="form-field">
+                    <label>Initial Opening Stock</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={newSkuForm.openingStock}
+                      onChange={e => setNewSkuForm({ ...newSkuForm, openingStock: Number(e.target.value) })}
+                    />
+                  </div>
+
+                  <div className="form-field">
+                    <label>Min Safety Buffer</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={newSkuForm.bufferThreshold}
+                      onChange={e => setNewSkuForm({ ...newSkuForm, bufferThreshold: Number(e.target.value) })}
+                    />
+                  </div>
+
+                  <div className="form-field">
+                    <label>Knockdown Cartons</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="8"
+                      value={newSkuForm.boxCount}
+                      onChange={e => setNewSkuForm({ ...newSkuForm, boxCount: Number(e.target.value) })}
+                    />
+                  </div>
+
+                  <div className="form-field">
+                    <label>Assigned Rack / Bay</label>
+                    <input
+                      type="text"
+                      value={newSkuForm.bay}
+                      onChange={e => setNewSkuForm({ ...newSkuForm, bay: e.target.value })}
+                      placeholder="e.g. Dock-A1"
+                    />
+                  </div>
+                </div>
+
+                {/* Safety Badges */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px', background: '#030712', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10.5px', color: '#FFF', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={newSkuForm.isHeavy} onChange={e => setNewSkuForm({ ...newSkuForm, isHeavy: e.target.checked })} />
+                    🏋️ Heavy Lift
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10.5px', color: '#FFF', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={newSkuForm.isFragile} onChange={e => setNewSkuForm({ ...newSkuForm, isFragile: e.target.checked })} />
+                    🍷 Fragile Glass
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10.5px', color: '#FFF', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={newSkuForm.isThisSideUp} onChange={e => setNewSkuForm({ ...newSkuForm, isThisSideUp: e.target.checked })} />
+                    ⬆️ This Side Up
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10.5px', color: '#FFF', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={newSkuForm.isKeepDry} onChange={e => setNewSkuForm({ ...newSkuForm, isKeepDry: e.target.checked })} />
+                    💧 Keep Dry
+                  </label>
+                </div>
+              </div>
+
+              {/* Real-time Barcode & QR Preview in Modal */}
+              <div style={{ background: '#FFFFFF', borderRadius: '12px', padding: '14px', color: '#000000', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '2px solid #000' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '12px', fontWeight: '900' }}>GODREJ INTERIO RAYAGADA</div>
+                  <div style={{ fontSize: '13px', fontWeight: '900', marginTop: '2px' }}>
+                    {newSkuForm.productName || 'New Furniture Product Name'}
+                  </div>
+                  <div style={{ fontSize: '10px', color: '#475569', marginTop: '2px' }}>
+                    SKU: <b>{newSkuForm.sku || 'GDJ-NEW-001'}</b> • Price: <b>₹{Number(newSkuForm.sellingPrice || 0).toLocaleString()}</b> • Bay: <b>{newSkuForm.bay}</b>
+                  </div>
+                  <div style={{ marginTop: '8px' }}>
+                    <Code128Barcode 
+                      value={newSkuForm.sku || 'GDJ-NEW-001'} 
+                      moduleWidth={1.2} 
+                      height={40} 
+                      bearerBars={true} 
+                      quietZone={false}
+                      fontSize={10} 
+                    />
+                  </div>
+                </div>
+
+                <div style={{ textAlign: 'center', paddingLeft: '16px', borderLeft: '1px solid #CBD5E1' }}>
+                  <div style={{ fontSize: '8.5px', fontWeight: '800', color: '#475569', marginBottom: '4px' }}>MOBILE QR</div>
+                  <DynamicQrCode 
+                    value={`https://godrej-interio-rayagada.web.app/catalog/${newSkuForm.sku || 'NEW'}`} 
+                    size={65} 
+                  />
+                </div>
+              </div>
+
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '14px' }}>
+              <button
+                type="button"
+                className="btn-ghost-edit"
+                onClick={() => setIsNewSkuModalOpen(false)}
+                style={{ padding: '10px 18px', fontSize: '12px' }}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className="btn-luxury-gold"
+                onClick={handleSaveNewSku}
+                style={{
+                  padding: '12px 24px',
+                  fontSize: '13px',
+                  fontWeight: '900',
+                  boxShadow: '0 0 20px rgba(212,175,55,0.5)'
+                }}
+              >
+                <Sparkles size={14} /> ✨ Generate Barcode & Add to Master Inventory
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

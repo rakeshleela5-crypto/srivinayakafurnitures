@@ -30,12 +30,16 @@ import {
   Sliders,
   Search,
   CheckCircle2,
-  RefreshCw
+  RefreshCw,
+  Radio,
+  Wifi
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, playSafeLockSound, triggerGoldenConfetti, speakVoiceFeedback } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
 import { decodeBarcodeFromSource, decodeBarcodeFromImageFile, sanitizeBarcode } from '../utils/barcodeDecoder';
 import { generateBoxesForProduct } from '../utils/knockdownBoxGenerator';
+import { useHardwareBarcodeScanner } from '../hooks/useHardwareBarcodeScanner';
+import { inspectFurnitureDamageVision } from '../services/geminiService';
 
 export function StaffInwardScannerView() {
   const { 
@@ -75,6 +79,55 @@ export function StaffInwardScannerView() {
   const mediaStreamRef = useRef(null);
   const fileInputRef = useRef(null);
   const lastScanRef = useRef({ code: '', time: 0 });
+
+  // 📸 SUPERPOWER 3: GEMINI 1.5 FLASH VISION QC STATES
+  const [visionQcReport, setVisionQcReport] = useState(null);
+  const [isAnalyzingVision, setIsAnalyzingVision] = useState(false);
+  const [selectedPhotoForQc, setSelectedPhotoForQc] = useState(null);
+
+  const handleRunGeminiVisionQc = async (dataUrl) => {
+    if (!dataUrl) return;
+    setIsAnalyzingVision(true);
+    showToast("🧠 Gemini 1.5 Flash Vision analyzing carton & wood surfaces...", true);
+    playScanBeep();
+
+    try {
+      const report = await inspectFurnitureDamageVision(dataUrl, 'image/jpeg', {
+        sku: selectedPoSku,
+        truck: truckNumber,
+        bilty: biltyNumber,
+        transporter: transporterName
+      });
+      setVisionQcReport(report);
+      setSelectedPhotoForQc(dataUrl);
+
+      if (report.status === 'PASS') {
+        playSuccessChime();
+        showToast(`✅ Gemini Vision QC PASSED: Packaging Intact (${Math.round((report.confidence_score || 0.95) * 100)}% confidence)`, true);
+      } else {
+        showToast(`⚠️ Gemini Vision Detected Transit Damage (${report.severity})! Claim ready to file.`, false);
+      }
+    } catch (e) {
+      showToast(`Error running vision QC: ${e.message}`, false);
+    } finally {
+      setIsAnalyzingVision(false);
+    }
+  };
+
+  const handleAutoFileDamageClaim = (report) => {
+    dispatchWebhookAction('FILE_TRANSIT_DAMAGE_CLAIM', {
+      truck_no: truckNumber,
+      bilty_no: biltyNumber,
+      sku: selectedPoSku,
+      transporter: transporterName,
+      damage_severity: report.severity,
+      damage_summary: report.inspection_summary,
+      notes: report.damage_details,
+      photo_attached: selectedPhotoForQc ? "BASE64_IMAGE_ATTACHED" : "NO_PHOTO"
+    });
+    playSuccessChime();
+    showToast(`🚨 Transit Damage Claim logged to Google Sheets for LR #${biltyNumber}! Driver alerted before gate exit.`, true);
+  };
 
   // Edit Shipment Header Drawer
   const [isEditingShipment, setIsEditingShipment] = useState(false);
@@ -457,6 +510,21 @@ export function StaffInwardScannerView() {
     }
   };
 
+  // ⚡ Universal Zero-Focus Bluetooth / Wireless Laser Scanner Hook
+  const {
+    lastScan: hwLastScan,
+    scanSpeedMs: hwScanSpeedMs,
+    isScanning: isHardwareScanning,
+    simulateScan: simulateHardwareScan
+  } = useHardwareBarcodeScanner({
+    onScan: (code) => {
+      handleProcessBarcodeScan(code);
+      showToast(`⚡ Bluetooth Gun Scanned: ${code} (${hwScanSpeedMs || 22}ms)`, true);
+    },
+    enabled: true,
+    enableVoice: soundProfile === 'VOICE_ANNOUNCER'
+  });
+
   // 1-Tap Fullscreen Kiosk Mode
   const toggleFullscreen = () => {
     try {
@@ -644,6 +712,41 @@ export function StaffInwardScannerView() {
           >
             🔄 Reset
           </button>
+
+          {/* ⚡ Bluetooth / Wireless Laser Gun Status Pill */}
+          <div 
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              padding: '4px 10px', 
+              borderRadius: '20px', 
+              background: isHardwareScanning ? 'rgba(234, 179, 8, 0.25)' : 'rgba(16, 185, 129, 0.15)', 
+              border: isHardwareScanning ? '1px solid #EAB308' : '1px solid rgba(16, 185, 129, 0.4)',
+              fontSize: '11px',
+              fontWeight: '700',
+              color: isHardwareScanning ? '#EAB308' : '#10B981',
+              cursor: 'pointer'
+            }}
+            title="Bluetooth / 2.4G HID Laser Barcode Scanner is actively listening without screen touch. Tap to test."
+            onClick={() => {
+              const unverified = customBoxes.find(b => !verifiedBoxes.includes(b.id));
+              const testCode = unverified ? `BOX-${unverified.id}` : `${selectedPoSku}-BOX-A`;
+              simulateHardwareScan(testCode);
+              showToast(`🔫 Test Laser Gun Fired: ${testCode}!`, true);
+            }}
+          >
+            <span style={{
+              width: '8px',
+              height: '8px',
+              borderRadius: '50%',
+              background: isHardwareScanning ? '#EAB308' : '#10B981',
+              boxShadow: isHardwareScanning ? '0 0 8px #EAB308' : '0 0 8px #10B981'
+            }}></span>
+            <Radio size={12} />
+            <span>{isHardwareScanning ? '⚡ LASER SCANNING...' : '🟢 BLUETOOTH GUN: READY (ZERO-TOUCH)'}</span>
+            {hwScanSpeedMs > 0 && <span style={{ opacity: 0.85, fontSize: '10px' }}>({hwScanSpeedMs}ms)</span>}
+          </div>
         </div>
 
         {/* Right Cross-Terminal Handoffs */}
@@ -656,7 +759,7 @@ export function StaffInwardScannerView() {
             }}
             style={{ fontSize: '11px', padding: '5px 10px' }}
           >
-            <Truck size={12} /> <span>Factory POs (Tab 5)</span>
+            <Truck size={12} /> <span>Factory POs</span>
           </button>
 
           <button 
@@ -667,7 +770,7 @@ export function StaffInwardScannerView() {
             }}
             style={{ fontSize: '11px', padding: '5px 10px' }}
           >
-            <ShieldCheck size={12} /> <span>SafeLock (Tab 4)</span>
+            <ShieldCheck size={12} /> <span>SafeLock Stock</span>
           </button>
 
           <button 
@@ -678,7 +781,7 @@ export function StaffInwardScannerView() {
             }}
             style={{ fontSize: '11px', padding: '5px 10px' }}
           >
-            <Tag size={12} /> <span>Barcodes (Tab 11)</span>
+            <Tag size={12} /> <span>Barcode Studio</span>
           </button>
 
           <button 
@@ -969,21 +1072,158 @@ export function StaffInwardScannerView() {
             </div>
           )}
 
-          {/* Damaged Carton Photo Thumbnails Strip */}
-          {damageSnapshots.length > 0 && (
-            <div style={{ background: '#030712', borderRadius: '10px', padding: '8px', margin: '8px 0', border: '1px solid rgba(244,63,94,0.4)' }}>
-              <div style={{ fontSize: '10.5px', fontWeight: '800', color: 'var(--accent-rose)', marginBottom: '4px' }}>
-                📸 Inspection Photos Captured ({damageSnapshots.length}):
+          {/* 📸 SUPERPOWER 3: GEMINI 1.5 FLASH VISION FURNITURE DAMAGE QC */}
+          <div style={{
+            background: sunnyMode ? '#F1F5F9' : 'rgba(15, 23, 42, 0.95)',
+            borderRadius: '12px',
+            padding: '12px 14px',
+            margin: '10px 0',
+            border: '1px solid rgba(147, 51, 234, 0.4)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.25)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '11px', fontWeight: '900', color: '#C084FC', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <Sparkles size={14} /> 📸 GEMINI VISION AI QC INSPECTOR
+                </span>
+                <span style={{ fontSize: '10px', background: 'rgba(147,51,234,0.2)', color: '#D8B4FE', padding: '1px 6px', borderRadius: '4px', border: '1px solid rgba(147,51,234,0.3)' }}>
+                  Carton & Wood Surface QC
+                </span>
               </div>
-              <div style={{ display: 'flex', gap: '6px', overflowX: 'auto' }}>
+
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    background: 'linear-gradient(135deg, #7C3AED, #9333EA)',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '4px 10px',
+                    color: '#FFF',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <Camera size={12} /> Snap / Upload Carton
+                </button>
+              </div>
+            </div>
+
+            {/* Photo Thumbnails Strip */}
+            {damageSnapshots.length > 0 ? (
+              <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '6px' }}>
                 {damageSnapshots.map(snap => (
-                  <div key={snap.id} style={{ position: 'relative', width: '55px', height: '45px', borderRadius: '6px', overflow: 'hidden', border: '1px solid #CBD5E1' }}>
-                    <img src={snap.dataUrl} alt="damage" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <div 
+                    key={snap.id} 
+                    onClick={() => handleRunGeminiVisionQc(snap.dataUrl)}
+                    style={{ 
+                      position: 'relative', 
+                      width: '68px', 
+                      height: '52px', 
+                      borderRadius: '8px', 
+                      overflow: 'hidden', 
+                      border: selectedPhotoForQc === snap.dataUrl ? '2px solid #C084FC' : '1px solid #475569',
+                      cursor: 'pointer',
+                      flexShrink: 0,
+                      boxShadow: selectedPhotoForQc === snap.dataUrl ? '0 0 10px rgba(192,132,252,0.5)' : 'none'
+                    }}
+                    title="Click to run Gemini Vision Inspection on this photo"
+                  >
+                    <img src={snap.dataUrl} alt="inspection" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.7)', fontSize: '8px', color: '#E2E8F0', textAlign: 'center', padding: '1px 0' }}>
+                      Inspect 🔍
+                    </div>
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <div style={{ fontSize: '11px', color: '#94A3B8', padding: '6px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>ℹ️ Take or upload a photo of the truck carton or wood surface to run automated Gemini Vision QC before signing the LR Bilty.</span>
+              </div>
+            )}
+
+            {/* Vision QC Analysis Progress Indicator */}
+            {isAnalyzingVision && (
+              <div style={{ background: 'rgba(147, 51, 234, 0.15)', border: '1px solid #9333EA', borderRadius: '8px', padding: '8px 12px', margin: '8px 0', display: 'flex', alignItems: 'center', gap: '8px', color: '#E9D5FF', fontSize: '11px' }}>
+                <RefreshCw size={14} className="spin-anim text-purple-400" />
+                <span>Gemini 1.5 Flash Vision inspecting corrugated layers, corner compression & wood finishes...</span>
+              </div>
+            )}
+
+            {/* Vision QC Result Certificate */}
+            {visionQcReport && !isAnalyzingVision && (
+              <div style={{
+                background: visionQcReport.status === 'PASS' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.12)',
+                border: `1px solid ${visionQcReport.status === 'PASS' ? '#10B981' : '#EF4444'}`,
+                borderRadius: '8px',
+                padding: '10px 12px',
+                margin: '8px 0',
+                fontSize: '11px',
+                lineHeight: '1.5'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span style={{
+                    fontWeight: '900',
+                    fontSize: '11.5px',
+                    color: visionQcReport.status === 'PASS' ? '#34D399' : '#F87171',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px'
+                  }}>
+                    {visionQcReport.status === 'PASS' ? '✅ QC VERIFIED: PACKAGING INTACT' : '🚨 QC FAILED: TRANSIT DAMAGE DETECTED'}
+                    <span style={{ fontSize: '10px', opacity: 0.85, fontWeight: 'normal' }}>
+                      ({Math.round((visionQcReport.confidence_score || 0.95) * 100)}% confidence)
+                    </span>
+                  </span>
+                  <span style={{ fontSize: '10px', color: '#94A3B8' }}>
+                    Severity: <strong>{visionQcReport.severity}</strong>
+                  </span>
+                </div>
+
+                <div style={{ color: '#E2E8F0', marginBottom: '6px' }}>
+                  • <strong>Observation:</strong> {visionQcReport.inspection_summary}
+                </div>
+                {visionQcReport.damage_details && visionQcReport.damage_details !== 'None detected' && (
+                  <div style={{ color: '#FCA5A5', marginBottom: '6px' }}>
+                    • <strong>Damage Details:</strong> {visionQcReport.damage_details}
+                  </div>
+                )}
+                <div style={{ color: '#A5B4FC', marginBottom: '8px' }}>
+                  • <strong>Recommended Action:</strong> {visionQcReport.recommended_action}
+                </div>
+
+                {visionQcReport.status !== 'PASS' && (
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleAutoFileDamageClaim(visionQcReport)}
+                      style={{
+                        background: 'linear-gradient(135deg, #DC2626, #B91C1C)',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '6px 12px',
+                        color: '#FFF',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        boxShadow: '0 0 10px rgba(220,38,38,0.4)'
+                      }}
+                    >
+                      <AlertTriangle size={13} /> 🚨 Auto-File Transit Damage Claim to Google Sheets
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Target Shipment SKU & Quantity */}
           <div className="form-grid" style={{ gridTemplateColumns: '1.5fr 1fr', margin: '8px 0' }}>

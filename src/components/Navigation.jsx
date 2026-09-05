@@ -77,6 +77,14 @@ export function AppHeader() {
         )}
         <button 
           className="btn-ghost-edit" 
+          onClick={() => setActiveTab('bank_ledger')} 
+          style={{ fontSize: '11px', padding: '6px 12px', color: '#34D399', border: '1px solid rgba(52,211,153,0.4)', background: 'rgba(52,211,153,0.08)' }} 
+          title="Open Commercial Bank Ledger, Statement Reconciler & B2B RTGS"
+        >
+          <span>🏛️ Bank Ledger & RTGS</span>
+        </button>
+        <button 
+          className="btn-ghost-edit" 
           onClick={() => openModal('store_settings')} 
           style={{ fontSize: '11px', padding: '6px 12px', color: 'var(--accent-emerald)', border: '1px solid rgba(16,185,129,0.4)', background: 'rgba(16,185,129,0.08)' }} 
           title="Configure Showroom Legal Entity, GSTIN, and Doorstep Merchant UPI VPA"
@@ -107,22 +115,29 @@ export function TabsRibbon() {
   const { activeTab, setActiveTab, currentUser } = useStore();
 
   const allTabs = [
-    { id: 'executive', label: '☕ 1. Executive Hub', icon: Zap },
-    { id: 'voice_pos', label: '🎙️ 2. AI Voice POS & Quote', icon: Mic },
-    { id: 'room_matcher', label: '📸 3. 2D AI Room Matcher', icon: Sparkles },
-    { id: 'safelock', label: '🔒 4. SafeLock Inventory', icon: ShieldCheck },
-    { id: 'autoprocure', label: '🏭 5. Factory Purchase Orders', icon: Factory },
-    { id: 'logistics_epod', label: '🚚 6. Fleet & Digital ePOD', icon: Truck },
-    { id: 'architects', label: '🏛️ 7. Architect VIP Referral', icon: Landmark },
-    { id: 'crm', label: '👥 8. Showroom CRM Leads', icon: Users },
-    { id: 'whatsapp_bots', label: '💬 9. WhatsApp & 20 Bots', icon: MessageSquare },
-    { id: 'documents', label: '🧾 10. Document Studio', icon: FileText },
-    { id: 'live_database', label: '📡 11. Live 21-Table Cloud', icon: Database },
-    { id: 'barcode_studio', label: '🏷️ 12. Barcode Studio (1D)', icon: Layers },
-    { id: 'qr_studio', label: '📱 13. Product QR Studio (2D)', icon: Smartphone },
-    { id: 'inward_scanner', label: '📦 14. Staff Inward Dock Scanner', icon: Truck },
-    { id: 'outward_scanner', label: '🚚 15. Staff Outward Dock Dispatch', icon: Truck },
-    { id: 'staff_qr', label: '📱 16. Staff Mobile QR Board', icon: Smartphone }
+    // PHASE 1: Executive & Showroom Sales
+    { id: 'executive', label: '☕ 1. Executive Cockpit', icon: Zap },
+    { id: 'crm', label: '👥 2. Showroom CRM Leads', icon: Users },
+    { id: 'voice_pos', label: '🎙️ 3. AI Voice POS & Quote', icon: Mic },
+    { id: 'architects', label: '🏛️ 4. Architect VIP Network', icon: Landmark },
+
+    // PHASE 2: Warehouse Dock & Supply Chain
+    { id: 'autoprocure', label: '🏭 5. Factory POs & AutoProcure', icon: Factory },
+    { id: 'inward_scanner', label: '📦 6. Inward Truck QC Scanner', icon: Truck },
+    { id: 'safelock', label: '🔒 7. SafeLock Warehouse Stock', icon: ShieldCheck },
+    { id: 'barcode_studio', label: '🏷️ 8. Barcode Studio (1D)', icon: Layers },
+    { id: 'qr_studio', label: '📱 9. Product QR Studio (2D)', icon: Smartphone },
+
+    // PHASE 3: Outward Dispatch & Customer Delivery
+    { id: 'outward_scanner', label: '🚚 10. Outward Dispatch Scanner', icon: Truck },
+    { id: 'logistics_epod', label: '📱 11. Logistics Fleet & ePOD', icon: Truck },
+    { id: 'documents', label: '🧾 12. Document Studio', icon: FileText },
+
+    // PHASE 4: Finance, Automation & Master Database
+    { id: 'bank_ledger', label: '🏛️ 13. Bank Statements & RTGS', icon: Landmark },
+    { id: 'whatsapp_bots', label: '💬 14. WhatsApp & 26 Bots', icon: MessageSquare },
+    { id: 'staff_qr', label: '📱 15. Staff Mobile QR Hub', icon: Smartphone },
+    { id: 'live_database', label: '📡 16. Live 36-Table Cloud', icon: Database }
   ];
 
   // Filter tabs allowed for current role
@@ -149,22 +164,22 @@ export function BottomDock() {
   const { activeTab, setActiveTab, currentUser } = useStore();
 
   const allDockItems = [
-    { id: 'executive', label: 'Executive' },
-    { id: 'voice_pos', label: '🎙️ Voice POS' },
-    { id: 'room_matcher', label: '📸 AI Matcher' },
-    { id: 'safelock', label: '🔒 SafeLock' },
-    { id: 'autoprocure', label: '🏭 Factory PO' },
-    { id: 'logistics_epod', label: '🚚 Fleet ePOD' },
-    { id: 'architects', label: '🏛️ Architects' },
+    { id: 'executive', label: '☕ Executive' },
     { id: 'crm', label: '👥 CRM Leads' },
-    { id: 'whatsapp_bots', label: '💬 WhatsApp' },
-    { id: 'documents', label: '🧾 Documents' },
-    { id: 'live_database', label: '📡 21 Tables' },
+    { id: 'voice_pos', label: '🎙️ Voice POS' },
+    { id: 'architects', label: '🏛️ Architects' },
+    { id: 'autoprocure', label: '🏭 Factory PO' },
+    { id: 'inward_scanner', label: '📦 Inward' },
+    { id: 'safelock', label: '🔒 SafeLock' },
     { id: 'barcode_studio', label: '🏷️ Barcodes' },
     { id: 'qr_studio', label: '📱 QR Studio' },
-    { id: 'inward_scanner', label: '📦 Inward' },
     { id: 'outward_scanner', label: '🚚 Outward' },
-    { id: 'staff_qr', label: '📱 QR Hub' }
+    { id: 'logistics_epod', label: '📱 Fleet ePOD' },
+    { id: 'documents', label: '🧾 Documents' },
+    { id: 'bank_ledger', label: '🏛️ Bank Ledger' },
+    { id: 'whatsapp_bots', label: '💬 WhatsApp' },
+    { id: 'staff_qr', label: '📱 QR Hub' },
+    { id: 'live_database', label: '📡 36 Tables' }
   ];
 
   const visibleDockItems = currentUser?.allowedTabs

@@ -7,7 +7,7 @@ import { STORE_METADATA } from '../data/initialData';
 // FIX 2: Hardcoded fallback URL — even if localStorage AND STORE_METADATA fail,
 // the webhook will ALWAYS fire to the correct endpoint
 // ============================================================================
-const HARDCODED_FALLBACK_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxMyADYcU8nyWR_9a77jae7HSnx_29jgM5u7mZ1ef7Yx5cEhMtZsJoDddrOZQQAZKca/exec';
+const HARDCODED_FALLBACK_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbx-4MH9Dnpvgy0vSoOE42P97U1q00r9eiUz6Md-IXkPEEoJT3KdIae20diAOjNj7RTd/exec';
 
 export function formatDateTimeIndian(date = new Date()) {
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -33,7 +33,7 @@ export function formatDateIndian(date = new Date()) {
 export async function dispatchWebhookAction(actionName, payload = {}, customWebhookUrl = null) {
   // Auto-heal stale localStorage URL if it contains an outdated deployment ID
   const storedUrl = localStorage.getItem('OMNIBUILD_WEBHOOK_URL');
-  const validStoredUrl = (storedUrl && storedUrl.includes('script.google.com') && !storedUrl.includes('H5TocJpK') && !storedUrl.includes('AKfycbwX-EUfdD55')) ? storedUrl : null;
+  const validStoredUrl = (storedUrl && storedUrl.includes('script.google.com') && storedUrl.includes('AKfycbx-4MH9Dnpvgy0vSoOE42P97U1q00r9eiUz6Md-IXkPEEoJT3KdIae20diAOjNj7RTd')) ? storedUrl : null;
   
   const webhookUrl = customWebhookUrl
     || validStoredUrl
@@ -59,18 +59,29 @@ export async function dispatchWebhookAction(actionName, payload = {}, customWebh
     };
 
     // Dynamically include all scalar payload fields (strings, numbers, booleans)
+    let hasComplexData = false;
     for (const [key, val] of Object.entries(payload)) {
-      if (val !== undefined && val !== null && typeof val !== 'object') {
-        sanitizedParams[key] = String(val);
+      if (val !== undefined && val !== null) {
+        if (typeof val === 'object') {
+          hasComplexData = true;
+        } else {
+          sanitizedParams[key] = String(val);
+        }
       }
     }
 
-    // For bulk import actions with large arrays/objects, use POST; otherwise use GET with redirect follow
-    if (actionName === 'BULK_CATALOG_IMPORT' || actionName === 'RESTORE_BACKUP') {
+    // Lossless Payload Serialization: If complex arrays/objects exist, serialize to payload_json
+    if (hasComplexData) {
+      sanitizedParams['payload_json'] = JSON.stringify(payload);
+    }
+
+    const getParams = new URLSearchParams(sanitizedParams).toString();
+
+    // If query string is too large (> 1800 chars) or action is a bulk operation, use POST
+    if (actionName === 'BULK_CATALOG_IMPORT' || actionName === 'RESTORE_BACKUP' || getParams.length > 1800) {
       const response = await fetch(webhookUrl, {
         method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(fullPayload)
       });
       return {
@@ -78,11 +89,9 @@ export async function dispatchWebhookAction(actionName, payload = {}, customWebh
         action: actionName,
         timestamp: currentTimestamp,
         dispatched: true,
-        _source: 'POST_BULK_DISPATCH'
+        _source: 'POST_LOSSLESS_DISPATCH'
       };
     }
-
-    const getParams = new URLSearchParams(sanitizedParams).toString();
 
     try {
       const response = await fetch(`${webhookUrl}?${getParams}`, {
@@ -126,12 +135,72 @@ export async function dispatchWebhookAction(actionName, payload = {}, customWebh
     }
   } catch (error) {
     console.error("Webhook Dispatch Exception:", error);
+    // Queue offline action for auto-replay once connection is restored
+    queueOfflineAction(actionName, payload);
     return {
       success: false,
       action: actionName,
       error: error.message,
       timestamp: currentTimestamp,
-      _source: 'DISPATCH_FAILED'
+      _source: 'OFFLINE_QUEUED'
     };
   }
+}
+
+// ============================================================================
+// 📴 OFFLINE TRANSACTION JOURNAL & AUTO-REPLAY ENGINE
+// ============================================================================
+export function queueOfflineAction(actionName, payload) {
+  try {
+    const queue = JSON.parse(localStorage.getItem('OMNIBUILD_OFFLINE_QUEUE') || '[]');
+    queue.push({
+      id: 'OFFLINE-' + Date.now(),
+      actionName,
+      payload,
+      queuedAt: formatDateTimeIndian()
+    });
+    localStorage.setItem('OMNIBUILD_OFFLINE_QUEUE', JSON.stringify(queue));
+    console.log(`[📴 OFFLINE JOURNAL QUEUED] Action ${actionName} stored locally for auto-replay.`);
+  } catch (e) {
+    console.warn("Could not save to offline queue:", e);
+  }
+}
+
+export async function flushOfflineQueue() {
+  try {
+    const raw = localStorage.getItem('OMNIBUILD_OFFLINE_QUEUE');
+    if (!raw) return 0;
+    const queue = JSON.parse(raw);
+    if (!Array.isArray(queue) || queue.length === 0) return 0;
+
+    console.log(`[🔄 REPLAYING OFFLINE JOURNAL] Replaying ${queue.length} actions...`);
+    const remaining = [];
+    let synced = 0;
+
+    for (const item of queue) {
+      try {
+        const res = await dispatchWebhookAction(item.actionName, item.payload);
+        if (res && res.success) {
+          synced++;
+        } else {
+          remaining.push(item);
+        }
+      } catch (err) {
+        remaining.push(item);
+      }
+    }
+
+    localStorage.setItem('OMNIBUILD_OFFLINE_QUEUE', JSON.stringify(remaining));
+    return synced;
+  } catch (e) {
+    return 0;
+  }
+}
+
+// Auto-replay journal when network connectivity is restored
+if (typeof window !== 'undefined') {
+  window.addEventListener('online', () => {
+    console.log("🌐 [NETWORK RESTORED] Automatically flushing offline transaction journal...");
+    flushOfflineQueue();
+  });
 }

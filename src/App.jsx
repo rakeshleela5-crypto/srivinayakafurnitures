@@ -17,7 +17,6 @@ import { StaffQrHubView } from './views/StaffQrHubView';
 
 // Lazy-loaded (large files, only loaded when the specific tab is activated)
 const VoicePosView = React.lazy(() => import('./views/VoicePosView').then(m => ({ default: m.VoicePosView })));
-const RoomMatcherStudio = React.lazy(() => import('./views/RoomMatcherStudio').then(m => ({ default: m.RoomMatcherStudio })));
 const InventorySafeLockView = React.lazy(() => import('./views/InventorySafeLockView').then(m => ({ default: m.InventorySafeLockView })));
 const AutoProcureView = React.lazy(() => import('./views/AutoProcureView').then(m => ({ default: m.AutoProcureView })));
 const LogisticsEpodView = React.lazy(() => import('./views/LogisticsEpodView').then(m => ({ default: m.LogisticsEpodView })));
@@ -29,6 +28,7 @@ const ProductQrStudio = React.lazy(() => import('./views/ProductQrStudio').then(
 const StaffInwardScannerView = React.lazy(() => import('./views/StaffInwardScannerView').then(m => ({ default: m.StaffInwardScannerView })));
 const StaffOutwardScannerView = React.lazy(() => import('./views/StaffOutwardScannerView').then(m => ({ default: m.StaffOutwardScannerView })));
 const MobileCustomerChatView = React.lazy(() => import('./views/MobileCustomerChatView').then(m => ({ default: m.MobileCustomerChatView })));
+const BankStatementLedgerView = React.lazy(() => import('./views/BankStatementLedgerView').then(m => ({ default: m.BankStatementLedgerView })));
 
 // Premium loading spinner shown while lazy chunks download
 function LazyLoadingFallback() {
@@ -131,12 +131,13 @@ function AppContent() {
         return <ExecutiveOverview />;
       case 'voice_pos':
         return <VoicePosView />;
-      case 'room_matcher':
-        return <RoomMatcherStudio />;
       case 'safelock':
         return <InventorySafeLockView />;
       case 'autoprocure':
         return <AutoProcureView />;
+      case 'bank_ledger':
+      case 'bank_statement':
+        return <BankStatementLedgerView />;
       case 'logistics_epod':
         return <LogisticsEpodView />;
       case 'architects':

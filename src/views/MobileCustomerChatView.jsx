@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
+import { generateConciergeFollowup, getGeminiApiKey } from '../services/geminiService';
 
 export function MobileCustomerChatView() {
   const { 
@@ -80,6 +81,58 @@ export function MobileCustomerChatView() {
   const [leadPhone, setLeadPhone] = useState(customerProfile.phone || '');
   const [leadAddress, setLeadAddress] = useState(customerProfile.address || 'Rayagada');
 
+  // 🎯 Behavioral Intent & Milestone Telemetry Tracking
+  const [shoppingOccasion, setShoppingOccasion] = useState('HOME_UPGRADE'); // 'WEDDING' | 'GRIHA_PRAVESH' | 'HOME_UPGRADE'
+  const [portalLang, setPortalLang] = useState('EN'); // 'EN' | 'OR' | 'TE' | 'HI'
+  const [browsedCategories, setBrowsedCategories] = useState(['Bedroom']);
+  const [browsedSkus, setBrowsedSkus] = useState([currentSku]);
+  const [highestBudget, setHighestBudget] = useState(89790);
+  const [sessionStartTime] = useState(Date.now());
+
+  // 💬 SUPERPOWER 4: GEMINI MULTI-LINGUAL CONCIERGE STATES
+  const [aiDraftMessage, setAiDraftMessage] = useState('');
+  const [isGeneratingAiDraft, setIsGeneratingAiDraft] = useState(false);
+  const [isAiConciergePanelOpen, setIsAiConciergePanelOpen] = useState(false);
+  const [conciergeTargetName, setConciergeTargetName] = useState(customerProfile.name || 'Shree Rajesh Panda');
+  const [conciergeOccasion, setConciergeOccasion] = useState('Wedding Bedroom Suite');
+  const [conciergeLang, setConciergeLang] = useState('ODIA');
+
+  const handleGenerateAiConcierge = async () => {
+    setIsGeneratingAiDraft(true);
+    playScanBeep();
+    try {
+      const msg = await generateConciergeFollowup({
+        customerName: conciergeTargetName,
+        occasion: conciergeOccasion,
+        language: conciergeLang,
+        category: (catalog.find(c => c.SKU === currentSku) || catalog[0])?.Product_Name || 'Solid Teak Hydraulic Bed',
+        budget: (catalog.find(c => c.SKU === currentSku) || catalog[0])?.Selling_Price_INR || 89790,
+        quoteId: `QUO-${Math.floor(1000 + Math.random() * 9000)}`
+      });
+      setAiDraftMessage(msg);
+      playSuccessChime();
+      showToast(`✨ Culturally authentic ${conciergeLang} message drafted by Gemini!`, true);
+    } catch (err) {
+      showToast(`Error: ${err.message}`, false);
+    } finally {
+      setIsGeneratingAiDraft(false);
+    }
+  };
+
+  const handleDispatchBot27Recovery = () => {
+    dispatchWebhookAction('BOT_27_CONCIERGE_LEAD_RECOVERY', {
+      customer_name: conciergeTargetName,
+      customer_phone: customerProfile.phone || leadPhone || '9390553301',
+      category: (catalog.find(c => c.SKU === currentSku) || catalog[0])?.Product_Name || 'Solid Teak Bed',
+      occasion: conciergeOccasion,
+      language: conciergeLang,
+      budget: (catalog.find(c => c.SKU === currentSku) || catalog[0])?.Selling_Price_INR || 89790,
+      recovery_step: 1
+    });
+    playSuccessChime();
+    showToast(`🚀 BOT-27 AI Concierge Recovery dispatched & logged to Google Sheets!`, true);
+  };
+
   // Interactive Product Customization & Tuner
   const [woodFinish, setWoodFinish] = useState('👑 Natural Teak');
   const [storageType, setStorageType] = useState('⚡ Hydraulic Auto-Lift');
@@ -123,7 +176,13 @@ export function MobileCustomerChatView() {
   const savings = mrp - sp;
   const tokenAdvance50 = Math.round(sp * 0.5);
 
-  // Handle Lead Registration (Saves to Google Sheets & CRM)
+  const getOccasionLabel = () => {
+    if (shoppingOccasion === 'WEDDING') return '💍 Wedding Suite (Marriage)';
+    if (shoppingOccasion === 'GRIHA_PRAVESH') return '🏠 Griha Pravesh (New Home)';
+    return '✨ Premium Room Refresh';
+  };
+
+  // Handle Lead Registration (Saves to Google Sheets & CRM with Occasion & Intent Score)
   const handleRegisterLead = (e) => {
     if (e) e.preventDefault();
     if (!leadName.trim() || !leadPhone.trim()) {
@@ -135,11 +194,20 @@ export function MobileCustomerChatView() {
       name: leadName.trim(),
       phone: leadPhone.trim(),
       address: leadAddress.trim() || 'Rayagada',
-      isRegistered: true
+      isRegistered: true,
+      occasion: shoppingOccasion,
+      language: portalLang
     };
     setCustomerProfile(newProfile);
     localStorage.setItem('OMNIBUILD_CUSTOMER_PROFILE', JSON.stringify(newProfile));
     setIsLeadCaptureOpen(false);
+
+    const isUltraVip = (highestBudget || sp) >= 150000;
+    const intentLabel = isUltraVip 
+      ? '99% (👑 ULTRA-VIP DIRECTOR CALL > 1.5L)'
+      : (shoppingOccasion === 'WEDDING' || shoppingOccasion === 'GRIHA_PRAVESH')
+        ? '96% (💍 HIGH-TICKET OCCASION LEAD)'
+        : '92% (HOT MOBILE VIP LEAD)';
 
     // Register in CRM Leads State
     const newInquiry = {
@@ -147,10 +215,10 @@ export function MobileCustomerChatView() {
       Customer_Name: newProfile.name,
       Customer_Phone: newProfile.phone,
       Address: newProfile.address,
-      Category_Models: `${activeProduct.Product_Name} (${activeProduct.SKU})`,
-      Budget_INR: activeProduct.Selling_Price_INR || 89790,
-      Urgency: "HIGH_HOT_LEAD",
-      AI_Intent_Score: "95% (HOT VIP LEAD)",
+      Category_Models: `${activeProduct.Product_Name} [${getOccasionLabel()}]`,
+      Budget_INR: highestBudget || sp,
+      Urgency: isUltraVip ? "DIRECTOR_URGENT" : "HIGH_HOT_LEAD",
+      AI_Intent_Score: intentLabel,
       Status: "ENGAGED_ON_MOBILE_AI"
     };
     setInquiries(prev => [newInquiry, ...prev]);
@@ -164,23 +232,61 @@ export function MobileCustomerChatView() {
       customer_name: newProfile.name,
       customer_phone: newProfile.phone,
       address: newProfile.address,
-      category: activeProduct.Product_Name,
-      budget: activeProduct.Selling_Price_INR,
-      intent_score: '95% (HOT VIP LEAD)'
+      category: `${activeProduct.Product_Name} (${getOccasionLabel()} • Lang: ${portalLang})`,
+      budget: highestBudget || sp,
+      intent_score: intentLabel
     });
 
-    // Personalized Welcome Greeting in Chat
+    // Multi-Lingual Personalized Welcome Greeting in Chat
+    let welcomeGreeting = '';
+    if (portalLang === 'OR') {
+      welcomeGreeting = `ନମସ୍କାର **${newProfile.name} ବାବୁ**! 🙏\n\nଗୋଦରେଜ୍ ଇଣ୍ଟିରିଓ ରାୟଗଡା ତରଫରୁ ସ୍ୱାଗତ। ଆପଣଙ୍କ ${getOccasionLabel()} ପାଇଁ ସ୍ପେଶାଲ୍ ଫେଷ୍ଟିଭ୍ ପ୍ରାଇସ୍ ଲକ୍ ସୁରକ୍ଷିତ ହୋଇଛି:\n\n• ✨ **ଶୋରୁମ୍ ଡିସକାଉଣ୍ଟ:** ₹${savings.toLocaleString()} ରିହାତି\n• 🎁 **ମାଗଣା ଉପହାର:** 2x ଅର୍ଥୋ ପିଲୋ + ୱାଟରପ୍ରୁଫ୍ ପ୍ରୋଟେକ୍ଟର୍\n• 🚚 **ମାଗଣା ଡେଲିଭରୀ ଓ ଫିଟିଙ୍ଗ୍:** ରାୟଗଡା ଜିଲ୍ଲା ମଧ୍ୟରେ।\n\n48 ଘଣ୍ଟା ପାଇଁ ଏହି ଷ୍ଟକ୍ ସୁରକ୍ଷିତ ରଖିବାକୁ ତଳେ **[🔒 SafeLock]** ଟ୍ୟାପ୍ କରନ୍ତୁ!`;
+    } else if (portalLang === 'TE') {
+      welcomeGreeting = `నమస్కారం **${newProfile.name} గారు**! 🙏\n\nరాయగడ గోద్రెజ్ ఇంటీరియోకి స్వాగతం. మీ ${getOccasionLabel()} కోసం ప్రత్యేక పండుగ ఆఫర్ రిజర్వ్ చేయబడింది:\n\n• ✨ **షోరూమ్ డిస్కౌంట్:** ₹${savings.toLocaleString()} ఆదా\n• 🎁 **ఉచిత బహుమతులు:** 2x ఆర్థో పిల్లోస్ + ప్రొటెక్టర్\n• 🚚 **ఉచిత డెలివరీ & ఫిట్టింగ్:** రాయగడలో మాస్టర్ కార్పెంటర్ ద్వారా.\n\nఈ ప్రొడక్ట్‌ను 48 గంటలు రిజర్వ్ చేయడానికి క్రింద **[🔒 SafeLock]** ట్యాప్ చేయండి!`;
+    } else {
+      welcomeGreeting = `Namaskar **${newProfile.name} Ji**! 🙏\n\nI have registered your profile for **${newProfile.address}** delivery [${getOccasionLabel()}]. You now have exclusive access to:\n\n• ✨ **Showroom Spot Discount:** Up to ₹${savings.toLocaleString()} OFF\n• 🎁 **Complimentary Gifts:** 2x Ortho Pillows + Mattress Protector\n• 🚚 **Free Hydraulic Assembly:** In Rayagada by Master Carpenter Narayana Mistri.\n\nTap **[🔒 SafeLock Bed]** below to hold this piece for 48 hours, or ask me any question!`;
+    }
+
     setChatMessages(prev => [
       ...prev,
       {
         id: Date.now(),
         sender: "bot",
-        title: "👑 VIP Welcome & Festive Offer Unlocked",
-        text: `Namaskar **${newProfile.name} Ji**! 🙏\n\nI have registered your profile for **${newProfile.address}** delivery. You now have exclusive access to:\n\n• ✨ **Showroom Spot Discount:** Up to ₹${savings.toLocaleString()} OFF\n• 🎁 **Complimentary Gifts:** 2x Ortho Pillows + Mattress Protector\n• 🚚 **Free Hydraulic Assembly:** In Rayagada by Master Carpenter Narayana Mistri.\n\nTap **[🔒 SafeLock Bed]** below to hold this piece for 48 hours, or ask me any question!`,
+        title: `👑 VIP ${getOccasionLabel()} Offer Unlocked`,
+        text: welcomeGreeting,
         time: "Just Now",
         matchedProducts: []
       }
     ]);
+  };
+
+  // 📲 1-Click WhatsApp Quote Saver / Exit-Intent Trigger
+  const handleSaveQuoteToWhatsApp = () => {
+    const custName = customerProfile.name || leadName || 'VIP Customer';
+    const cleanStorePhone = (storeMeta.phone || '+919390553301').replace(/[^0-9]/g, '');
+
+    let waText = '';
+    if (portalLang === 'OR') {
+      waText = `ନମସ୍କାର ରାକେଶ ସାର୍! 🙏 ମୁଁ ${custName}। ମୁଁ ଗୋଦରେଜ୍ ଇଣ୍ଟିରିଓ ରାୟଗଡାର 24/7 AI Concierge ରେ ${activeProduct.Product_Name} (₹${sp.toLocaleString()}) ଦେଖୁଥିଲି [${getOccasionLabel()}]। ଦୟାକରି ଏହାର ରିଅଲ୍ ଶୋରୁମ୍ ଭିଡିଓ ଏବଂ ଫେଷ୍ଟିଭ୍ ଅଫର୍ ପଠାନ୍ତୁ।`;
+    } else if (portalLang === 'TE') {
+      waText = `నమస్కారం రాకేష్ సర్! 🙏 నేను ${custName}. రాయగడ గోద్రెజ్ ఇంటీరియో 24/7 పోర్టల్‌లో ${activeProduct.Product_Name} (₹${sp.toLocaleString()}) చూశాను [${getOccasionLabel()}]. దయచేసి షోరూమ్ వీడియో మరియు పండుగ ఆఫర్ వివరాలు పంపండి.`;
+    } else {
+      waText = `Namaskar Rakesh Sir! 🙏 I am ${custName}. I was exploring the ${activeProduct.Product_Name} (₹${sp.toLocaleString()}) on your Godrej Interio Rayagada 24/7 Concierge for my ${getOccasionLabel()}. Please send showroom floor video & festive offer details.`;
+    }
+
+    // Telemetry dispatch
+    dispatchWebhookAction('LOG_INQUIRY', {
+      customer_name: custName,
+      customer_phone: customerProfile.phone || leadPhone || '94371',
+      address: customerProfile.address || leadAddress || 'Rayagada',
+      category: `${activeProduct.Product_Name} (${getOccasionLabel()} • ${portalLang})`,
+      budget: highestBudget || sp,
+      intent_score: (highestBudget || sp) >= 150000 ? '99% (👑 ULTRA-VIP DIRECTOR CALL > 1.5L)' : '95% (HOT CONCIERGE WHATSAPP)',
+      channel: '24/7 AI Concierge (WhatsApp Quote Saved)'
+    });
+
+    window.open(`https://wa.me/${cleanStorePhone}?text=${encodeURIComponent(waText)}`, '_blank');
+    showToast("📲 Quote & Festive Privileges saved to WhatsApp!", true);
   };
 
   // Handle 1-Click SafeLock Confirmation by Customer
@@ -250,6 +356,16 @@ export function MobileCustomerChatView() {
     setIsProductCardExpanded(true);
     playSuccessChime();
     triggerGoldenConfetti();
+
+    // 🎯 Track behavioral telemetry
+    setBrowsedSkus(prev => Array.from(new Set([...prev, product.SKU])));
+    if (product.Main_Category) {
+      setBrowsedCategories(prev => Array.from(new Set([...prev, product.Main_Category])));
+    }
+    const pPrice = Number(product.Selling_Price_INR) || 0;
+    if (pPrice > highestBudget) {
+      setHighestBudget(pPrice);
+    }
 
     const switchMsg = {
       id: Date.now(),
@@ -520,17 +636,6 @@ export function MobileCustomerChatView() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
           <button 
-            className="btn-purple"
-            onClick={() => {
-              setActiveTab('room_matcher');
-              showToast("🛋️ Switched to 2D Spatial AI Room Matcher!", true);
-            }}
-            style={{ fontSize: '10.5px', padding: '3px 8px' }}
-          >
-            <Layers size={11} /> <span>2D Fit (Tab 13)</span>
-          </button>
-
-          <button 
             className="btn-cyan"
             onClick={() => {
               setActiveTab('voice_pos');
@@ -559,8 +664,218 @@ export function MobileCustomerChatView() {
           >
             <RefreshCw size={11} className={isSyncing ? 'spin-anim' : ''} /> <span>Sync</span>
           </button>
+
+          <button 
+            className="btn-luxury-gold"
+            onClick={() => setIsAiConciergePanelOpen(!isAiConciergePanelOpen)}
+            style={{ fontSize: '10.5px', padding: '3px 10px', background: 'linear-gradient(135deg, #7C3AED, #9333EA)', color: '#FFF', border: 'none' }}
+          >
+            <Sparkles size={11} /> <span>✨ Gemini Concierge ({conciergeLang})</span>
+          </button>
         </div>
       </div>
+
+      {/* 💬 SUPERPOWER 4: GEMINI MULTI-LINGUAL CONCIERGE DRAWER */}
+      {isAiConciergePanelOpen && (
+        <div style={{
+          background: 'linear-gradient(135deg, #0F172A, #1E1B4B)',
+          borderBottom: '2px solid #A855F7',
+          padding: '16px 20px',
+          boxShadow: '0 8px 30px rgba(0,0,0,0.5)'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#E9D5FF', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Sparkles size={16} className="text-purple-400" />
+                ✨ Gemini Multi-Lingual WhatsApp Concierge Studio
+              </span>
+              <span style={{ fontSize: '10px', background: 'rgba(168,85,247,0.2)', color: '#D8B4FE', padding: '2px 8px', borderRadius: '12px', border: '1px solid rgba(168,85,247,0.4)' }}>
+                Powered by Gemini 1.5 Flash
+              </span>
+            </div>
+            <button
+              onClick={() => setIsAiConciergePanelOpen(false)}
+              style={{ background: 'transparent', border: 'none', color: '#94A3B8', fontSize: '12px', cursor: 'pointer' }}
+            >
+              ✕ Close
+            </button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '12px' }}>
+            <div>
+              <label style={{ fontSize: '10px', color: '#94A3B8', textTransform: 'uppercase', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>
+                Customer / Lead Name:
+              </label>
+              <input
+                type="text"
+                value={conciergeTargetName}
+                onChange={(e) => setConciergeTargetName(e.target.value)}
+                style={{
+                  width: '100%',
+                  background: '#0B132B',
+                  border: '1px solid rgba(168,85,247,0.3)',
+                  borderRadius: '8px',
+                  padding: '6px 10px',
+                  color: '#FFF',
+                  fontSize: '12px'
+                }}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontSize: '10px', color: '#94A3B8', textTransform: 'uppercase', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>
+                Occasion / Milestone:
+              </label>
+              <select
+                value={conciergeOccasion}
+                onChange={(e) => setConciergeOccasion(e.target.value)}
+                style={{
+                  width: '100%',
+                  background: '#0B132B',
+                  border: '1px solid rgba(168,85,247,0.3)',
+                  borderRadius: '8px',
+                  padding: '6px 10px',
+                  color: '#FFF',
+                  fontSize: '12px'
+                }}
+              >
+                <option value="Wedding Bedroom Suite">💍 Wedding Bedroom Suite (ବିବାହ ଉପହାର)</option>
+                <option value="Griha Pravesh Housewarming">🏡 Griha Pravesh (ଗୃହ ପ୍ରବେଶ)</option>
+                <option value="Luxury Turnkey Villa">👑 Luxury Turnkey Villa Project</option>
+                <option value="Home Living Renovation">✨ Home Living Renovation</option>
+              </select>
+            </div>
+
+            <div>
+              <label style={{ fontSize: '10px', color: '#94A3B8', textTransform: 'uppercase', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>
+                Language Preference:
+              </label>
+              <select
+                value={conciergeLang}
+                onChange={(e) => setConciergeLang(e.target.value)}
+                style={{
+                  width: '100%',
+                  background: '#0B132B',
+                  border: '1px solid rgba(168,85,247,0.3)',
+                  borderRadius: '8px',
+                  padding: '6px 10px',
+                  color: '#FFF',
+                  fontSize: '12px',
+                  fontWeight: 'bold'
+                }}
+              >
+                <option value="ODIA">🇮🇳 Odia (ଓଡ଼ିଆ) - Rayagada Native</option>
+                <option value="TELUGU">🇮🇳 Telugu (తెలుగు) - Border Client</option>
+                <option value="HINDI">🇮🇳 Hindi (हिन्दी)</option>
+                <option value="ENGLISH">🌐 English (Executive Tone)</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+            <button
+              onClick={handleGenerateAiConcierge}
+              disabled={isGeneratingAiDraft}
+              style={{
+                background: 'linear-gradient(135deg, #7C3AED, #9333EA)',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                color: '#FFF',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                cursor: isGeneratingAiDraft ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 0 15px rgba(168,85,247,0.4)'
+              }}
+            >
+              {isGeneratingAiDraft ? <RefreshCw size={13} className="spin-anim" /> : <Sparkles size={13} />}
+              {isGeneratingAiDraft ? `Crafting in ${conciergeLang}...` : `✨ Draft Message in ${conciergeLang}`}
+            </button>
+          </div>
+
+          {aiDraftMessage && (
+            <div style={{
+              background: 'rgba(0, 0, 0, 0.4)',
+              border: '1px solid rgba(168,85,247,0.4)',
+              borderRadius: '10px',
+              padding: '12px 14px',
+              marginTop: '8px'
+            }}>
+              <div style={{ fontSize: '11px', color: '#D8B4FE', fontWeight: 'bold', marginBottom: '6px' }}>
+                📝 Generated WhatsApp Follow-up ({conciergeLang}):
+              </div>
+              <div style={{ fontSize: '13px', color: '#F1F5F9', lineHeight: '1.6', whiteSpace: 'pre-wrap', fontFamily: 'system-ui' }}>
+                {aiDraftMessage}
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => {
+                    const phone = (customerProfile.phone || leadPhone || '9390553301').replace(/[^0-9]/g, '');
+                    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(aiDraftMessage)}`, '_blank');
+                    showToast("📲 Opened in WhatsApp with pre-filled AI draft!", true);
+                  }}
+                  style={{
+                    background: '#10B981',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '6px 12px',
+                    color: '#FFF',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px'
+                  }}
+                >
+                  <MessageSquare size={13} /> 📲 Send via WhatsApp
+                </button>
+
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(aiDraftMessage);
+                    showToast("📋 Copied message to clipboard!", true);
+                  }}
+                  style={{
+                    background: 'rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '6px',
+                    padding: '6px 12px',
+                    color: '#CBD5E1',
+                    fontSize: '11px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  📋 Copy Text
+                </button>
+
+                <button
+                  onClick={handleDispatchBot27Recovery}
+                  style={{
+                    background: 'linear-gradient(135deg, #4F46E5, #6366F1)',
+                    border: 'none',
+                    borderRadius: '6px',
+                    padding: '6px 12px',
+                    color: '#FFF',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px'
+                  }}
+                >
+                  <Send size={13} /> 🚀 Log to BOT-27 Queue
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Top Mobile Header */}
       <div style={{ background: '#0F1A2E', borderBottom: '1px solid rgba(212,175,55,0.3)', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>
@@ -579,7 +894,38 @@ export function MobileCustomerChatView() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {/* 🌐 Regional Language 1-Tap Switcher */}
+          <div style={{ display: 'flex', gap: '2px', background: 'rgba(0,0,0,0.5)', padding: '2px 4px', borderRadius: '14px', border: '1px solid rgba(212,175,55,0.3)' }}>
+            {[
+              { id: 'EN', label: 'EN' },
+              { id: 'OR', label: 'ଓଡ଼ିଆ' },
+              { id: 'TE', label: 'తెలుగు' },
+              { id: 'HI', label: 'हिंदी' }
+            ].map(l => (
+              <button
+                key={l.id}
+                type="button"
+                onClick={() => {
+                  setPortalLang(l.id);
+                  showToast(`🌐 Language: ${l.label}`);
+                }}
+                style={{
+                  background: portalLang === l.id ? 'var(--accent-gold)' : 'transparent',
+                  color: portalLang === l.id ? '#000000' : '#CBD5E1',
+                  border: 'none',
+                  borderRadius: '10px',
+                  padding: '3px 6px',
+                  fontSize: '9.5px',
+                  fontWeight: '900',
+                  cursor: 'pointer'
+                }}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+
           <a 
             href={`tel:${(storeMeta.phone || '+919390553301').replace(/[^0-9+]/g, '')}`}
             style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-gold-light)', border: '1px solid rgba(212,175,55,0.3)', textDecoration: 'none' }}
@@ -645,6 +991,45 @@ export function MobileCustomerChatView() {
               onChange={e => setLeadAddress(e.target.value)}
               style={{ background: '#030712', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', padding: '8px 10px', color: '#FFFFFF', fontSize: '12px', outline: 'none' }}
             />
+
+            {/* 💍 Shopping Purpose / Occasion Milestone Selector */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '10.5px', color: '#FCD34D', fontWeight: '800' }}>
+                  🎯 Shopping Occasion:
+                </span>
+                <span style={{ fontSize: '9.5px', color: '#94A3B8' }}>
+                  Unlocks Special Bridal/Villa Packages
+                </span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                {[
+                  { id: 'WEDDING', label: '💍 Wedding Suite' },
+                  { id: 'GRIHA_PRAVESH', label: '🏠 Griha Pravesh' },
+                  { id: 'HOME_UPGRADE', label: '✨ Room Refresh' }
+                ].map(occ => (
+                  <button
+                    type="button"
+                    key={occ.id}
+                    onClick={() => setShoppingOccasion(occ.id)}
+                    style={{
+                      fontSize: '10px',
+                      padding: '6px 4px',
+                      borderRadius: '8px',
+                      border: shoppingOccasion === occ.id ? '1.5px solid #FCD34D' : '1px solid rgba(255,255,255,0.15)',
+                      background: shoppingOccasion === occ.id ? 'rgba(212,175,55,0.25)' : 'rgba(0,0,0,0.4)',
+                      color: shoppingOccasion === occ.id ? '#FCD34D' : '#CBD5E1',
+                      fontWeight: '800',
+                      cursor: 'pointer',
+                      textAlign: 'center'
+                    }}
+                  >
+                    {occ.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <button
               type="submit"
               style={{ background: 'linear-gradient(135deg, #D4AF37 0%, #B45309 100%)', color: '#000000', border: 'none', borderRadius: '10px', padding: '9px', fontSize: '12px', fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 15px rgba(212,175,55,0.4)' }}
@@ -1049,6 +1434,50 @@ export function MobileCustomerChatView() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* 🌟 1-Click WhatsApp Quote Saver & Showroom Video Bar (Exit-Intent & Drop-Off Protection) */}
+      <div style={{
+        background: 'linear-gradient(90deg, rgba(37,211,102,0.18) 0%, rgba(212,175,55,0.18) 100%)',
+        borderTop: '1px solid rgba(37,211,102,0.4)',
+        padding: '8px 14px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: '8px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
+          <span style={{ fontSize: '16px' }}>📹</span>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: '11px', fontWeight: '800', color: '#6EE7B7', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              Want real showroom video of {activeProduct.Product_Name}?
+            </div>
+            <div style={{ fontSize: '9.5px', color: '#FCD34D' }}>
+              Save ₹{savings.toLocaleString()} Festive Price-Lock on WhatsApp
+            </div>
+          </div>
+        </div>
+
+        <button
+          onClick={handleSaveQuoteToWhatsApp}
+          style={{
+            background: 'linear-gradient(135deg, #25D366, #128C7E)',
+            color: '#FFFFFF',
+            border: 'none',
+            borderRadius: '18px',
+            padding: '7px 12px',
+            fontSize: '10.5px',
+            fontWeight: '900',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px',
+            boxShadow: '0 3px 12px rgba(37,211,102,0.4)',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          <MessageSquare size={13} /> <span>Save to WhatsApp</span>
+        </button>
       </div>
 
       {/* Bottom Sticky Chat Input */}

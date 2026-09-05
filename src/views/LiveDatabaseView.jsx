@@ -34,6 +34,7 @@ export function LiveDatabaseView() {
     routeStops, 
     paymentsLog, 
     documentsLog,
+    cloudTables,
     syncWithGoogleSheets,
     isSyncing,
     showToast,
@@ -41,14 +42,32 @@ export function LiveDatabaseView() {
     setActiveTab
   } = useStore();
 
-  const [selectedTable, setSelectedTable] = useState('Orders_SafeLock');
+  const [selectedTable, setSelectedTable] = useState('Inquiries_Log');
   const [searchQuery, setSearchQuery] = useState('');
   const [editingRowIndex, setEditingRowIndex] = useState(null);
   const [editFormData, setEditFormData] = useState({});
   const [showAddRowModal, setShowAddRowModal] = useState(false);
   const [newRowData, setNewRowData] = useState({});
 
-  // Sample data fallback for all 20 Google Sheets tables
+  // Helper to look up table in cloudTables with flexible matching (case-insensitive, prefix variations)
+  const getCloudTable = (tableName) => {
+    if (!cloudTables || typeof cloudTables !== 'object') return null;
+    if (Array.isArray(cloudTables[tableName]) && cloudTables[tableName].length > 0) {
+      return cloudTables[tableName];
+    }
+    const cleanTarget = tableName.toLowerCase().replace(/[^a-z0-9]/g, '');
+    for (const key of Object.keys(cloudTables)) {
+      const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (cleanKey === cleanTarget || cleanKey.endsWith(cleanTarget) || cleanTarget.endsWith(cleanKey)) {
+        if (Array.isArray(cloudTables[key]) && cloudTables[key].length > 0) {
+          return cloudTables[key];
+        }
+      }
+    }
+    return null;
+  };
+
+  // Sample data fallback for all Google Sheets tables
   const defaultPurchaseOrders = [
     { PO_ID: "PO-2026-881", Date: "02-Sep-2026", Vendor: "Royal Teak Crafts (Saharanpur)", SKU_Details: "BED-MOD-001 (x2) + ALM-MOD-001 (x2)", Total_INR: 234000, Status: "DISPATCHED_IN_TRANSIT" },
     { PO_ID: "PO-2026-882", Date: "02-Sep-2026", Vendor: "Kurlon Enterprise Ltd (Bangalore)", SKU_Details: "MAT-MOD-001 (x5)", Total_INR: 85000, Status: "CONFIRMED_PRODUCTION" }
@@ -84,30 +103,69 @@ export function LiveDatabaseView() {
     { Campaign_ID: "CAMP-2026-8891", Date_Time: "02-Sep-2026 02:25 PM", Bot_ID: "BOT-11", Bot_Name: "WhatsApp VIP Broadcast Festive Bot", Audience_Segment: "Hot Walk-In Leads [HOT_LEADS]", Recipient_Count: 124, Language: "EN", Drip_Sequence: "YES (3-Stage Drip)", Status: "DISPATCHED_TO_META_CLOUD_API ✓" }
   ];
 
-  const tableDataMap = {
-    'Orders_SafeLock': orders,
+  const defaultArchitectPayouts = [
+    { Payout_ID: "PAY-ARC-101", Date_Time: "02-Sep-2026 04:30 PM", Architect: "Ar. Sunita Patnaik (Studio Vastu)", Project: "Gayatri Nagar Villa (5-Piece Teak Suite)", Deal_Amount: 450000, Commission_Rate: "8%", Payout_Amount_INR: 36000, Bank_UTR: "HDFCR520260902881", Status: "DISBURSED_RTGS ✓" },
+    { Payout_ID: "PAY-ARC-102", Date_Time: "01-Sep-2026 02:15 PM", Architect: "Ar. Rajesh Verma", Project: "JK Paper Mills Executive Lounge", Deal_Amount: 320000, Commission_Rate: "6%", Payout_Amount_INR: 19200, Bank_UTR: "SBINR20260901992", Status: "DISBURSED_RTGS ✓" }
+  ];
+
+  const defaultStoreAlerts = [
+    { Alert_ID: "ALT-001", Timestamp: formatDateTimeIndian(), Type: "STOCK_THRESHOLD", Message: "Warehouse Teak King Bed stock below threshold", Severity: "HIGH", Status: "ACTIVE" }
+  ];
+
+  const defaultDailySales = [
+    { Date: "03-Sep-2026", Day: "Thursday", Footfall: 42, Orders_Count: 8, Gross_Sales_INR: 420000, Advance_Collected_INR: 210000, SafeLock_Conversion_Pct: "75%" }
+  ];
+
+  // Comprehensive 21-Table Map prioritizing Cloud Data from Google Sheets
+  const baseTableMap = {
+    'Inquiries_Log': getCloudTable('Inquiries_Log') || inquiries,
+    'Orders_SafeLock': getCloudTable('Orders_SafeLock') || orders,
+    'Inventory_Stock': getCloudTable('Inventory_Stock') || inventory,
+    'SmartKit_Components': getCloudTable('SmartKit_Components') || smartKitBoxes,
+    'Purchase_Orders_Log': getCloudTable('Purchase_Orders_Log') || defaultPurchaseOrders,
+    'Payments_Log': getCloudTable('Payments_Log') || paymentsLog,
+    'Architect_VIPs': getCloudTable('Architect_VIPs') || architects,
+    'Fleet_Drivers': getCloudTable('Fleet_Drivers') || drivers,
+    'Delivery_Route_Stops': getCloudTable('Delivery_Route_Stops') || routeStops,
+    'Delivery_Log': getCloudTable('Delivery_Log') || defaultOutwardManifest,
+    'Daily_Sales_Summary': getCloudTable('Daily_Sales_Summary') || defaultDailySales,
+    'Carpenter_Work_Orders': getCloudTable('Carpenter_Work_Orders') || defaultCarpenterOrders,
+    'Store_Alerts_Log': getCloudTable('Store_Alerts_Log') || defaultStoreAlerts,
+    'Marketing_Campaigns_Log': getCloudTable('Marketing_Campaigns_Log') || defaultMarketingCampaigns,
+    'Quote_Log': getCloudTable('Quote_Log') || defaultRoomProposals,
+    'Commission_Log': getCloudTable('Commission_Log') || defaultArchitectPayouts,
+    'OTP_Log': getCloudTable('OTP_Log') || [],
+    'Exchange_Buyback_Log': getCloudTable('Exchange_Buyback_Log') || [],
+    'Store_Sales_Targets': getCloudTable('Store_Sales_Targets') || [],
     'Furniture_Catalog': catalog,
-    'Inventory_Stock': inventory,
-    'SmartKit_Components': smartKitBoxes,
-    'Inquiries_Log': inquiries,
-    'Marketing_Campaigns_Log': defaultMarketingCampaigns,
-    'Architect_VIPs': architects,
-    'Fleet_Drivers': drivers,
-    'Delivery_Route_Stops': routeStops,
-    'Payments_Log': paymentsLog,
     'Document_Generation_Log': documentsLog,
-    'Factory_Purchase_Orders': defaultPurchaseOrders,
     'Vendor_Sourcing_Matrix': defaultVendorMatrix,
-    'Warehouse_Dock_Inward_Log': defaultDockInward,
-    'Outward_Loading_Manifest': defaultOutwardManifest,
-    'Customer_Reviews_Log': defaultCustomerReviews,
-    'Carpenter_Work_Orders': defaultCarpenterOrders,
-    'Room_Matcher_Proposals_Log': defaultRoomProposals,
-    'Architect_Payouts_Log': defaultArchitectPayouts
+    'Customer_Reviews_Log': defaultCustomerReviews
   };
 
+  // Add any additional dynamic tables returned by Google Sheets
+  const tableDataMap = { ...baseTableMap };
+  if (cloudTables && typeof cloudTables === 'object') {
+    Object.keys(cloudTables).forEach(cloudKey => {
+      if (!tableDataMap[cloudKey] && Array.isArray(cloudTables[cloudKey])) {
+        tableDataMap[cloudKey] = cloudTables[cloudKey];
+      }
+    });
+  }
+
   const rawRows = tableDataMap[selectedTable] || [];
-  const headers = rawRows.length > 0 ? Object.keys(rawRows[0]) : [];
+  
+  // Extract all unique headers across all rows in the active table
+  const headers = React.useMemo(() => {
+    if (!rawRows || rawRows.length === 0) return [];
+    const keysSet = new Set();
+    rawRows.forEach(row => {
+      if (row && typeof row === 'object') {
+        Object.keys(row).forEach(k => keysSet.add(k));
+      }
+    });
+    return Array.from(keysSet);
+  }, [rawRows]);
 
   const totalRecordsCount = Object.values(tableDataMap).reduce((sum, list) => sum + (list?.length || 0), 0);
 

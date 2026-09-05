@@ -1,6 +1,6 @@
 import https from 'https';
 
-const webhookUrl = "https://script.google.com/macros/s/AKfycbxDOn7rk0D3IL_s5-jLscvpz_Gg3-9qWSpXFRzugPlUpv2xq9Npag0cehBAYQDBJKep/exec";
+const webhookUrl = "https://script.google.com/macros/s/AKfycbx-4MH9Dnpvgy0vSoOE42P97U1q00r9eiUz6Md-IXkPEEoJT3KdIae20diAOjNj7RTd/exec";
 
 function fetchWithRedirect(url) {
   https.get(url, (res) => {

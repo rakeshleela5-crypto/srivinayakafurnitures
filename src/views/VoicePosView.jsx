@@ -19,19 +19,24 @@ import {
   Building2,
   ShieldCheck,
   Flame,
-  Printer
+  Printer,
+  Search,
+  Tag
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
+import { FURNITURE_CATALOG } from '../data/initialData';
 
 export function VoicePosView() {
-  const { catalog, inquiries, triggerSafeLockOrder, openModal, showToast, setActiveTab } = useStore();
+  const { catalog = [], inquiries, triggerSafeLockOrder, openModal, showToast, setActiveTab } = useStore();
 
-  // Voice & Transcript State
+  // 🔍 115+ Stock Search & Filter State
+  const [posSearchQuery, setPosSearchQuery] = useState('');
+  const [posCatFilter, setPosCatFilter] = useState('ALL');
+
+  // Voice State
   const [isRecording, setIsRecording] = useState(false);
   const [timer, setTimer] = useState(0);
-  const [transcript, setTranscript] = useState("Dr. Subhashish Jena from Gayatri Nagar Villa wants the Solid King Bed with Hydraulic Storage and 4-Door Wardrobe for 1 lakh 56 thousand rupees.");
-  const [isEditingTranscript, setIsEditingTranscript] = useState(false);
   const [typedQuery, setTypedQuery] = useState('');
   const [posStep, setPosStep] = useState(1);
 
@@ -85,9 +90,12 @@ export function VoicePosView() {
       showToast("🎙️ Continuous live microphone active! Speak naturally into your mic...", true);
     } else {
       setIsRecording(false);
-      setIsEditingTranscript(true);
       playScanBeep();
-      showToast("⏹️ Recording stopped. You can edit the transcription text below.");
+      // Auto-match spoken query if recorded
+      if (catalog.length > 0) {
+        addItemToCart(catalog[0].SKU);
+      }
+      showToast("⏹️ Mic stopped. Detected order items added to cart ✓", true);
     }
   };
 
@@ -98,34 +106,33 @@ export function VoicePosView() {
       setCustName("Dr. Subhashish Jena");
       setCustPhone("9437188291");
       setCustAddress("Gayatri Nagar Villa, Rayagada");
-      setTranscript("Dr. Subhashish Jena from Gayatri Nagar Villa wants Solid King Bed (Hydraulic) and 4-Door Wardrobe.");
       setCartItems([
         { ...(catalog[0] || {}), qty: 1 },
         { ...(catalog[10] || {}), qty: 1 }
       ]);
       setDiscountPct(5);
+      showToast("✨ Loaded Dr. Subhashish Jena's preset (King Bed + 4D Wardrobe) into cart!", true);
     } else if (presetType === 'alok_mishra') {
       setCustName("Er. Alok Mishra");
       setCustPhone("9437122334");
       setCustAddress("Raniguda Farmhouse, Rayagada");
-      setTranscript("Er. Alok Mishra wants Royal Velvet 7-Seater Sectional and Wingback Accent Chair.");
       setCartItems([
         { ...(catalog[5] || catalog[0] || {}), qty: 1 },
         { ...(catalog[9] || catalog[1] || {}), qty: 1 }
       ]);
       setDiscountPct(8);
+      showToast("✨ Loaded Er. Alok Mishra's preset (7-Seater Sofa + Accent Chair) into cart!", true);
     } else if (presetType === 'sunita_patnaik') {
       setCustName("Ar. Sunita Patnaik (Studio Vastu)");
       setCustPhone("9437011223");
       setCustAddress("Ashok Nagar Villa, Rayagada");
-      setTranscript("Ar. Sunita Patnaik ordered 6-Seater Italian Marble Dining Set and Luxury 4-Poster Bed.");
       setCartItems([
         { ...(catalog[7] || catalog[0] || {}), qty: 1 },
         { ...(catalog[4] || catalog[1] || {}), qty: 1 }
       ]);
       setDiscountPct(10);
+      showToast("✨ Loaded Ar. Sunita Patnaik's preset (Marble Dining + 4-Poster Bed) into cart!", true);
     }
-    showToast(`🎙️ Loaded preset order for ${custName}!`);
   };
 
   // 📥 Import Lead from Tab 8 (Showroom CRM)
@@ -136,33 +143,63 @@ export function VoicePosView() {
     setCustName(lead.Customer_Name || "Customer");
     setCustPhone(lead.Customer_Phone || "94371");
     setCustAddress(lead.Address || lead.Locality_Address || "Rayagada Town");
-    setTranscript(`Walk-in customer ${lead.Customer_Name} interested in ${lead.Category_Models || 'Furniture'}. Budget: ₹${(lead.Budget_INR || 0).toLocaleString()}`);
     
     playScanBeep();
     showToast(`📥 Imported lead #${lead.Inquiry_ID} (${lead.Customer_Name}) into Voice POS!`, true);
   };
 
-  // Natural Language Typed Order Parser
+  // Natural Language Typed Order Parser (Silently adds directly to cart with zero text clutter)
   const handleTypedOrder = () => {
     if (!typedQuery.trim()) return;
-    const q = typedQuery.toLowerCase();
+    const q = typedQuery.trim().toLowerCase();
     
-    // Search matching products
-    const matched = catalog.filter(c => 
-      (c.Product_Name || '').toLowerCase().includes(q) || 
-      (c.Main_Category || '').toLowerCase().includes(q) ||
-      (c.Sub_Category || '').toLowerCase().includes(q) ||
-      (q.includes('sofa') && c.Main_Category === 'Living Room') ||
-      (q.includes('bed') && c.Main_Category === 'Bedroom') ||
-      (q.includes('dining') && c.Main_Category === 'Dining & Study')
-    );
+    const matched = [];
+    const segments = q.split(/[\+,\&]| and /i).map(s => s.trim()).filter(Boolean);
+    
+    segments.forEach(seg => {
+      const found = catalog.find(c => 
+        (c.SKU || '').toLowerCase() === seg ||
+        (c.Product_Name || '').toLowerCase().includes(seg) ||
+        (c.Sub_Category || '').toLowerCase().includes(seg) ||
+        (seg.includes('bed') && c.Main_Category === 'Bedroom') ||
+        (seg.includes('sofa') && c.Main_Category === 'Living Room') ||
+        (seg.includes('wardrobe') && ((c.Sub_Category || '').toLowerCase().includes('wardrobe') || (c.Product_Name || '').toLowerCase().includes('wardrobe'))) ||
+        (seg.includes('dining') && c.Main_Category === 'Dining & Study') ||
+        (seg.includes('chair') && ((c.Sub_Category || '').toLowerCase().includes('chair') || (c.Product_Name || '').toLowerCase().includes('chair')))
+      );
+      if (found && !matched.some(m => m.SKU === found.SKU)) {
+        matched.push(found);
+      }
+    });
+
+    if (matched.length === 0) {
+      const directMatches = catalog.filter(c => 
+        (c.SKU || '').toLowerCase().includes(q) || 
+        (c.Product_Name || '').toLowerCase().includes(q) || 
+        (c.Main_Category || '').toLowerCase().includes(q) ||
+        (c.Sub_Category || '').toLowerCase().includes(q)
+      );
+      matched.push(...directMatches.slice(0, 3));
+    }
 
     if (matched.length > 0) {
-      setCartItems(matched.slice(0, 2).map(m => ({ ...m, qty: 1 })));
-      setTranscript(`Customer ordered ${matched.map(m => m.Product_Name).join(' + ')}`);
-      showToast(`✨ AI matched ${matched.length} furniture models from catalog!`);
+      setCartItems(prev => {
+        let updated = [...prev];
+        matched.forEach(item => {
+          const existing = updated.find(p => p.SKU === item.SKU);
+          if (existing) {
+            updated = updated.map(p => p.SKU === item.SKU ? { ...p, qty: p.qty + 1 } : p);
+          } else {
+            updated.push({ ...item, qty: 1 });
+          }
+        });
+        return updated;
+      });
+      playScanBeep();
+      showToast(`✨ Added ${matched.length} item(s) directly to Quotation Cart!`, true);
+      setTypedQuery('');
     } else {
-      showToast(`🔍 Searched catalog for "${typedQuery}"`);
+      showToast(`🔍 No catalog match found for "${typedQuery}". Try searching by SKU or model name below.`);
     }
   };
 
@@ -211,7 +248,13 @@ export function VoicePosView() {
       Ordered_SKU: skuList + (giftList ? ` + Gifts: [${giftList}]` : ''),
       Total_Amount_INR: finalPayable,
       Advance_Paid_INR: advanceToken50,
-      Balance_Due_INR: finalPayable - advanceToken50
+      Balance_Due_INR: finalPayable - advanceToken50,
+      items: cartItems.map(i => ({
+        sku: i.SKU,
+        qty: i.qty,
+        name: i.Product_Name,
+        price: i.Selling_Price_INR
+      }))
     });
 
     // Webhook dispatch to Quote_Log
@@ -332,31 +375,64 @@ export function VoicePosView() {
             🔄 Old Furniture Exchange
           </button>
         </div>
+      </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button 
-            className="btn-ghost-edit" 
-            onClick={() => {
-              setActiveTab('room_matcher');
-              showToast(`📸 Pre-loaded ${custName}'s cart into AI Room Matcher!`, true);
-            }}
-            style={{ fontSize: '11px', padding: '5px 12px', color: 'var(--accent-gold-light)', border: '1px solid rgba(212,175,55,0.4)', background: 'rgba(212,175,55,0.06)' }}
-          >
-            <Compass size={13} /> <span>📸 2D Room Matcher (Tab 3)</span>
-          </button>
-
-          <button 
-            className="btn-ghost-edit" 
-            onClick={() => {
-              setActiveTab('documents');
-              showToast(`📄 Switched to Document Studio to print Proforma GST Invoice for ${custName}!`, true);
-            }}
-            style={{ fontSize: '11px', padding: '5px 12px', color: 'var(--accent-cyan)', border: '1px solid rgba(56,189,248,0.4)', background: 'rgba(56,189,248,0.06)' }}
-          >
-            <Printer size={13} /> <span>📄 Proforma GST Invoice (Tab 10)</span>
-          </button>
+      {/* 📑 Master Commercial Quotation Studio Top Access Banner */}
+      <div style={{
+        background: 'linear-gradient(135deg, rgba(212,175,55,0.15) 0%, rgba(3,7,18,0.9) 100%)',
+        border: '1.5px solid var(--accent-gold)',
+        borderRadius: '12px',
+        padding: '12px 18px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        boxShadow: '0 4px 20px rgba(212,175,55,0.15)',
+        flexWrap: 'wrap',
+        gap: '12px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ background: 'var(--accent-gold)', color: '#030712', borderRadius: '8px', padding: '8px', fontWeight: '900', fontSize: '16px' }}>
+            📑
+          </div>
+          <div>
+            <div style={{ fontSize: '14px', fontWeight: '900', color: 'var(--accent-gold-light)' }}>
+              Master Commercial Quotation Studio & 5 Value Schemes
+            </div>
+            <div style={{ fontSize: '11.5px', color: '#CBD5E1' }}>
+              Live edit customer profile, item prices, free festive gifts, the 5 schemes & 1-Click WhatsApp / Phone Gmail / Print
+            </div>
+          </div>
         </div>
 
+        <button 
+          type="button"
+          className="btn-luxury-gold"
+          style={{ fontSize: '12px', padding: '9px 18px', fontWeight: '900', boxShadow: '0 0 15px rgba(212,175,55,0.4)', cursor: 'pointer' }}
+          onClick={() => {
+            playScanBeep();
+            openModal('whatsapp_proposal', { 
+              customerName: custName, 
+              customerPhone: custPhone, 
+              address: custAddress, 
+              items: cartItems.map(c => ({ 
+                sku: c.SKU, 
+                name: c.Product_Name, 
+                mrp: c.MRP_INR || c.Selling_Price_INR, 
+                price: c.Selling_Price_INR, 
+                warranty: `${c.Warranty_Years || 5} Years`,
+                qty: c.qty,
+                specs: c.Material_Spec || c.Dimensions || 'Solid Material',
+                image: c.Image_URL || c.image || c.thumbnail || '',
+                thumbnail: c.Image_URL || c.image || c.thumbnail || '',
+                category: c.Category || c.Main_Category || 'Living Room',
+                finish: c.Color_Finish || c.Finish_Color || ''
+              })),
+              exchangeCredit: exchangeCredit
+            });
+          }}
+        >
+          <FileText size={15} /> 📑 Open Quotation Studio (WhatsApp / Gmail / Print)
+        </button>
       </div>
 
       {/* 🧭 3-Step Guided Voice POS Checkout Wizard Navigation */}
@@ -396,112 +472,98 @@ export function VoicePosView() {
         })}
       </div>
 
-      {/* Main Interactive Mic & Waveform Card */}
-      <div className="glass-panel">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h3 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-              🎙️ Continuous Live Microphone & Real-Time Transcriber
-            </h3>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
-              ⏱️ <b>UNLIMITED TIME:</b> Tap Mic ➔ Speak order naturally ➔ AI populates 115-catalog models & customer profile!
-            </p>
-          </div>
-          <span className={`badge ${isRecording ? 'badge-rose' : 'badge-emerald'}`} style={{ padding: '6px 12px', fontSize: '11.5px' }}>
-            {isRecording ? '🔴 RECORDING LIVE...' : 'UNLIMITED MIC READY'}
-          </span>
-        </div>
-
-        {/* 1-Click Demo Presets */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', margin: '14px 0 8px 0' }}>
-          <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--text-secondary)' }}>⚡ 1-CLICK INSTANT PRESETS:</span>
-          <button className="btn-ghost-edit" onClick={() => playPreset('dr_jena')}>🎙️ Dr. Jena (King Bed + 4D Wardrobe ₹1.56L)</button>
-          <button className="btn-ghost-edit" onClick={() => playPreset('alok_mishra')}>🎙️ Er. Alok Mishra (7-Seater Sofa ₹1.36L)</button>
-          <button className="btn-ghost-edit" onClick={() => playPreset('sunita_patnaik')}>🎙️ Ar. Sunita (Marble Dining ₹1.29L)</button>
-        </div>
-
-        {/* Mic Button & Waveform Soundwave */}
-        <div style={{ background: '#030712', border: '1.5px solid rgba(56,189,248,0.3)', borderRadius: '16px', padding: '16px 22px', display: 'flex', alignItems: 'center', gap: '18px' }}>
-          <button 
-            type="button" 
-            onClick={toggleRecording}
-            style={{
-              width: '60px',
-              height: '60px',
-              borderRadius: '50%',
-              background: isRecording ? 'linear-gradient(135deg, #E11D48, #BE123C)' : 'linear-gradient(135deg, #0284C7, #0369A1)',
-              color: '#FFFFFF',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: isRecording ? '0 0 25px rgba(225,29,72,0.8)' : '0 0 20px rgba(2,132,199,0.5)',
-              transition: 'all 0.25s ease'
-            }}
-          >
-            {isRecording ? <MicOff size={26} /> : <Mic size={26} />}
-          </button>
-
-          {/* Soundwave Bars */}
-          <div style={{ flex: 1, height: '40px', display: 'flex', alignItems: 'center', gap: '4px', overflow: 'hidden' }}>
-            {Array.from({ length: 32 }).map((_, i) => (
-              <div 
-                key={i} 
-                style={{
-                  flex: 1,
-                  height: isRecording ? `${Math.max(6, Math.sin((i + timer * 5) * 0.4) * 35)}px` : '6px',
-                  background: isRecording ? 'var(--accent-emerald)' : 'rgba(56,189,248,0.35)',
-                  borderRadius: '3px',
-                  transition: 'height 0.1s ease'
-                }}
-              />
-            ))}
+      {/* 🎙️ Sleek AI Voice & Natural Language Omni-Bar */}
+      <div className="glass-panel" style={{ padding: '14px 18px', background: 'linear-gradient(135deg, rgba(15,23,42,0.85) 0%, rgba(3,7,18,0.95) 100%)', border: '1px solid rgba(56,189,248,0.25)', borderRadius: '14px' }}>
+        
+        {/* Header Row: Title, 1-Click Presets, and Live Compact Mic Button */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.4)', borderRadius: '10px', padding: '6px 10px', fontSize: '15px' }}>
+              🎙️
+            </div>
+            <div>
+              <div style={{ fontSize: '13.5px', fontWeight: '800', color: '#FFFFFF', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                Showroom Voice Copilot & AI Smart Add
+                <span className="badge badge-cyan" style={{ fontSize: '9.5px', padding: '2px 6px' }}>115+ SKUs Linked</span>
+              </div>
+              <div style={{ fontSize: '11px', color: '#94A3B8' }}>
+                Speak or type natural order items — instantly adds to Quotation Cart below.
+              </div>
+            </div>
           </div>
 
-          <div style={{ fontSize: '18px', fontWeight: '900', color: isRecording ? '#F43F5E' : 'var(--accent-cyan)', fontFamily: 'JetBrains Mono' }}>
-            {formatTimer(timer)}
-          </div>
-        </div>
+          {/* Right Controls: 1-Click Presets + Compact Mic Pill */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '10.5px', fontWeight: '800', color: 'var(--text-secondary)' }}>⚡ PRESETS:</span>
+            <button type="button" className="btn-ghost-edit" style={{ fontSize: '10.5px', padding: '4px 8px' }} onClick={() => playPreset('dr_jena')}>
+              Dr. Jena (Bed + Wardrobe)
+            </button>
+            <button type="button" className="btn-ghost-edit" style={{ fontSize: '10.5px', padding: '4px 8px' }} onClick={() => playPreset('alok_mishra')}>
+              Er. Alok (Sofa + Chair)
+            </button>
+            <button type="button" className="btn-ghost-edit" style={{ fontSize: '10.5px', padding: '4px 8px' }} onClick={() => playPreset('sunita_patnaik')}>
+              Ar. Sunita (Marble Dining)
+            </button>
 
-        {/* Live Audio Transcript Box */}
-        <div style={{ background: '#070D18', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px', margin: '14px 0' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-            <span style={{ fontSize: '11px', fontWeight: '800', color: 'var(--accent-gold-light)', textTransform: 'uppercase' }}>
-              📝 Real-Time Voice Transcription Text:
-            </span>
-            <button className="btn-ghost-edit" style={{ fontSize: '10px', padding: '2px 6px' }} onClick={() => setIsEditingTranscript(!isEditingTranscript)}>
-              {isEditingTranscript ? '✓ Lock Text' : '✏️ Edit Text'}
+            {/* Compact Live Mic Pill */}
+            <button 
+              type="button" 
+              onClick={toggleRecording}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '5px 12px',
+                borderRadius: '20px',
+                background: isRecording ? 'linear-gradient(135deg, #E11D48, #BE123C)' : 'linear-gradient(135deg, #0284C7, #0369A1)',
+                color: '#FFFFFF',
+                border: isRecording ? '1.5px solid #FDA4AF' : '1.5px solid rgba(56,189,248,0.5)',
+                cursor: 'pointer',
+                fontWeight: '800',
+                fontSize: '11.5px',
+                boxShadow: isRecording ? '0 0 16px rgba(225,29,72,0.8)' : '0 0 10px rgba(2,132,199,0.4)',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              {isRecording ? <MicOff size={14} /> : <Mic size={14} />}
+              <span>{isRecording ? `REC ${formatTimer(timer)}` : 'Tap to Speak'}</span>
             </button>
           </div>
-          {isEditingTranscript ? (
-            <textarea 
-              rows={2} 
-              value={transcript} 
-              onChange={e => setTranscript(e.target.value)} 
-              style={{ width: '100%', background: '#030712', border: '1px solid var(--accent-gold)', borderRadius: '8px', padding: '8px', color: '#FFFFFF', fontSize: '12.5px' }}
-            />
-          ) : (
-            <div style={{ fontSize: '13px', color: '#FFFFFF', fontStyle: 'italic', lineHeight: '1.4' }}>
-              "{transcript}"
-            </div>
-          )}
+
         </div>
 
-        {/* Natural Language Query Search Bar */}
+        {/* Input Bar: Smart Search / Parse with AI */}
         <div style={{ display: 'flex', gap: '8px' }}>
-          <input 
-            type="text" 
-            placeholder="Type customer spoken order (e.g. 'Customer wants Solid Teak Bed + Wardrobe')..."
-            value={typedQuery}
-            onChange={e => setTypedQuery(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleTypedOrder()}
-            style={{ flex: 1, fontSize: '12px', padding: '10px 14px', borderRadius: '8px', background: '#030712', border: '1px solid rgba(255,255,255,0.15)', color: '#FFFFFF' }}
-          />
-          <button className="btn-cyan" onClick={handleTypedOrder} style={{ padding: '0 18px', fontSize: '12px' }}>
-            <Sparkles size={14} /> Parse with AI
+          <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+            <Search size={14} style={{ position: 'absolute', left: '12px', color: '#38BDF8', pointerEvents: 'none' }} />
+            <input 
+              type="text" 
+              placeholder="Type product name, SKU, or spoken order (e.g. 'King Bed and 4-Door Wardrobe', 'Sofa', 'Dining')..."
+              value={typedQuery}
+              onChange={e => setTypedQuery(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleTypedOrder()}
+              style={{ 
+                width: '100%', 
+                fontSize: '12.5px', 
+                padding: '10px 14px 10px 34px', 
+                borderRadius: '8px', 
+                background: '#030712', 
+                border: '1px solid rgba(56,189,248,0.3)', 
+                color: '#FFFFFF' 
+              }}
+            />
+          </div>
+          <button 
+            type="button" 
+            className="btn-cyan" 
+            onClick={handleTypedOrder} 
+            style={{ padding: '0 20px', fontSize: '12px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}
+          >
+            <Sparkles size={14} /> ✨ Add to Cart
           </button>
         </div>
+
       </div>
 
       {/* 2-Column POS Layout: Customer Profile & Shopping Cart */}
@@ -531,22 +593,87 @@ export function VoicePosView() {
             </div>
           </div>
 
-          {/* Catalog SKU Quick Add Box */}
+          {/* Interactive 115+ Catalog SKU Search & Quick Add */}
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px' }}>
-            <div style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--accent-gold-light)', marginBottom: '8px' }}>
-              ➕ 1-Click Catalog SKU Quick Add:
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <div style={{ fontSize: '11.5px', fontWeight: '800', color: 'var(--accent-gold-light)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Search size={13} color="var(--accent-gold-light)" /> ➕ 115+ Catalog Stock Quick Add:
+              </div>
+              <span style={{ fontSize: '9.5px', color: '#94A3B8' }}>Click SKU to add</span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '6px', maxHeight: '200px', overflowY: 'auto' }}>
-              {catalog.slice(0, 8).map(c => (
+
+            {/* Category Filter Pills */}
+            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '8px' }}>
+              {[
+                { id: 'ALL', label: 'All' },
+                { id: 'Bedroom', label: '🛏️ Bed' },
+                { id: 'Living', label: '🛋️ Sofa' },
+                { id: 'Dining', label: '🍽️ Dining' },
+                { id: 'Storage', label: '🚪 Wardrobe' },
+                { id: 'Recliner', label: '🪑 Chair' }
+              ].map(cat => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setPosCatFilter(cat.id)}
+                  className={`btn-ghost-edit ${posCatFilter === cat.id ? 'badge-gold' : ''}`}
+                  style={{ fontSize: '9.5px', padding: '2px 6px', borderRadius: '12px' }}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Search Input Box */}
+            <div style={{ position: 'relative', marginBottom: '8px' }}>
+              <Search size={12} style={{ position: 'absolute', left: '8px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+              <input 
+                type="text" 
+                placeholder="Search 115+ models by SKU, Name, Material..." 
+                value={posSearchQuery}
+                onChange={e => setPosSearchQuery(e.target.value)}
+                style={{ width: '100%', paddingLeft: '26px', fontSize: '11px', background: '#030712', border: '1px solid rgba(212,175,55,0.3)', borderRadius: '6px', color: '#FFFFFF', paddingRight: '22px' }}
+              />
+              {posSearchQuery && (
+                <button 
+                  type="button" 
+                  onClick={() => setPosSearchQuery('')}
+                  style={{ position: 'absolute', right: '6px', top: '50%', transform: 'translateY(-50%)', background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', fontSize: '11px' }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Filtered Catalog Items Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '6px', maxHeight: '180px', overflowY: 'auto' }}>
+              {((catalog && catalog.length > 0 ? catalog : FURNITURE_CATALOG).filter(c => {
+                const cat = (c.Main_Category || '').toLowerCase();
+                const sub = (c.Sub_Category || '').toLowerCase();
+                const matchesCat = posCatFilter === 'ALL' || cat.includes(posCatFilter.toLowerCase()) || sub.includes(posCatFilter.toLowerCase());
+                const q = posSearchQuery.trim().toLowerCase();
+                if (!q) return matchesCat;
+                const matchesQ = (c.SKU || '').toLowerCase().includes(q) || (c.Product_Name || '').toLowerCase().includes(q) || (c.Material_Spec || '').toLowerCase().includes(q);
+                return matchesCat && matchesQ;
+              })).slice(0, 24).map(c => (
                 <button
                   key={c.SKU}
+                  type="button"
                   onClick={() => addItemToCart(c.SKU)}
                   className="btn-ghost-edit"
-                  style={{ fontSize: '10px', padding: '6px 8px', justifyContent: 'flex-start', textAlign: 'left', lineHeight: '1.2' }}
+                  style={{ fontSize: '10px', padding: '6px 8px', justifyContent: 'flex-start', textAlign: 'left', lineHeight: '1.2', border: '1px solid rgba(255,255,255,0.08)' }}
                 >
-                  <div>
-                    <div style={{ fontWeight: '800', color: '#FFFFFF' }}>{c.SKU}</div>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '9px' }}>₹{(c.Selling_Price_INR || 0).toLocaleString()}</div>
+                  <div style={{ width: '100%' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: '800', color: 'var(--accent-gold-light)', fontSize: '9.5px', fontFamily: 'JetBrains Mono' }}>{c.SKU}</span>
+                      <span style={{ fontSize: '8.5px', color: 'var(--accent-emerald)' }}>+ Add</span>
+                    </div>
+                    <div style={{ color: '#FFFFFF', fontWeight: '700', fontSize: '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '1px' }}>
+                      {c.Product_Name}
+                    </div>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '9px' }}>
+                      ₹{(c.Selling_Price_INR || 0).toLocaleString()}
+                    </div>
                   </div>
                 </button>
               ))}
@@ -653,7 +780,38 @@ export function VoicePosView() {
             </div>
           </div>
 
-          {/* Action Closing Tools */}
+          {/* 📑 Master Commercial Quotation Direct Hub */}
+          <button 
+            type="button"
+            className="btn-luxury-gold" 
+            style={{ width: '100%', justifyContent: 'center', padding: '11px 16px', fontSize: '12px', fontWeight: '900', letterSpacing: '0.3px' }}
+            onClick={() => {
+              playScanBeep();
+              openModal('whatsapp_proposal', { 
+                customerName: custName, 
+                customerPhone: custPhone, 
+                address: custAddress, 
+                items: cartItems.map(c => ({ 
+                  sku: c.SKU, 
+                  name: c.Product_Name, 
+                  mrp: c.MRP_INR || c.Selling_Price_INR, 
+                  price: c.Selling_Price_INR, 
+                  warranty: `${c.Warranty_Years || 5} Years`,
+                  qty: c.qty,
+                  specs: c.Material_Spec || c.Dimensions || 'Solid Material',
+                  image: c.Image_URL || c.image || c.thumbnail || '',
+                  thumbnail: c.Image_URL || c.image || c.thumbnail || '',
+                  category: c.Category || c.Main_Category || 'Living Room',
+                  finish: c.Color_Finish || c.Finish_Color || ''
+                })),
+                exchangeCredit: exchangeCredit
+              });
+            }}
+          >
+            <FileText size={15} /> 📑 Master Commercial Quotation (WhatsApp / Gmail / Print)
+          </button>
+
+          {/* Action Closing Tools & The 5 Schemes */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
             <button 
               className="btn-purple" 
@@ -683,7 +841,19 @@ export function VoicePosView() {
                 customerName: custName, 
                 customerPhone: custPhone, 
                 address: custAddress, 
-                items: cartItems.map(c => ({ sku: c.SKU, name: c.Product_Name, mrp: c.MRP_INR || c.Selling_Price_INR, price: c.Selling_Price_INR, warranty: `${c.Warranty_Years || 5} Years` })),
+                items: cartItems.map(c => ({ 
+                  sku: c.SKU, 
+                  name: c.Product_Name, 
+                  mrp: c.MRP_INR || c.Selling_Price_INR, 
+                  price: c.Selling_Price_INR, 
+                  warranty: `${c.Warranty_Years || 5} Years`,
+                  qty: c.qty,
+                  specs: c.Material_Spec || c.Dimensions || 'Solid Material',
+                  image: c.Image_URL || c.image || c.thumbnail || '',
+                  thumbnail: c.Image_URL || c.image || c.thumbnail || '',
+                  category: c.Category || c.Main_Category || 'Living Room',
+                  finish: c.Color_Finish || c.Finish_Color || ''
+                })),
                 exchangeCredit: exchangeCredit
               })}
             >

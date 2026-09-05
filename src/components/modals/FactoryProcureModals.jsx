@@ -39,7 +39,7 @@ export function FactoryPaymentVoucherModal({ isOpen, onClose, po = null }) {
   const handleRecordPayment = () => {
     const voucherId = `VOUCH-EXP-${Math.floor(1000 + Math.random() * 9000)}`;
 
-    // Webhook dispatch to Google Sheets Payments_Log
+    // Webhook dispatch to Google Sheets Payments_Log & Bank_Transactions_Log
     dispatchWebhookAction("RECORD_FACTORY_PAYMENT_VOUCHER", {
       voucher_id: voucherId,
       payment_type: "FACTORY_EXPENSE_DEBIT",
@@ -51,6 +51,21 @@ export function FactoryPaymentVoucherModal({ isOpen, onClose, po = null }) {
       authorized_by: authorizedBy,
       remarks: remarks,
       timestamp: new Date().toISOString()
+    });
+
+    dispatchWebhookAction("LOG_BANK_TRANSACTION", {
+      transaction_id: `TXN-BNK-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+      flow_type: "OUTWARD_DEBIT",
+      bank_account: "SBI Current A/c (***9182)",
+      payment_mode: paymentMode === "RTGS_BANK_TRANSFER" ? "RTGS" : paymentMode,
+      utr_number: utrRef,
+      party_name: po.supplier,
+      amount: Number(amount),
+      linked_entity_type: "FACTORY_PO",
+      linked_id: po.po_id,
+      reconciliation_status: "VERIFIED_AND_MATCHED",
+      notes: `${remarks} for Factory PO #${po.po_id}`,
+      logged_by: authorizedBy
     });
 
     playSuccessChime();

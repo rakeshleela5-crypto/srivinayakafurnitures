@@ -250,7 +250,14 @@ export function WhatsAppBotSimulator() {
       'BOT-19': "📊 STORE TARGET PACING GAUGE\nToday Achieved: ₹1,69,000 (112% of Daily Target)\nMonthly Run-Rate: ₹38.45L / ₹45.00L (85.4% Achieved) ✓",
       'BOT-20': "🔄 MASTER 2-WAY CLOUD WEBHOOK ENGINE\nLive Bi-Directional Webhook Active with Google Apps Script.\nAll 21 tables synchronized in real-time.",
       'BOT-21': "🚨 FLOOR AGING DISPLAY ALERT — GODREJ INTERIO RAYAGADA\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nModel: {Product_Name} ({SKU})\n⏱️ Display Age: 52 Days in Bay 3 (₹78,000 Capital Locked)\n\n⚡ Recommended Action:\n1. Launch 20% Flash Clearance Flyer\n2. Swap display piece with fresh warehouse carton stock.",
-      'BOT-22': "👑 VIP TURNKEY VILLA MILESTONE CONFIRMATION\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nNamaskar {Customer_Name}! 🙏\nYour {Address} Villa Bedroom Suite is 100% staged!\n\n• Total Project Value: ₹{Amount}\n• Stage 1 (50% Booking Advance): ₹{Advance_Amount} [PAID ✓]\n• Stage 2 (40% Factory Dispatch): ₹{Stage2_Amount} [DUE ON LOADING]\n• Stage 3 (10% Final Assembly): ₹{Stage3_Amount} [UPON MISTRI SIGN-OFF]\n\nShowroom Helpline: +91 93905 53301 | Shree Ganesh Enterprises"
+      'BOT-22': "👑 VIP TURNKEY VILLA MILESTONE CONFIRMATION\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nNamaskar {Customer_Name}! 🙏\nYour {Address} Villa Bedroom Suite is 100% staged!\n\n• Total Project Value: ₹{Amount}\n• Stage 1 (50% Booking Advance): ₹{Advance_Amount} [PAID ✓]\n• Stage 2 (40% Factory Dispatch): ₹{Stage2_Amount} [DUE ON LOADING]\n• Stage 3 (10% Final Assembly): ₹{Stage3_Amount} [UPON MISTRI SIGN-OFF]\n\nShowroom Helpline: +91 93905 53301 | Shree Ganesh Enterprises",
+      'BOT-23': "🏭 FACTORY PO & LR BILTY SYNCED\nPO: {PO_Number} ({Manufacturer_Plant})\n• Transporter: {Transporter} | LR Bilty #: {LR_Number}\n• Expected Delivery: {Expected_Delivery} | Status: IN_TRANSIT ✓\nWarehouse receiving dock alerted for carton barcode scanning upon arrival.",
+      'BOT-24': "💳 MULTI-TENDER SPLIT SETTLEMENT LEDGER\nOrder: {Order_ID} ({Customer_Name})\n• Cash Drawer: ₹45,000 | Dynamic UPI: ₹33,247\n• Total Settled: ₹78,247 | Balance Due: ₹0.00 ✓\nInstant split receipt dispatched to WhatsApp.",
+      'BOT-25': "⭐ POST-ASSEMBLY VIP 5-STAR REVIEW INVITATION\nNamaskar {Customer_Name}! 🙏\nMaster Carpenter Ramesh Mistri has finished your {Product_Name} installation.\nAre you enjoying your new bedroom suite? Tap here to leave a 5-star Google review & receive your Free Wood Care Kit voucher!",
+      'BOT-26': "📋 COMMERCIAL VIP QUOTE PRICE-LOCK REMINDER\nNamaskar {Customer_Name}! Your VIP tender quote for {Product_Name} has a 72-hour price-lock guarantee.\nLock in your 18% corporate festive rebate before container allocations close tomorrow!",
+      'BOT-27': "🤖 24/7 CONCIERGE FLOOR TOUR RECOVERY\nNamaskar {Customer_Name}! We noticed you loved the Solid Teak Bedroom Suite today at our Rayagada showroom.\nHere is a 360° video walkthrough of the hydraulic storage mechanism. Reply 'DISCOUNT' for a ₹5,000 spot booking token.",
+      'BOT-28': "💰 9:30 PM SHOWROOM PROFIT & MARGIN RADAR AUDIT\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nStore: Godrej Interio Rayagada (Shree Ganesh Enterprises)\n• Invoiced Turnover: ₹2,56,41,407\n• Landed Factory COGS: ₹1,70,51,536\n• Gross Showroom Margin: ₹85,89,871 (33.5%)\n• Direct Variable Deductions:\n  - Architect Payout (8.5%): ₹5,82,310\n  - Carpenter Assembly (₹500): ₹1,20,000\n  - Delivery Freight & Diesel: ₹2,15,400\n• Pure Realized Net Profit: ₹61,80,351 (24.1% Margin)\nAudit locked to Profit_Radar_Audit_Log & Webhook Verified ✓",
+      'BOT-29': "🛡️ DEALER GROSS MARGIN & DISCOUNT GUARD\nOrder: {Order_ID} ({Customer_Name})\nRequested Discount: 8.5% | Approved Floor Margin: 24.1% (Safe ✓)\nMargin Guard rule passed: Dealer net margin remains above mandatory 15% threshold."
     };
 
     // Resolve the active order dynamically based on the selected customer/order filter
@@ -324,7 +331,7 @@ export function WhatsAppBotSimulator() {
       title: `${b.name} (${b.botId})`,
       text: formattedText,
       time: "Just Now",
-      isDirector: ['BOT-08', 'BOT-12', 'BOT-17', 'BOT-19', 'BOT-20', 'BOT-21', 'BOT-22'].includes(b.botId)
+      isDirector: ['BOT-08', 'BOT-12', 'BOT-17', 'BOT-19', 'BOT-20', 'BOT-21', 'BOT-22', 'BOT-24'].includes(b.botId)
     };
 
     setChatMessages(prev => [...prev, newBotMsg]);
@@ -345,10 +352,10 @@ export function WhatsAppBotSimulator() {
   // Helper to categorize bots
   const getBotCategory = (botId) => {
     const idNum = parseInt(botId.replace('BOT-', ''), 10);
-    if ([1, 14, 16].includes(idNum)) return 'SALES';
-    if ([2, 3, 13, 18].includes(idNum)) return 'WAREHOUSE';
-    if ([4, 5, 6, 9].includes(idNum)) return 'LOGISTICS';
-    if ([7, 10, 12, 19].includes(idNum)) return 'FINANCE';
+    if ([1, 14, 16, 26, 27].includes(idNum)) return 'SALES';
+    if ([2, 3, 13, 18, 21].includes(idNum)) return 'WAREHOUSE';
+    if ([4, 5, 6, 9, 25].includes(idNum)) return 'LOGISTICS';
+    if ([7, 10, 12, 19, 23, 24].includes(idNum)) return 'FINANCE';
     return 'SYSTEM';
   };
 
@@ -421,7 +428,7 @@ export function WhatsAppBotSimulator() {
             }}
             style={{ fontSize: '11px', padding: '5px 10px' }}
           >
-            <Mic size={12} /> <span>Voice POS (Tab 2)</span>
+            <Mic size={12} /> <span>Voice POS</span>
           </button>
 
           <button 
@@ -432,7 +439,7 @@ export function WhatsAppBotSimulator() {
             }}
             style={{ fontSize: '11px', padding: '5px 10px' }}
           >
-            <ShieldCheck size={12} /> <span>SafeLock (Tab 4)</span>
+            <ShieldCheck size={12} /> <span>SafeLock Stock</span>
           </button>
 
           <button 
@@ -443,7 +450,7 @@ export function WhatsAppBotSimulator() {
             }}
             style={{ fontSize: '11px', padding: '5px 10px' }}
           >
-            <Truck size={12} /> <span>Fleet (Tab 6)</span>
+            <Truck size={12} /> <span>Fleet & ePOD</span>
           </button>
 
           <button 

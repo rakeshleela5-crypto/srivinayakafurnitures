@@ -89,17 +89,6 @@ export function ArchitectPortalView() {
           </button>
 
           <button 
-            className="btn-amber" 
-            onClick={() => {
-              setActiveTab('room_matcher');
-              showToast("📸 Switched to 2D Room Matcher to co-design client floor plans!", true);
-            }}
-            style={{ fontSize: '11px', padding: '5px 10px' }}
-          >
-            <Camera size={12} /> <span>2D Matcher (Tab 3)</span>
-          </button>
-
-          <button 
             className="btn-ghost-edit" 
             onClick={() => {
               setActiveTab('documents');

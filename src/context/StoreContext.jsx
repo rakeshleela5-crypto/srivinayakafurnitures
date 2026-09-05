@@ -13,7 +13,7 @@ import {
   APPSHEET_BOTS,
   STORE_TARGETS
 } from '../data/initialData';
-import { dispatchWebhookAction, formatDateTimeIndian } from '../services/webhookService';
+import { dispatchWebhookAction, formatDateTimeIndian, flushOfflineQueue } from '../services/webhookService';
 import { 
   playScanBeep, 
   playSuccessChime, 
@@ -34,9 +34,10 @@ export const USER_ROLES = {
     avatar: '👑',
     badgeClass: 'badge-gold',
     allowedTabs: [
-      'executive', 'voice_pos', 'room_matcher', 'safelock', 'autoprocure',
-      'logistics_epod', 'architects', 'crm', 'whatsapp_bots', 'documents',
-      'live_database', 'barcode_studio', 'qr_studio', 'inward_scanner', 'outward_scanner', 'staff_qr'
+      'executive', 'crm', 'voice_pos', 'architects',
+      'autoprocure', 'inward_scanner', 'safelock', 'barcode_studio', 'qr_studio',
+      'outward_scanner', 'logistics_epod', 'documents',
+      'bank_ledger', 'whatsapp_bots', 'staff_qr', 'live_database'
     ]
   },
   SALES: {
@@ -47,7 +48,7 @@ export const USER_ROLES = {
     avatar: '💼',
     badgeClass: 'badge-cyan',
     allowedTabs: [
-      'voice_pos', 'room_matcher', 'crm', 'safelock', 'documents', 'barcode_studio', 'qr_studio'
+      'voice_pos', 'crm', 'safelock', 'documents', 'barcode_studio', 'qr_studio'
     ]
   },
   WAREHOUSE: {
@@ -80,7 +81,7 @@ export const USER_ROLES = {
     avatar: '🏛️',
     badgeClass: 'badge-emerald',
     allowedTabs: [
-      'architects', 'room_matcher', 'documents'
+      'architects', 'documents'
     ]
   }
 };
@@ -91,7 +92,13 @@ const getStored = (key, fallback) => {
     const saved = localStorage.getItem(key);
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (Array.isArray(fallback) ? (Array.isArray(parsed) && parsed.length > 0) : parsed) {
+      if (Array.isArray(fallback)) {
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } else if (fallback && typeof fallback === 'object') {
+        if (parsed && typeof parsed === 'object') {
+          return { ...fallback, ...parsed };
+        }
+      } else if (parsed !== undefined && parsed !== null) {
         return parsed;
       }
     }
@@ -131,6 +138,9 @@ export function StoreProvider({ children }) {
       return next;
     });
   };
+
+  // Master Universal Google Sheets Tables State with Persistence
+  const [cloudTables, setCloudTables] = useState(() => getStored('OMNIBUILD_CLOUD_TABLES', {}));
 
   // Core Persistent 21-Table Data Stores
   const [catalog, setCatalog] = useState(() => getStored('OMNIBUILD_CATALOG', FURNITURE_CATALOG));
@@ -338,13 +348,30 @@ export function StoreProvider({ children }) {
 
     setOrders(prev => [newOrder, ...prev]);
 
-    // Decrement stock & increment reserved
+    // Precise multi-SKU Stock Decrement & Reserved Count Increment
     setInventory(prev => prev.map(item => {
-      if (orderData.Ordered_SKU && orderData.Ordered_SKU.includes(item.SKU)) {
+      let qtyToDeduct = 0;
+      if (orderData.items && Array.isArray(orderData.items)) {
+        const match = orderData.items.find(it => (it.sku || it.SKU) === item.SKU);
+        if (match) {
+          qtyToDeduct = Number(match.qty || match.Qty || match.quantity) || 1;
+        }
+      } else if (orderData.Ordered_SKU && orderData.Ordered_SKU.includes(item.SKU)) {
+        // Try regex match for e.g. "BED-MOD-001 ... x2"
+        const regex = new RegExp(`${item.SKU}[^\\n\\r,]*?x(\\d+)`, 'i');
+        const match = orderData.Ordered_SKU.match(regex);
+        qtyToDeduct = match ? (Number(match[1]) || 1) : 1;
+      }
+
+      if (qtyToDeduct > 0) {
+        const newWh = Math.max(0, (Number(item.Warehouse_Qty) || 0) - qtyToDeduct);
+        const newRes = (Number(item.Reserved_SafeLock) || 0) + qtyToDeduct;
+        const threshold = Number(item.Buffer_Threshold) || 2;
         return {
           ...item,
-          Warehouse_Qty: Math.max(0, item.Warehouse_Qty - 1),
-          Reserved_SafeLock: item.Reserved_SafeLock + 1
+          Warehouse_Qty: newWh,
+          Reserved_SafeLock: newRes,
+          Reorder_Status: newWh <= threshold ? "CRITICAL_REORDER" : "HEALTHY"
         };
       }
       return item;
@@ -448,12 +475,45 @@ export function StoreProvider({ children }) {
 
   // 3.1. Update Order Status
   const updateOrderStatus = (orderId, newStatus) => {
+    const targetOrder = orders.find(ord => ord.Order_ID === orderId);
     setOrders(prev => prev.map(ord => {
       if (ord.Order_ID === orderId) {
         return { ...ord, SafeLock_Status: newStatus };
       }
       return ord;
     }));
+
+    // If order is DELIVERED, the reserved physical units leave warehouse permanently
+    if (newStatus.includes("DELIVERED") && targetOrder) {
+      setInventory(prev => prev.map(item => {
+        if (targetOrder.Ordered_SKU && targetOrder.Ordered_SKU.includes(item.SKU)) {
+          return {
+            ...item,
+            Reserved_SafeLock: Math.max(0, (Number(item.Reserved_SafeLock) || 0) - 1)
+          };
+        }
+        return item;
+      }));
+    }
+
+    // If order is CANCELLED or RELEASED, reserved units return to warehouse stock
+    if ((newStatus.includes("CANCELLED") || newStatus.includes("RELEASED")) && targetOrder) {
+      setInventory(prev => prev.map(item => {
+        if (targetOrder.Ordered_SKU && targetOrder.Ordered_SKU.includes(item.SKU)) {
+          const newWh = (Number(item.Warehouse_Qty) || 0) + 1;
+          const newRes = Math.max(0, (Number(item.Reserved_SafeLock) || 0) - 1);
+          const threshold = Number(item.Buffer_Threshold) || 2;
+          return {
+            ...item,
+            Warehouse_Qty: newWh,
+            Reserved_SafeLock: newRes,
+            Reorder_Status: newWh <= threshold ? "CRITICAL_REORDER" : "HEALTHY"
+          };
+        }
+        return item;
+      }));
+    }
+
     playScanBeep();
     showToast(`📦 Order #${orderId} status updated to: ${newStatus}`);
   };
@@ -472,6 +532,7 @@ export function StoreProvider({ children }) {
 
   // 5. ePOD Delivery Completion
   const submitEpodDelivery = (orderId, epodData = {}) => {
+    const targetOrder = orders.find(ord => ord.Order_ID === orderId);
     setOrders(prev => prev.map(ord => {
       if (ord.Order_ID === orderId) {
         return {
@@ -483,6 +544,19 @@ export function StoreProvider({ children }) {
       }
       return ord;
     }));
+
+    // Release reservation since stock is physically delivered to customer
+    if (targetOrder) {
+      setInventory(prev => prev.map(item => {
+        if (targetOrder.Ordered_SKU && targetOrder.Ordered_SKU.includes(item.SKU)) {
+          return {
+            ...item,
+            Reserved_SafeLock: Math.max(0, (Number(item.Reserved_SafeLock) || 0) - 1)
+          };
+        }
+        return item;
+      }));
+    }
 
     // Update Route stop
     setRouteStops(prev => prev.map(st => {
@@ -531,6 +605,107 @@ export function StoreProvider({ children }) {
       payout_amount: amount,
       upi_rrn: rrn
     });
+  };
+
+  // 6.1 Register New Custom Product SKU & Seed SafeLock Inventory
+  const registerNewSku = (skuData) => {
+    const sku = (skuData.sku || skuData.SKU || `GDJ-NEW-${Date.now().toString().slice(-4)}`).trim().toUpperCase();
+    const productName = (skuData.productName || skuData.Product_Name || "Custom Furniture Unit").trim();
+    const category = skuData.category || skuData.Main_Category || "Living Room";
+    const subCategory = skuData.subCategory || skuData.Sub_Category || "Custom Model";
+    const material = skuData.material || skuData.Material_Spec || "Solid Teak Wood & Steel Frame";
+    const dimensions = skuData.dimensions || skuData.Dimensions || 'Standard Size';
+    const mrp = Number(skuData.mrp || skuData.MRP_INR) || 0;
+    const sellingPrice = Number(skuData.sellingPrice || skuData.Selling_Price_INR) || 0;
+    const warranty = Number(skuData.warranty || skuData.Warranty_Years) || 5;
+    const boxCount = Number(skuData.boxCount || skuData.Total_Component_Boxes) || 1;
+    const supplier = skuData.supplier || skuData.Default_Supplier || "Godrej Interio Flagship";
+    const bay = skuData.bay || skuData.Assigned_Bay || "Dock-A1";
+    const openingStock = Number(skuData.openingStock || skuData.Warehouse_Qty) || 0;
+    const bufferThreshold = Number(skuData.bufferThreshold || skuData.Buffer_Threshold) || 2;
+    const unitCost = Number(skuData.unitCost || skuData.Unit_Cost_INR) || Math.round(sellingPrice * 0.72);
+    const imageUrl = skuData.imageUrl || skuData.Image_URL || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600';
+
+    const catalogItem = {
+      SKU: sku,
+      Product_Name: productName,
+      Main_Category: category,
+      Sub_Category: subCategory,
+      Price_Tier: skuData.priceTier || "Luxury",
+      Material_Spec: material,
+      Dimensions: dimensions,
+      MRP_INR: mrp,
+      Selling_Price_INR: sellingPrice,
+      Warranty_Years: warranty,
+      Total_Component_Boxes: boxCount,
+      Default_Supplier: supplier,
+      Assigned_Bay: bay,
+      Image_URL: imageUrl
+    };
+
+    const inventoryItem = {
+      SKU: sku,
+      Product_Name: productName,
+      Category: category,
+      Warehouse_Qty: openingStock,
+      Reserved_SafeLock: 0,
+      Buffer_Threshold: bufferThreshold,
+      Reorder_Status: openingStock <= bufferThreshold ? "CRITICAL_REORDER" : "HEALTHY",
+      Unit_Cost_INR: unitCost,
+      Bay: bay,
+      Last_Audited: formatDateTimeIndian()
+    };
+
+    // Update Master Catalog
+    setCatalog(prev => {
+      const exists = prev.some(c => c.SKU === sku);
+      let updated;
+      if (exists) {
+        updated = prev.map(c => c.SKU === sku ? { ...c, ...catalogItem } : c);
+      } else {
+        updated = [catalogItem, ...prev];
+      }
+      try { localStorage.setItem('OMNIBUILD_CATALOG', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+
+    // Update SafeLock Inventory
+    setInventory(prev => {
+      const exists = prev.some(i => i.SKU === sku);
+      let updated;
+      if (exists) {
+        updated = prev.map(i => i.SKU === sku ? { ...i, ...inventoryItem } : i);
+      } else {
+        updated = [inventoryItem, ...prev];
+      }
+      try { localStorage.setItem('OMNIBUILD_INVENTORY', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+
+    playSuccessChime();
+    triggerGoldenConfetti();
+    showToast(`✨ Successfully registered new SKU: ${sku} & seeded ${openingStock} units in SafeLock!`, true);
+
+    // Dispatch Webhook to Google Sheets
+    dispatchWebhookAction('UPDATE_CATALOG_ITEM', {
+      sku: sku,
+      product_name: productName,
+      category: category,
+      sub_category: subCategory,
+      material: material,
+      dimensions: dimensions,
+      mrp: mrp,
+      selling_price: sellingPrice,
+      warranty: warranty,
+      box_count: boxCount,
+      assigned_bay: bay,
+      default_supplier: supplier,
+      opening_stock: openingStock,
+      buffer_threshold: bufferThreshold,
+      unit_cost: unitCost
+    });
+
+    return catalogItem;
   };
 
   // 7. AppSheet Bot Cloud Execution
@@ -633,22 +808,39 @@ export function StoreProvider({ children }) {
   };
 
   // 8. 2-Way Sync with Google Sheets with Real-Time Cloud Hydration
-  const syncWithGoogleSheets = async (silent = false) => {
+  const syncWithGoogleSheets = async (silent = false, targetTab = null) => {
     setIsSyncing(true);
     if (!silent) {
       playScanBeep();
-      showToast("📡 Connecting to Google Apps Script Master Webhook...");
+      showToast(targetTab && targetTab !== 'ALL' ? `⚡ Fast-syncing [${targetTab}] tables from Google Sheets...` : "📡 Connecting to Google Apps Script Master Webhook...");
     }
 
     try {
-      const res = await dispatchWebhookAction('FETCH_ALL_TABLES', {});
+      const isFullSync = targetTab === 'ALL';
+      const actionToDispatch = isFullSync ? 'FETCH_ALL_TABLES' : 'SYNC_TAB_TABLES';
+      const payload = isFullSync ? {} : { target_tab: targetTab || activeTab };
+
+      const res = await dispatchWebhookAction(actionToDispatch, payload);
       if (res && res.tables) {
-        // 1. Sync & Merge Orders from Google Sheets Orders_SafeLock
-        if (Array.isArray(res.tables.Orders_SafeLock) && res.tables.Orders_SafeLock.length > 0) {
-          const cloudOrders = res.tables.Orders_SafeLock.map(row => ({
+        setCloudTables(prev => ({ ...prev, ...res.tables }));
+
+        // Helper to find table rows in res.tables flexibly
+        const getTableRows = (possibleNames) => {
+          for (const name of possibleNames) {
+            if (Array.isArray(res.tables[name]) && res.tables[name].length > 0) {
+              return res.tables[name];
+            }
+          }
+          return null;
+        };
+
+        // 1. Sync Orders_SafeLock (200 rows)
+        const rawOrders = getTableRows(['Orders_SafeLock', '05_Orders_SafeLock', 'Orders SafeLock', 'Orders']);
+        if (rawOrders) {
+          const cloudOrders = rawOrders.map(row => ({
             Order_ID: row.Order_ID || `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
             Customer_Name: row.Customer_Name || "VIP Customer",
-            Customer_Phone: row.Customer_Phone || "",
+            Customer_Phone: String(row.Customer_Phone || ""),
             Project_Address: row.Project_Address || "Rayagada",
             Designer_ID: row.Designer_ID || "VIP-ARC-001",
             Ordered_SKU: row.Ordered_SKU || "BED-MOD-001",
@@ -661,17 +853,66 @@ export function StoreProvider({ children }) {
             Delivery_Schedule: row.Delivery_Schedule || "Today",
             Carpenter_Assigned: row.Carpenter_Assigned || "Narayana Mistri",
             Carpenter_Payout_INR: Number(row.Carpenter_Payout_INR) || 500,
-            OTP_Code: row.OTP_Code || "8899",
-            Created_Date: row.Created_Date || formatDateTimeIndian()
+            OTP_Code: String(row.OTP_Code || "8899"),
+            Created_Date: row.Created_Date || row.Timestamp || formatDateTimeIndian()
           }));
-          
-          setOrders(prev => {
-            const map = new Map();
-            cloudOrders.forEach(o => map.set(o.Order_ID, o));
-            prev.forEach(o => map.set(o.Order_ID, { ...(map.get(o.Order_ID) || {}), ...o }));
-            return Array.from(map.values());
-          });
+          setOrders(cloudOrders);
         }
+
+        // 2. Sync Inquiries_Log (22 rows)
+        const rawInquiries = getTableRows(['Inquiries_Log', '06_Inquiries_Log', 'Enquiries_Log', 'Inquiries Log', 'Enquiries Log']);
+        if (rawInquiries) {
+          const cloudInquiries = rawInquiries.map(row => ({
+            Inquiry_ID: row.Inquiry_ID || `INQ-${Math.floor(1000 + Math.random() * 9000)}`,
+            Timestamp: row.Timestamp || formatDateTimeIndian(),
+            Customer_Name: row.Customer_Name || "Walk-In Customer",
+            Customer_Phone: String(row.Customer_Phone || ""),
+            Address: row.Address || row.Locality_Address || "Rayagada",
+            Channel: row.Channel || "SHOWROOM_WALKIN",
+            Category_Models: row.Category_Models || "Living Room Sofa & Recliner",
+            Budget_INR: Number(row.Budget_INR) || 0,
+            AI_Intent_Score: Number(row.AI_Intent_Score) || 75,
+            Follow_Up_Date: row.Follow_Up_Date || "Tomorrow 11:00 AM",
+            Status: row.Status || "HOT_LEAD",
+            Assigned_Staff: row.Assigned_Staff || "Rakesh (Store Manager)"
+          }));
+          setInquiries(cloudInquiries);
+        }
+
+        // 3. Sync Payments_Log (32 rows)
+        const rawPayments = getTableRows(['Payments_Log', '13_Payments_Log', 'Payments Log', 'Transactions_Log']);
+        if (rawPayments) {
+          setPaymentsLog(rawPayments);
+        }
+
+        // 4. Sync Inventory_Stock (155 rows)
+        const rawInventory = getTableRows(['Inventory_Stock', '03_Inventory_Stock', 'Inventory Stock']);
+        if (rawInventory) {
+          setInventory(rawInventory);
+        }
+
+        // 5. Sync SmartKit_Components (227 rows)
+        const rawBoxes = getTableRows(['SmartKit_Components', '04_SmartKit_Components', 'SmartKit Components']);
+        if (rawBoxes) {
+          setSmartKitBoxes(rawBoxes);
+        }
+
+        // 6. Sync Architect_VIPs (50 rows)
+        const rawArchitects = getTableRows(['Architect_VIPs', '05_Architect_VIPs', 'Architect VIPs']);
+        if (rawArchitects) {
+          setArchitects(rawArchitects);
+        }
+
+        // 7. Sync Fleet Drivers & Routes
+        const rawDrivers = getTableRows(['Fleet_Drivers', '14_Fleet_Drivers', 'Fleet Drivers']);
+        if (rawDrivers) setDrivers(rawDrivers);
+
+        const rawRoutes = getTableRows(['Delivery_Route_Stops', '15_Delivery_Route_Stops', 'Delivery Route Stops']);
+        if (rawRoutes) setRouteStops(rawRoutes);
+
+        // 8. Sync Sales Targets & Daily Summary
+        const rawTargets = getTableRows(['Store_Sales_Targets', '17_Store_Sales_Targets', 'Store Sales Targets']);
+        if (rawTargets) setTargets(rawTargets);
       }
     } catch (e) {
       console.warn("[Cloud Sync Hydration Warning]:", e);
@@ -679,15 +920,33 @@ export function StoreProvider({ children }) {
       setIsSyncing(false);
       if (!silent) {
         playSuccessChime();
-        showToast("✅ Master Webhook 2-Way Sync Complete! All Tables Synchronized.");
+        showToast(targetTab && targetTab !== 'ALL' ? `✅ Tab [${targetTab}] updated in real-time!` : "✅ Master Webhook 2-Way Sync Complete! All Tables Synchronized.");
       }
     }
   };
 
-  // Initial Silent Startup Cloud Hydration
+  // Initial Silent Fast Cloud Hydration on Startup (< 1s for Executive Tab)
   useEffect(() => {
-    syncWithGoogleSheets(true);
+    syncWithGoogleSheets(true, 'executive');
   }, []);
+
+  // Background Fast Hydration on Tab Switch
+  useEffect(() => {
+    if (activeTab) {
+      syncWithGoogleSheets(true, activeTab);
+    }
+  }, [activeTab]);
+
+  // 💓 Multi-Terminal 45s Lightweight Cloud Heartbeat & Offline Queue Auto-Flush
+  useEffect(() => {
+    const heartbeatTimer = setInterval(() => {
+      if (typeof window !== 'undefined' && window.navigator && window.navigator.onLine) {
+        syncWithGoogleSheets(true, activeTab);
+        flushOfflineQueue();
+      }
+    }, 45000);
+    return () => clearInterval(heartbeatTimer);
+  }, [activeTab]);
 
   return (
     <StoreContext.Provider value={{
@@ -699,6 +958,7 @@ export function StoreProvider({ children }) {
       setActiveTab,
       appMode,
       toggleAppMode,
+      cloudTables,
       catalog,
       setCatalog,
       orders,
@@ -755,6 +1015,7 @@ export function StoreProvider({ children }) {
       verifySmartKitBox,
       submitEpodDelivery,
       disburseArchitectPayout,
+      registerNewSku,
       triggerAppSheetBot
     }}>
       {children}

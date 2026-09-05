@@ -37,7 +37,13 @@ export function ShowroomCrmView() {
 
   // 📊 Executive KPI Calculations
   const totalLeads = inquiries.length;
-  const hotLeadsCount = inquiries.filter(i => (Number(i.AI_Intent_Score) || 0) >= 80).length;
+  const hotLeadsCount = inquiries.filter(i => (parseInt(i.AI_Intent_Score) || 0) >= 80).length;
+  const mobileConciergeLeadsCount = inquiries.filter(i => 
+    (i.Status || '').includes('ENGAGED_ON_MOBILE_AI') || 
+    (i.Inquiry_ID || '').includes('INQ-AI') ||
+    (i.AI_Intent_Score || '').toString().includes('CONCIERGE') ||
+    (i.AI_Intent_Score || '').toString().includes('DIRECTOR')
+  ).length;
   const convertedCount = inquiries.filter(i => (i.Status || '').includes('CONVERTED')).length;
   const conversionRate = totalLeads > 0 ? Math.round((convertedCount / totalLeads) * 100) : 0;
   
@@ -52,8 +58,14 @@ export function ShowroomCrmView() {
     return inquiries.filter(inq => {
       // Status Filter
       let matchesStatus = true;
-      if (filterStatus === 'HOT_LEAD') matchesStatus = (Number(inq.AI_Intent_Score) || 0) >= 80 && !(inq.Status || '').includes('CONVERTED');
-      else if (filterStatus === 'WARM_LEAD') matchesStatus = (Number(inq.AI_Intent_Score) || 0) < 80 && !(inq.Status || '').includes('CONVERTED');
+      if (filterStatus === 'HOT_LEAD') matchesStatus = (parseInt(inq.AI_Intent_Score) || 0) >= 80 && !(inq.Status || '').includes('CONVERTED');
+      else if (filterStatus === 'WARM_LEAD') matchesStatus = (parseInt(inq.AI_Intent_Score) || 0) < 80 && !(inq.Status || '').includes('CONVERTED');
+      else if (filterStatus === 'CONCIERGE_DROP') {
+        matchesStatus = (inq.Status || '').includes('ENGAGED_ON_MOBILE_AI') || 
+                        (inq.Inquiry_ID || '').includes('INQ-AI') || 
+                        (inq.AI_Intent_Score || '').toString().includes('CONCIERGE') || 
+                        (inq.AI_Intent_Score || '').toString().includes('DIRECTOR');
+      }
       else if (filterStatus === 'FOLLOW_UP') matchesStatus = (inq.Status || '').includes('FOLLOW_UP') || (inq.Follow_Up_Date || '').includes('Tomorrow');
       else if (filterStatus === 'MISTRI_VISIT') matchesStatus = (inq.Status || '').includes('MISTRI');
       else if (filterStatus === 'CONVERTED') matchesStatus = (inq.Status || '').includes('CONVERTED');
@@ -104,12 +116,6 @@ export function ShowroomCrmView() {
   const handleHandoffToVoicePos = (inq) => {
     setActiveTab('voice_pos');
     showToast(`🎙️ Transferred ${inq.Customer_Name} (Budget: ₹${(inq.Budget_INR || 0).toLocaleString()}) to Voice POS!`, true);
-  };
-
-  // 📸 Handoff to Tab 3 (AI Room Matcher)
-  const handleHandoffToRoomMatcher = (inq) => {
-    setActiveTab('room_matcher');
-    showToast(`📸 Pre-loaded ${inq.Customer_Name}'s project into AI Room Matcher!`, true);
   };
 
   // 🗑️ Delete / Void Lead
@@ -192,6 +198,7 @@ export function ShowroomCrmView() {
             {[
               { id: 'ALL', label: '📋 All Leads' },
               { id: 'HOT_LEAD', label: '🔥 Hot Intent (80%+)' },
+              { id: 'CONCIERGE_DROP', label: `📱 24/7 Mobile AI Leads (${mobileConciergeLeadsCount})` },
               { id: 'WARM_LEAD', label: '⚡ Warm Leads' },
               { id: 'MISTRI_VISIT', label: '📐 Mistri Booked' },
               { id: 'FOLLOW_UP', label: '📅 Follow-Up Due' },
@@ -301,9 +308,39 @@ export function ShowroomCrmView() {
 
                   {/* AI Intent Score */}
                   <td style={{ padding: '12px 10px' }}>
-                    <span className={`badge ${inq.AI_Intent_Score >= 80 ? 'badge-rose' : 'badge-amber'}`}>
-                      {inq.AI_Intent_Score}% {inq.AI_Intent_Score >= 80 ? '🔥 HOT' : '⚡ WARM'}
-                    </span>
+                    {(() => {
+                      const scoreStr = String(inq.AI_Intent_Score || '');
+                      const numScore = parseInt(scoreStr) || 80;
+                      if (scoreStr.includes('DIRECTOR') || inq.Urgency === 'DIRECTOR_URGENT') {
+                        return (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                            <span className="badge badge-rose" style={{ background: 'linear-gradient(135deg, #DC2626, #991B1B)', color: '#FFF', border: '1px solid #F87171', fontWeight: '800', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              👑 ULTRA-VIP DIRECTOR CALL ({numScore}%)
+                            </span>
+                            <span style={{ fontSize: '10px', color: '#FCA5A5', fontWeight: '600' }}>⚡ Dial within 5 mins</span>
+                          </div>
+                        );
+                      }
+                      if (scoreStr.includes('WEDDING')) {
+                        return (
+                          <span className="badge badge-purple" style={{ background: 'linear-gradient(135deg, #7C3AED, #4C1D95)', color: '#FFF', border: '1px solid #A78BFA', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            💍 WEDDING SUITE VIP ({numScore}%)
+                          </span>
+                        );
+                      }
+                      if (scoreStr.includes('CONCIERGE') || (inq.Status || '').includes('ENGAGED_ON_MOBILE_AI')) {
+                        return (
+                          <span className="badge badge-cyan" style={{ fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            📱 24/7 MOBILE AI LEAD ({numScore}%)
+                          </span>
+                        );
+                      }
+                      return (
+                        <span className={`badge ${numScore >= 80 ? 'badge-rose' : 'badge-amber'}`}>
+                          {numScore}% {numScore >= 80 ? '🔥 HOT' : '⚡ WARM'}
+                        </span>
+                      );
+                    })()}
                   </td>
 
                   {/* Follow-up Schedule */}
@@ -316,12 +353,17 @@ export function ShowroomCrmView() {
                   {/* Status & Staff */}
                   <td style={{ padding: '12px 10px' }}>
                     <div>
-                      <span className={`badge ${inq.Status.includes('CONVERTED') ? 'badge-emerald' : inq.Status.includes('MISTRI') ? 'badge-purple' : 'badge-gold'}`}>
-                        {inq.Status}
+                      <span className={`badge ${
+                        inq.Status.includes('CONVERTED') ? 'badge-emerald' : 
+                        inq.Status.includes('ENGAGED_ON_MOBILE_AI') ? 'badge-cyan' :
+                        inq.Status.includes('MISTRI') ? 'badge-purple' : 
+                        'badge-gold'
+                      }`}>
+                        {inq.Status === 'ENGAGED_ON_MOBILE_AI' ? '📱 Mobile AI Engaged' : inq.Status}
                       </span>
                     </div>
                     <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                      👤 {inq.Assigned_Staff || 'Rakesh'}
+                      {(inq.Status === 'ENGAGED_ON_MOBILE_AI' && !inq.Assigned_Staff) ? '🤖 24/7 AI Concierge' : `👤 ${inq.Assigned_Staff || 'Rakesh'}`}
                     </div>
                   </td>
 
@@ -329,6 +371,18 @@ export function ShowroomCrmView() {
                   <td style={{ padding: '12px 10px', textAlign: 'right' }}>
                     <div style={{ display: 'flex', gap: '5px', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap' }}>
                       
+                      {/* 📞 Immediate Direct Phone Call */}
+                      {inq.Customer_Phone && (
+                        <a 
+                          href={`tel:${inq.Customer_Phone}`} 
+                          className="btn-luxury-gold" 
+                          title={`Direct Phone Call to ${inq.Customer_Name} (${inq.Customer_Phone})`}
+                          style={{ padding: '5px 8px', fontSize: '11px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+                        >
+                          <Phone size={13} />
+                        </a>
+                      )}
+
                       {/* ✏️ Edit Lead */}
                       <button 
                         className="btn-ghost-edit" 
@@ -367,16 +421,6 @@ export function ShowroomCrmView() {
                         style={{ padding: '5px 8px', fontSize: '11px', color: 'var(--accent-cyan)', border: '1px solid rgba(56,189,248,0.3)', background: 'rgba(56,189,248,0.06)' }}
                       >
                         <Mic size={13} />
-                      </button>
-
-                      {/* 📸 AI Room Matcher Handoff */}
-                      <button 
-                        className="btn-ghost-edit" 
-                        onClick={() => handleHandoffToRoomMatcher(inq)}
-                        title="Transfer Customer to Tab 3 (AI Room Matcher) for 2D Spatial Layout"
-                        style={{ padding: '5px 8px', fontSize: '11px', color: 'var(--accent-gold-light)', border: '1px solid rgba(212,175,55,0.3)', background: 'rgba(212,175,55,0.06)' }}
-                      >
-                        <Compass size={13} />
                       </button>
 
                       {/* ⚡ Convert to Order */}

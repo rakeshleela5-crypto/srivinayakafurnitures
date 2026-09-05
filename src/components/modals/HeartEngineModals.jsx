@@ -472,7 +472,7 @@ export function WeddingSuiteModal({ isOpen, onClose }) {
       `━━━━━━━━━━━━━━━━━━━━\n` +
       `Warmest Congratulations to *${coupleName}* on your upcoming wedding on ${weddingDate}!\n\n` +
       `✨ *Selected Package:* ${tier} Grand Suite (${currentPkg.rooms})\n` +
-      `💰 *Special Wedding Package Price:* ₹${currentPkg.price.toLocaleString()} (${currentPkg.discount})\n` +
+      `💰 *Special Wedding Package Price:* ₹${(Number(currentPkg?.price) || 0).toLocaleString()} (${currentPkg.discount})\n` +
       `🎁 *Complimentary Festive Inclusions:* 2x Ortho Memory Foam Pillows + Mattress Protector + Free Master Fitting\n\n` +
       `👉 *View Full 3D Room Suite Renders:* https://shreeganesh-godrej.web.app/#concierge\n` +
       `📞 *Director VIP Desk:* +91 9390553301 | Main Road, Rayagada`;
@@ -547,7 +547,7 @@ export function WeddingSuiteModal({ isOpen, onClose }) {
         </div>
 
         <button className="btn-luxury-gold" onClick={handleGenerateBrochure} style={{ width: '100%', justifyContent: 'center', padding: '12px', marginTop: '14px' }}>
-          <Sparkles size={16} /> 👑 Generate Luxury Wedding Brochure & WhatsApp PDF (₹{currentPkg.price.toLocaleString()})
+          <Sparkles size={16} /> 👑 Generate Luxury Wedding Brochure & WhatsApp PDF (₹{(Number(currentPkg?.price) || 0).toLocaleString()})
         </button>
       </div>
     </div>
@@ -721,7 +721,7 @@ export function AgingStockModal({ isOpen, onClose }) {
               </div>
               <div style={{ textAlign: 'right' }}>
                 <span className="badge badge-rose" style={{ fontSize: '10px' }}>{item.days} DAYS IN STORE</span>
-                <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-gold-light)', marginTop: '2px' }}>₹{item.price.toLocaleString()}</div>
+                <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-gold-light)', marginTop: '2px' }}>₹{(Number(item?.price) || 0).toLocaleString()}</div>
               </div>
             </div>
           ))}
@@ -1321,7 +1321,7 @@ export function B2bTurnkeyModal({ isOpen, onClose }) {
       `📄 *Proposal Ref:* ${quoteId}\n` +
       `📦 *Project Scope:* ${selected.title}\n` +
       `✨ *Included BIFMA Certified Items:* ${selected.desc}\n\n` +
-      `💰 *Institutional Commercial Value:* ₹${selected.price.toLocaleString()} + 18% GST\n` +
+      `💰 *Institutional Commercial Value:* ₹${(Number(selected?.price) || 0).toLocaleString()} + 18% GST\n` +
       `💳 *Payment Milestones:* 40% Mobilization Advance • 40% On Delivery • 20% Sign-Off\n` +
       `🛡️ *Warranty:* 5-Year Comprehensive On-Site Godrej Commercial Warranty\n\n` +
       `🏢 *Godrej Interio Commercial Projects Division, Rayagada*\n` +
@@ -1444,7 +1444,7 @@ export function B2bTurnkeyModal({ isOpen, onClose }) {
             <div style={{ background: '#030712', borderRadius: '10px', padding: '12px 14px', border: '1px solid rgba(212,175,55,0.25)', fontSize: '11px', color: '#CBD5E1', lineHeight: '1.5' }}>
               <strong style={{ color: 'var(--accent-emerald)' }}>📦 Package Scope & BIFMA Level 3 Compliance:</strong><br />
               {selected.desc}<br />
-              <strong style={{ color: 'var(--accent-gold-light)' }}>Base Cost: ₹{selected.price.toLocaleString()} (+ 18% GST)</strong>
+              <strong style={{ color: 'var(--accent-gold-light)' }}>Base Cost: ₹{(Number(selected?.price) || 0).toLocaleString()} (+ 18% GST)</strong>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
@@ -1481,7 +1481,7 @@ export function B2bTurnkeyModal({ isOpen, onClose }) {
               <strong style={{ color: 'var(--accent-gold-light)' }}>📋 Institutional Proposal Mandate:</strong><br />
               • Client: <b>{orgName}</b> ({contactPerson})<br />
               • Package: <b>{selected.title}</b><br />
-              • Total: <b>₹{selected.price.toLocaleString()} + GST</b><br />
+              • Total: <b>₹{(Number(selected?.price) || 0).toLocaleString()} + GST</b><br />
               • Milestone Terms: <b>40% Advance • 40% Delivery • 20% Sign-Off</b>
             </div>
 

@@ -65,8 +65,9 @@ export function InventorySafeLockView() {
       const isOrderedItem = (selectedOrderObj.Ordered_SKU || '').includes(item.SKU);
       return isOrderedItem;
     }
-    const matchesSearch = item.Product_Name.toLowerCase().includes(searchQuery.toLowerCase()) || item.SKU.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCat = filterCategory === 'ALL' || item.Category === filterCategory;
+    const itemCat = item.Category || item.Main_Category || "";
+    const matchesSearch = (item.Product_Name || '').toLowerCase().includes(searchQuery.toLowerCase()) || (item.SKU || '').toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCat = filterCategory === 'ALL' || itemCat === filterCategory;
     return matchesSearch && matchesCat;
   });
 

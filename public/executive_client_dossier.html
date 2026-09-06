@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OmniBuild OS™ — Executive Commercial & Technical Value Dossier</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 5mm 6mm 4mm 6mm;
+  }
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #0f172a;
+    background: #ffffff;
+    font-size: 6.8pt;
+    line-height: 1.18;
+    padding: 0;
+  }
+
+  .dossier-wrapper {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    background: #fff;
+  }
+
+  /* Header */
+  .header {
+    border-bottom: 1.5px solid #0f172a;
+    padding-bottom: 2.5px;
+    margin-bottom: 3px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  .header-left .brand-tag {
+    font-size: 6.2pt;
+    font-weight: 800;
+    background: #0f172a;
+    color: #ffffff;
+    padding: 1px 4.5px;
+    border-radius: 2px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    display: inline-block;
+  }
+  .header-left h1 {
+    font-size: 11pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: #0f172a;
+    line-height: 1.1;
+    margin-top: 1.5px;
+  }
+  .header-left .sub {
+    font-size: 6.8pt;
+    font-weight: 600;
+    color: #334155;
+    margin-top: 0.5px;
+  }
+  .header-right {
+    text-align: right;
+    font-size: 6.2pt;
+    color: #475569;
+    line-height: 1.25;
+  }
+  .badge-primary { color: #0369a1; font-weight: 800; }
+  .badge-green { color: #047857; font-weight: 700; }
+  .badge-dark { color: #0f172a; font-weight: 800; }
+
+  /* Strategic Banner */
+  .quote-bar {
+    background: #0f172a;
+    color: #ffffff;
+    padding: 2.5px 6px;
+    border-radius: 2px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3px;
+  }
+  .quote-bar .text {
+    font-size: 7.2pt;
+    font-weight: 700;
+    letter-spacing: -0.1px;
+  }
+  .quote-bar .sub {
+    font-size: 6pt;
+    color: #94a3b8;
+  }
+  .quote-bar .pill {
+    background: #059669;
+    color: #ffffff;
+    font-size: 6pt;
+    font-weight: 800;
+    padding: 1.5px 5px;
+    border-radius: 2px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* Section Titles */
+  .sec-title {
+    background: #0f172a;
+    color: #ffffff;
+    padding: 1.8px 5px;
+    font-size: 6.7pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    border-radius: 1.5px;
+    margin-top: 2.5px;
+    margin-bottom: 2px;
+  }
+
+  /* Comparison Table */
+  table.comp-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 2.5px;
+    font-size: 6.3pt;
+  }
+  table.comp-table th {
+    background: #f1f5f9;
+    color: #1e293b;
+    font-weight: 800;
+    text-align: left;
+    padding: 1.8px 4px;
+    border: 0.5px solid #cbd5e1;
+    text-transform: uppercase;
+    font-size: 6pt;
+  }
+  table.comp-table td {
+    padding: 1.4px 4px;
+    border: 0.5px solid #e2e8f0;
+    vertical-align: middle;
+  }
+  .highlight-col {
+    background: #f0fdf4;
+    color: #065f46;
+    font-weight: 600;
+  }
+  .pill-red {
+    background: #fee2e2;
+    color: #991b1b;
+    font-weight: 800;
+    padding: 0.5px 3px;
+    border-radius: 2px;
+  }
+  .pill-green {
+    background: #dcfce7;
+    color: #166534;
+    font-weight: 800;
+    padding: 0.5px 3px;
+    border-radius: 2px;
+  }
+
+  /* 2-Column Grid */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    margin-bottom: 2.5px;
+  }
+  .box {
+    border: 0.75px solid #cbd5e1;
+    border-radius: 2px;
+    padding: 3px 5px;
+    background: #f8fafc;
+  }
+  .box-title {
+    font-size: 6.7pt;
+    font-weight: 800;
+    color: #0f172a;
+    border-bottom: 0.75px solid #cbd5e1;
+    padding-bottom: 1.2px;
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+  }
+  .box ul {
+    list-style-type: none;
+    padding: 0;
+  }
+  .box ul li {
+    position: relative;
+    padding-left: 8px;
+    margin-bottom: 1.2px;
+    font-size: 6.2pt;
+    color: #334155;
+  }
+  .box ul li::before {
+    content: "■";
+    position: absolute;
+    left: 0;
+    font-size: 4pt;
+    top: 2.5px;
+    color: #0284c7;
+  }
+  .token-highlight {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: #0369a1;
+    background: #e0f2fe;
+    padding: 0 2px;
+    border-radius: 2px;
+  }
+
+  /* Investment Matrix */
+  .pricing-row {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr 1fr;
+    gap: 4px;
+    margin-top: 1.5px;
+    margin-bottom: 2.5px;
+  }
+  .price-card {
+    border: 0.75px solid #cbd5e1;
+    border-radius: 2px;
+    padding: 2.5px 4.5px;
+    background: #ffffff;
+    text-align: center;
+  }
+  .price-card.featured {
+    border: 1.2px solid #2563eb;
+    background: #f8faff;
+  }
+  .price-card .label {
+    font-size: 6pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #64748b;
+  }
+  .price-card.featured .label {
+    color: #1d4ed8;
+  }
+  .price-card .val {
+    font-size: 9.5pt;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 1px 0;
+  }
+  .price-card.featured .val {
+    color: #1d4ed8;
+  }
+  .price-card .sub {
+    font-size: 5.8pt;
+    color: #64748b;
+    border-bottom: 0.5px dashed #cbd5e1;
+    padding-bottom: 1.5px;
+    margin-bottom: 1.5px;
+  }
+  .price-card .features {
+    font-size: 5.7pt;
+    color: #334155;
+    text-align: left;
+    line-height: 1.2;
+  }
+
+  /* Signatures */
+  .sign-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    border-top: 0.75px solid #cbd5e1;
+    padding-top: 2px;
+    margin-top: 2px;
+  }
+  .sign-col {
+    font-size: 6pt;
+  }
+  .sign-line {
+    border-bottom: 0.75px solid #0f172a;
+    margin-top: 13px;
+    margin-bottom: 1.5px;
+  }
+  .sign-name {
+    font-weight: 800;
+    color: #0f172a;
+    font-size: 6.4pt;
+  }
+
+  /* Footer */
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 0.75px solid #cbd5e1;
+    padding-top: 1.5px;
+    margin-top: 2.5px;
+    font-size: 5.6pt;
+    color: #64748b;
+    font-weight: 600;
+  }
+
+  @media screen {
+    body {
+      background: #e2e8f0;
+      padding: 16px;
+    }
+    .dossier-wrapper {
+      max-width: 820px;
+      padding: 16px 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border-radius: 6px;
+    }
+    .screen-print-btn {
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      background: #0f172a;
+      color: #fff;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      z-index: 999;
+    }
+    .screen-print-btn:hover { background: #1e293b; }
+  }
+
+  @media print {
+    .screen-print-btn { display: none !important; }
+    body { background: #fff; padding: 0; }
+    .dossier-wrapper { box-shadow: none; padding: 0; }
+  }
+</style>
+</head>
+<body>
+
+<button class="screen-print-btn" onclick="window.print()">🖨️ Print / Save 1-Page PDF</button>
+
+<div class="dossier-wrapper">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <span class="brand-tag">NSAIAGENCY7777 • Sovereign OS Proposal</span>
+      <h1>OmniBuild OS™ — Commercial & Technical Value Dossier</h1>
+      <div class="sub">Custom Enterprise Architecture for <strong>Shree Ganesh Enterprises</strong> (Godrej Interio Flagship, Rayagada)</div>
+    </div>
+    <div class="header-right">
+      <div>REF: <strong class="badge-dark">NSAI-VAL-2026-GODREJ-01</strong> | MARCH 2026</div>
+      <div>PREPARED BY: <span class="badge-primary">NSAIAGENCY7777 TEAM</span></div>
+      <div>EXECUTIVE DIRECTOR: <strong class="badge-dark">N. LEELA RAKESH</strong></div>
+      <div>DIRECT / WHATSAPP: <span class="badge-green">+91 9390553301</span></div>
+    </div>
+  </div>
+
+  <!-- Strategic Value Banner -->
+  <div class="quote-bar">
+    <div>
+      <div class="text">"Commercial ERPs are a recurring rental expense. OmniBuild OS™ is a permanent profit asset."</div>
+      <div class="sub">Custom-engineered from the ground up for Godrej showroom dispatches, anti-theft banking, and 43 atomic ledgers.</div>
+    </div>
+    <div class="pill">✓ 100% Zero SaaS Lock-in</div>
+  </div>
+
+  <!-- Section 1: Market Comparison Table -->
+  <div class="sec-title">1. Commercial Market Reality: Legacy Software Rents vs. OmniBuild OS™ Ownership</div>
+  <table class="comp-table">
+    <thead>
+      <tr>
+        <th style="width: 25%;">Operational Metric</th>
+        <th style="width: 37%;">Commercial ERPs (SAP / Zoho / Marg + Add-ons)</th>
+        <th style="width: 38%;" class="highlight-col">OmniBuild OS™ (Custom Operating System)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Monthly Software Rent</strong></td>
+        <td><span class="pill-red">₹15,000 to ₹20,000 / month</span> (₹1.8L – ₹2.4L every single year forever)</td>
+        <td class="highlight-col"><span class="pill-green">₹0 License Rent</span> (Nominal Cloud AMC Only)</td>
+      </tr>
+      <tr>
+        <td><strong>Setup & Customization</strong></td>
+        <td>₹1,50,000 to ₹3,50,000 for rigid, generic accounting templates</td>
+        <td class="highlight-col">Fair, One-Time Capital Investment <strong>[₹ ENTER AMOUNT]</strong></td>
+      </tr>
+      <tr>
+        <td><strong>Godrej Furniture Fitment</strong></td>
+        <td>❌ Inflexible: zero integration with lorry dispatches (LR), Safelock, or box fit</td>
+        <td class="highlight-col">✅ <strong>100% Tailored</strong> for Godrej Rayagada inward/outward & dispatches</td>
+      </tr>
+      <tr>
+        <td><strong>Bank Reconciliation</strong></td>
+        <td>❌ Manual end-of-day tally (leads to undetected cash discrepancies & theft)</td>
+        <td class="highlight-col">✅ <strong>Sub-2s Atomic Dual-Ledger Sync</strong> (100% audit-proof reconciliation)</td>
+      </tr>
+      <tr>
+        <td><strong>Regional AI Voice POS</strong></td>
+        <td>❌ English only or ₹50,000/yr extra; zero regional dialect capabilities</td>
+        <td class="highlight-col">✅ <strong>Odia, Hindi, Telugu & English</strong> Voice POS + WhatsApp Bot Engine</td>
+      </tr>
+      <tr>
+        <td><strong>Data Sovereignty & Cloud</strong></td>
+        <td>❌ Locked on vendor servers; license cancellation forfeits access</td>
+        <td class="highlight-col">✅ <strong>100% Client-Owned</strong> on your private Google Cloud infrastructure</td>
+      </tr>
+      <tr>
+        <td><strong>3-Year Total Cost of Ownership</strong></td>
+        <td><strong style="color: #991b1b;">₹7,00,000 to ₹8,50,000+</strong> (Rent + Setup + Paid Support)</td>
+        <td class="highlight-col"><strong>Saves Over ₹5,00,000 in Direct Showroom Operating Expenses</strong></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Section 2: Deep Engineering & Security Grid -->
+  <div class="sec-title">2. Engineering Reality, AI Infrastructure & Database Protection</div>
+  <div class="grid-2">
+    <div class="box">
+      <div class="box-title">
+        <span>⚡ Deep Engineering & AI Token Compute Incurred</span>
+        <span class="token-highlight">43 Live Sheets</span>
+      </div>
+      <ul>
+        <li><strong>Not Copy-Paste:</strong> Hand-crafted architectural codebase specifically synchronized across <strong>43 live Google Sheet database ledgers</strong>.</li>
+        <li><strong>High-Tier AI Tokens:</strong> Architected with advanced reasoning AI models billed per token and per second. Our agency team incurred <span class="token-highlight">₹18,500+ per engineer</span> strictly in AI development compute & cloud tokens.</li>
+        <li><strong>Project-Based Team Model:</strong> Engineered by senior cloud security, full-stack, and database architects whose milestone compensation directly depends on this project delivery.</li>
+        <li><strong>Atomic Multi-Ledger Engine:</strong> Simultaneously posts to `Bank_Transactions`, `Payments_Log`, and `Transactions_Log` to prevent any financial tampering.</li>
+      </ul>
+    </div>
+
+    <div class="box">
+      <div class="box-title">
+        <span>🛡️ Institutional Security, Firewall & Anti-Hacking</span>
+        <span class="token-highlight">Bank-Grade</span>
+      </div>
+      <ul>
+        <li><strong>Cloudflare WAF & DDoS Shield:</strong> Enterprise geo-fencing and web application firewall shielding your customer and price lists from external bots and attacks.</li>
+        <li><strong>HMAC Cryptographic Security:</strong> Bank-grade tokenized authentication blocks unauthorized devices or staff from altering billing entries or sales logs.</li>
+        <li><strong>Monthly Routing & Security Audits:</strong> Continuous monthly monitoring of API routing, database latency, and failover health to ensure 99.9% uptime.</li>
+        <li><strong>Zero Data Loss Architecture:</strong> Built-in multi-layered caching guarantees no order or payment is lost even during local showroom internet drops.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Section 3: Hardware Turnkey & Legal SLA Grid -->
+  <div class="sec-title">3. Turnkey Hardware Integration & Sovereign Legal Guarantees</div>
+  <div class="grid-2">
+    <div class="box">
+      <div class="box-title">
+        <span>🖨️ Turnkey Hardware Integration</span>
+        <span class="token-highlight">Plug-and-Play</span>
+      </div>
+      <ul>
+        <li><strong>Industrial Wireless Bluetooth Scanner:</strong> Rapid 1D/2D scanning for factory shipments, LR inward docks, and delivery loading.</li>
+        <li><strong>High-Speed Thermal POS Receipt Printer:</strong> Instant billing slips and dispatch gatepasses generated in seconds at billing desk.</li>
+        <li><strong>Barcode Label Sticker Printer:</strong> Instant barcode tagging for furniture displayed on the showroom floor.</li>
+      </ul>
+    </div>
+
+    <div class="box">
+      <div class="box-title">
+        <span>📜 Binding Legal SLA Contract & Future AI Roadmap</span>
+        <span class="token-highlight">Legal SLA</span>
+      </div>
+      <ul>
+        <li><strong>Legally Binding SLA:</strong> Formal signed contract guaranteeing 99.9% uptime, 100% private data sovereignty, and zero vendor lock-in.</li>
+        <li><strong>Lifetime Technical Partnership:</strong> Direct priority bugfix and operational support without charging hourly agency consulting fees.</li>
+        <li><strong>Subsidized Future AI Upgrades:</strong> Direct access to upcoming AI vision (furniture dimension scanning, automated WhatsApp campaign bots) at low partner rates.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Section 4: Investment Matrix -->
+  <div class="sec-title">4. Proposed Commercial Investment Structure</div>
+  <div class="pricing-row">
+    <div class="price-card">
+      <div class="label">Option A: Core Software OS</div>
+      <div class="val">[₹ ENTER AMOUNT]</div>
+      <div class="sub">One-Time Capital Asset Fee</div>
+      <div class="features">
+        ✓ Complete 43-Ledger Sync Engine<br>
+        ✓ Voice POS & Regional WhatsApp Bot<br>
+        ✓ 100% Private Cloud Deployment<br>
+        ✓ Staff Training & Handover Manuals
+      </div>
+    </div>
+
+    <div class="price-card featured">
+      <div class="label">Option B: Turnkey Complete (Recommended)</div>
+      <div class="val">[₹ ENTER AMOUNT]</div>
+      <div class="sub">One-Time All-Inclusive Package</div>
+      <div class="features">
+        ✓ <strong>Everything in Option A</strong><br>
+        ✓ <strong>Industrial Wireless Bluetooth Barcode Scanner</strong><br>
+        ✓ <strong>High-Speed Thermal POS Receipt Printer</strong><br>
+        ✓ Complete On-site Hardware Calibration
+      </div>
+    </div>
+
+    <div class="price-card">
+      <div class="label">Cloud Security & Maintenance AMC</div>
+      <div class="val">[₹ ENTER AMOUNT]<span style="font-size: 6pt; font-weight: normal;">/mo</span></div>
+      <div class="sub">Billed Quarterly / Annually</div>
+      <div class="features">
+        ✓ 24/7 Cloud Uptime & DB Protection<br>
+        ✓ Monthly Security & Route Audits<br>
+        ✓ Lifetime Priority Bugfix Guarantee<br>
+        ✓ Ongoing Automatic Data Backups
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Signatures -->
+  <div class="sign-row">
+    <div class="sign-col">
+      <div style="color: #64748b;">Issued on Behalf of:</div>
+      <div style="font-weight: 800; color: #0f172a;">NSAIAGENCY7777 ENGINEERING TEAM</div>
+      <div class="sign-line"></div>
+      <div class="sign-name">N. LEELA RAKESH</div>
+      <div style="color: #475569;">Executive Director & Lead Systems Architect | <strong>+91 9390553301</strong></div>
+    </div>
+
+    <div class="sign-col">
+      <div style="color: #64748b;">Accepted & Approved on Behalf of:</div>
+      <div style="font-weight: 800; color: #0f172a;">SHREE GANESH ENTERPRISES (GODREJ INTERIO RAYAGADA)</div>
+      <div class="sign-line"></div>
+      <div class="sign-name">MANAGING DIRECTOR / PROPRIETOR</div>
+      <div style="color: #475569;">Corporate Seal, Signature & Authorized Acceptance</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span>OmniBuild OS™ • Proprietary Sovereign Enterprise Architecture</span>
+    <span>Client: <strong>Shree Ganesh Enterprises</strong> (Rayagada)</span>
+    <span>Engineered & Deployed by <strong>NSAIAGENCY7777</strong> | Executive Director: <strong>N. LEELA RAKESH (+91 9390553301)</strong></span>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -588,6 +588,53 @@ else if (action === "SYSTEM_1_COMBO_DEAL") {
     }
 
     // ------------------------------------------------------------------------------------------
+    // 👑 BOT-27: 24/7 AI CONCIERGE 5-MINUTE DWELL & HOT LEAD RECOVERY
+    // Logs high-intent drop-offs/dwell leads to Inquiries_Log and prepares Director alert
+    // ------------------------------------------------------------------------------------------
+    else if (action === "BOT_27_CONCIERGE_LEAD_RECOVERY" || action === "LOG_CONCIERGE_HOT_LEAD" || action === "LOG_INQUIRY") {
+      var inqSheet = getOrCreateSheet(ss, "Inquiries_Log", [
+        "Inquiry_ID", "Inquiry_Date_Time", "Customer_Name", "Customer_Phone", "Address", 
+        "Channel", "Category_Models", "Budget_INR", "AI_Intent_Score", "Follow_Up_Date", 
+        "Status", "Assigned_Staff"
+      ], "#0F172A");
+
+      var inqId = params.inquiry_id || ("INQ-AI-" + Math.floor(1000 + Math.random() * 9000));
+      var cName = params.customer_name || params.name || "VIP Concierge Guest";
+      var rawP = (params.customer_phone || params.phone || "9390553301").toString().replace(/[^0-9]/g, "");
+      var cPhone = Number(rawP) || 9390553301;
+      var cAddr = params.address || params.location || "Rayagada";
+      var cCategory = params.category || params.specifics || "Godrej Luxury Collection";
+      var cBudget = Number(params.budget) || 89790;
+      var cOccasion = params.occasion || "Wedding Bedroom Suite";
+      var cScore = params.ai_intent_score || (cBudget >= 100000 ? "99% (DIRECTOR_URGENT)" : "95% (CONCIERGE_5MIN)");
+
+      if (inqSheet) {
+        inqSheet.appendRow([
+          inqId,
+          currentDateTimeStr,
+          cName,
+          cPhone,
+          cAddr,
+          "24/7 Mobile AI Concierge",
+          cCategory + " [" + cOccasion + "]",
+          cBudget,
+          cScore,
+          formatDateIndian(new Date(Date.now() + 86400000)),
+          "ENGAGED_ON_MOBILE_AI",
+          "N. Leela Rakesh (Store Director)"
+        ]);
+        applyStandardFormat(inqSheet);
+      }
+
+      result.inquiry_id = inqId;
+      result.customer_name = cName;
+      result.customer_phone = cPhone;
+      result.budget = cBudget;
+      result.director_alert_phone = "9390553301";
+      result.message = "BOT-27 Lead #" + inqId + " recorded in Inquiries_Log. Director Alert triggered!";
+    }
+
+    // ------------------------------------------------------------------------------------------
     // EXECUTIVE ACTION 1: Update Live Inquiry / Lead Details (Inquiries_Log)
     // ------------------------------------------------------------------------------------------
     else if (action === "UPDATE_INQUIRY_LEAD") {

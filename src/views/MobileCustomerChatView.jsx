@@ -142,6 +142,89 @@ export function MobileCustomerChatView() {
   const [isSafeLockModalOpen, setIsSafeLockModalOpen] = useState(false);
   const [tokenAmountOption, setTokenAmountOption] = useState(5000); // 5000 or 50%
 
+  // ⏱️ AUTOMATED 5-MINUTE DWELL & DIRECTOR VIP ALERT TRIGGER
+  const [dwellSeconds, setDwellSeconds] = useState(0);
+  const [hasDwellAlertTriggered, setHasDwellAlertTriggered] = useState(false);
+  const [showDirectorAlertModal, setShowDirectorAlertModal] = useState(false);
+  const [showExitIntentModal, setShowExitIntentModal] = useState(false);
+  const hasTriggeredDwellRef = useRef(false);
+
+  // Active Session Dwell Timer (counts up every second)
+  useEffect(() => {
+    const dwellInterval = setInterval(() => {
+      setDwellSeconds(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(dwellInterval);
+  }, []);
+
+  // Exit-Intent Listener (triggers if mouse leaves viewport on desktop to close tab)
+  useEffect(() => {
+    const handleMouseLeave = (e) => {
+      if (e.clientY <= 10 && !showExitIntentModal && !hasTriggeredDwellRef.current && dwellSeconds >= 15) {
+        setShowExitIntentModal(true);
+      }
+    };
+    document.addEventListener('mouseleave', handleMouseLeave);
+    return () => document.removeEventListener('mouseleave', handleMouseLeave);
+  }, [showExitIntentModal, dwellSeconds]);
+
+  // Automated 5-Minute (300s) or High-Ticket 2-Minute (120s) Dwell & CRM Trigger
+  useEffect(() => {
+    const activeSp = catalog.find(c => c.SKU === currentSku)?.Selling_Price_INR || 89790;
+    const effectiveBudget = Math.max(highestBudget || 0, activeSp);
+    const threshold = effectiveBudget >= 150000 ? 120 : 300;
+
+    if (dwellSeconds >= threshold && !hasTriggeredDwellRef.current) {
+      hasTriggeredDwellRef.current = true;
+      setHasDwellAlertTriggered(true);
+
+      const custName = customerProfile.name || leadName || 'VIP Showroom Guest';
+      const custPhone = customerProfile.phone || leadPhone || '9390553301';
+      const prodName = catalog.find(c => c.SKU === currentSku)?.Product_Name || 'Godrej Luxury Collection';
+      const isUltraVipLead = effectiveBudget >= 120000 || shoppingOccasion === 'WEDDING';
+
+      // 1. Silent Background Synchronization to Google Sheets (Table 6: Inquiries_Log)
+      dispatchWebhookAction('BOT_27_CONCIERGE_LEAD_RECOVERY', {
+        customer_name: custName,
+        customer_phone: custPhone,
+        address: customerProfile.address || leadAddress || 'Rayagada',
+        category: `${prodName} [${shoppingOccasion}]`,
+        budget: effectiveBudget,
+        occasion: shoppingOccasion,
+        language: portalLang,
+        ai_intent_score: isUltraVipLead ? '99% (👑 ULTRA-VIP DIRECTOR CALL > 1.5L)' : '95% (🔥 5-MIN HOT CONCIERGE LEAD)',
+        dwell_time_seconds: dwellSeconds,
+        recovery_step: 1
+      });
+
+      // 2. Immediate In-Memory Reflection in ShowroomCrmView
+      if (setInquiries) {
+        const autoHotLead = {
+          Inquiry_ID: `INQ-AI-${Math.floor(1000 + Math.random() * 9000)}`,
+          Inquiry_Date_Time: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+          Customer_Name: custName,
+          Customer_Phone: custPhone,
+          Address: customerProfile.address || leadAddress || 'Rayagada',
+          Channel: '24/7 Mobile AI Concierge (5-Min Dwell)',
+          Category_Models: `${prodName} [${shoppingOccasion}]`,
+          Budget_INR: effectiveBudget,
+          Urgency: isUltraVipLead ? 'DIRECTOR_URGENT' : 'HOT_LEAD',
+          AI_Intent_Score: isUltraVipLead ? '99% (👑 ULTRA-VIP DIRECTOR CALL)' : '95% (🔥 5-MIN HOT LEAD)',
+          Follow_Up_Date: 'Today (Within 5 Mins)',
+          Status: 'ENGAGED_ON_MOBILE_AI',
+          Assigned_Staff: 'N. Leela Rakesh (Store Director)'
+        };
+        setInquiries(prev => [autoHotLead, ...(prev || [])]);
+      }
+
+      // 3. Audio Chime & VIP Director Privilege Modal
+      playSuccessChime();
+      triggerGoldenConfetti();
+      setShowDirectorAlertModal(true);
+      showToast("👑 VIP Privilege Unlocked: Store Director Direct Call Authorized!", true);
+    }
+  }, [dwellSeconds, highestBudget, customerProfile, leadName, leadPhone, currentSku, catalog, shoppingOccasion, portalLang, setInquiries, showToast]);
+
   // Silent Background Cloud Sync with Google Sheets on QR scan
   useEffect(() => {
     async function syncCatalogWithGoogleSheets() {
@@ -630,6 +713,11 @@ export function MobileCustomerChatView() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span className="badge badge-gold" style={{ fontSize: '10.5px', padding: '3px 8px' }}>
             📱 MOBILE AI CONCIERGE
+          </span>
+          <span style={{ fontSize: '10px', color: dwellSeconds >= 300 ? '#F87171' : '#FCD34D', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: '12px', border: dwellSeconds >= 300 ? '1px solid #EF4444' : '1px solid rgba(212,175,55,0.3)' }}>
+            <Clock size={10} />
+            <span>{Math.floor(dwellSeconds / 60)}m {String(dwellSeconds % 60).padStart(2, '0')}s</span>
+            {dwellSeconds >= 300 && <span style={{ background: '#EF4444', color: '#FFF', padding: '1px 4px', borderRadius: '4px', fontSize: '8px', fontWeight: '900' }}>🔥 5M HOT</span>}
           </span>
           <span style={{ fontSize: '11px', color: '#94A3B8' }}>• Scan & Fit Hub</span>
         </div>
@@ -1517,6 +1605,213 @@ export function MobileCustomerChatView() {
           <Send size={16} />
         </button>
       </div>
+
+      {/* 👑 VIP DIRECTOR PRIVILEGE UNLOCKED MODAL (Triggered on 5-Minute Dwell or High Budget) */}
+      {showDirectorAlertModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(3, 7, 18, 0.88)',
+          backdropFilter: 'blur(8px)',
+          zIndex: 99999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px'
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%)',
+            border: '2px solid #F59E0B',
+            borderRadius: '20px',
+            maxWidth: '440px',
+            width: '100%',
+            padding: '24px 20px',
+            boxShadow: '0 20px 50px rgba(245,158,11,0.25), 0 0 30px rgba(0,0,0,0.8)',
+            position: 'relative'
+          }}>
+            <button
+              onClick={() => setShowDirectorAlertModal(false)}
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '14px',
+                background: 'rgba(255,255,255,0.1)',
+                border: 'none',
+                color: '#94A3B8',
+                borderRadius: '50%',
+                width: '28px',
+                height: '28px',
+                fontSize: '14px',
+                cursor: 'pointer'
+              }}
+            >
+              ✕
+            </button>
+
+            <div style={{ textAlign: 'center', marginBottom: '14px' }}>
+              <span style={{ fontSize: '32px' }}>👑</span>
+              <h3 style={{ fontSize: '17px', fontWeight: '900', color: '#FCD34D', margin: '6px 0 2px 0', letterSpacing: '-0.3px' }}>
+                Store Director Direct Privilege Unlocked!
+              </h3>
+              <div style={{ fontSize: '11px', color: '#38BDF8', fontWeight: '700' }}>
+                🔥 5-Minute High-Intent Session Verified • Godrej Interio Rayagada
+              </div>
+            </div>
+
+            <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', padding: '12px', marginBottom: '14px' }}>
+              <div style={{ fontSize: '11.5px', color: '#E2E8F0', lineHeight: '1.5' }}>
+                Namaskar <strong>{customerProfile.name || leadName || 'Respected Customer'}</strong>! Because you have taken time exploring our flagship collection today, Store Director <strong>N. Leela Rakesh (+91 9390553301)</strong> has authorized:
+              </div>
+              <div style={{ marginTop: '8px', fontSize: '11px', color: '#A7F3D0', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div>✓ <strong>Direct Showroom Margin Discount</strong> on {activeProduct.Product_Name}</div>
+                <div>✓ <strong>Priority Factory Dispatch & Free Assembly</strong> in Rayagada</div>
+                <div>✓ <strong>48-Hour SafeLock Price Guarantee</strong></div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <a
+                href={`https://wa.me/919390553301?text=${encodeURIComponent(`Namaskar Director Rakesh Sir! 🙏 I am ${customerProfile.name || leadName || 'a VIP Customer'} exploring ${activeProduct.Product_Name} (₹${sp.toLocaleString()}) on your 24/7 AI Concierge [${getOccasionLabel()}]. I would like to speak directly about the festive showroom privilege.`)}`}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  background: 'linear-gradient(135deg, #25D366, #128C7E)',
+                  color: '#FFFFFF',
+                  textDecoration: 'none',
+                  borderRadius: '12px',
+                  padding: '11px 16px',
+                  fontSize: '12.5px',
+                  fontWeight: '800',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 15px rgba(37,211,102,0.4)'
+                }}
+              >
+                <MessageSquare size={16} /> <span>WhatsApp Director Rakesh (+91 9390553301)</span>
+              </a>
+
+              <a
+                href="tel:9390553301"
+                style={{
+                  background: 'rgba(255,255,255,0.08)',
+                  color: '#FCD34D',
+                  textDecoration: 'none',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(245,158,11,0.4)',
+                  padding: '9px 16px',
+                  fontSize: '11.5px',
+                  fontWeight: '700',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Phone size={14} /> <span>Call Director Now (+91 9390553301)</span>
+              </a>
+
+              <button
+                onClick={() => {
+                  setShowDirectorAlertModal(false);
+                  setIsLeadCaptureOpen(true);
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#94A3B8',
+                  fontSize: '11px',
+                  padding: '6px',
+                  cursor: 'pointer'
+                }}
+              >
+                Continue Exploring Showroom Models ➔
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ⏳ EXIT-INTENT MODAL (Catches user leaving tab) */}
+      {showExitIntentModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(3, 7, 18, 0.85)',
+          backdropFilter: 'blur(6px)',
+          zIndex: 99998,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px'
+        }}>
+          <div style={{
+            background: '#0B132B',
+            border: '1.5px solid #25D366',
+            borderRadius: '18px',
+            maxWidth: '400px',
+            width: '100%',
+            padding: '20px 18px',
+            boxShadow: '0 15px 40px rgba(37,211,102,0.25)'
+          }}>
+            <div style={{ textAlign: 'center', marginBottom: '12px' }}>
+              <span style={{ fontSize: '28px' }}>⏳</span>
+              <h4 style={{ fontSize: '15px', fontWeight: '800', color: '#FFFFFF', margin: '4px 0' }}>
+                Leaving Already? Don't Lose Your Quote!
+              </h4>
+              <p style={{ fontSize: '11px', color: '#94A3B8', margin: '4px 0 0 0' }}>
+                Send your shortlisted <strong>{activeProduct.Product_Name}</strong> and festive savings directly to WhatsApp so you don't lose it.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <button
+                onClick={() => {
+                  setShowExitIntentModal(false);
+                  handleSaveQuoteToWhatsApp();
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #25D366, #128C7E)',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '10px 14px',
+                  fontSize: '12px',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                <MessageSquare size={14} /> <span>Save Quote & Video to WhatsApp</span>
+              </button>
+
+              <button
+                onClick={() => setShowExitIntentModal(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#64748B',
+                  fontSize: '11px',
+                  padding: '4px',
+                  cursor: 'pointer'
+                }}
+              >
+                Stay on Portal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

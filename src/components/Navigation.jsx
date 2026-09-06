@@ -51,7 +51,7 @@ export function TopTicker() {
 }
 
 export function AppHeader() {
-  const { storeMeta, syncWithGoogleSheets, isSyncing, setActiveTab, currentUser, logout, openModal } = useStore();
+  const { storeMeta, syncWithGoogleSheets, isSyncing, setActiveTab, currentUser, logout, openModal, appMode, toggleAppMode } = useStore();
 
   return (
     <header className="app-header">
@@ -75,6 +75,21 @@ export function AppHeader() {
             </button>
           </div>
         )}
+        <button 
+          className="btn-ghost-edit" 
+          onClick={toggleAppMode} 
+          style={{ 
+            fontSize: '11px', 
+            padding: '6px 12px', 
+            color: appMode === 'PRODUCTION' ? '#10B981' : '#F59E0B', 
+            border: `1px solid ${appMode === 'PRODUCTION' ? 'rgba(16,185,129,0.5)' : 'rgba(245,158,11,0.5)'}`, 
+            background: appMode === 'PRODUCTION' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)',
+            fontWeight: '700'
+          }} 
+          title="Toggle between Pure Live Google Sheets Data and Luxury Demo Showcase"
+        >
+          <span>{appMode === 'PRODUCTION' ? '🟢 LIVE CLOUD DATA' : '🎭 DEMO SHOWCASE'}</span>
+        </button>
         <button 
           className="btn-ghost-edit" 
           onClick={() => setActiveTab('bank_ledger')} 

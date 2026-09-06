@@ -54,27 +54,12 @@ export function BankStatementLedgerView() {
     setActiveTab,
     paymentsLog,
     setPaymentsLog,
-    cloudTables
+    cloudTables,
+    bankAccounts,
+    setBankAccounts,
+    bankTransactions: transactions,
+    setBankTransactions: setTransactions
   } = useStore();
-
-  // 🏦 Bank Accounts & Live Transaction State
-  const [bankAccounts, setBankAccounts] = useState(() => {
-    try {
-      const saved = localStorage.getItem('OMNIBUILD_BANK_ACCOUNTS');
-      return saved ? JSON.parse(saved) : BANK_ACCOUNTS;
-    } catch (e) {
-      return BANK_ACCOUNTS;
-    }
-  });
-
-  const [transactions, setTransactions] = useState(() => {
-    try {
-      const saved = localStorage.getItem('OMNIBUILD_BANK_TRANSACTIONS');
-      return saved ? JSON.parse(saved) : INITIAL_BANK_TRANSACTIONS;
-    } catch (e) {
-      return INITIAL_BANK_TRANSACTIONS;
-    }
-  });
 
   // Persist transactions to localStorage
   const saveTransactions = (updated) => {

@@ -45,8 +45,13 @@ export function ExecutiveOverview() {
   const { 
     orders, 
     inventory, 
+    catalog,
+    smartKitBoxes,
     inquiries, 
     architects, 
+    bankAccounts,
+    bankTransactions,
+    paymentsLog,
     targets, 
     eodSummary, 
     openModal, 
@@ -94,15 +99,24 @@ export function ExecutiveOverview() {
     try {
       const answer = await askShowroomAssistant(q, {
         orders,
+        catalog: catalog || inventory,
+        inventory,
+        smartKitBoxes,
+        inquiries,
+        architects,
+        bankAccounts,
+        bankTransactions,
+        paymentsLog,
+        vipProjects,
+        agingStock: floorAgingStock,
+        floorAgingStock,
         dailySales: eodSummary,
         profitMetrics: {
           total_sales: totalRevenue,
           net_profit: netShowroomContributionINR,
           net_margin_pct: '24.1%'
         },
-        agingStock: floorAgingStock,
-        catalog: inventory,
-        architects
+        storeMeta
       });
       setShowroomAiAnswer(answer);
       playSuccessChime();

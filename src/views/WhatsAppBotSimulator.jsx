@@ -36,6 +36,9 @@ export function WhatsAppBotSimulator() {
     catalog, 
     inventory, 
     orders, 
+    inquiries,
+    bankAccounts,
+    bankTransactions,
     storeMeta, 
     triggerAppSheetBot, 
     openModal, 
@@ -65,8 +68,33 @@ export function WhatsAppBotSimulator() {
 
     if (mode === 'DIRECTOR') {
       // 👑 EXECUTIVE DIRECTOR VIP COPILOT (UNRESTRICTED ACCESS)
+      // 1. Bank Balances & UTR Transactions
+      if (q.includes('bank') || q.includes('utr') || q.includes('hdfc') || q.includes('sbi') || q.includes('account') || q.includes('ledger')) {
+        const hdfc = bankAccounts?.find(b => (b.id || '').includes('HDFC'))?.currentBalance || 3842500;
+        const sbi = bankAccounts?.find(b => (b.id || '').includes('SBI'))?.currentBalance || 1480000;
+        const recentTxns = (bankTransactions || []).slice(0, 3).map(t => 
+          `• [${t.flowType === 'INWARD_CREDIT' ? '🟢' : '🔴'}] ${t.partyName}: ₹${Number(t.amount || 0).toLocaleString()} (UTR: ${t.utrNumber})`
+        ).join('\n');
+        return {
+          title: "👑 Executive Bank Ledger Radar (Director Access)",
+          text: `Namaskar Director Rakesh! 🏦 Live Dual-Ledger Status:\n• HDFC Operating A/c: ₹${hdfc.toLocaleString()}\n• SBI Commercial A/c: ₹${sbi.toLocaleString()}\n• Total Liquid Cash: ₹${(hdfc + sbi).toLocaleString()}\n\nRecent Transactions:\n${recentTxns || '• All accounts reconciled.'}`
+        };
+      }
+
+      // 2. Hot Leads & Inquiries
+      if (q.includes('lead') || q.includes('inquiry') || q.includes('concierge') || q.includes('hot') || q.includes('walkin') || q.includes('crm')) {
+        const inqs = inquiries || [];
+        const topLeads = inqs.slice(0, 3).map(i => 
+          `• ${i.Customer_Name} (📞 ${i.Customer_Phone}): ${i.Category_Models} | ₹${Number(i.Budget_INR || 0).toLocaleString()} [${i.AI_Intent_Score || '80%'}]`
+        ).join('\n');
+        return {
+          title: "👑 24/7 AI Concierge & Walk-In Radar",
+          text: `📊 We have ${inqs.length} total inquiries logged across showroom and mobile.\n\nTop Priority Leads:\n${topLeads || '• No urgent leads.'}\n\n💡 5-Minute hot leads from the AI Concierge are tagged for immediate Director privilege callback.`
+        };
+      }
+
       if (q.includes('sale') || q.includes('collection') || q.includes('today') || q.includes('revenue') || q.includes('billing')) {
-        const totalSales = orders.reduce((sum, o) => sum + (o.Total_Amount || 0), 0) || 482500;
+        const totalSales = orders.reduce((sum, o) => sum + (Number(o.Total_Amount || o.Total_Amount_INR || 0)), 0) || 482500;
         const totalCash = 115000;
         const totalUpi = totalSales - totalCash;
         return {
@@ -76,14 +104,14 @@ export function WhatsAppBotSimulator() {
       }
 
       if (q.includes('cost') || q.includes('margin') || q.includes('profit') || q.includes('supplier') || q.includes('wholesale')) {
-        const bedItem = catalog.find(c => c.SKU === 'BED-MOD-001') || catalog[0];
+        const bedItem = catalog.find(c => c.SKU === 'BED-MOD-001') || catalog[0] || {};
         const factoryCost = 62000;
         const selling = bedItem.Selling_Price_INR || 89790;
         const margin = selling - factoryCost;
         const marginPct = ((margin / selling) * 100).toFixed(1);
         return {
           title: "👑 Factory Cost & Margin Audit (Director Access)",
-          text: `🏭 Supplier Margin Breakdown for ${bedItem.Product_Name} (${bedItem.SKU}):\n• Factory Supplier: ${bedItem.Default_Supplier || 'Royal Teak Crafts, Saharanpur (UP)'}\n• Direct Purchase Cost: ₹${factoryCost.toLocaleString()}\n• Showroom Retail Price: ₹${selling.toLocaleString()}\n• Net Gross Margin: ₹${margin.toLocaleString()} (${marginPct}%)\n• Warehouse Stock in Dock-A1: 3 Units available.`
+          text: `🏭 Supplier Margin Breakdown for ${bedItem.Product_Name || 'King Bed'} (${bedItem.SKU || 'BED-MOD-001'}):\n• Factory Supplier: ${bedItem.Default_Supplier || 'Royal Teak Crafts, Saharanpur (UP)'}\n• Direct Purchase Cost: ₹${factoryCost.toLocaleString()}\n• Showroom Retail Price: ₹${selling.toLocaleString()}\n• Net Gross Margin: ₹${margin.toLocaleString()} (${marginPct}%)\n• Warehouse Stock in Dock-A1: 3 Units available.`
         };
       }
 
@@ -97,15 +125,22 @@ export function WhatsAppBotSimulator() {
       }
 
       if (q.includes('balance') || q.includes('pending') || q.includes('due') || q.includes('receivable') || q.includes('owe')) {
+        const pendingOrders = orders.filter(o => {
+          const bal = Number(o.Balance_Due_INR || o.Balance_Due || (Number(o.Total_Amount_INR || 0) - Number(o.Advance_Paid_INR || 0)));
+          return bal > 0;
+        });
+        const dueList = pendingOrders.slice(0, 3).map(o => 
+          `• ${o.Customer_Name} (${o.Project_Address || o.Address || 'Rayagada'}): ₹${Number(o.Balance_Due_INR || o.Balance_Due || 50000).toLocaleString()} balance (📞 ${o.Customer_Phone || o.Phone || 'N/A'})`
+        ).join('\n');
         return {
           title: "👑 Receivables & Customer Dues",
-          text: `💰 Outstanding Receivables Summary:\n• Dr. Subhashish Jena (Gayatri Nagar): ₹78,247 balance (Delivery scheduled today 04:30 PM)\n• Er. Alok Mishra (Raniguda): ₹42,000 balance (Delivery scheduled tomorrow)\n• Ar. Sunita Patnaik: ₹0 balance (100% Paid ✓)\nTotal Pending Collection: ₹1,20,247.`
+          text: `💰 Outstanding Receivables Summary (${pendingOrders.length} orders):\n${dueList || '• All active orders 100% settled.'}`
         };
       }
 
       return {
         title: "👑 Executive Director Copilot",
-        text: `Namaskar Director Rakesh! 🔓 VIP Executive Mode Active. Full 21-Table Google Sheets telemetry online. You can ask me for today's sales collections, factory purchase costs, profit margins, low stock alerts, or pending customer balances.`
+        text: `Namaskar Director Rakesh! 🔓 VIP Executive Mode Active. Full 43-Table Google Sheets telemetry online. You can ask me for today's bank balance, UTR status, hot concierge leads, sales collections, factory purchase costs, profit margins, low stock alerts, or customer balances.`
       };
     }
 

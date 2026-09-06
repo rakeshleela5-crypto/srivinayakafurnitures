@@ -245,7 +245,18 @@ export function ManageOrderModal({ isOpen, onClose, order = {} }) {
       }
       return o;
     }));
-    showToast(`Order #${order.Order_ID} updated in Orders_SafeLock!`);
+
+    dispatchWebhookAction('UPDATE_ORDER_RECORD', {
+      order_id: order.Order_ID,
+      driver: driver,
+      delivery_schedule: schedule,
+      carpenter: carpenter,
+      safelock_status: status,
+      carpenter_payout: Number(payout)
+    });
+
+    playSuccessChime();
+    showToast(`Order #${order.Order_ID} updated in Orders_SafeLock & synced to Google Sheets!`, true);
     onClose();
   };
 

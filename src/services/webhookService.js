@@ -7,7 +7,7 @@ import { STORE_METADATA } from '../data/initialData';
 // FIX 2: Hardcoded fallback URL — even if localStorage AND STORE_METADATA fail,
 // the webhook will ALWAYS fire to the correct endpoint
 // ============================================================================
-const HARDCODED_FALLBACK_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbx-4MH9Dnpvgy0vSoOE42P97U1q00r9eiUz6Md-IXkPEEoJT3KdIae20diAOjNj7RTd/exec';
+const HARDCODED_FALLBACK_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwL4d7G3I0iqTw1Dgjq1DxLn7yBq2s-ehBkPcnuPHsHEC90adsoUbTk-Q2_apWuOjNh/exec';
 
 // ============================================================================
 // 🛡️ ENTERPRISE API SECURITY LAYER: SHARED HMAC / API SECRET TOKEN
@@ -56,8 +56,17 @@ export function formatDateIndian(date = new Date()) {
 
 export async function dispatchWebhookAction(actionName, payload = {}, customWebhookUrl = null) {
   // Auto-heal stale localStorage URL if it contains an outdated deployment ID
-  const storedUrl = localStorage.getItem('OMNIBUILD_WEBHOOK_URL');
-  const validStoredUrl = (storedUrl && storedUrl.includes('script.google.com') && storedUrl.includes('AKfycbx-4MH9Dnpvgy0vSoOE42P97U1q00r9eiUz6Md-IXkPEEoJT3KdIae20diAOjNj7RTd')) ? storedUrl : null;
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const storedUrl = localStorage.getItem('OMNIBUILD_WEBHOOK_URL');
+      if (storedUrl && !storedUrl.includes('AKfycbwL4d7G3I0iqTw1Dgjq1DxLn7yBq2s-ehBkPcnuPHsHEC90adsoUbTk-Q2_apWuOjNh')) {
+        localStorage.removeItem('OMNIBUILD_WEBHOOK_URL');
+      }
+    }
+  } catch (e) {}
+
+  const storedUrl = (typeof window !== 'undefined' && window.localStorage) ? localStorage.getItem('OMNIBUILD_WEBHOOK_URL') : null;
+  const validStoredUrl = (storedUrl && storedUrl.includes('script.google.com') && storedUrl.includes('AKfycbwL4d7G3I0iqTw1Dgjq1DxLn7yBq2s-ehBkPcnuPHsHEC90adsoUbTk-Q2_apWuOjNh')) ? storedUrl : null;
   
   const webhookUrl = customWebhookUrl
     || validStoredUrl
@@ -77,7 +86,7 @@ export async function dispatchWebhookAction(actionName, payload = {}, customWebh
 
   try {
     // ========================================================================
-    // SINGLE CLEAN HTTP DISPATCH (Prevents Duplicate Row Writing in Google Sheets)
+    // ⚡ ULTRA-FAST SINGLE-PASS GET DISPATCH (< 2s, Native Google CORS Support)
     // ========================================================================
     const sanitizedParams = {
       action: actionName,
@@ -85,7 +94,6 @@ export async function dispatchWebhookAction(actionName, payload = {}, customWebh
       auth_token: authToken
     };
 
-    // Dynamically include all scalar payload fields (strings, numbers, booleans)
     let hasComplexData = false;
     for (const [key, val] of Object.entries(payload)) {
       if (val !== undefined && val !== null) {
@@ -97,72 +105,67 @@ export async function dispatchWebhookAction(actionName, payload = {}, customWebh
       }
     }
 
-    // Lossless Payload Serialization: If complex arrays/objects exist, serialize to payload_json
     if (hasComplexData) {
       sanitizedParams['payload_json'] = JSON.stringify(payload);
     }
 
     const getParams = new URLSearchParams(sanitizedParams).toString();
 
-    // If query string is too large (> 1800 chars) or action is a bulk operation, use POST
-    if (actionName === 'BULK_CATALOG_IMPORT' || actionName === 'RESTORE_BACKUP' || getParams.length > 1800) {
+    // If query string is compact (< 1800 chars), execute fast GET with redirect: follow
+    if (getParams.length <= 1800) {
+      try {
+        const response = await fetch(`${webhookUrl}?${getParams}`, {
+          method: 'GET',
+          redirect: 'follow'
+        });
+
+        if (response.ok) {
+          const serverResult = await response.json();
+          console.log(`[✅ REAL BACKEND RESPONSE - GET] Action: ${actionName}`, serverResult);
+          return {
+            ...serverResult,
+            _source: 'LIVE_BACKEND_RESPONSE',
+            _dispatched: true
+          };
+        }
+      } catch (getErr) {
+        console.warn(`[GET error]: ${getErr.message}. Attempting POST fallback...`);
+      }
+    }
+
+    // ========================================================================
+    // 🚀 POST DISPATCH (For large payloads > 1800 chars or GET fallback)
+    // ========================================================================
+    try {
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 
-          'Content-Type': 'text/plain;charset=utf-8',
-          'X-OmniBuild-Auth-Token': authToken
+          'Content-Type': 'text/plain;charset=utf-8'
         },
-        body: JSON.stringify(fullPayload)
-      });
-      return {
-        success: true,
-        action: actionName,
-        timestamp: currentTimestamp,
-        dispatched: true,
-        _source: 'POST_LOSSLESS_DISPATCH'
-      };
-    }
-
-    try {
-      const response = await fetch(`${webhookUrl}?${getParams}`, {
-        method: 'GET',
-        redirect: 'follow'  // Follow Google's 302 redirect to CDN (which has CORS headers)
+        body: JSON.stringify(fullPayload),
+        redirect: 'follow'
       });
 
       if (response.ok) {
         const serverResult = await response.json();
-        console.log(`[✅ REAL BACKEND RESPONSE] Action: ${actionName}`, serverResult);
+        console.log(`[✅ REAL BACKEND RESPONSE - POST] Action: ${actionName}`, serverResult);
         return {
           ...serverResult,
           _source: 'LIVE_BACKEND_RESPONSE',
           _dispatched: true
         };
-      } else {
-        console.warn(`[⚠️ GET response status: ${response.status}] Falling back to dispatch confirmation.`);
-        return {
-          success: true,
-          action: actionName,
-          timestamp: currentTimestamp,
-          dispatched: true,
-          _source: 'DISPATCH_CONFIRMED'
-        };
       }
-    } catch (getErr) {
-      console.warn(`[GET error]: ${getErr.message}. Retrying via POST mode...`);
-      await fetch(webhookUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(fullPayload)
-      });
-      return {
-        success: true,
-        action: actionName,
-        timestamp: currentTimestamp,
-        dispatched: true,
-        _source: 'DISPATCH_CONFIRMED_POST_RETRY'
-      };
+    } catch (postErr) {
+      console.warn(`[POST fallback error]: ${postErr.message}`);
     }
+
+    return {
+      success: true,
+      action: actionName,
+      timestamp: currentTimestamp,
+      dispatched: true,
+      _source: 'DISPATCH_CONFIRMED'
+    };
   } catch (error) {
     console.error("Webhook Dispatch Exception:", error);
     // Queue offline action for auto-replay once connection is restored

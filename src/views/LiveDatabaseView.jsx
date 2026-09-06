@@ -124,6 +124,8 @@ export function LiveDatabaseView() {
     'SmartKit_Components': getCloudTable('SmartKit_Components') || smartKitBoxes,
     'Purchase_Orders_Log': getCloudTable('Purchase_Orders_Log') || defaultPurchaseOrders,
     'Payments_Log': getCloudTable('Payments_Log') || paymentsLog,
+    'Transactions_Log': getCloudTable('Transactions_Log') || paymentsLog,
+    'Bank_Transactions_Log': getCloudTable('Bank_Transactions_Log') || [],
     'Architect_VIPs': getCloudTable('Architect_VIPs') || architects,
     'Fleet_Drivers': getCloudTable('Fleet_Drivers') || drivers,
     'Delivery_Route_Stops': getCloudTable('Delivery_Route_Stops') || routeStops,

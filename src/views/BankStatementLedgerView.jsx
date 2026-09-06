@@ -51,7 +51,10 @@ export function BankStatementLedgerView() {
     showToast, 
     syncWithGoogleSheets, 
     isSyncing,
-    setActiveTab 
+    setActiveTab,
+    paymentsLog,
+    setPaymentsLog,
+    cloudTables
   } = useStore();
 
   // 🏦 Bank Accounts & Live Transaction State
@@ -92,6 +95,44 @@ export function BankStatementLedgerView() {
       console.warn("localStorage write error", e);
     }
   };
+
+  // 🔄 Sync Live Cloud Data from Google Sheets if Bank_Transactions or Bank_Transactions_Log exists
+  React.useEffect(() => {
+    const bankData = (cloudTables && (cloudTables['Bank_Transactions'] || cloudTables['bank_transactions'] || cloudTables['Bank_Transactions_Log'])) || null;
+    if (bankData && Array.isArray(bankData) && bankData.length > 0) {
+      const cloudTxns = bankData.map(row => ({
+        id: row.Transaction_ID || row.id || `TXN-BNK-${Math.floor(1000 + Math.random() * 9000)}`,
+        dateTime: row.Value_Date_Time || row.Created_Timestamp || row.dateTime || 'Just now',
+        flowType: row.Flow_Type || (row.flowType || 'INWARD_CREDIT'),
+        bankAccountId: (row.Bank_Account && row.Bank_Account.includes('SBI')) ? 'SBI_CURRENT' : 'HDFC_CURRENT',
+        bankAccountName: row.Bank_Account || 'HDFC Bank Current A/c (***2481)',
+        paymentMode: row.Payment_Mode || 'RTGS',
+        utrNumber: row.Bank_UTR_Ref_Number || row.utrNumber || '',
+        partyName: row.Party_Entity_Name || row.partyName || 'Enterprise Counterparty',
+        partyCategory: row.Linked_Entity_Type || 'VIP Client',
+        amount: Number(row.Amount_INR || row.amount || 0),
+        linkedEntityType: row.Linked_Entity_Type || 'CUSTOMER_QUOTATION',
+        linkedId: row.Linked_Reference_ID || row.linkedId || '',
+        reconciliationStatus: row.Reconciliation_Status || 'VERIFIED_AND_MATCHED',
+        notes: row.Notes_Remarks || row.notes || '',
+        loggedBy: row.Logged_By || 'Store Director'
+      }));
+
+      // Merge cloud transactions without duplicates
+      setTransactions(prev => {
+        const merged = [...cloudTxns];
+        (prev || []).forEach(pTxn => {
+          if (!merged.some(m => m.id === pTxn.id || (pTxn.utrNumber && m.utrNumber === pTxn.utrNumber))) {
+            merged.push(pTxn);
+          }
+        });
+        try {
+          localStorage.setItem('OMNIBUILD_BANK_TRANSACTIONS', JSON.stringify(merged));
+        } catch (e) {}
+        return merged;
+      });
+    }
+  }, [cloudTables]);
 
   // 🔍 Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
@@ -234,6 +275,24 @@ export function BankStatementLedgerView() {
       updateOrderStatus(newTxn.linkedId, `SAFELOCKED (BANK RTGS: ${newTxn.utrNumber})`);
     }
 
+    // Update paymentsLog in StoreContext so Payments Log stays in 100% sync
+    if (setPaymentsLog) {
+      setPaymentsLog(prev => [{
+        Txn_ID: newTxn.id,
+        Payment_Date_Time: newTxn.dateTime,
+        Order_ID: newTxn.linkedId || 'ORD-GENERAL',
+        Customer_Name: newTxn.partyName,
+        Payment_Type: 'INWARD_BANK_CREDIT',
+        Amount_INR: Number(newTxn.amount),
+        Payment_Mode: `${newTxn.paymentMode} (${newTxn.bankAccountName})`,
+        UPI_VPA: newTxn.bankAccountName,
+        UPI_Transaction_Ref: newTxn.utrNumber,
+        Merchant_Name: 'Godrej Interio Rayagada',
+        Collected_By: newTxn.loggedBy,
+        Status: 'SETTLED'
+      }, ...(prev || [])]);
+    }
+
     // Dispatch Webhook to Google Sheets
     dispatchWebhookAction('LOG_BANK_TRANSACTION', {
       transaction_id: newTxn.id,
@@ -358,10 +417,45 @@ export function BankStatementLedgerView() {
       showToast(`🔒 SafeLock Order ${editForm.linkedId} status updated to Bank RTGS Verified!`, true);
     }
 
+    // Update paymentsLog in StoreContext so Payments Log table is kept in 100% real-time sync
+    if (setPaymentsLog) {
+      const bnkName = editForm.bankAccountId === 'HDFC_CURRENT' ? 'HDFC Bank Current A/c (***2481)' : 'SBI Current A/c (***9182)';
+      const payEntry = {
+        Txn_ID: editForm.id,
+        Payment_Date_Time: new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }),
+        Order_ID: editForm.linkedId || 'ORD-GENERAL',
+        Customer_Name: editForm.partyName,
+        Payment_Type: editForm.flowType === 'INWARD_CREDIT' ? 'INWARD_BANK_CREDIT' : 'FACTORY_DEBIT',
+        Amount_INR: Number(editForm.amount),
+        Payment_Mode: `${editForm.paymentMode} (${bnkName})`,
+        UPI_VPA: bnkName,
+        UPI_Transaction_Ref: editForm.utrNumber,
+        Merchant_Name: 'Godrej Interio Rayagada',
+        Collected_By: 'Store Director / Accounts',
+        Status: editForm.reconciliationStatus === 'VERIFIED_AND_MATCHED' ? 'SETTLED' : editForm.reconciliationStatus
+      };
+
+      setPaymentsLog(prev => {
+        const list = Array.isArray(prev) ? [...prev] : [];
+        const existingIdx = list.findIndex(p => 
+          (p.Txn_ID && p.Txn_ID === editForm.id) || 
+          (p.UPI_Transaction_Ref && p.UPI_Transaction_Ref === editForm.utrNumber)
+        );
+        if (existingIdx >= 0) {
+          list[existingIdx] = { ...list[existingIdx], ...payEntry };
+          return list;
+        } else if (editForm.flowType === 'INWARD_CREDIT') {
+          return [payEntry, ...list];
+        }
+        return list;
+      });
+    }
+
     // Google Sheets Webhook Dispatch
     dispatchWebhookAction('UPDATE_BANK_TRANSACTION', {
       transaction_id: editForm.id,
       amount: editForm.amount,
+      flow_type: editForm.flowType,
       party_name: editForm.partyName,
       party_category: editForm.partyCategory,
       payment_mode: editForm.paymentMode,
@@ -482,6 +576,25 @@ export function BankStatementLedgerView() {
     const filtered = transactions.filter(t => t.id !== selectedTxn.id);
     const updated = [...newChildren, ...filtered];
     saveTransactions(updated);
+
+    // Update paymentsLog in StoreContext if inward credit
+    if (setPaymentsLog && selectedTxn.flowType === 'INWARD_CREDIT') {
+      const splitPayRecords = newChildren.map(child => ({
+        Txn_ID: child.id,
+        Payment_Date_Time: child.dateTime,
+        Order_ID: child.linkedId,
+        Customer_Name: child.partyName,
+        Payment_Type: 'SPLIT_BANK_ALLOCATION',
+        Amount_INR: Number(child.amount),
+        Payment_Mode: `${child.paymentMode} (${child.bankAccountName})`,
+        UPI_VPA: child.bankAccountName,
+        UPI_Transaction_Ref: child.utrNumber,
+        Merchant_Name: 'Godrej Interio Rayagada',
+        Collected_By: child.loggedBy,
+        Status: 'SETTLED'
+      }));
+      setPaymentsLog(prev => [...splitPayRecords, ...(prev || []).filter(p => p.Txn_ID !== selectedTxn.id)]);
+    }
 
     // Dispatch webhook
     newChildren.forEach(child => {

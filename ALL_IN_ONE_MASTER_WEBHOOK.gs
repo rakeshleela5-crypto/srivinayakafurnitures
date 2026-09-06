@@ -335,9 +335,9 @@ function handleWebhookRequest(params, e) {
           'outward_scanner': ['SmartKit_Components', 'Delivery_Log', 'Orders_SafeLock'],
           'logistics_epod': ['Delivery_Log', 'Fleet_Drivers', 'Delivery_Route_Stops', 'OTP_Log'],
           'documents': ['Document_Generation_Log', 'Warranty_Registry'],
-          'bank_ledger': ['Bank_Transactions_Log', 'Payments_Log'],
+          'bank_ledger': ['Bank_Transactions', 'Bank_Transactions_Log', 'Payments_Log', 'Transactions_Log'],
           'whatsapp_bots': ['Bot_Configurations_Log', 'AppSheet_Bots_Telemetry', 'WhatsApp_Dispatches_Log'],
-          'live_database': ['Orders_SafeLock', 'Furniture_Catalog', 'Inventory_Stock']
+          'live_database': ['Orders_SafeLock', 'Furniture_Catalog', 'Inventory_Stock', 'Payments_Log', 'Transactions_Log', 'Bank_Transactions_Log', 'Bank_Transactions']
         };
         requestedTables = tabTableMap[tabKey] || ['Orders_SafeLock', 'Inventory_Stock'];
       }
@@ -2088,136 +2088,52 @@ else if (action === "LOG_MARKETING_CAMPAIGN") {
     // ------------------------------------------------------------------------------------------
     // ACTION 15C: LOG_BANK_TRANSACTION & RECONCILE_BANK_UTR (Enterprise Bank Statement Ledger)
     // ------------------------------------------------------------------------------------------
+    // ------------------------------------------------------------------------------------------
+    // ACTION 15C: LOG_BANK_TRANSACTION & RECONCILE_BANK_UTR (Enterprise Bank Statement Ledger)
+    // ------------------------------------------------------------------------------------------
     else if (action === "LOG_BANK_TRANSACTION" || action === "RECORD_BANK_PAYMENT" || action === "RECORD_RTGS_NEFT_PAYMENT") {
-      var bnkSheet = getOrCreateSheet(ss, "Bank_Transactions_Log", [
-        "Transaction_ID", "Value_Date_Time", "Flow_Type", "Bank_Account", "Payment_Mode",
-        "Bank_UTR_Ref_Number", "Party_Entity_Name", "Amount_INR", "Linked_Entity_Type",
-        "Linked_Reference_ID", "Reconciliation_Status", "Notes_Remarks", "Logged_By", "Created_Timestamp"
-      ], "#047857");
-
-      var txnId = params.transaction_id || ("TXN-BNK-2026-" + Math.floor(1000 + Math.random() * 9000));
-      var valDateTime = params.value_date_time || currentDateTimeStr;
+      var syncRes = syncBankAndPaymentLedgers(ss, params, currentDateTimeStr);
+      var txnId = params.transaction_id || params.txn_id || ("TXN-BNK-2026-" + Math.floor(1000 + Math.random() * 9000));
+      var utrRef = (params.utr_number || params.bank_utr || params.ref_number || "").toString().toUpperCase().trim();
       var flowType = params.flow_type || (params.is_debit ? "OUTWARD_DEBIT" : "INWARD_CREDIT");
-      var bnkAccount = params.bank_account || "HDFC Bank Current A/c (***4821)";
-      var payMode = params.payment_mode || "RTGS";
-      var utrRef = (params.utr_number || params.bank_utr || params.ref_number || ("UTR-" + Math.floor(10000000 + Math.random() * 90000000))).toString().toUpperCase().trim();
-      var partyName = params.party_name || params.customer_name || params.supplier_name || "Enterprise Counterparty";
       var amount = Number(params.amount || params.amount_inr) || 0;
-      var entityType = params.entity_type || params.linked_entity_type || (flowType === "INWARD_CREDIT" ? "CUSTOMER_QUOTATION" : "FACTORY_PO");
-      var linkedId = params.linked_id || params.linked_reference_id || params.po_id || params.order_id || params.proposal_number || "REF-GENERAL";
-      var reconStatus = params.reconciliation_status || "VERIFIED_AND_MATCHED";
-      var notes = params.notes || params.remarks || ("Direct B2B " + payMode + " Transfer");
-      var loggedBy = params.logged_by || "Store Director / Accountant";
-
-      if (bnkSheet) {
-        bnkSheet.appendRow([
-          txnId, valDateTime, flowType, bnkAccount, payMode,
-          utrRef, partyName, amount, entityType,
-          linkedId, reconStatus, notes, loggedBy, currentDateTimeStr
-        ]);
-        applyStandardFormat(bnkSheet);
-      }
-
-      // If linked to an order, optionally mark SafeLock Order as Bank Verified
-      if (linkedId && linkedId.indexOf("ORD-") !== -1) {
-        try {
-          var ordSheet = getSheetByNameFlexible(ss, ["Orders_SafeLock", "05_Orders_SafeLock", "Orders SafeLock"]);
-          if (ordSheet) {
-            var ordData = ordSheet.getDataRange().getValues();
-            for (var oi = 1; oi < ordData.length; oi++) {
-              if (ordData[oi][0] && ordData[oi][0].toString().trim() === linkedId.trim()) {
-                ordSheet.getRange(oi + 1, 8).setValue("SAFELOCKED (BANK RTGS VERIFIED: " + utrRef + ")");
-                break;
-              }
-            }
-          }
-        } catch (ordErr) {
-          // SafeLock update fallback
-        }
-      }
+      var partyName = params.party_name || params.customer_name || "Enterprise Counterparty";
+      var payMode = params.payment_mode || "RTGS";
 
       result.transaction_id = txnId;
       result.utr_number = utrRef;
       result.party_name = partyName;
       result.amount = amount;
       result.flow_type = flowType;
-      result.reconciliation_status = reconStatus;
-      result.message = "Bank Transaction #" + txnId + " (" + flowType + " ₹" + amount.toLocaleString() + " via " + payMode + " UTR: " + utrRef + ") logged to Bank_Transactions_Log sheet!";
+      result.sync_status = syncRes;
+      result.message = "Bank Transaction #" + txnId + " (" + flowType + " ₹" + amount.toLocaleString() + " via " + payMode + ") recorded across Bank_Transactions_Log, Payments_Log, and Transactions_Log!";
     }
 
     else if (action === "UPDATE_BANK_TRANSACTION" || action === "EDIT_BANK_TRANSACTION") {
-      var bnkSheet = getSheetByNameFlexible(ss, ["Bank_Transactions_Log", "Bank Transactions Log"]);
+      var syncRes = syncBankAndPaymentLedgers(ss, params, currentDateTimeStr);
       var targetId = (params.transaction_id || params.txn_id || params.utr_number || "").toString().toUpperCase().trim();
-      var updatedCount = 0;
 
-      if (bnkSheet && targetId) {
-        var bnkData = bnkSheet.getDataRange().getValues();
-        for (var bi = 1; bi < bnkData.length; bi++) {
-          var rowTxn = (bnkData[bi][0] || "").toString().toUpperCase().trim();
-          var rowUtr = (bnkData[bi][5] || "").toString().toUpperCase().trim();
-          if (rowTxn === targetId || rowUtr === targetId) {
-            if (params.party_name) bnkSheet.getRange(bi + 1, 7).setValue(params.party_name); // Col G: Party Name
-            if (params.amount) bnkSheet.getRange(bi + 1, 8).setValue(Number(params.amount)); // Col H: Amount
-            if (params.payment_mode) bnkSheet.getRange(bi + 1, 5).setValue(params.payment_mode); // Col E: Payment Mode
-            if (params.bank_account) bnkSheet.getRange(bi + 1, 4).setValue(params.bank_account); // Col D: Bank Account
-            if (params.utr_number) bnkSheet.getRange(bi + 1, 6).setValue(params.utr_number.toString().toUpperCase().trim()); // Col F: UTR
-            if (params.linked_entity_type) bnkSheet.getRange(bi + 1, 9).setValue(params.linked_entity_type); // Col I: Linked Entity
-            if (params.linked_id) bnkSheet.getRange(bi + 1, 10).setValue(params.linked_id); // Col J: Linked ID
-            if (params.reconciliation_status) bnkSheet.getRange(bi + 1, 11).setValue(params.reconciliation_status); // Col K: Status
-            if (params.notes) bnkSheet.getRange(bi + 1, 12).setValue(params.notes); // Col L: Notes
-            updatedCount++;
-            break;
-          }
-        }
-      }
-
-      // If linked to an order, update Orders_SafeLock status
-      if (params.linked_id && params.linked_id.indexOf("ORD-") !== -1) {
-        try {
-          var ordSheet = getSheetByNameFlexible(ss, ["Orders_SafeLock", "05_Orders_SafeLock", "Orders SafeLock"]);
-          if (ordSheet) {
-            var ordData = ordSheet.getDataRange().getValues();
-            for (var oi = 1; oi < ordData.length; oi++) {
-              if (ordData[oi][0] && ordData[oi][0].toString().trim() === params.linked_id.trim()) {
-                ordSheet.getRange(oi + 1, 8).setValue("SAFELOCKED (BANK RTGS VERIFIED: " + (params.utr_number || "") + ")");
-                break;
-              }
-            }
-          }
-        } catch (ordErr) {}
-      }
-
-      result.updated_count = updatedCount;
       result.transaction_id = targetId;
-      result.message = updatedCount > 0 ? ("Transaction " + targetId + " updated successfully in Bank_Transactions_Log!") : ("Transaction " + targetId + " not found.");
+      result.sync_status = syncRes;
+      result.updated = true;
+      result.message = "Transaction " + targetId + " successfully synchronized to Bank_Transactions_Log, Payments_Log, and Transactions_Log!";
     }
 
     else if (action === "RECONCILE_BANK_UTR" || action === "UPDATE_BANK_TXN_STATUS") {
-      var bnkSheet = getSheetByNameFlexible(ss, ["Bank_Transactions_Log", "Bank Transactions Log"]);
       var targetUtr = (params.utr_number || params.bank_utr || params.transaction_id || "").toString().toUpperCase().trim();
       var newStatus = params.new_status || "VERIFIED_AND_MATCHED";
-      var matchedCount = 0;
+      params.reconciliation_status = newStatus;
+      params.status = newStatus;
+      var syncRes = syncBankAndPaymentLedgers(ss, params, currentDateTimeStr);
 
-      if (bnkSheet && targetUtr) {
-        var bnkData = bnkSheet.getDataRange().getValues();
-        for (var bi = 1; bi < bnkData.length; bi++) {
-          var rowTxn = (bnkData[bi][0] || "").toString().toUpperCase().trim();
-          var rowUtr = (bnkData[bi][5] || "").toString().toUpperCase().trim();
-          if (rowTxn === targetUtr || rowUtr === targetUtr) {
-            bnkSheet.getRange(bi + 1, 11).setValue(newStatus); // Col K: Reconciliation_Status
-            matchedCount++;
-          }
-        }
-      }
-
-      result.matched_count = matchedCount;
       result.target_utr = targetUtr;
       result.new_status = newStatus;
-      result.message = matchedCount > 0 ? ("Bank UTR " + targetUtr + " status updated to " + newStatus + "!") : ("No matching transaction found for " + targetUtr);
+      result.sync_status = syncRes;
+      result.message = "Bank UTR " + targetUtr + " status reconciled to " + newStatus + " across all ledgers!";
     }
 
     else if (action === "FETCH_BANK_LEDGER" || action === "GET_BANK_TRANSACTIONS") {
-      var bnkSheet = getSheetByNameFlexible(ss, ["Bank_Transactions_Log", "Bank Transactions Log"]);
+      var bnkSheet = getSheetByNameFlexible(ss, ["Bank_Transactions", "bank_transactions", "Bank_Transactions_Log", "Bank Transactions Log"]);
       var transactions = [];
       var totalInward = 0;
       var totalOutward = 0;
@@ -7242,6 +7158,308 @@ function getSheetByNameFlexible(ss, nameOptions) {
     if (s) return s;
   }
   return ss.getSheets()[0];
+}
+
+/**
+ * ==============================================================================================
+ * 🏦 MULTI-LEDGER OMNI-SYNC HELPER: SYNCS BANK_TRANSACTIONS, PAYMENTS & TRANSACTIONS LOGS
+ * ==============================================================================================
+ */
+function syncBankAndPaymentLedgers(ss, p, currentDateTimeStr) {
+  var syncResult = {
+    bank_updated: false,
+    payments_updated: false,
+    transactions_updated: false
+  };
+
+  if (!p) return syncResult;
+
+  var txnId = (p.transaction_id || p.txn_id || p.payment_id || ("TXN-BNK-2026-" + Math.floor(1000 + Math.random() * 9000))).toString().trim();
+  var valDateTime = p.value_date_time || p.dateTime || p.date_time || currentDateTimeStr;
+  var flowType = (p.flow_type || (p.is_debit ? "OUTWARD_DEBIT" : "INWARD_CREDIT")).toString().toUpperCase().trim();
+  var bnkAccount = p.bank_account || p.bankAccountName || "HDFC Bank Current A/c (***2481)";
+  var payMode = (p.payment_mode || p.mode || "RTGS").toString().trim();
+  var utrRef = (p.utr_number || p.bank_utr || p.ref_number || p.upi_ref || ("UTR-" + Math.floor(10000000 + Math.random() * 90000000))).toString().toUpperCase().trim();
+  var partyName = (p.party_name || p.customer_name || p.supplier_name || "Enterprise Counterparty").toString().trim();
+  var amount = Number(p.amount || p.amount_inr || p.total) || 0;
+  var entityType = p.entity_type || p.linked_entity_type || (flowType === "INWARD_CREDIT" ? "CUSTOMER_QUOTATION" : "FACTORY_PO");
+  var linkedId = (p.linked_id || p.linked_reference_id || p.order_id || p.po_id || "REF-GENERAL").toString().trim();
+  var reconStatus = (p.reconciliation_status || p.status || "VERIFIED_AND_MATCHED").toString().trim();
+  var notes = p.notes || p.remarks || ("Direct B2B " + payMode + " Transfer");
+  var loggedBy = p.logged_by || p.recorded_by || "Store Director / Accountant";
+  var custPhone = (p.customer_phone || p.phone || "9437188291").toString().replace(/[^0-9]/g, "");
+
+  // 1. BANK_TRANSACTIONS (Guarantees both "Bank_Transactions" & "Bank_Transactions_Log" exist and are kept in sync)
+  try {
+    var bankHeaders = [
+      "Transaction_ID", "Value_Date_Time", "Flow_Type", "Bank_Account", "Payment_Mode",
+      "Bank_UTR_Ref_Number", "Party_Entity_Name", "Amount_INR", "Linked_Entity_Type",
+      "Linked_Reference_ID", "Reconciliation_Status", "Notes_Remarks", "Logged_By", "Created_Timestamp"
+    ];
+
+    // Ensure BOTH standard tabs exist so user finds it under either "Bank_Transactions" OR "Bank_Transactions_Log"
+    var bnkLogSheet = getOrCreateSheet(ss, "Bank_Transactions_Log", bankHeaders, "#047857");
+    var bnkDirectSheet = getOrCreateSheet(ss, "Bank_Transactions", bankHeaders, "#047857");
+
+    // If Bank_Transactions was newly created and Bank_Transactions_Log has data, clone existing rows across
+    try {
+      if (bnkDirectSheet && bnkLogSheet && bnkDirectSheet.getLastRow() <= 1 && bnkLogSheet.getLastRow() > 1) {
+        var existingLogData = bnkLogSheet.getRange(2, 1, bnkLogSheet.getLastRow() - 1, bnkLogSheet.getLastColumn()).getValues();
+        for (var eld = 0; eld < existingLogData.length; eld++) {
+          bnkDirectSheet.appendRow(existingLogData[eld]);
+        }
+        applyStandardFormat(bnkDirectSheet);
+      }
+    } catch (cloneErr) {}
+
+    var allSsSheets = ss.getSheets();
+    var targetBankSheets = [];
+    for (var s = 0; s < allSsSheets.length; s++) {
+      var sName = allSsSheets[s].getName();
+      var sNorm = sName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (sNorm.indexOf('banktrans') !== -1 || sNorm === 'banktransactions' || sNorm === 'banktransactionslog') {
+        targetBankSheets.push(allSsSheets[s]);
+      }
+    }
+
+    if (targetBankSheets.length === 0) {
+      if (bnkLogSheet) targetBankSheets.push(bnkLogSheet);
+      if (bnkDirectSheet) targetBankSheets.push(bnkDirectSheet);
+    }
+
+    // Write / Upsert to every matching Bank sheet
+    for (var bsIdx = 0; bsIdx < targetBankSheets.length; bsIdx++) {
+      var bnkSheet = targetBankSheets[bsIdx];
+      var bnkData = bnkSheet.getDataRange().getValues();
+      var foundBnkIdx = -1;
+      for (var bi = 1; bi < bnkData.length; bi++) {
+        var rTxn = (bnkData[bi][0] || "").toString().toUpperCase().trim();
+        var rUtr = (bnkData[bi][5] || "").toString().toUpperCase().trim();
+        if (rTxn === txnId.toUpperCase() || (utrRef && rUtr === utrRef)) {
+          foundBnkIdx = bi + 1;
+          break;
+        }
+      }
+
+      if (foundBnkIdx > 0) {
+        if (partyName) bnkSheet.getRange(foundBnkIdx, 7).setValue(partyName);
+        if (amount) bnkSheet.getRange(foundBnkIdx, 8).setValue(amount);
+        if (payMode) bnkSheet.getRange(foundBnkIdx, 5).setValue(payMode);
+        if (bnkAccount) bnkSheet.getRange(foundBnkIdx, 4).setValue(bnkAccount);
+        if (utrRef) bnkSheet.getRange(foundBnkIdx, 6).setValue(utrRef);
+        if (entityType) bnkSheet.getRange(foundBnkIdx, 9).setValue(entityType);
+        if (linkedId) bnkSheet.getRange(foundBnkIdx, 10).setValue(linkedId);
+        if (reconStatus) bnkSheet.getRange(foundBnkIdx, 11).setValue(reconStatus);
+        if (notes) bnkSheet.getRange(foundBnkIdx, 12).setValue(notes);
+        syncResult.bank_updated = true;
+      } else {
+        bnkSheet.appendRow([
+          txnId, valDateTime, flowType, bnkAccount, payMode,
+          utrRef, partyName, amount, entityType,
+          linkedId, reconStatus, notes, loggedBy, currentDateTimeStr
+        ]);
+        applyStandardFormat(bnkSheet);
+        syncResult.bank_updated = true;
+      }
+    }
+  } catch (errBnk) {
+    Logger.log("Bank_Transactions sync error: " + errBnk.toString());
+  }
+
+  // 2. PAYMENTS_LOG (Detects and writes to "Payments_Log", "Payments", "payments_log", etc.)
+  if (flowType === "INWARD_CREDIT" || flowType === "INWARD" || amount > 0) {
+    try {
+      var allSsSheetsPay = ss.getSheets();
+      var targetPaySheets = [];
+      for (var ps = 0; ps < allSsSheetsPay.length; ps++) {
+        var psName = allSsSheetsPay[ps].getName();
+        var psNorm = psName.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (psNorm === 'paymentslog' || psNorm === 'payments' || psNorm === '13paymentslog') {
+          targetPaySheets.push(allSsSheetsPay[ps]);
+        }
+      }
+
+      if (targetPaySheets.length === 0) {
+        var defPay = getOrCreateSheet(ss, "Payments_Log", [
+          "Txn_ID", "Payment_Date_Time", "Order_ID", "Customer_Name", "Payment_Type", 
+          "Amount_INR", "Payment_Mode", "UPI_VPA", "UPI_Transaction_Ref", "Merchant_Name", "Collected_By", "Status"
+        ], "#047857");
+        if (defPay) targetPaySheets.push(defPay);
+      }
+
+      for (var pIdx = 0; pIdx < targetPaySheets.length; pIdx++) {
+        var paySheet = targetPaySheets[pIdx];
+        var nRows = paySheet.getLastRow();
+        var nCols = paySheet.getLastColumn();
+        var headers = paySheet.getRange(1, 1, 1, Math.max(nCols, 1)).getValues()[0];
+        var colMap = {};
+        for (var c = 0; c < headers.length; c++) {
+          colMap[(headers[c] || "").toString().trim().toLowerCase()] = c + 1;
+        }
+
+        var foundPayRow = -1;
+        if (nRows > 1) {
+          var pData = paySheet.getRange(2, 1, nRows - 1, Math.max(nCols, 1)).getValues();
+          var refCol = colMap["upi_transaction_ref"] || colMap["transaction_ref"] || colMap["utr_transaction_ref"] || colMap["txn_ref"] || 9;
+          for (var pi = 0; pi < pData.length; pi++) {
+            var rowId = (pData[pi][0] || "").toString().toUpperCase().trim();
+            var rowRef = (pData[pi][refCol - 1] || "").toString().toUpperCase().trim();
+            if (rowId === txnId.toUpperCase() || (utrRef && rowRef === utrRef)) {
+              foundPayRow = pi + 2;
+              break;
+            }
+          }
+        }
+
+        var effectiveStatus = reconStatus === "VERIFIED_AND_MATCHED" ? "SETTLED" : reconStatus;
+        var paymentModeStr = payMode + (bnkAccount ? (" (" + bnkAccount + ")") : "");
+
+        if (foundPayRow > 0) {
+          function updateField(names, val) {
+            for (var k = 0; k < names.length; k++) {
+              var colIdx = colMap[names[k].toLowerCase()];
+              if (colIdx) {
+                paySheet.getRange(foundPayRow, colIdx).setValue(val);
+                return;
+              }
+            }
+          }
+          updateField(["amount_inr", "payment_amount_inr", "amount"], amount);
+          updateField(["customer_name", "party_name", "beneficiary_supplier"], partyName);
+          updateField(["order_id", "linked_id", "po_reference_id"], linkedId);
+          updateField(["payment_mode", "payment_method"], paymentModeStr);
+          updateField(["upi_transaction_ref", "transaction_ref", "utr_transaction_ref", "txn_ref"], utrRef);
+          updateField(["status", "settlement_status", "payment_status"], effectiveStatus);
+          updateField(["gatekeeper_notes", "notes", "notes_remarks"], notes);
+          syncResult.payments_updated = true;
+        } else {
+          var rowArr = [];
+          for (var c = 0; c < headers.length; c++) {
+            var h = (headers[c] || "").toString().trim().toLowerCase();
+            if (h === "txn_id" || h === "payment_id" || h === "voucher_id") {
+              rowArr.push(txnId);
+            } else if (h === "payment_date_time" || h === "timestamp" || h === "date_time" || h === "value_date_time") {
+              rowArr.push(valDateTime);
+            } else if (h === "order_id" || h === "po_reference_id" || h === "order_or_po_ref" || h === "linked_reference_id") {
+              rowArr.push(linkedId);
+            } else if (h === "customer_name" || h === "party_name" || h === "customer_or_beneficiary" || h === "beneficiary_supplier") {
+              rowArr.push(partyName);
+            } else if (h === "customer_phone" || h === "phone_number") {
+              rowArr.push(custPhone || "9437188291");
+            } else if (h === "payment_type") {
+              rowArr.push("INWARD_BANK_CREDIT");
+            } else if (h === "amount_inr" || h === "payment_amount_inr" || h === "amount") {
+              rowArr.push(amount);
+            } else if (h === "payment_mode" || h === "payment_method") {
+              rowArr.push(paymentModeStr);
+            } else if (h === "upi_vpa" || h === "merchant_vpa") {
+              rowArr.push(bnkAccount);
+            } else if (h === "upi_transaction_ref" || h === "transaction_ref" || h === "utr_transaction_ref" || h === "txn_ref") {
+              rowArr.push(utrRef);
+            } else if (h === "merchant_name" || h === "authorized_by") {
+              rowArr.push("Godrej Interio Rayagada");
+            } else if (h === "collected_by" || h === "logged_by") {
+              rowArr.push(loggedBy);
+            } else if (h === "status" || h === "settlement_status" || h === "payment_status") {
+              rowArr.push(effectiveStatus);
+            } else if (h === "gatekeeper_notes" || h === "notes" || h === "notes_remarks") {
+              rowArr.push(notes);
+            } else {
+              rowArr.push("");
+            }
+          }
+          paySheet.appendRow(rowArr);
+          applyStandardFormat(paySheet);
+          syncResult.payments_updated = true;
+        }
+      }
+    } catch (errPay) {
+      Logger.log("Payments_Log sync error: " + errPay.toString());
+    }
+
+    // 3. TRANSACTIONS_LOG (Detects and writes to "Transactions_Log", "Transactions", "transactions_log", etc.)
+    try {
+      var allSsSheetsTxn = ss.getSheets();
+      var targetTxnSheets = [];
+      for (var ts = 0; ts < allSsSheetsTxn.length; ts++) {
+        var tsName = allSsSheetsTxn[ts].getName();
+        var tsNorm = tsName.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (tsNorm === 'transactionslog' || tsNorm === 'transactions' || tsNorm === '23transactionslog') {
+          targetTxnSheets.push(allSsSheetsTxn[ts]);
+        }
+      }
+
+      if (targetTxnSheets.length === 0) {
+        var defTxn = getOrCreateSheet(ss, "Transactions_Log", [
+          "Txn_ID", "Timestamp", "Order_ID", "Customer_Name", "Amount_INR", "Payment_Mode", "Payment_Status", "UTR_Reference", "Recorded_By"
+        ], "#059669");
+        if (defTxn) targetTxnSheets.push(defTxn);
+      }
+
+      for (var tIdx = 0; tIdx < targetTxnSheets.length; tIdx++) {
+        var txnSheet = targetTxnSheets[tIdx];
+        var tRows = txnSheet.getLastRow();
+        var tCols = txnSheet.getLastColumn();
+        var foundTxnRow = -1;
+        if (tRows > 1) {
+          var tData = txnSheet.getRange(2, 1, tRows - 1, Math.max(tCols, 1)).getValues();
+          for (var ti = 0; ti < tData.length; ti++) {
+            var rowTxnId = (tData[ti][0] || "").toString().toUpperCase().trim();
+            var rowUtrRef = (tData[ti][7] || "").toString().toUpperCase().trim();
+            if (rowTxnId === txnId.toUpperCase() || (utrRef && rowUtrRef === utrRef)) {
+              foundTxnRow = ti + 2;
+              break;
+            }
+          }
+        }
+
+        var tStatus = reconStatus === "VERIFIED_AND_MATCHED" ? "PAID_SAFELOCK_VERIFIED" : reconStatus;
+        if (foundTxnRow > 0) {
+          txnSheet.getRange(foundTxnRow, 3).setValue(linkedId);
+          txnSheet.getRange(foundTxnRow, 4).setValue(partyName);
+          txnSheet.getRange(foundTxnRow, 5).setValue(amount);
+          txnSheet.getRange(foundTxnRow, 6).setValue(payMode + " (" + bnkAccount + ")");
+          txnSheet.getRange(foundTxnRow, 7).setValue(tStatus);
+          txnSheet.getRange(foundTxnRow, 8).setValue(utrRef);
+          syncResult.transactions_updated = true;
+        } else {
+          txnSheet.appendRow([
+            txnId,
+            valDateTime,
+            linkedId,
+            partyName,
+            amount,
+            payMode + " (" + bnkAccount + ")",
+            tStatus,
+            utrRef,
+            loggedBy
+          ]);
+          applyStandardFormat(txnSheet);
+          syncResult.transactions_updated = true;
+        }
+      }
+    } catch (errTxn) {
+      Logger.log("Transactions_Log sync error: " + errTxn.toString());
+    }
+  }
+
+  // 4. ORDERS_SAFELOCK (If linked to ORD-)
+  if (linkedId && linkedId.indexOf("ORD-") !== -1) {
+    try {
+      var ordSheet = ss.getSheetByName("Orders_SafeLock") || ss.getSheetByName("05_Orders_SafeLock") || ss.getSheetByName("Orders SafeLock");
+      if (ordSheet) {
+        var ordData = ordSheet.getDataRange().getValues();
+        for (var oi = 1; oi < ordData.length; oi++) {
+          if (ordData[oi][0] && ordData[oi][0].toString().trim() === linkedId.trim()) {
+            ordSheet.getRange(oi + 1, 8).setValue("SAFELOCKED (BANK RTGS VERIFIED: " + utrRef + ")");
+            break;
+          }
+        }
+      }
+    } catch (ordErr) {}
+  }
+
+  return syncResult;
 }
 
 /**

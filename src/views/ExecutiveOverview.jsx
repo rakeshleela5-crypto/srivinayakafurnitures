@@ -298,6 +298,15 @@ export function ExecutiveOverview() {
             <DollarSign size={13} /> 💰 PROFIT & MARGIN RADAR
           </button>
 
+          <button 
+            className="btn-luxury-gold" 
+            onClick={() => openModal('enterprise_security')} 
+            style={{ fontSize: '11px', padding: '5px 12px', display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'rgba(16, 185, 129, 0.15)', color: '#34D399', border: '1px solid rgba(16, 185, 129, 0.4)', fontWeight: '800' }}
+            title="Open Enterprise Firewall & WAF Security Console"
+          >
+            <ShieldCheck size={13} /> 🛡️ FIREWALL & WAF
+          </button>
+
           <button className="btn-emerald" onClick={() => setAiBriefingOpen(!aiBriefingOpen)} style={{ fontSize: '11px', padding: '5px 12px' }}>
             <Zap size={13} /> ⚡ 9 PM AI Briefing
           </button>

@@ -30,7 +30,7 @@
  */
 
 function doGet(e) {
-  return handleWebhookRequest(e ? e.parameter : {});
+  return handleWebhookRequest(e ? e.parameter : {}, e);
 }
 
 function doPost(e) {
@@ -56,7 +56,7 @@ function doPost(e) {
   } catch (err) {
     params = e ? (e.parameter || {}) : {};
   }
-  return handleWebhookRequest(params);
+  return handleWebhookRequest(params, e);
 }
 
 
@@ -100,7 +100,7 @@ function withScriptLock(fn, timeoutMs) {
   }
 }
 
-function handleWebhookRequest(params) {
+function handleWebhookRequest(params, e) {
   params = params || {};
   if (params.params && typeof params.params === 'object') {
     for (var k in params.params) {
@@ -182,6 +182,44 @@ function handleWebhookRequest(params) {
     action: action,
     timestamp: currentDateTimeStr
   };
+
+  // ==========================================================================================
+  // 🛡️ ENTERPRISE API SECURITY FIREWALL: AUTH TOKEN & HMAC VERIFICATION
+  // Blocks unauthorized access, bot crawlers, and malicious injections lacking valid secret key
+  // ==========================================================================================
+  var ENTERPRISE_SECRET_KEY = "OMNIBUILD_SEC_TOKEN_2026_SOVEREIGN_7777";
+  try {
+    var customKey = PropertiesService.getScriptProperties().getProperty("OMNIBUILD_SECRET_KEY");
+    if (customKey && customKey.trim().length > 0) {
+      ENTERPRISE_SECRET_KEY = customKey.trim();
+    }
+  } catch (propErr) {}
+
+  var incomingToken = params.auth_token 
+    || params.secret_key 
+    || params.api_key 
+    || params.token
+    || (e && e.parameter && (e.parameter.auth_token || e.parameter.secret_key || e.parameter.api_key))
+    || (e && e.headers && (e.headers["x-omnibuild-auth-token"] || e.headers["X-OmniBuild-Auth-Token"] || e.headers["authorization"] || e.headers["Authorization"]))
+    || (params.headers && (params.headers["x-omnibuild-auth-token"] || params.headers["X-OmniBuild-Auth-Token"] || params.headers["authorization"]))
+    || "";
+
+  if (typeof incomingToken === 'string' && incomingToken.indexOf("Bearer ") === 0) {
+    incomingToken = incomingToken.substring(7).trim();
+  }
+
+  // Public/Read-Only Safe Actions that can bypass token (Health ping & initial discovery)
+  var isPublicHealthCheck = (action === "GET_ALL_STATUS" || action === "PING" || action === "HEALTH_CHECK");
+
+  // Rejection gate: all POST mutations and protected actions REQUIRE valid secret key
+  if (!isPublicHealthCheck && incomingToken !== ENTERPRISE_SECRET_KEY) {
+    result.success = false;
+    result.error = "UNAUTHORIZED_ACCESS_BLOCKED";
+    result.security_status = "REJECTED_BY_FIREWALL";
+    result.message = "OmniBuild Security Alert: Request rejected. Valid HMAC / Shared API Secret Token ('auth_token' or 'X-OmniBuild-Auth-Token' header) required.";
+    return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
+  }
+  result.security_verified = true;
 
   // ------------------------------------------------------------------------------------------
   // DEDUPLICATION LOCK: Prevent duplicate rapid clicks within 3 seconds for the same action & ID

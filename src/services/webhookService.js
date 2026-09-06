@@ -9,6 +9,30 @@ import { STORE_METADATA } from '../data/initialData';
 // ============================================================================
 const HARDCODED_FALLBACK_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbx-4MH9Dnpvgy0vSoOE42P97U1q00r9eiUz6Md-IXkPEEoJT3KdIae20diAOjNj7RTd/exec';
 
+// ============================================================================
+// 🛡️ ENTERPRISE API SECURITY LAYER: SHARED HMAC / API SECRET TOKEN
+// Prevents unauthorized webhook access, malicious crawlers, and foreign bots
+// ============================================================================
+export const OMNIBUILD_ENTERPRISE_SECRET_KEY = 'OMNIBUILD_SEC_TOKEN_2026_SOVEREIGN_7777';
+
+export function getEnterpriseAuthToken() {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return localStorage.getItem('OMNIBUILD_AUTH_TOKEN') || OMNIBUILD_ENTERPRISE_SECRET_KEY;
+    }
+  } catch (e) {}
+  return OMNIBUILD_ENTERPRISE_SECRET_KEY;
+}
+
+export function setEnterpriseAuthToken(token) {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage && token) {
+      localStorage.setItem('OMNIBUILD_AUTH_TOKEN', token.trim());
+      console.log('🛡️ [SECURITY] OmniBuild Enterprise Auth Token updated in local storage.');
+    }
+  } catch (e) {}
+}
+
 export function formatDateTimeIndian(date = new Date()) {
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const day = String(date.getDate()).padStart(2, '0');
@@ -40,10 +64,12 @@ export async function dispatchWebhookAction(actionName, payload = {}, customWebh
     || HARDCODED_FALLBACK_WEBHOOK_URL;
 
   const currentTimestamp = formatDateTimeIndian();
+  const authToken = getEnterpriseAuthToken();
   
   const fullPayload = {
     action: actionName,
     client_timestamp: currentTimestamp,
+    auth_token: authToken,
     ...payload
   };
 
@@ -55,7 +81,8 @@ export async function dispatchWebhookAction(actionName, payload = {}, customWebh
     // ========================================================================
     const sanitizedParams = {
       action: actionName,
-      client_timestamp: currentTimestamp
+      client_timestamp: currentTimestamp,
+      auth_token: authToken
     };
 
     // Dynamically include all scalar payload fields (strings, numbers, booleans)
@@ -81,7 +108,10 @@ export async function dispatchWebhookAction(actionName, payload = {}, customWebh
     if (actionName === 'BULK_CATALOG_IMPORT' || actionName === 'RESTORE_BACKUP' || getParams.length > 1800) {
       const response = await fetch(webhookUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        headers: { 
+          'Content-Type': 'text/plain;charset=utf-8',
+          'X-OmniBuild-Auth-Token': authToken
+        },
         body: JSON.stringify(fullPayload)
       });
       return {

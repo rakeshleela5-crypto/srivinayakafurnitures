@@ -46,6 +46,7 @@ import { EditFactoryPoModal } from './EditFactoryPoModal';
 import { FactoryPaymentVoucherModal, VendorSourcingModal } from './FactoryProcureModals';
 import { ShowroomProfitRadarModal } from './ShowroomProfitRadarModal';
 import { GeminiConfigModal } from './GeminiConfigModal';
+import { EnterpriseSecurityModal } from './EnterpriseSecurityModal';
 
 export function ModalContainer() {
   const { activeModal, modalProps, closeModal } = useStore();
@@ -141,6 +142,9 @@ export function ModalContainer() {
 
       {/* 🧠 GOOGLE GEMINI AI CONFIGURATION MODAL */}
       <GeminiConfigModal isOpen={activeModal === 'gemini_config'} onClose={closeModal} />
+
+      {/* 🛡️ ENTERPRISE FIREWALL & SECURITY CONSOLE */}
+      <EnterpriseSecurityModal isOpen={activeModal === 'enterprise_security'} onClose={closeModal} />
     </>
   );
 }

@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniBuild OS™ — Production Implementation & Data Collection Dossier</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&family=Outfit:wght@400;600;700;800;900&display=swap');
+
+    :root {
+      --gold-primary: #D4AF37;
+      --gold-light: #F5E08F;
+      --gold-dark: #997A15;
+      --slate-900: #0F172A;
+      --slate-800: #1E293B;
+      --slate-700: #334155;
+      --slate-600: #475569;
+      --emerald-500: #10B981;
+      --cyan-400: #38BDF8;
+      --rose-500: #F43F5E;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #0B0F19;
+      color: #E2E8F0;
+      line-height: 1.6;
+      padding: 30px 15px;
+    }
+
+    .dossier-container {
+      max-width: 960px;
+      margin: 0 auto;
+      background: #131B2E;
+      border: 1px solid rgba(212, 175, 55, 0.35);
+      border-radius: 20px;
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+      padding: 45px;
+      position: relative;
+    }
+
+    /* Top Action Bar (Hidden during print) */
+    .action-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+      border-radius: 12px;
+      padding: 12px 20px;
+      margin-bottom: 35px;
+    }
+
+    .btn-download-pdf {
+      background: linear-gradient(135deg, #D4AF37 0%, #B45309 100%);
+      color: #000000;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 900;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      padding: 10px 22px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+      text-decoration: none;
+    }
+
+    .btn-download-pdf:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 22px rgba(212, 175, 55, 0.5);
+    }
+
+    /* Header Section */
+    .header-block {
+      border-bottom: 2px solid rgba(212, 175, 55, 0.4);
+      padding-bottom: 25px;
+      margin-bottom: 35px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+    }
+
+    .brand-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 26px;
+      font-weight: 900;
+      color: #FFFFFF;
+      letter-spacing: -0.5px;
+    }
+
+    .brand-title span {
+      color: var(--gold-primary);
+    }
+
+    .brand-subtitle {
+      font-size: 13.5px;
+      color: #94A3B8;
+      margin-top: 4px;
+    }
+
+    .doc-badge {
+      background: rgba(212, 175, 55, 0.15);
+      border: 1px solid var(--gold-primary);
+      color: var(--gold-light);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 6px 14px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-align: right;
+    }
+
+    /* Section Cards */
+    .section-card {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 28px;
+      page-break-inside: avoid;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 12px;
+    }
+
+    .section-icon {
+      font-size: 22px;
+      background: rgba(212, 175, 55, 0.12);
+      width: 42px;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      border: 1px solid rgba(212, 175, 55, 0.3);
+    }
+
+    .section-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      color: #FFFFFF;
+    }
+
+    .section-desc {
+      font-size: 12.5px;
+      color: #94A3B8;
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    /* Questionnaire Tables */
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 12.5px;
+    }
+
+    table.data-table th {
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--gold-primary);
+      text-align: left;
+      padding: 10px 14px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 11.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    table.data-table td {
+      padding: 10px 14px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #CBD5E1;
+      vertical-align: middle;
+    }
+
+    table.data-table tr:nth-child(even) {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .fill-box {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px dashed rgba(212, 175, 55, 0.4);
+      border-radius: 6px;
+      padding: 6px 10px;
+      color: #FFFFFF;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      min-height: 28px;
+    }
+
+    .tag-critical {
+      background: rgba(244, 63, 94, 0.15);
+      border: 1px solid rgba(244, 63, 94, 0.4);
+      color: #FDA4AF;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .tag-recommended {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #6EE7B7;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .tag-optional {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #BAE6FD;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    /* Callout Alert */
+    .callout-box {
+      background: rgba(212, 175, 55, 0.08);
+      border-left: 4px solid var(--gold-primary);
+      border-radius: 0 8px 8px 0;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 12.5px;
+      color: #E2E8F0;
+    }
+
+    .callout-box b {
+      color: var(--gold-light);
+    }
+
+    /* Print Specific Formatting */
+    @media print {
+      body {
+        background: #FFFFFF !important;
+        color: #000000 !important;
+        padding: 0 !important;
+      }
+
+      .dossier-container {
+        max-width: 100% !important;
+        background: #FFFFFF !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 20px !important;
+      }
+
+      .action-bar {
+        display: none !important;
+      }
+
+      .header-block {
+        border-bottom: 2px solid #000000 !important;
+      }
+
+      .brand-title {
+        color: #000000 !important;
+      }
+
+      .brand-title span {
+        color: #B45309 !important;
+      }
+
+      .brand-subtitle {
+        color: #475569 !important;
+      }
+
+      .doc-badge {
+        background: #F8FAFC !important;
+        color: #000000 !important;
+        border: 1px solid #000000 !important;
+      }
+
+      .section-card {
+        background: #FFFFFF !important;
+        border: 1px solid #CBD5E1 !important;
+        page-break-inside: avoid !important;
+        margin-bottom: 20px !important;
+      }
+
+      .section-icon {
+        background: #F1F5F9 !important;
+        border: 1px solid #CBD5E1 !important;
+      }
+
+      .section-title {
+        color: #000000 !important;
+      }
+
+      .section-desc {
+        color: #475569 !important;
+      }
+
+      table.data-table th {
+        background: #F1F5F9 !important;
+        color: #000000 !important;
+        border: 1px solid #CBD5E1 !important;
+      }
+
+      table.data-table td {
+        border: 1px solid #CBD5E1 !important;
+        color: #000000 !important;
+      }
+
+      .fill-box {
+        background: #FAFAFA !important;
+        border: 1px dashed #94A3B8 !important;
+        color: #000000 !important;
+      }
+
+      .callout-box {
+        background: #FEF3C7 !important;
+        color: #000000 !important;
+        border-left: 4px solid #D97706 !important;
+      }
+
+      .callout-box b {
+        color: #92400E !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="dossier-container">
+
+    <!-- Top Action Bar (Hidden in Print) -->
+    <div class="action-bar">
+      <div>
+        <div style="font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 14px; color: #FFFFFF;">
+          📄 Official Store Handover Questionnaire
+        </div>
+        <div style="font-size: 11.5px; color: #94A3B8;">
+          Fill this checklist with the client to launch OmniBuild OS™ in real-time production
+        </div>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn-download-pdf" onclick="window.print()">
+          🖨️ Print / Save as PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- Header Block -->
+    <div class="header-block">
+      <div>
+        <div class="brand-title">OMNIBUILD <span>OS™</span></div>
+        <div class="brand-subtitle">
+          Enterprise Showroom Management System — Production Deployment Checklist
+        </div>
+        <div style="font-size: 12px; color: var(--gold-light); margin-top: 6px; font-weight: 600;">
+          Target Showroom: Godrej Interio Rayagada (Shree Ganesh Enterprises)
+        </div>
+      </div>
+      <div class="doc-badge">
+        CONFIDENTIAL & PROPRIETARY<br>
+        SPEC-VER: 2026.09.PROD
+      </div>
+    </div>
+
+    <div class="callout-box">
+      <b>📌 Purpose of this Document:</b> To transition OmniBuild OS™ from the verified staging environment to live, real-time daily production at the showroom. Collect the following verified business data points, credentials, and equipment specifications from Store Director N. Leela Rakesh.
+    </div>
+
+    <!-- SECTION 1: Legal Entity & Statutory Tax Profile -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon">🏛️</div>
+        <div>
+          <div class="section-title">1. Legal Entity & Statutory Billing Identity</div>
+          <div style="font-size: 11px; color: #94A3B8;">Used for GST Tax Invoices, Delivery Challans, and Quotation Letterheads</div>
+        </div>
+      </div>
+      <div class="section-desc">
+        These parameters appear automatically on customer tax invoices, WhatsApp PDF quotes, and warranty certificates.
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 25%;">Field Name</th>
+            <th style="width: 15%;">Priority</th>
+            <th style="width: 30%;">Current Default in Code</th>
+            <th style="width: 30%;">Live Verified Store Value (Fill In)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Legal Entity Name</b></td>
+            <td><span class="tag-critical">CRITICAL</span></td>
+            <td>Shree Ganesh Enterprises</td>
+            <td><div class="fill-box">Shree Ganesh Enterprises</div></td>
+          </tr>
+          <tr>
+            <td><b>Trade / Banner Name</b></td>
+            <td><span class="tag-critical">CRITICAL</span></td>
+            <td>Godrej Interio Rayagada Flagship Showroom</td>
+            <td><div class="fill-box">Godrej Interio Rayagada</div></td>
+          </tr>
+          <tr>
+            <td><b>15-Digit GSTIN</b></td>
+            <td><span class="tag-critical">CRITICAL</span></td>
+            <td>21AAAAA0000A1Z5 (Odisha)</td>
+            <td><div class="fill-box">21___________________</div></td>
+          </tr>
+          <tr>
+            <td><b>Physical Showroom Address</b></td>
+            <td><span class="tag-critical">CRITICAL</span></td>
+            <td>Main Road, Near New Bus Stand / Convent Road, Rayagada, OD 765001</td>
+            <td><div class="fill-box"></div></td>
+          </tr>
+          <tr>
+            <td><b>Official Landline / Phone</b></td>
+            <td><span class="tag-critical">CRITICAL</span></td>
+            <td>+91 93905 53301</td>
+            <td><div class="fill-box"></div></td>
+          </tr>
+          <tr>
+            <td><b>Official Billing Support Email</b></td>
+            <td><span class="tag-recommended">RECOMMENDED</span></td>
+            <td>rakeshleela5@gmail.com</td>
+            <td><div class="fill-box"></div></td>
+          </tr>
+          <tr>
+            <td><b>State & State Code</b></td>
+            <td><span class="tag-critical">CRITICAL</span></td>
+            <td>Odisha (State Code: 21)</td>
+            <td><div class="fill-box">21 - Odisha</div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SECTION 2: Banking, Dual-Ledger & Merchant UPI QR -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon">💳</div>
+        <div>
+          <div class="section-title">2. Banking, Dual-Ledger & Doorstep Merchant UPI VPA</div>
+          <div style="font-size: 11px; color: #94A3B8;">Powers Dynamic Doorstep UPI QR Codes & Instant Dual-Ledger Bank Reconciliation</div>
+        </div>
+      </div>
+      <div class="section-desc">
+        When a customer pays at the showroom or on home delivery, the system generates a dynamic UPI QR with the exact rupee amount and order ID. Collect these exact banking credentials:
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 25%;">Field Name</th>
+            <th style="width: 15%;">Priority</th>
+            <th style="width: 30%;">Current Staging Value</th>
+            <th style="width: 30%;">Live Production Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Primary UPI ID (VPA)</b></td>
+            <td><span class="tag-critical">CRITICAL</span></td>
+            <td>9390553301@ybl</td>
+            <td><div class="fill-box">_________________@____</div></td>
+          </tr>
+          <tr>
+            <td><b>Primary Bank Name</b></td>
+            <td><span class="tag-critical">CRITICAL</span></td>
+            <td>HDFC Bank</td>
+            <td><div class="fill-box">HDFC Bank</div></td>
+          </tr>
+          <tr>
+            <td><b>Operating Current A/c No.</b></td>
+            <td><span class="tag-critical">CRITICAL</span></td>
+            <td>50200088192481</td>
+            <td><div class="fill-box"></div></td>
+          </tr>
+          <tr>
+            <td><b>Bank IFSC Code</b></td>
+            <td><span class="tag-critical">CRITICAL</span></td>
+            <td>HDFC0001892 (Rayagada Branch)</td>
+            <td><div class="fill-box"></div></td>
+          </tr>
+          <tr>
+            <td><b>Account Holder Name</b></td>
+            <td><span class="tag-critical">CRITICAL</span></td>
+            <td>SHREE GANESH ENTERPRISES</td>
+            <td><div class="fill-box"></div></td>
+          </tr>
+          <tr>
+            <td><b>Secondary Bank (Optional)</b></td>
+            <td><span class="tag-optional">OPTIONAL</span></td>
+            <td>SBI Commercial Account</td>
+            <td><div class="fill-box"></div></td>
+          </tr>
+          <tr>
+            <td><b>Physical Soundbox / QR Image</b></td>
+            <td><span class="tag-recommended">RECOMMENDED</span></td>
+            <td>Standard UPI Dynamic Payload</td>
+            <td><div class="fill-box">Attach Merchant Standee QR Photo</div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SECTION 3: Physical Warehouse Stock & Product Catalog Master -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon">📦</div>
+        <div>
+          <div class="section-title">3. Physical Warehouse Inventory & Catalog Export</div>
+          <div style="font-size: 11px; color: #94A3B8;">Initializes SafeLock™ Stock Defense, Buffer Alerts & Barcode Studio (115 SKUs)</div>
+        </div>
+      </div>
+      <div class="section-desc">
+        Ask the store accountant or inventory manager to provide an <b>Excel / CSV export</b> of their current inventory (from Godrej Interio dealer portal, Tally, or physical stock register) with these columns:
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 25%;">Required Column</th>
+            <th style="width: 20%;">Why It Is Needed</th>
+            <th style="width: 55%;">Example Data</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Godrej SKU / Item Code</b></td>
+            <td>Unique primary key for 1D/2D Barcode scanning</td>
+            <td><code>BED-MOD-001</code>, <code>SOF-LIV-002</code>, <code>ALM-SLM-003</code></td>
+          </tr>
+          <tr>
+            <td><b>Product Model & Finish</b></td>
+            <td>Name displayed in Voice POS and invoices</td>
+            <td>Solid King Bed with Hydraulic Storage (CP Teak Finish)</td>
+          </tr>
+          <tr>
+            <td><b>Category</b></td>
+            <td>Filters in POS & CRM Lead matching</td>
+            <td>Bedroom Suites, Living Room, Modular Wardrobes, Dining, Mattresses</td>
+          </tr>
+          <tr>
+            <td><b>Official MRP (INR)</b></td>
+            <td>Printed on quotation to show festive discount</td>
+            <td>₹1,11,000</td>
+          </tr>
+          <tr>
+            <td><b>Showroom Selling Price (INR)</b></td>
+            <td>Standard final showroom billing price</td>
+            <td>₹89,790</td>
+          </tr>
+          <tr>
+            <td><b>Landed Factory Cost (INR)</b></td>
+            <td>Calculates net gross margin (Director eyes only)</td>
+            <td>₹62,000 (Protected under Owner PIN 8899)</td>
+          </tr>
+          <tr>
+            <td><b>Warehouse Stock (Units)</b></td>
+            <td>Available physical cartons in back dock</td>
+            <td>3 units</td>
+          </tr>
+          <tr>
+            <td><b>Showroom Display Units</b></td>
+            <td>Pieces placed on display floor</td>
+            <td>1 unit</td>
+          </tr>
+          <tr>
+            <td><b>Floor Placement Date</b></td>
+            <td>Flags stock aging over 45 days for clearance</td>
+            <td>YYYY-MM-DD (e.g. 2026-07-15)</td>
+          </tr>
+          <tr>
+            <td><b>Buffer Safety Threshold</b></td>
+            <td>Triggers 1-Click AutoProcure factory PO</td>
+            <td>Default: 2 units</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SECTION 4: Staff Crew Roster & Login PINs -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon">👥</div>
+        <div>
+          <div class="section-title">4. Showroom Staff Roster & Security PIN Configuration</div>
+          <div style="font-size: 11px; color: #94A3B8;">Configures Role-Based Access Control for Director, Sales, Dock & Fleet</div>
+        </div>
+      </div>
+      <div class="section-desc">
+        OmniBuild OS™ features a 4-digit security lock. Confirm the staff names, phone numbers, and preferred PIN codes:
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 25%;">Role & Privilege</th>
+            <th style="width: 25%;">Default Name in System</th>
+            <th style="width: 20%;">Default PIN</th>
+            <th style="width: 30%;">Real Staff Name & Mobile</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <b>👑 Store Owner / Director</b><br>
+              <span style="font-size: 10.5px; color: var(--gold-light);">Unrestricted, P&L Radar, Factory Costs</span>
+            </td>
+            <td>Rakesh (Director)</td>
+            <td><code>8899</code></td>
+            <td><div class="fill-box">N. Leela Rakesh (+91 93905 53301)</div></td>
+          </tr>
+          <tr>
+            <td>
+              <b>💼 Sales Executive</b><br>
+              <span style="font-size: 10.5px; color: var(--cyan-400);">Voice POS, Quotes, CRM Leads</span>
+            </td>
+            <td>Sunil</td>
+            <td><code>1122</code></td>
+            <td><div class="fill-box"></div></td>
+          </tr>
+          <tr>
+            <td>
+              <b>📦 Warehouse Dock Supervisor</b><br>
+              <span style="font-size: 10.5px; color: var(--emerald-500);">Inward QC, SmartKit 5-Box Staging</span>
+            </td>
+            <td>Santosh</td>
+            <td><code>3344</code></td>
+            <td><div class="fill-box"></div></td>
+          </tr>
+          <tr>
+            <td>
+              <b>🚚 Logistics & Fleet Driver</b><br>
+              <span style="font-size: 10.5px; color: #C084FC;">Gatepass, Geotagged Signature ePOD</span>
+            </td>
+            <td>Tophan Gouda</td>
+            <td><code>5566</code></td>
+            <td><div class="fill-box"></div></td>
+          </tr>
+          <tr>
+            <td>
+              <b>🔨 Master Carpenter</b><br>
+              <span style="font-size: 10.5px; color: #F59E0B;">Fitting Wage Card, Laser Measurement</span>
+            </td>
+            <td>Narayana Mistri</td>
+            <td>Job Cards</td>
+            <td><div class="fill-box"></div></td>
+          </tr>
+          <tr>
+            <td>
+              <b>🏛️ VIP Architect Partner</b><br>
+              <span style="font-size: 10.5px; color: var(--gold-primary);">8.5% Commission Portal</span>
+            </td>
+            <td>Ar. Sunita Patnaik (Studio Vastu)</td>
+            <td><code>7788</code></td>
+            <td><div class="fill-box"></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SECTION 5: WhatsApp & Customer Communication Setup -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon">💬</div>
+        <div>
+          <div class="section-title">5. WhatsApp Business Integration Strategy</div>
+          <div style="font-size: 11px; color: #94A3B8;">Powers 1-Click Quotations, Gatepasses, Delivery Tracking & 24/7 AI Concierge</div>
+        </div>
+      </div>
+      <div class="section-desc">
+        OmniBuild OS™ supports two operational modes. Choose the client's preferred route:
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px;">
+        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 10px; padding: 16px;">
+          <div style="font-weight: 800; color: #6EE7B7; font-size: 13.5px; margin-bottom: 6px;">
+            ✅ OPTION A: 1-Click WhatsApp Direct (Recommended on Day 1)
+          </div>
+          <p style="font-size: 11.5px; color: #CBD5E1; line-height: 1.5;">
+            • Uses official <code>wa.me</code> deep links directly on the sales consultant's phone, tablet, or showroom PC.<br>
+            • <b>Cost:</b> ₹0 (100% Free forever).<br>
+            • <b>Meta Approval:</b> Zero verification needed; ready in 30 seconds.<br>
+            • <b>Staff Action:</b> Staff taps "WhatsApp Quote", WhatsApp opens with pre-filled message, staff taps Send.<br>
+            • <b>What to collect:</b> The official WhatsApp phone number used at the sales desk (e.g. +91 93905 53301).
+          </p>
+        </div>
+
+        <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 10px; padding: 16px;">
+          <div style="font-weight: 800; color: #7DD3FC; font-size: 13.5px; margin-bottom: 6px;">
+            🤖 OPTION B: Meta Cloud API / Gupshup / Wati (Automated Server)
+          </div>
+          <p style="font-size: 11.5px; color: #CBD5E1; line-height: 1.5;">
+            • Automatically sends messages silently in the background without staff touching their phones.<br>
+            • <b>Cost:</b> Meta charges ~₹0.80 per marketing message, or third-party BSP subscription (~₹1,500/month).<br>
+            • <b>Meta Approval:</b> Requires Facebook Business verification & template message approvals.<br>
+            • <b>What to collect:</b> Meta Business Manager ID, WhatsApp Phone Number ID, and Permanent Bearer Access Token.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 6: Hardware & Peripheral Devices at Showroom -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon">🖨️</div>
+        <div>
+          <div class="section-title">6. Hardware & Peripheral Equipment Inventory</div>
+          <div style="font-size: 11px; color: #94A3B8;">Ensures Seamless Barcode Scanning, Thermal Receipt Printing & Mobile ePOD</div>
+        </div>
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 25%;">Equipment Type</th>
+            <th style="width: 40%;">Recommended Specs</th>
+            <th style="width: 35%;">Showroom Status (Check / Fill)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Handheld Barcode Scanner</b></td>
+            <td>1D/2D USB or Bluetooth Laser Scanner (Honeywell / Zebra / TVS-E) or Android phone camera</td>
+            <td><div class="fill-box">Model: _______________________</div></td>
+          </tr>
+          <tr>
+            <td><b>Thermal POS Slip Printer</b></td>
+            <td>3-inch (80mm) ESC/POS USB or Bluetooth Thermal Printer for billing slips & gatepasses</td>
+            <td><div class="fill-box">Model: _______________________</div></td>
+          </tr>
+          <tr>
+            <td><b>A4 Invoice Laser Printer</b></td>
+            <td>Standard HP/Canon Laser printer for Tax Invoices & Warranty dossiers</td>
+            <td><div class="fill-box">Model: _______________________</div></td>
+          </tr>
+          <tr>
+            <td><b>Showroom Sales Tablet</b></td>
+            <td>Android 10+ Tablet or iPad with Google Chrome for walking the floor</td>
+            <td><div class="fill-box">Device: ______________________</div></td>
+          </tr>
+          <tr>
+            <td><b>Delivery Driver Smartphone</b></td>
+            <td>Android phone with camera and internet for ePOD signatures and doorstep UPI</td>
+            <td><div class="fill-box">Driver Phone: _________________</div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SECTION 7: Google Cloud & Free Gemini AI Key -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon">🧠</div>
+        <div>
+          <div class="section-title">7. Google Account & Google Gemini AI Configuration</div>
+          <div style="font-size: 11px; color: #94A3B8;">Hosts the Master Google Sheet Database & Powers Voice POS + AI Copilot</div>
+        </div>
+      </div>
+      <div class="section-desc">
+        OmniBuild OS™ uses Google Sheets as its sovereign, zero-cost cloud database. Collect:
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th style="width: 30%;">Credential / Asset</th>
+            <th style="width: 35%;">How It Is Setup</th>
+            <th style="width: 35%;">Client Submission</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Primary Showroom Google Account</b></td>
+            <td>The official Gmail or Google Workspace email that will own the Master Sheet</td>
+            <td><div class="fill-box">e.g. godrejrayagada@gmail.com</div></td>
+          </tr>
+          <tr>
+            <td><b>Google Gemini API Key</b></td>
+            <td>Free key generated at <code>aistudio.google.com</code> (takes 2 minutes; free tier provides 1,500 queries/day)</td>
+            <td><div class="fill-box">AIzaSy________________________</div></td>
+          </tr>
+          <tr>
+            <td><b>Master Sheet Backup Schedule</b></td>
+            <td>Weekly automated Google Drive copy export to prevent accidental deletion</td>
+            <td><div class="fill-box">Every Sunday 09:00 PM ✓</div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Footer Sign-Off -->
+    <div style="margin-top: 40px; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 25px; display: flex; justify-content: space-between; align-items: flex-end;">
+      <div>
+        <div style="font-size: 11px; color: #94A3B8;">Document Prepared For:</div>
+        <div style="font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 15px; color: #FFFFFF;">
+          Shree Ganesh Enterprises — Godrej Interio Rayagada
+        </div>
+        <div style="font-size: 11px; color: var(--gold-light);">
+          Commercial Contract Value: ₹3,00,000 (INR Three Lakhs Only)
+        </div>
+      </div>
+
+      <div style="text-align: right;">
+        <div style="font-size: 11px; color: #94A3B8; margin-bottom: 35px;">Handover Authorized By:</div>
+        <div style="border-top: 1px dashed rgba(212, 175, 55, 0.5); padding-top: 6px; width: 220px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--gold-primary);">
+          Store Director Signature & Seal
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>OmniBuild OS - Executive ROI Matrix</title>
+<style>
+  @page { 
+    size: A4 portrait; 
+    margin: 5mm 6mm 4mm 6mm; 
+  }
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #0f172a;
+    background: #fff;
+    margin: 0;
+    padding: 0;
+    font-size: 6.8pt;
+    line-height: 1.15;
+  }
+  .header {
+    border-bottom: 1.5px solid #0f172a;
+    padding-bottom: 2px;
+    margin-bottom: 3px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  .header h1 {
+    font-size: 11pt;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #0f172a;
+    line-height: 1.1;
+  }
+  .header .client-sub {
+    font-size: 6.8pt;
+    font-weight: 600;
+    color: #334155;
+    margin-top: 1px;
+  }
+  .header .agency-sub {
+    font-size: 6.8pt;
+    font-weight: 600;
+    color: #475569;
+  }
+  .header .meta {
+    text-align: right;
+    font-size: 6.4pt;
+    color: #475569;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+  .agency-badge {
+    color: #0369a1;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+  }
+  .director-badge {
+    color: #0f172a;
+    font-weight: 800;
+  }
+  .phone-badge {
+    color: #047857;
+    font-weight: 700;
+  }
+  .dept-title {
+    background: #0f172a;
+    color: #fff;
+    padding: 1.5px 5px;
+    font-size: 6.8pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-top: 3px;
+    margin-bottom: 1.5px;
+    border-radius: 1.5px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 2px;
+  }
+  th {
+    background: #f1f5f9;
+    color: #334155;
+    font-weight: 700;
+    text-align: left;
+    padding: 1.5px 3.5px;
+    border: 0.5px solid #cbd5e1;
+    font-size: 6.3pt;
+    text-transform: uppercase;
+  }
+  td {
+    padding: 1.4px 3.5px;
+    border: 0.5px solid #e2e8f0;
+    vertical-align: top;
+  }
+  tr:nth-child(even) { background-color: #f8fafc; }
+  .col-id { width: 3%; text-align: center; font-weight: 700; color: #64748b; }
+  .col-name { width: 21%; font-weight: 700; color: #0f172a; }
+  .col-before { width: 28%; color: #64748b; }
+  .col-after { width: 28%; color: #0f172a; }
+  .col-impact { width: 20%; font-weight: 700; color: #047857; }
+  
+  .roi-container {
+    display: flex;
+    gap: 6px;
+    margin-top: 3px;
+  }
+  .roi-box {
+    flex: 1;
+    border: 0.75px solid #cbd5e1;
+    border-radius: 2px;
+    padding: 3px 5px;
+    background: #f8fafc;
+  }
+  .roi-box h3 {
+    margin: 0 0 2px 0;
+    font-size: 6.8pt;
+    color: #0f172a;
+    text-transform: uppercase;
+    border-bottom: 0.75px solid #cbd5e1;
+    padding-bottom: 1.5px;
+  }
+  .roi-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 6.3pt;
+  }
+  .roi-table td {
+    border: none;
+    padding: 0.7px 0;
+  }
+  .roi-total {
+    font-weight: 800;
+    color: #047857;
+    border-top: 0.75px dashed #94a3b8 !important;
+    padding-top: 1.5px !important;
+  }
+  .page-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 0.75px solid #cbd5e1;
+    padding-top: 2px;
+    margin-top: 2.5px;
+    font-size: 5.8pt;
+    color: #64748b;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>OmniBuild OS™ — 24-Pillar Sovereign Matrix</h1>
+    <div class="client-sub">
+      Client: Shree Ganesh Enterprises (Godrej Interio Flagship, Rayagada)
+    </div>
+    <div class="agency-sub">
+      Architected & Deployed by: <span class="agency-badge">NSAIAGENCY7777</span>
+    </div>
+  </div>
+  <div class="meta">
+    <div style="color: #64748b; font-size: 6pt; letter-spacing: 0.4px;">CLASSIFICATION: BOARDROOM CONFIDENTIAL</div>
+    <div style="margin-top: 1px;">
+      EXECUTIVE DIRECTOR: <span class="director-badge">N. LEELA RAKESH</span>
+    </div>
+    <div>
+      DIRECT / WHATSAPP: <span class="phone-badge">+91 9390553301</span>
+    </div>
+  </div>
+</div>
+
+<div class="dept-title">Department 1: Front Sales Counter & Commercial Closing Engine</div>
+<table>
+  <thead>
+    <tr>
+      <th class="col-id">#</th>
+      <th class="col-name">Pillar & System</th>
+      <th class="col-before">Vulnerability (Before)</th>
+      <th class="col-after">Sovereign Architecture (After)</th>
+      <th class="col-impact">Business Impact</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="col-id">01</td>
+      <td class="col-name">Atomic Inventory SafeLock</td>
+      <td class="col-before">Reps double-sell display bed during rush; leads to customer cancellations.</td>
+      <td class="col-after">Sub-500ms transactional cloud lock syncs inventory across all POS counters.</td>
+      <td class="col-impact">100% Zero Double-Selling</td>
+    </tr>
+    <tr>
+      <td class="col-id">02</td>
+      <td class="col-name">Dealer Margin Floor Guard</td>
+      <td class="col-before">Reps concede 10–12% spot discounts, eroding showroom take-home.</td>
+      <td class="col-after">Automated margin sentinel blocks quotes below the 15% dealer floor.</td>
+      <td class="col-impact">Guaranteed Minimum Profit</td>
+    </tr>
+    <tr>
+      <td class="col-id">03</td>
+      <td class="col-name">0% EMI Finance Advisory</td>
+      <td class="col-before">Middle-class walk-ins drop off due to ₹85,000 upfront cash resistance.</td>
+      <td class="col-after">Finance calculator splits resistance into ₹7,083/mo accessible schedules.</td>
+      <td class="col-impact">2x Sales Conversion Lift</td>
+    </tr>
+    <tr>
+      <td class="col-id">04</td>
+      <td class="col-name">Old Furniture Exchange Engine</td>
+      <td class="col-before">Staff estimate trade-ins on scratch paper, conceding excessive discounts.</td>
+      <td class="col-after">Algorithmic engine assesses timber and age to issue verified digital vouchers.</td>
+      <td class="col-impact">Zero-Loss Trade-Ins</td>
+    </tr>
+    <tr>
+      <td class="col-id">05</td>
+      <td class="col-name">B2B Institutional Proposals</td>
+      <td class="col-before">Informal WhatsApp text quotes sent for bulk inquiries; 70% lost.</td>
+      <td class="col-after">Institutional proposals with 18% GST ITC reconciliation & 48h locks.</td>
+      <td class="col-impact">2x Bulk Tender Win Rate</td>
+    </tr>
+    <tr>
+      <td class="col-id">06</td>
+      <td class="col-name">Villa & Wedding Suite Ledger</td>
+      <td class="col-before">₹5L–₹10L packages cause confusion & payment delays across family members.</td>
+      <td class="col-after">Milestone escrow: 30% Booking ➔ 40% Factory Dispatch ➔ 30% Assembly.</td>
+      <td class="col-impact">Zero High-Ticket Payment Delays</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="dept-title">Department 2: Warehouse Dock, Staging & Inward Velocity</div>
+<table>
+  <thead>
+    <tr>
+      <th class="col-id">#</th>
+      <th class="col-name">Pillar & System</th>
+      <th class="col-before">Vulnerability (Before)</th>
+      <th class="col-after">Sovereign Architecture (After)</th>
+      <th class="col-impact">Business Impact</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="col-id">07</td>
+      <td class="col-name">SmartKit Staging Shield</td>
+      <td class="col-before">Trucks reach outstations with missing boxes; orders rejected.</td>
+      <td class="col-after">Cryptographic 5-box gatepass lock prevents departure until all boxes scan.</td>
+      <td class="col-impact">0% Delivery Rejections</td>
+    </tr>
+    <tr>
+      <td class="col-id">08</td>
+      <td class="col-name">Optical Dock QC Inspector</td>
+      <td class="col-before">Transporters leave with clean bilties; showroom absorbs hidden breakages.</td>
+      <td class="col-after">Optical scanning inspects cartons on arrival; auto-files claims before exit.</td>
+      <td class="col-impact">100% Carrier Claim Recovery</td>
+    </tr>
+    <tr>
+      <td class="col-id">09</td>
+      <td class="col-name">Laser Hardware Scanning</td>
+      <td class="col-before">Staff manually type long serials, causing inventory mismatch errors.</td>
+      <td class="col-after">150ms zero-touch optical barcode verification with audio confirmations.</td>
+      <td class="col-impact">10x Dock In/Out Velocity</td>
+    </tr>
+    <tr>
+      <td class="col-id">10</td>
+      <td class="col-name">45-Day Aging Floor Sentinel</td>
+      <td class="col-before">Display furniture sits for 6+ months, freezing working capital.</td>
+      <td class="col-after">Automated sentinel identifies 45-day items and applies clearance tags.</td>
+      <td class="col-impact">Unfrozen Floor Working Capital</td>
+    </tr>
+    <tr>
+      <td class="col-id">11</td>
+      <td class="col-name">Barcode & Shelf QR Studio</td>
+      <td class="col-before">Showroom waits weeks for outside agencies to print price cards.</td>
+      <td class="col-after">Generates Code-128 stickers, 2"x1" shelf talkers, and spec QRs in 1 click.</td>
+      <td class="col-impact">Zero External Agency Costs</td>
+    </tr>
+    <tr>
+      <td class="col-id">12</td>
+      <td class="col-name">1-Click Multi-Doc Generator</td>
+      <td class="col-before">Staff spend 20 minutes per dispatch manually preparing challans & bills.</td>
+      <td class="col-after">Compiles GST invoices, delivery challans, and gatepasses in 30 seconds.</td>
+      <td class="col-impact">Documentation Cut to 30 Secs</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="dept-title">Department 3: Fleet Logistics, Delivery & Field Installation</div>
+<table>
+  <thead>
+    <tr>
+      <th class="col-id">#</th>
+      <th class="col-name">Pillar & System</th>
+      <th class="col-before">Vulnerability (Before)</th>
+      <th class="col-after">Sovereign Architecture (After)</th>
+      <th class="col-impact">Business Impact</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="col-id">13</td>
+      <td class="col-name">Dynamic Route Optimizer</td>
+      <td class="col-before">Drivers take arbitrary routes, wasting diesel and missing delivery slots.</td>
+      <td class="col-after">Algorithmic routing calculates shortest distance and optimal departure times.</td>
+      <td class="col-impact">30% Lower Fleet Fuel Cost</td>
+    </tr>
+    <tr>
+      <td class="col-id">14</td>
+      <td class="col-name">Driver OTP Verification</td>
+      <td class="col-before">Verbal handovers lead to disputed claims or misplaced items.</td>
+      <td class="col-after">Delivery unlatches only upon validating an OTP sent to customer mobile.</td>
+      <td class="col-impact">100% Elimination of Disputes</td>
+    </tr>
+    <tr>
+      <td class="col-id">15</td>
+      <td class="col-name">Geotagged Digital ePOD</td>
+      <td class="col-before">Customers claim items were damaged/undelivered with zero paper proof.</td>
+      <td class="col-after">Customer signature, GPS coordinates, and timestamp archived in cloud.</td>
+      <td class="col-impact">100% Doorstep Legal Immunity</td>
+    </tr>
+    <tr>
+      <td class="col-id">16</td>
+      <td class="col-name">Doorstep Dynamic QR Pay</td>
+      <td class="col-before">Driver lacks change; customer defers balance payment, causing bad debts.</td>
+      <td class="col-after">Driver phone displays dynamic UPI QR with split-tender verification.</td>
+      <td class="col-impact">100% Cash/UPI Collection</td>
+    </tr>
+    <tr>
+      <td class="col-id">17</td>
+      <td class="col-name">Carpenter Wage Vouchers</td>
+      <td class="col-before">Piece-rate wage disputes cause delayed or substandard installations.</td>
+      <td class="col-after">Digital job cards issue pre-set fitting vouchers upon customer digital sign-off.</td>
+      <td class="col-impact">Flawless Assembly Workmanship</td>
+    </tr>
+    <tr>
+      <td class="col-id">18</td>
+      <td class="col-name">Godrej Care AMC Engine</td>
+      <td class="col-before">Showroom earns zero post-delivery revenue from past buyers.</td>
+      <td class="col-after">Automated scheduler enrols buyers into annual wood/fabric maintenance plans.</td>
+      <td class="col-impact">Recurring Aftermarket Revenue</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="dept-title">Department 4: Financial Radar, Regional AI & Sovereign Core</div>
+<table>
+  <thead>
+    <tr>
+      <th class="col-id">#</th>
+      <th class="col-name">Pillar & System</th>
+      <th class="col-before">Vulnerability (Before)</th>
+      <th class="col-after">Sovereign Architecture (After)</th>
+      <th class="col-impact">Business Impact</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="col-id">19</td>
+      <td class="col-name">Real-Time Margin Radar</td>
+      <td class="col-before">Owner guesses profit blindly, omitting freight, wages, and net taxes.</td>
+      <td class="col-after">Dynamic financial ledger calculates true net cash margins per sofa/bed.</td>
+      <td class="col-impact">100% Unit Margin Transparency</td>
+    </tr>
+    <tr>
+      <td class="col-id">20</td>
+      <td class="col-name">9 PM Automated Cash Lock</td>
+      <td class="col-before">Owner spends 2+ hours nightly reconciling cash drawers and QR slips.</td>
+      <td class="col-after">60-second closeout reconciles cash, cards, UPI, and technician floats.</td>
+      <td class="col-impact">2 Hours Reclaimed Every Night</td>
+    </tr>
+    <tr>
+      <td class="col-id">21</td>
+      <td class="col-name">Architect 8.5% Ledger</td>
+      <td class="col-before">Disputed architect referral commissions cause loss of villa clients.</td>
+      <td class="col-after">Automated ledger tracks commission slabs and produces instant settlement slips.</td>
+      <td class="col-impact">Long-Term Architect Loyalty</td>
+    </tr>
+    <tr>
+      <td class="col-id">22</td>
+      <td class="col-name">Live Bank UTR Reconciler</td>
+      <td class="col-before">Accountant manually verifies 12-digit UTR references against passbooks.</td>
+      <td class="col-after">Automated ledger pairs bank UTR references with invoices and vendor POs.</td>
+      <td class="col-impact">Zero Unallocated Bank Transfers</td>
+    </tr>
+    <tr>
+      <td class="col-id">23</td>
+      <td class="col-name">24/7 Regional AI Concierge</td>
+      <td class="col-before">After 9 PM & rush queries go unanswered; high-ticket walk-ins drop off.</td>
+      <td class="col-after">24/7 autonomous concierge answers specs, shares video catalogs & captures leads in Odia/Telugu.</td>
+      <td class="col-impact">24/7 Zero-Lead-Drop Engagement</td>
+    </tr>
+    <tr>
+      <td class="col-id">24</td>
+      <td class="col-name">"Ask My Showroom" Copilot</td>
+      <td class="col-before">Director spends 45 mins searching ledgers to check outstanding debts.</td>
+      <td class="col-after">Voice/text query returns audited balances and inventory status in seconds.</td>
+      <td class="col-impact">Zero Decision Latency</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="roi-container">
+  <div class="roi-box">
+    <h3>Hard Cash Annual Value Audit</h3>
+    <table class="roi-table">
+      <tr><td>Transit Breakage & Transport Damage Recovered</td><td style="text-align:right">₹4,50,000 / Yr</td></tr>
+      <tr><td>Dropped Wedding & Villa Walk-ins Recovered</td><td style="text-align:right">₹8,50,000 / Yr</td></tr>
+      <tr><td>Discount Floor Breaches & Waste Deliveries Sealed</td><td style="text-align:right">₹7,60,000 / Yr</td></tr>
+      <tr><td>Staff Overtime & Manual Reconciliation Eliminated</td><td style="text-align:right">₹1,80,000 / Yr</td></tr>
+      <tr class="roi-total"><td>TOTAL ANNUAL NET CASH FLOW RETAINED</td><td style="text-align:right">₹22,40,000 / YR</td></tr>
+    </table>
+  </div>
+  <div class="roi-box">
+    <h3>Executive Boardroom Guarantees & Sovereign Authority</h3>
+    <div style="font-size: 6.4pt; color: #334155; margin-bottom: 2px;">
+      <strong>1. 100% Owner-Independent Operation:</strong> System automation enforces operational discipline across sales floors, docks, and fleets. Delivers audited 9:00 PM financials straight to your smartphone anywhere.
+    </div>
+    <div style="font-size: 6.4pt; color: #334155; margin-bottom: 2.5px;">
+      <strong>2. Perpetual Private Sovereign Ownership:</strong> Shree Ganesh Enterprises holds full balance-sheet asset ownership of all custom software systems and core databases. Zero SaaS rental lock-in.
+    </div>
+    <div style="border-top: 0.75px solid #cbd5e1; padding-top: 1.5px; margin-top: 1px; display: flex; justify-content: space-between; align-items: center; font-size: 6.4pt;">
+      <span><strong>Agency:</strong> <span class="agency-badge">NSAIAGENCY7777</span></span>
+      <span><strong>Executive Director:</strong> <span class="director-badge">N. LEELA RAKESH</span></span>
+      <span><strong>Direct:</strong> <span class="phone-badge">+91 9390553301</span></span>
+    </div>
+  </div>
+</div>
+
+<div class="page-footer">
+  <span>OmniBuild OS™ • Proprietary Sovereign Enterprise Architecture</span>
+  <span>Client: <strong>Shree Ganesh Enterprises</strong> (Rayagada)</span>
+  <span>Engineered & Deployed by <strong>NSAIAGENCY7777</strong> | <strong>N. LEELA RAKESH</strong> (<strong class="phone-badge">+91 9390553301</strong>)</span>
+</div>
+
+</body>
+</html>

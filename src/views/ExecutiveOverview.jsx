@@ -76,6 +76,7 @@ export function ExecutiveOverview() {
   const [editableWalkInTarget, setEditableWalkInTarget] = useState(25);
   const [festiveBoostPct, setFestiveBoostPct] = useState(10);
   const [aiBriefingOpen, setAiBriefingOpen] = useState(false);
+  const [campaignLang, setCampaignLang] = useState('OR');
 
   // 🧠 SUPERPOWER 1: "Ask My Showroom" AI Copilot States
   const [showroomAiQuery, setShowroomAiQuery] = useState('');

@@ -1,6 +1,5 @@
 {
   "hosting": {
-    "site": "shreeganesh-godrej",
     "public": "dist",
     "ignore": [
       "firebase.json",

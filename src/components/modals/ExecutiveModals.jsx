@@ -406,15 +406,15 @@ export function CarpenterDispatchModal({ isOpen, onClose, order = null }) {
   const [lang, setLang] = useState('EN');
 
   useEffect(() => {
-    if (activeOrder && isOpen) {
-      setOrderId(activeOrder.Order_ID || 'ORD-8921');
-      setCustomerName(activeOrder.Customer_Name || 'Valued Client');
-      setCustomerPhone(activeOrder.Customer_Phone || '9390553301');
-      setAddress(activeOrder.Project_Address || activeOrder.Delivery_Address || 'Rayagada, Odisha');
-      setItems(activeOrder.Ordered_SKU || activeOrder.Item_Names || 'Solid King Bed + 4-Door Wardrobe');
-      setPayout(activeOrder.Carpenter_Payout_INR || 500);
+    if (order && isOpen) {
+      setOrderId(order.Order_ID || 'ORD-8921');
+      setCustomerName(order.Customer_Name || 'Valued Client');
+      setCustomerPhone(order.Customer_Phone || '9390553301');
+      setAddress(order.Project_Address || order.Delivery_Address || 'Rayagada, Odisha');
+      setItems(order.Ordered_SKU || order.Item_Names || 'Solid King Bed + 4-Door Wardrobe');
+      setPayout(order.Carpenter_Payout_INR || 500);
     }
-  }, [isOpen, order]);
+  }, [isOpen, order?.Order_ID]);
 
   if (!isOpen) return null;
 

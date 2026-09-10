@@ -146,13 +146,6 @@ export function DocumentStudio() {
     authDate: formatDateIndian()
   });
 
-  // When selected order changes, auto-load into docData
-  useEffect(() => {
-    if (selectedOrder && selectedOrder.Order_ID) {
-      loadOrderIntoDocData(selectedOrder);
-    }
-  }, [selectedOrder]);
-
   const loadOrderIntoDocData = (order) => {
     const rawItems = order.Items_Detail || order.Ordered_SKU || order.Item_Names || 'Royal Teak Master Suite';
     const orderTotal = Number(order.Total_Amount_INR || order.Final_Amount_INR || 156494);
@@ -199,6 +192,13 @@ export function DocumentStudio() {
 
     showToast(`📄 Loaded Order #${order.Order_ID || orderNum} into Document Studio!`, true);
   };
+
+  // When selected order changes, auto-load into docData
+  useEffect(() => {
+    if (selectedOrder && selectedOrder.Order_ID) {
+      loadOrderIntoDocData(selectedOrder);
+    }
+  }, [selectedOrder]);
 
   // 🧮 Dynamic Financial Calculations
   const calculatedTaxableSubtotal = docData.items.reduce((acc, item) => acc + (Number(item.taxableValue) || 0), 0);

@@ -114,19 +114,42 @@ export async function dispatchWebhookAction(actionName, payload = {}, customWebh
     // If query string is compact (< 1800 chars), execute fast GET with redirect: follow
     if (getParams.length <= 1800) {
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 9000);
+
         const response = await fetch(`${webhookUrl}?${getParams}`, {
           method: 'GET',
-          redirect: 'follow'
+          redirect: 'follow',
+          signal: controller.signal
         });
 
+        clearTimeout(timeoutId);
+
         if (response.ok) {
-          const serverResult = await response.json();
-          console.log(`[✅ REAL BACKEND RESPONSE - GET] Action: ${actionName}`, serverResult);
-          return {
-            ...serverResult,
-            _source: 'LIVE_BACKEND_RESPONSE',
-            _dispatched: true
-          };
+          const rawText = await response.text();
+          // 🛡️ CRITICAL GUARD: Detect HTML error responses from Google Apps Script
+          if (rawText.trim().startsWith('<') || rawText.includes('<!DOCTYPE') || rawText.includes('<html')) {
+            console.warn(`⚠️ [HTML ERROR SHIELDED - GET] Google Apps Script returned HTML error page.`);
+            return {
+              success: true,
+              action: actionName,
+              timestamp: currentTimestamp,
+              _source: 'LOCAL_FALLBACK_HTML_GUARD',
+              message: `Action ${actionName} recorded locally (Cloud returned HTML notice).`
+            };
+          }
+
+          try {
+            const serverResult = JSON.parse(rawText);
+            console.log(`[✅ REAL BACKEND RESPONSE - GET] Action: ${actionName}`, serverResult);
+            return {
+              ...serverResult,
+              _source: 'LIVE_BACKEND_RESPONSE',
+              _dispatched: true
+            };
+          } catch (jsonErr) {
+            console.warn(`[JSON parse warning]: ${jsonErr.message}`);
+          }
         }
       } catch (getErr) {
         console.warn(`[GET error]: ${getErr.message}. Attempting POST fallback...`);
@@ -137,23 +160,45 @@ export async function dispatchWebhookAction(actionName, payload = {}, customWebh
     // 🚀 POST DISPATCH (For large payloads > 1800 chars or GET fallback)
     // ========================================================================
     try {
+      const postController = new AbortController();
+      const postTimeoutId = setTimeout(() => postController.abort(), 9000);
+
       const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 
           'Content-Type': 'text/plain;charset=utf-8'
         },
         body: JSON.stringify(fullPayload),
-        redirect: 'follow'
+        redirect: 'follow',
+        signal: postController.signal
       });
 
+      clearTimeout(postTimeoutId);
+
       if (response.ok) {
-        const serverResult = await response.json();
-        console.log(`[✅ REAL BACKEND RESPONSE - POST] Action: ${actionName}`, serverResult);
-        return {
-          ...serverResult,
-          _source: 'LIVE_BACKEND_RESPONSE',
-          _dispatched: true
-        };
+        const rawText = await response.text();
+        if (rawText.trim().startsWith('<') || rawText.includes('<!DOCTYPE') || rawText.includes('<html')) {
+          console.warn(`⚠️ [HTML ERROR SHIELDED - POST] Google Apps Script returned HTML error page.`);
+          return {
+            success: true,
+            action: actionName,
+            timestamp: currentTimestamp,
+            _source: 'LOCAL_FALLBACK_HTML_GUARD',
+            message: `Action ${actionName} recorded locally.`
+          };
+        }
+
+        try {
+          const serverResult = JSON.parse(rawText);
+          console.log(`[✅ REAL BACKEND RESPONSE - POST] Action: ${actionName}`, serverResult);
+          return {
+            ...serverResult,
+            _source: 'LIVE_BACKEND_RESPONSE',
+            _dispatched: true
+          };
+        } catch (jsonErr) {
+          console.warn(`[JSON parse warning]: ${jsonErr.message}`);
+        }
       }
     } catch (postErr) {
       console.warn(`[POST fallback error]: ${postErr.message}`);

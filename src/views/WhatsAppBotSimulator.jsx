@@ -390,7 +390,7 @@ export function WhatsAppBotSimulator() {
     if ([1, 14, 16, 26, 27].includes(idNum)) return 'SALES';
     if ([2, 3, 13, 18, 21].includes(idNum)) return 'WAREHOUSE';
     if ([4, 5, 6, 9, 25].includes(idNum)) return 'LOGISTICS';
-    if ([7, 10, 12, 19, 23, 24].includes(idNum)) return 'FINANCE';
+    if ([7, 10, 12, 19, 23, 24, 28, 29].includes(idNum)) return 'FINANCE';
     return 'SYSTEM';
   };
 
@@ -418,7 +418,7 @@ export function WhatsAppBotSimulator() {
         
         {/* Left Action Badges */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <span className="badge badge-emerald">🤖 WHATSAPP & 22 APPSHEET CLOUD BOTS</span>
+          <span className="badge badge-emerald">🤖 WHATSAPP & 29 APPSHEET CLOUD BOTS</span>
           <span className="badge badge-purple">{bots.filter(b => b.status !== 'PAUSED').length}/{bots.length} ACTIVE</span>
           
           <button className="btn-luxury-gold" onClick={() => openModal('bulk_bot_broadcast')} style={{ fontSize: '11px', padding: '5px 10px' }}>
@@ -729,14 +729,14 @@ export function WhatsAppBotSimulator() {
           {/* Department Filter Pills */}
           <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             {[
-              { id: 'ALL', label: 'All Bots (20)' },
-              { id: 'SALES', label: '🛒 Sales & Quotes (3)' },
-              { id: 'WAREHOUSE', label: '🔒 Warehouse & SafeLock (4)' },
-              { id: 'LOGISTICS', label: '🚚 Fleet & ePOD (4)' },
-              { id: 'FINANCE', label: '🏛️ Finance & Cash Lock (4)' },
-              { id: 'SYSTEM', label: '⚙️ Cloud Sync & Audit (5)' },
-              { id: 'ACTIVE', label: '🟢 Active Only' },
-              { id: 'PAUSED', label: '⏸️ Paused Only' }
+              { id: 'ALL', label: `All Bots (${bots.length})` },
+              { id: 'SALES', label: `🛒 Sales & Quotes (${bots.filter(b => getBotCategory(b.botId) === 'SALES').length})` },
+              { id: 'WAREHOUSE', label: `🔒 Warehouse & SafeLock (${bots.filter(b => getBotCategory(b.botId) === 'WAREHOUSE').length})` },
+              { id: 'LOGISTICS', label: `🚚 Fleet & ePOD (${bots.filter(b => getBotCategory(b.botId) === 'LOGISTICS').length})` },
+              { id: 'FINANCE', label: `🏛️ Finance & Cash (${bots.filter(b => getBotCategory(b.botId) === 'FINANCE').length})` },
+              { id: 'SYSTEM', label: `⚙️ Cloud Sync & Audit (${bots.filter(b => getBotCategory(b.botId) === 'SYSTEM').length})` },
+              { id: 'ACTIVE', label: `🟢 Active (${bots.filter(b => b.status !== 'PAUSED').length})` },
+              { id: 'PAUSED', label: `⏸️ Paused (${bots.filter(b => b.status === 'PAUSED').length})` }
             ].map(f => (
               <button
                 key={f.id}

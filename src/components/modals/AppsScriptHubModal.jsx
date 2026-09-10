@@ -199,9 +199,18 @@ export function AppsScriptHubModal({ isOpen, onClose }) {
             >
               <FileSpreadsheet size={16} /> 📊 Open Master Google Sheet Database <ExternalLink size={14} />
             </a>
+            <a 
+              href="https://www.appsheet.com/start/ebd76f5e-5611-4de4-96a4-95e71288f147" 
+              target="_blank" 
+              rel="noreferrer"
+              className="btn-purple"
+              style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', textDecoration: 'none', textAlign: 'center', fontSize: '12.5px' }}
+            >
+              📱 🚀 Open AppSheet App (ID: ebd76f5e...) <ExternalLink size={14} />
+            </a>
           </div>
           <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '10px', lineHeight: '1.5' }}>
-            💡 <strong style={{ color: '#E2E8F0' }}>Pro-Tip:</strong> Because this webhook script is a <em>Standalone Script</em> linking directly to Spreadsheet ID <code style={{ color: 'var(--accent-gold-light)' }}>{MASTER_SPREADSHEET_ID}</code>, opening it from <a href={APPS_SCRIPT_DASHBOARD_URL} target="_blank" rel="noreferrer" style={{ color: 'var(--accent-cyan)' }}>script.google.com/home</a> avoids any browser pop-up blocks or Google account switching conflicts!
+            💡 <strong style={{ color: '#E2E8F0' }}>AppSheet App ID:</strong> <code style={{ color: '#C084FC' }}>ebd76f5e-5611-4de4-96a4-95e71288f147</code> • Linked to Google Spreadsheet <code style={{ color: 'var(--accent-gold-light)' }}>{MASTER_SPREADSHEET_ID}</code>.
           </div>
         </div>
 
@@ -329,7 +338,15 @@ export function AppsScriptHubModal({ isOpen, onClose }) {
               disabled={isHealing}
               style={{ justifyContent: 'center', padding: '10px 12px', fontSize: '11.5px', textAlign: 'center' }}
             >
-              🔑 Deduplicate AppSheet Keys
+              🔑 Deduplicate Keys
+            </button>
+            <button 
+              className="btn-ghost-edit" 
+              onClick={() => handleExecuteMaintenance('FIX_APPSHEET_ERRORS', 'AppSheet Keys Verified & Column Headers Sanitized')}
+              disabled={isHealing}
+              style={{ justifyContent: 'center', padding: '10px 12px', fontSize: '11.5px', textAlign: 'center', color: '#C084FC', borderColor: '#A855F7' }}
+            >
+              📱 Heal AppSheet Schema (ID: ebd76f5e...)
             </button>
           </div>
 

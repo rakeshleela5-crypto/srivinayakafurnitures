@@ -7,7 +7,34 @@ import { STORE_METADATA } from '../data/initialData';
 // FIX 2: Hardcoded fallback URL — even if localStorage AND STORE_METADATA fail,
 // the webhook will ALWAYS fire to the correct endpoint
 // ============================================================================
-const HARDCODED_FALLBACK_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxaMPI6fFcOrANKmS6Lqhr6-dB9h882cZyXFP9w3Nf52OTt2af17rPIB14OJ8gqLM-7/exec';
+export const HARDCODED_FALLBACK_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbxaMPI6fFcOrANKmS6Lqhr6-dB9h882cZyXFP9w3Nf52OTt2af17rPIB14OJ8gqLM-7/exec';
+export const MASTER_SPREADSHEET_ID = '14TqQ7LR5xSNppufWFhXDGo9hANC0JV_wRukc7HlIpaI';
+export const MASTER_SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/14TqQ7LR5xSNppufWFhXDGo9hANC0JV_wRukc7HlIpaI/edit';
+export const APPS_SCRIPT_DASHBOARD_URL = 'https://script.google.com/home';
+
+export function getActiveWebhookUrl() {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const stored = localStorage.getItem('OMNIBUILD_WEBHOOK_URL');
+      if (stored && stored.trim().startsWith('https://script.google.com/')) {
+        return stored.trim();
+      }
+    }
+  } catch (e) {}
+  return HARDCODED_FALLBACK_WEBHOOK_URL;
+}
+
+export function setActiveWebhookUrl(url) {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      if (!url || url.trim() === '' || url.trim() === HARDCODED_FALLBACK_WEBHOOK_URL) {
+        localStorage.removeItem('OMNIBUILD_WEBHOOK_URL');
+      } else {
+        localStorage.setItem('OMNIBUILD_WEBHOOK_URL', url.trim());
+      }
+    }
+  } catch (e) {}
+}
 
 // ============================================================================
 // 🛡️ ENTERPRISE API SECURITY LAYER: SHARED HMAC / API SECRET TOKEN
@@ -55,22 +82,7 @@ export function formatDateIndian(date = new Date()) {
 }
 
 export async function dispatchWebhookAction(actionName, payload = {}, customWebhookUrl = null) {
-  // Auto-heal stale localStorage URL if it contains an outdated deployment ID
-  try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      const storedUrl = localStorage.getItem('OMNIBUILD_WEBHOOK_URL');
-      if (storedUrl && !storedUrl.includes('AKfycbxaMPI6fFcOrANKmS6Lqhr6-dB9h882cZyXFP9w3Nf52OTt2af17rPIB14OJ8gqLM-7')) {
-        localStorage.removeItem('OMNIBUILD_WEBHOOK_URL');
-      }
-    }
-  } catch (e) {}
-
-  const storedUrl = (typeof window !== 'undefined' && window.localStorage) ? localStorage.getItem('OMNIBUILD_WEBHOOK_URL') : null;
-  const validStoredUrl = (storedUrl && storedUrl.includes('script.google.com') && storedUrl.includes('AKfycbxaMPI6fFcOrANKmS6Lqhr6-dB9h882cZyXFP9w3Nf52OTt2af17rPIB14OJ8gqLM-7')) ? storedUrl : null;
-  
-  const webhookUrl = customWebhookUrl
-    || validStoredUrl
-    || HARDCODED_FALLBACK_WEBHOOK_URL;
+  const webhookUrl = customWebhookUrl || getActiveWebhookUrl();
 
   const currentTimestamp = formatDateTimeIndian();
   const authToken = getEnterpriseAuthToken();

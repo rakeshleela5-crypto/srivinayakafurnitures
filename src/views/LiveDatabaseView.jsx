@@ -142,7 +142,61 @@ export function LiveDatabaseView() {
     'Furniture_Catalog': catalog,
     'Document_Generation_Log': documentsLog,
     'Vendor_Sourcing_Matrix': defaultVendorMatrix,
-    'Customer_Reviews_Log': defaultCustomerReviews
+    'Customer_Reviews_Log': defaultCustomerReviews,
+    'Room_Fitment_QC_Log': getCloudTable('Room_Fitment_QC_Log') || [
+      { QC_ID: "QC-2026-001", Order_ID: "ORD-101", Customer: "Dr. Subhashish Jena", Room_Dimensions: "16x14 ft", Fitment_Status: "PASSED_100%", Stairway_Clearance: "ADEQUATE", Inspected_By: "Narayana Mistri" }
+    ],
+    'Discounts_Override_Log': getCloudTable('Discounts_Override_Log') || [
+      { Override_ID: "OVR-8801", Date: "03-Sep-2026", Order_Ref: "ORD-POS-ADV", Discount_Amt_INR: 5000, Authorized_By: "Store Director (PIN 8899)", Reason: "Festive Spot Negotiation" }
+    ],
+    'Profit_Radar_Audit_Log': getCloudTable('Profit_Radar_Audit_Log') || [
+      { Audit_ID: "AUD-PR-101", Date: "03-Sep-2026", Gross_Revenue: 169000, Total_COGS: 104780, Net_Margin_INR: 64220, Margin_Pct: "38.0%", Health_Grade: "PLATINUM_GRADE" }
+    ],
+    'AppSheet_Bots_Telemetry': getCloudTable('AppSheet_Bots_Telemetry') || [
+      { Telemetry_ID: "TEL-BOT-01", Bot_ID: "BOT-01", Event: "Order_SafeLock_Trigger", Target_Channel: "WhatsApp Cloud API", Status: "DELIVERED ✓", Latency_MS: 310 }
+    ],
+    'Commercial_Quotations_Log': getCloudTable('Commercial_Quotations_Log') || [
+      { Quote_ID: "QUO-COM-881", Client: "Gayatri Education Trust", Value_INR: 540000, Items_Count: 18, Status: "DISPATCHED_WHATSAPP_PDF" }
+    ],
+    'Bot_Configurations_Log': getCloudTable('Bot_Configurations_Log') || [
+      { Bot_ID: "BOT-01", Bot_Name: "SafeLock Order Confirmation Bot", Status: "ACTIVE", Trigger: "On New Order", Schedule: "Instant Real-Time", DND_Guard: "09:30 PM to 08:30 AM" }
+    ],
+    'Bot_Test_Log': getCloudTable('Bot_Test_Log') || [
+      { Test_ID: "TST-9901", Bot_Ref: "BOT-01", Dispatched_To: "+91 93905 53301", Status: "SUCCESS_DELIVERED ✓" }
+    ],
+    'EOD_Reconciliation_Log': getCloudTable('EOD_Reconciliation_Log') || [
+      { EOD_ID: "EOD-2026-09-03", Total_Sales: 420000, Cash_In_Safe: 85000, UPI_Settled: 335000, Discrepancy: 0, Director_Signoff: "DIRECTOR_PIN_VERIFIED ✓" }
+    ],
+    'Warranty_Registry': getCloudTable('Warranty_Registry') || [
+      { Warranty_ID: "WAR-2026-101", Customer: "Dr. Subhashish Jena", SKU: "BED-MOD-001", Coverage_Years: "10-Year Borer & Termite Proof", Status: "ACTIVE_WARRANTY" }
+    ],
+    'Wedding_Suites_Log': getCloudTable('Wedding_Suites_Log') || [
+      { Package_ID: "WED-2026-001", Couple: "Pooja & Rakesh", Package: "Royal Odisha Teak Heritage Suite", Value_INR: 285000, Token_Held: 142500, Status: "RESERVED_SAFELOCK" }
+    ],
+    'B2B_Commercial_Tenders_Log': getCloudTable('B2B_Commercial_Tenders_Log') || [
+      { Tender_ID: "TND-2026-001", Institution: "JK Paper Mills Executive Quarters", Proposal_Value_INR: 1250000, Margin_Tier: "34%", Status: "STAGE_3_BOARD_APPROVAL" }
+    ],
+    'AMC_Subscriptions_Log': getCloudTable('AMC_Subscriptions_Log') || [
+      { AMC_ID: "AMC-2026-001", Customer: "Dr. Subhashish Jena", Plan: "Godrej Platinum Care 3-Year Polish & Hardware", Annual_Fee_INR: 4500, Status: "ACTIVE_AMC" }
+    ],
+    'Company_Profile': getCloudTable('Company_Profile') || [
+      { Entity_Name: "Shree Ganesh Enterprises / Shree Vinayaka Furnitures", Showroom: "Godrej Interio Flagship Rayagada", GSTIN: "21AABCS1429B1Z8", State_Code: "21 (Odisha)", Contact: "+91 93905 53301" }
+    ],
+    'FollowUp_Queue_Log': getCloudTable('FollowUp_Queue_Log') || [
+      { Queue_ID: "FU-001", Customer: "Anand Mishra", Preferred_Category: "Recliner Sofa", Next_Drip_Date: "Tomorrow 11:00 AM", Channel: "WhatsApp Automated Drip" }
+    ],
+    'Delivery_Reschedule_Log': getCloudTable('Delivery_Reschedule_Log') || [
+      { Reschedule_ID: "RESCH-001", Order_Ref: "ORD-8921", Original_Date: "03-Sep-2026", Requested_Date: "05-Sep-2026", Customer_Reason: "Flooring tile work delayed", Status: "APPROVED" }
+    ],
+    'WhatsApp_Dispatches_Log': getCloudTable('WhatsApp_Dispatches_Log') || [
+      { Dispatch_ID: "DISP-WA-901", Bot: "BOT-01", Recipient: "+91 93905 53301", Message_Type: "SafeLock Confirmation + UPI QR", Status: "SENT_META_CLOUD_API" }
+    ],
+    'Floor_Aging_Sentinel': getCloudTable('Floor_Aging_Sentinel') || [
+      { SKU: "SOF-MOD-001", Description: "Chesterfield Leatherette 3-Seater", Showroom_Age_Days: 38, Safe_Limit_Days: 45, Action_Required: "FLASH_SALE_15%_DISCOUNT" }
+    ],
+    'VIP_Villa_Projects': getCloudTable('VIP_Villa_Projects') || [
+      { Project_ID: "VILLA-001", Client: "Er. Alok Mohanty", Location: "Raniguda Farmhouse", Total_Budget_INR: 850000, Architect: "Ar. Sunita Patnaik", Status: "EXECUTION_IN_PROGRESS" }
+    ]
   };
 
   // Add any additional dynamic tables returned by Google Sheets
@@ -231,13 +285,17 @@ export function LiveDatabaseView() {
         
         {/* Left Action Badges */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <span className="badge badge-cyan">🗄️ ENTERPRISE 20-TABLE DATABASE STUDIO</span>
+          <span className="badge badge-cyan">🗄️ ENTERPRISE 43-TABLE DATABASE STUDIO</span>
           
           <button className="btn-cyan" onClick={() => openModal('csv_import')} style={{ fontSize: '11px', padding: '5px 10px', fontWeight: '800' }}>
             📥 Import CSV / Excel
           </button>
+
+          <button className="btn-luxury-gold" onClick={() => openModal('appsscript_hub')} style={{ fontSize: '11px', padding: '5px 10px', fontWeight: '800' }}>
+            ⚡ Apps Script Gateway
+          </button>
           
-          <button className="btn-luxury-gold" onClick={() => syncWithGoogleSheets()} style={{ fontSize: '11px', padding: '5px 10px' }}>
+          <button className="btn-ghost-edit" onClick={() => syncWithGoogleSheets()} style={{ fontSize: '11px', padding: '5px 10px' }}>
             <RefreshCw size={13} className={isSyncing ? 'spin-anim' : ''} /> <span>2-Way Master Sync</span>
           </button>
 

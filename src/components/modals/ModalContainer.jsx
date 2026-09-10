@@ -47,6 +47,7 @@ import { FactoryPaymentVoucherModal, VendorSourcingModal } from './FactoryProcur
 import { ShowroomProfitRadarModal } from './ShowroomProfitRadarModal';
 import { GeminiConfigModal } from './GeminiConfigModal';
 import { EnterpriseSecurityModal } from './EnterpriseSecurityModal';
+import { AppsScriptHubModal } from './AppsScriptHubModal';
 
 export function ModalContainer() {
   const { activeModal, modalProps, closeModal } = useStore();
@@ -145,6 +146,9 @@ export function ModalContainer() {
 
       {/* 🛡️ ENTERPRISE FIREWALL & SECURITY CONSOLE */}
       <EnterpriseSecurityModal isOpen={activeModal === 'enterprise_security'} onClose={closeModal} />
+
+      {/* ⚡ GOOGLE APPS SCRIPT & CLOUD DATABASE GATEWAY */}
+      <AppsScriptHubModal isOpen={activeModal === 'appsscript_hub'} onClose={closeModal} />
     </>
   );
 }

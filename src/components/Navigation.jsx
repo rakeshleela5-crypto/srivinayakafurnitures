@@ -114,6 +114,14 @@ export function AppHeader() {
         >
           <ShieldCheck size={13} /> <span>🛡️ DPDP 2023</span>
         </button>
+        <button 
+          className="btn-ghost-edit" 
+          onClick={() => openModal('appsscript_hub')} 
+          style={{ fontSize: '11px', padding: '6px 12px', color: 'var(--accent-cyan)', border: '1px solid rgba(6,182,212,0.4)', background: 'rgba(6,182,212,0.08)', fontWeight: '700' }} 
+          title="Open Google Apps Script & Cloud Database Gateway (Master Webhook & 43 Tables)"
+        >
+          <span>⚡ Apps Script & Sheets</span>
+        </button>
         <button className="btn-luxury-gold" onClick={() => setActiveTab('staff_qr')} style={{ padding: '6px 14px', fontSize: '11.5px' }}>
           <span>📱 Staff QR</span>
         </button>

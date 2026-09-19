@@ -48,6 +48,7 @@ import { ShowroomProfitRadarModal } from './ShowroomProfitRadarModal';
 import { GeminiConfigModal } from './GeminiConfigModal';
 import { EnterpriseSecurityModal } from './EnterpriseSecurityModal';
 import { AppsScriptHubModal } from './AppsScriptHubModal';
+import { AgenticRagStudioModal } from './AgenticRagStudioModal';
 
 export function ModalContainer() {
   const { activeModal, modalProps, closeModal } = useStore();
@@ -149,6 +150,9 @@ export function ModalContainer() {
 
       {/* ⚡ GOOGLE APPS SCRIPT & CLOUD DATABASE GATEWAY */}
       <AppsScriptHubModal isOpen={activeModal === 'appsscript_hub'} onClose={closeModal} />
+
+      {/* 📚 PRODUCTION AGENTIC RAG STUDIO (JamWithAI Architecture) */}
+      <AgenticRagStudioModal isOpen={activeModal === 'agentic_rag_studio'} onClose={closeModal} />
     </>
   );
 }

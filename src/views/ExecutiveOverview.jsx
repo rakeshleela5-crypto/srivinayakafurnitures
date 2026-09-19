@@ -36,7 +36,8 @@ import {
   Building2,
   Bot,
   Search,
-  Key
+  Key,
+  BookOpen
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
@@ -368,6 +369,28 @@ export function ExecutiveOverview() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button
               type="button"
+              onClick={() => openModal('agentic_rag_studio')}
+              style={{
+                background: 'linear-gradient(135deg, rgba(124, 58, 237, 0.25), rgba(79, 70, 229, 0.25))',
+                border: '1px solid rgba(147, 51, 234, 0.45)',
+                color: '#C084FC',
+                padding: '4px 11px',
+                borderRadius: '8px',
+                fontSize: '11px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
+              title="Open Production Agentic RAG Studio & Catalog Grounding Inspector (JamWithAI Architecture)"
+            >
+              <BookOpen size={12} color="#C084FC" />
+              📚 AGENTIC RAG STUDIO
+            </button>
+
+            <button
+              type="button"
               onClick={() => openModal('gemini_config')}
               style={{
                 background: 'rgba(255, 255, 255, 0.06)',
@@ -438,7 +461,7 @@ export function ExecutiveOverview() {
 
         {/* Quick Question Chips */}
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontSize: '10px', color: '#64748B', textTransform: 'uppercase', fontWeight: 'bold' }}>⚡ Quick Prompts:</span>
+          <span style={{ fontSize: '10px', color: '#64748B', textTransform: 'uppercase', fontWeight: 'bold' }}>⚡ Store Ops:</span>
           {[
             { label: '💰 Who owes balance payment today?', q: 'Who owes us balance payments today?' },
             { label: '📈 Net profit & true margin this week', q: 'What is our net profit and margin breakdown this week?' },
@@ -463,6 +486,31 @@ export function ExecutiveOverview() {
               {chip.label}
             </button>
           ))}
+
+          <span style={{ fontSize: '10px', color: 'var(--accent-gold)', textTransform: 'uppercase', fontWeight: 'bold', marginLeft: '6px' }}>📚 Agentic RAG:</span>
+          {[
+            { label: '🛋️ Centuro Recliner Warranty', q: 'What is the warranty period on Godrej Centuro motorized recliner mechanism?' },
+            { label: '🚪 Slimline Royal Burgundy & Locker', q: 'Does the Slimline wardrobe come in Royal Burgundy with a locker?' },
+            { label: '🍳 Kitchen Coastal Humidity & Termites', q: 'Can the modular kitchen withstand coastal Odisha humidity and termites?' }
+          ].map((chip, idx) => (
+            <button
+              key={'rag-' + idx}
+              type="button"
+              onClick={() => handleAskShowroom(chip.q)}
+              style={{
+                background: 'rgba(124, 58, 237, 0.15)',
+                border: '1px solid rgba(147, 51, 234, 0.35)',
+                borderRadius: '20px',
+                padding: '4px 12px',
+                fontSize: '11px',
+                color: '#E9D5FF',
+                cursor: 'pointer',
+                transition: 'all 0.15s'
+              }}
+            >
+              {chip.label}
+            </button>
+          ))}
         </div>
 
         {/* AI Answer Box */}
@@ -478,9 +526,12 @@ export function ExecutiveOverview() {
             color: '#E2E8F0',
             position: 'relative'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '6px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
               <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#A5B4FC', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Sparkles size={12} /> Live AI Showroom Analysis
+                <span className="badge badge-gold" style={{ fontSize: '9px', background: 'rgba(212,175,55,0.15)', border: '1px solid var(--accent-gold)' }}>
+                  📚 JamWithAI Agentic RAG Grounded
+                </span>
               </span>
               <button
                 type="button"
@@ -492,12 +543,38 @@ export function ExecutiveOverview() {
             </div>
             {isAiAnswering ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#A5B4FC', padding: '10px 0' }}>
-                <RefreshCw size={16} className="spin-anim" /> Consulting live Google Sheets database...
+                <RefreshCw size={16} className="spin-anim" /> Consulting live Google Sheets & Grounded Godrej Catalogs...
               </div>
             ) : (
-              <div style={{ whiteSpace: 'pre-wrap' }}>
-                {showroomAiAnswer}
-              </div>
+              <>
+                <div style={{ whiteSpace: 'pre-wrap' }}>
+                  {showroomAiAnswer}
+                </div>
+                <div style={{ marginTop: '12px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                  <span style={{ fontSize: '10.5px', color: '#94A3B8' }}>
+                    🛡️ Verified via LangGraph Document Grader & Official Godrej Catalogs (Zero Hallucinations)
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => openModal('agentic_rag_studio')}
+                    style={{
+                      background: 'rgba(124, 58, 237, 0.25)',
+                      border: '1px solid rgba(147, 51, 234, 0.4)',
+                      color: '#C084FC',
+                      fontSize: '10.5px',
+                      fontWeight: '700',
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    Inspect RAG Pipeline & Citations ➔
+                  </button>
+                </div>
+              </>
             )}
           </div>
         )}

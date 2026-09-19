@@ -49,6 +49,7 @@ import { GeminiConfigModal } from './GeminiConfigModal';
 import { EnterpriseSecurityModal } from './EnterpriseSecurityModal';
 import { AppsScriptHubModal } from './AppsScriptHubModal';
 import { AgenticRagStudioModal } from './AgenticRagStudioModal';
+import { D1CatalogManagerModal } from './D1CatalogManagerModal';
 
 export function ModalContainer() {
   const { activeModal, modalProps, closeModal } = useStore();
@@ -153,6 +154,9 @@ export function ModalContainer() {
 
       {/* 📚 PRODUCTION AGENTIC RAG STUDIO (JamWithAI Architecture) */}
       <AgenticRagStudioModal isOpen={activeModal === 'agentic_rag_studio'} onClose={closeModal} />
+
+      {/* ⚡ CLOUDFLARE D1 CATALOG IMPORTER (Methods 1, 2, 3) */}
+      <D1CatalogManagerModal isOpen={activeModal === 'd1_catalog_manager'} onClose={closeModal} />
     </>
   );
 }

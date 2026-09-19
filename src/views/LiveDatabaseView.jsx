@@ -116,8 +116,9 @@ export function LiveDatabaseView() {
     { Date: "03-Sep-2026", Day: "Thursday", Footfall: 42, Orders_Count: 8, Gross_Sales_INR: 420000, Advance_Collected_INR: 210000, SafeLock_Conversion_Pct: "75%" }
   ];
 
-  // Comprehensive 21-Table Map prioritizing Cloud Data from Google Sheets
+  // Comprehensive 21-Table Map prioritizing Cloud Data from Google Sheets & Cloudflare D1
   const baseTableMap = {
+    'Cloudflare_D1_Catalog': catalog,
     'Inquiries_Log': getCloudTable('Inquiries_Log') || inquiries,
     'Orders_SafeLock': getCloudTable('Orders_SafeLock') || orders,
     'Inventory_Stock': getCloudTable('Inventory_Stock') || inventory,
@@ -287,6 +288,16 @@ export function LiveDatabaseView() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className="badge badge-cyan">🗄️ ENTERPRISE 43-TABLE DATABASE STUDIO</span>
           
+          <button 
+            className="btn-luxury-gold" 
+            onClick={() => openModal('d1_catalog_manager')} 
+            style={{ fontSize: '11px', padding: '5px 12px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}
+            title="Open Cloudflare D1 Catalog Importer Hub (Excel/CSV Drag & Drop, Single Model, Bulk SQL Seed)"
+          >
+            <Database size={13} color="#000" />
+            <span>⚡ Cloudflare D1 Catalog Hub</span>
+          </button>
+
           <button className="btn-cyan" onClick={() => openModal('csv_import')} style={{ fontSize: '11px', padding: '5px 10px', fontWeight: '800' }}>
             📥 Import CSV / Excel
           </button>

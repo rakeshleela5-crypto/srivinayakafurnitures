@@ -31,11 +31,20 @@ import {
   Printer,
   ShoppingBag,
   Zap,
-  Cpu
+  Cpu,
+  Smartphone,
+  MessageSquare,
+  Wifi,
+  QrCode
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../../utils/audioUtils';
 import { dispatchWebhookAction } from '../../services/webhookService';
 import { getAiProviderKeys, saveAiProviderKey } from '../../services/aiRouterService';
+import { 
+  getWhatsAppGatewayConfig, 
+  saveWhatsAppGatewayConfig, 
+  checkGatewayConnection 
+} from '../../services/whatsappGatewayService';
 
 // ==============================================================================================
 // ❤️ HEART ENGINE 1: 3-TIER PRICING & PROFIT MARGIN MATRIX MODAL
@@ -353,16 +362,54 @@ export function StoreSettingsModal({ isOpen, onClose }) {
   const [groqKey, setGroqKey] = useState('');
   const [customEndpoint, setCustomEndpoint] = useState('');
 
+  // 📱 WhatsApp Automation Gateway State
+  const [waDispatchMode, setWaDispatchMode] = useState('DEEP_LINK');
+  const [waGatewayUrl, setWaGatewayUrl] = useState('');
+  const [waGatewayApiKey, setWaGatewayApiKey] = useState('');
+  const [waInstanceName, setWaInstanceName] = useState('srivinayaka_showroom');
+  const [waStatusMsg, setWaStatusMsg] = useState(null);
+  const [isTestingWa, setIsTestingWa] = useState(false);
+
   useEffect(() => {
     if (isOpen) {
       const currentKeys = getAiProviderKeys();
       setGeminiKey(currentKeys.geminiKey || '');
       setGroqKey(currentKeys.groqKey || '');
       setCustomEndpoint(currentKeys.customEndpoint || '');
+
+      const waCfg = getWhatsAppGatewayConfig();
+      setWaDispatchMode(waCfg.dispatchMode || 'DEEP_LINK');
+      setWaGatewayUrl(waCfg.gatewayUrl || '');
+      setWaGatewayApiKey(waCfg.gatewayApiKey || '');
+      setWaInstanceName(waCfg.instanceName || 'srivinayaka_showroom');
+      setWaStatusMsg(waCfg.isPaired ? '🟢 Connected & Paired' : null);
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const handleTestWa = async () => {
+    setIsTestingWa(true);
+    setWaStatusMsg('Connecting to gateway...');
+    try {
+      const res = await checkGatewayConnection({
+        gatewayUrl: waGatewayUrl,
+        gatewayApiKey: waGatewayApiKey,
+        instanceName: waInstanceName
+      });
+      setWaStatusMsg(res.message);
+      if (res.connected) {
+        playSuccessChime();
+        showToast("🟢 WhatsApp Gateway Connected & Paired!", true);
+      } else {
+        showToast(res.message, false);
+      }
+    } catch (e) {
+      setWaStatusMsg(`🔴 Test failed: ${e.message}`);
+    } finally {
+      setIsTestingWa(false);
+    }
+  };
 
   const handleSave = () => {
     playSuccessChime();
@@ -372,6 +419,14 @@ export function StoreSettingsModal({ isOpen, onClose }) {
     saveAiProviderKey('gemini', geminiKey);
     saveAiProviderKey('groq', groqKey);
     saveAiProviderKey('customEndpoint', customEndpoint);
+
+    // Save WhatsApp Gateway configuration
+    saveWhatsAppGatewayConfig({
+      dispatchMode: waDispatchMode,
+      gatewayUrl: waGatewayUrl,
+      gatewayApiKey: waGatewayApiKey,
+      instanceName: waInstanceName
+    });
 
     dispatchWebhookAction('SAVE_COMPANY_IDENTITY', {
       store_name: storeName,
@@ -385,7 +440,7 @@ export function StoreSettingsModal({ isOpen, onClose }) {
       updated_timestamp: new Date().toISOString()
     });
 
-    showToast("⚙️ Showroom Identity, UPI VPA & AI Provider Keys updated successfully!", true);
+    showToast("⚙️ Showroom Identity, UPI, AI & WhatsApp Gateway settings updated successfully!", true);
     onClose();
   };
 
@@ -396,10 +451,10 @@ export function StoreSettingsModal({ isOpen, onClose }) {
           <div>
             <span className="badge badge-emerald">❤️ COMMERCIAL IDENTITY & AI HEART ENGINE</span>
             <h3 style={{ fontSize: '17px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
-              ⚙️ Showroom Identity, GST & Multi-LLM Settings
+              ⚙️ Showroom Identity, GST, AI & WhatsApp Settings
             </h3>
             <div style={{ fontSize: '11px', color: '#94A3B8' }}>
-              White-label configuration powering invoices, UPI VPAs, and Multi-LLM failover routing
+              White-label configuration powering invoices, UPI VPAs, Multi-LLM failover, and WhatsApp dispatch
             </div>
           </div>
           <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
@@ -498,6 +553,155 @@ export function StoreSettingsModal({ isOpen, onClose }) {
               />
             </div>
           </div>
+        </div>
+
+        {/* 📱 WhatsApp Dispatch & Automation Engine */}
+        <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Smartphone size={15} color="var(--accent-emerald)" />
+              <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#FFFFFF' }}>
+                WhatsApp Dispatch & Automation Engine
+              </div>
+            </div>
+            <span className="badge badge-emerald" style={{ fontSize: '9px' }}>
+              {waDispatchMode === 'DEEP_LINK' ? '1-CLICK WA.ME (ACTIVE)' : 'SELF-HOSTED GATEWAY'}
+            </span>
+          </div>
+
+          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+            Select how OmniBuild OS dispatches invoices, delivery OTPs, factory indents, and 29 automated bots.
+          </div>
+
+          {/* Mode Switcher Tabs */}
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+            <button
+              type="button"
+              onClick={() => setWaDispatchMode('DEEP_LINK')}
+              style={{
+                flex: 1,
+                padding: '9px 12px',
+                borderRadius: '8px',
+                border: waDispatchMode === 'DEEP_LINK' ? '2px solid var(--accent-emerald)' : '1px solid rgba(255,255,255,0.15)',
+                background: waDispatchMode === 'DEEP_LINK' ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.03)',
+                color: waDispatchMode === 'DEEP_LINK' ? 'var(--accent-emerald)' : '#94A3B8',
+                fontSize: '11.5px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                textAlign: 'left'
+              }}
+            >
+              <div>◉ Mode 1: Universal 1-Click</div>
+              <div style={{ fontSize: '9.5px', fontWeight: 'normal', marginTop: '2px', opacity: 0.85 }}>
+                ₹0 Cost • Zero Setup • 100% Safe (Recommended)
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setWaDispatchMode('SELF_HOSTED_GATEWAY')}
+              style={{
+                flex: 1,
+                padding: '9px 12px',
+                borderRadius: '8px',
+                border: waDispatchMode === 'SELF_HOSTED_GATEWAY' ? '2px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.15)',
+                background: waDispatchMode === 'SELF_HOSTED_GATEWAY' ? 'rgba(212,175,55,0.15)' : 'rgba(255,255,255,0.03)',
+                color: waDispatchMode === 'SELF_HOSTED_GATEWAY' ? 'var(--accent-gold)' : '#94A3B8',
+                fontSize: '11.5px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                textAlign: 'left'
+              }}
+            >
+              <div>○ Mode 2: Self-Hosted QR Gateway</div>
+              <div style={{ fontSize: '9.5px', fontWeight: 'normal', marginTop: '2px', opacity: 0.85 }}>
+                Evolution API / Baileys • Headless Auto-Send
+              </div>
+            </button>
+          </div>
+
+          {/* Mode 1 Explainer */}
+          {waDispatchMode === 'DEEP_LINK' && (
+            <div style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: '8px', padding: '10px 12px', fontSize: '11px', color: '#A7F3D0', lineHeight: '1.5' }}>
+              ✅ <strong>Active & Ready:</strong> Staff clicks "Send on WhatsApp", and pre-formatted messages open directly in WhatsApp Web/Mobile.
+              <br />• <strong>₹0 API Bills:</strong> Zero monthly charges from Meta.
+              <br />• <strong>Zero Risk:</strong> No phone number bans, and staff can review before sending.
+            </div>
+          )}
+
+          {/* Mode 2 Gateway Settings */}
+          {waDispatchMode === 'SELF_HOSTED_GATEWAY' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', background: 'rgba(0,0,0,0.25)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
+              <div>
+                <label style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block', marginBottom: '3px' }}>
+                  Gateway Server Endpoint URL (e.g. Railway / Render / Localhost)
+                </label>
+                <input
+                  type="text"
+                  placeholder="https://my-evolution-api.up.railway.app or http://localhost:8080"
+                  value={waGatewayUrl}
+                  onChange={e => setWaGatewayUrl(e.target.value)}
+                  style={{ width: '100%', padding: '7px 10px', background: '#070D18', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#FFFFFF', fontSize: '12px' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block', marginBottom: '3px' }}>
+                    Instance Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="srivinayaka_showroom"
+                    value={waInstanceName}
+                    onChange={e => setWaInstanceName(e.target.value)}
+                    style={{ width: '100%', padding: '7px 10px', background: '#070D18', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#FFFFFF', fontSize: '12px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block', marginBottom: '3px' }}>
+                    Gateway API Key / Token
+                  </label>
+                  <input
+                    type="password"
+                    placeholder="Global API key..."
+                    value={waGatewayApiKey}
+                    onChange={e => setWaGatewayApiKey(e.target.value)}
+                    style={{ width: '100%', padding: '7px 10px', background: '#070D18', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#FFFFFF', fontSize: '12px' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '4px', flexWrap: 'wrap', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={handleTestWa}
+                  disabled={isTestingWa}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    background: 'rgba(212,175,55,0.2)',
+                    border: '1px solid var(--accent-gold)',
+                    color: 'var(--accent-gold)',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <Wifi size={13} /> {isTestingWa ? 'Testing Connection...' : 'Test Connection & Pair Status'}
+                </button>
+
+                {waStatusMsg && (
+                  <div style={{ fontSize: '11px', color: waStatusMsg.includes('🟢') ? '#34D399' : '#FBBF24' }}>
+                    {waStatusMsg}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         <button className="btn-emerald" onClick={handleSave} style={{ width: '100%', justifyContent: 'center', padding: '12px' }}>

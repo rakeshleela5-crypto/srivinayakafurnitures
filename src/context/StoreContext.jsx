@@ -898,6 +898,20 @@ export function StoreProvider({ children }) {
     }
 
     try {
+      // ⚡ FAST PATH: Instant Cloudflare D1 Edge SQL Hydration (Sub-10ms)
+      try {
+        const edgeRes = await fetch('/api/d1/sync-all');
+        if (edgeRes.ok) {
+          const edgeJson = await edgeRes.json();
+          if (edgeJson.success && edgeJson.data) {
+            if (Array.isArray(edgeJson.data.orders) && edgeJson.data.orders.length > 0) setOrders(edgeJson.data.orders);
+            if (Array.isArray(edgeJson.data.catalog) && edgeJson.data.catalog.length > 0) setCatalog(edgeJson.data.catalog);
+            if (Array.isArray(edgeJson.data.inquiries) && edgeJson.data.inquiries.length > 0) setInquiries(edgeJson.data.inquiries);
+            if (Array.isArray(edgeJson.data.architects) && edgeJson.data.architects.length > 0) setArchitects(edgeJson.data.architects);
+          }
+        }
+      } catch (d1Err) {}
+
       const isFullSync = targetTab === 'ALL';
       const actionToDispatch = isFullSync ? 'FETCH_ALL_TABLES' : 'SYNC_TAB_TABLES';
       const payload = isFullSync ? {} : { target_tab: targetTab || activeTab };

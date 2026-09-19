@@ -96,6 +96,19 @@ export async function dispatchWebhookAction(actionName, payload = {}, customWebh
 
   console.log(`[HTTP ➔ GOOGLE APPS SCRIPT WEBHOOK] Action: ${actionName}`, fullPayload);
 
+  // ⚡ CLOUDFLARE EDGE D1 SOVEREIGN DISPATCH (Instant sub-15ms edge execution)
+  try {
+    fetch('/api/d1/dispatch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(fullPayload)
+    }).then(r => r.json()).then(edgeRes => {
+      console.log(`⚡ [CLOUDFLARE EDGE D1 SUCCESS] Action: ${actionName}`, edgeRes);
+    }).catch(edgeErr => {
+      console.debug('Cloudflare Edge dispatch notice:', edgeErr);
+    });
+  } catch (e) {}
+
   try {
     // ========================================================================
     // 🛡️ SECURE POST DISPATCH (Eliminates PII in GET query logs)

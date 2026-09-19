@@ -100,8 +100,32 @@ function withScriptLock(fn, timeoutMs) {
   }
 }
 
+/**
+ * 🛡️ SPREADSHEET FORMULA INJECTION SANITIZER (CSV/Formula Defense)
+ * Neutralizes potential formula execution (=, +, -, @, tab, cr) in Google Sheets
+ */
+function sanitizeCellInput(val) {
+  if (typeof val === 'string' && /^[=\+\-\@\t\r]/.test(val.trim())) {
+    return "'" + val; // Prepend apostrophe to force plaintext interpretation
+  }
+  return val;
+}
+
+function sanitizeObjectCells(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+  for (var key in obj) {
+    if (typeof obj[key] === 'string') {
+      obj[key] = sanitizeCellInput(obj[key]);
+    } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+      sanitizeObjectCells(obj[key]);
+    }
+  }
+  return obj;
+}
+
 function handleWebhookRequest(params, e) {
   params = params || {};
+  params = sanitizeObjectCells(params);
   if (params.params && typeof params.params === 'object') {
     for (var k in params.params) {
       if (params[k] === undefined) {

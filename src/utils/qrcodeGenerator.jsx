@@ -1,17 +1,18 @@
 // OmniBuild OS™ — ISO/IEC 18004 Standard Compliant QR Code Generator Engine
-// Generates 100% verified, scannable QR Code SVGs for UPI, Camera Scanners, and Staff Portals
+// Renders to Canvas element directly for 100% XSS immunity & crisp scannability
 
-import React, { useState, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 
 export function DynamicQrCode({ value, size = 140, fgColor = "#000000", bgColor = "#FFFFFF", margin = 1 }) {
-  const [svgContent, setSvgContent] = useState('');
+  const canvasRef = useRef(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (!value) return;
+    if (!value || !canvasRef.current) return;
 
-    QRCode.toString(value, {
-      type: 'svg',
+    setError(false);
+    QRCode.toCanvas(canvasRef.current, String(value), {
       margin: margin,
       color: {
         dark: fgColor,
@@ -19,35 +20,11 @@ export function DynamicQrCode({ value, size = 140, fgColor = "#000000", bgColor 
       },
       errorCorrectionLevel: 'M',
       width: size
-    })
-    .then(svg => {
-      // Ensure SVG has proper scaling attributes
-      const styledSvg = svg
-        .replace(/<svg /, `<svg style="width: 100%; height: 100%; display: block;" `);
-      setSvgContent(styledSvg);
-    })
-    .catch(err => {
-      console.error("QR Code Generation Error:", err);
+    }).catch(err => {
+      console.error("QR Code Canvas Render Error:", err);
+      setError(true);
     });
   }, [value, size, fgColor, bgColor, margin]);
-
-  if (!svgContent) {
-    return (
-      <div 
-        style={{ 
-          width: size, 
-          height: size, 
-          background: bgColor, 
-          borderRadius: '8px', 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center' 
-        }}
-      >
-        <div style={{ fontSize: '10px', color: '#666', fontFamily: 'sans-serif' }}>Generating...</div>
-      </div>
-    );
-  }
 
   return (
     <div 
@@ -61,10 +38,19 @@ export function DynamicQrCode({ value, size = 140, fgColor = "#000000", bgColor 
         height: `${size}px`,
         boxSizing: 'border-box',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        overflow: 'hidden'
       }}
-      dangerouslySetInnerHTML={{ __html: svgContent }}
-    />
+    >
+      {error ? (
+        <div style={{ fontSize: '10px', color: '#EF4444', fontFamily: 'sans-serif', textAlign: 'center' }}>QR Error</div>
+      ) : (
+        <canvas 
+          ref={canvasRef} 
+          style={{ width: '100%', height: '100%', display: 'block' }} 
+        />
+      )}
+    </div>
   );
 }
 

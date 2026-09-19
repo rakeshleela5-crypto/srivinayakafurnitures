@@ -57,8 +57,8 @@ export function AuthLockScreen() {
     playScanBeep();
   };
 
-  const submitPin = (enteredPin) => {
-    const result = loginWithPin(enteredPin);
+  const submitPin = async (enteredPin) => {
+    const result = await loginWithPin(enteredPin);
     if (!result.success) {
       setErrorShake(true);
       setTimeout(() => {
@@ -250,7 +250,7 @@ export function AuthLockScreen() {
                 onClick={() => loginAsRole('OWNER')}
               >
                 <span>👑 <b>Rakesh (Store Owner)</b></span>
-                <span style={{ fontFamily: 'JetBrains Mono', color: 'var(--accent-gold-light)' }}>PIN: 8899</span>
+                <span style={{ fontSize: '10px', color: 'var(--accent-gold-light)' }}>Director Profile</span>
               </button>
 
               <button 
@@ -259,7 +259,7 @@ export function AuthLockScreen() {
                 onClick={() => loginAsRole('SALES')}
               >
                 <span>💼 <b>Sunil (Sales Executive)</b></span>
-                <span style={{ fontFamily: 'JetBrains Mono', color: 'var(--accent-cyan)' }}>PIN: 1122</span>
+                <span style={{ fontSize: '10px', color: 'var(--accent-cyan)' }}>Consultant Profile</span>
               </button>
 
               <button 
@@ -268,7 +268,7 @@ export function AuthLockScreen() {
                 onClick={() => loginAsRole('WAREHOUSE')}
               >
                 <span>📦 <b>Santosh (Dock Supervisor)</b></span>
-                <span style={{ fontFamily: 'JetBrains Mono', color: 'var(--accent-amber)' }}>PIN: 3344</span>
+                <span style={{ fontSize: '10px', color: 'var(--accent-amber)' }}>Dock Profile</span>
               </button>
 
               <button 
@@ -277,7 +277,7 @@ export function AuthLockScreen() {
                 onClick={() => loginAsRole('DRIVER')}
               >
                 <span>🚚 <b>Tophan (Fleet Driver)</b></span>
-                <span style={{ fontFamily: 'JetBrains Mono', color: 'var(--accent-purple)' }}>PIN: 5566</span>
+                <span style={{ fontSize: '10px', color: 'var(--accent-purple)' }}>Logistics Profile</span>
               </button>
 
               <button 
@@ -286,7 +286,7 @@ export function AuthLockScreen() {
                 onClick={() => loginAsRole('ARCHITECT')}
               >
                 <span>🏛️ <b>Ar. Sunita (Architect VIP)</b></span>
-                <span style={{ fontFamily: 'JetBrains Mono', color: 'var(--accent-emerald)' }}>PIN: 7788</span>
+                <span style={{ fontSize: '10px', color: 'var(--accent-emerald)' }}>Partner Profile</span>
               </button>
             </div>
           </div>

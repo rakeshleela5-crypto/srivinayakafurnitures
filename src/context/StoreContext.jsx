@@ -26,66 +26,80 @@ import {
 
 const StoreContext = createContext();
 
+export const ROLE_PERMISSIONS = Object.freeze({
+  rakesh: Object.freeze([
+    'executive', 'b2b_projects', 'crm', 'voice_pos', 'architects',
+    'autoprocure', 'inward_scanner', 'safelock', 'barcode_studio', 'qr_studio',
+    'outward_scanner', 'logistics_epod', 'documents',
+    'bank_ledger', 'whatsapp_bots', 'staff_qr', 'live_database'
+  ]),
+  sunil_sales: Object.freeze([
+    'voice_pos', 'b2b_projects', 'crm', 'safelock', 'documents', 'barcode_studio', 'qr_studio'
+  ]),
+  dock_supervisor: Object.freeze([
+    'inward_scanner', 'outward_scanner', 'safelock', 'barcode_studio', 'qr_studio', 'staff_qr'
+  ]),
+  tophan_driver: Object.freeze([
+    'logistics_epod', 'outward_scanner'
+  ]),
+  sunita_architect: Object.freeze([
+    'architects', 'documents'
+  ])
+});
+
 export const USER_ROLES = {
   OWNER: {
     id: 'rakesh',
-    pin: '8899',
+    pinHash: '9800a8677d99e5f6968d7357e44006388b09d3b6a8676d0f930fbaa63d02330d', // SHA-256 for 8899
     name: 'Rakesh (Store Director & Owner)',
     roleName: 'Store Owner / Director',
     avatar: '👑',
-    badgeClass: 'badge-gold',
-    allowedTabs: [
-      'executive', 'b2b_projects', 'crm', 'voice_pos', 'architects',
-      'autoprocure', 'inward_scanner', 'safelock', 'barcode_studio', 'qr_studio',
-      'outward_scanner', 'logistics_epod', 'documents',
-      'bank_ledger', 'whatsapp_bots', 'staff_qr', 'live_database'
-    ]
+    badgeClass: 'badge-gold'
   },
   SALES: {
     id: 'sunil_sales',
-    pin: '1122',
+    pinHash: 'b3282a2f2a28757b3a18ab833de16a9c54518c0b0cf493e3f0a7cf09386f326a', // SHA-256 for 1122
     name: 'Sunil (Senior Showroom Consultant)',
     roleName: 'Showroom Sales Executive',
     avatar: '💼',
-    badgeClass: 'badge-cyan',
-    allowedTabs: [
-      'voice_pos', 'b2b_projects', 'crm', 'safelock', 'documents', 'barcode_studio', 'qr_studio'
-    ]
+    badgeClass: 'badge-cyan'
   },
   WAREHOUSE: {
     id: 'dock_supervisor',
-    pin: '3344',
+    pinHash: '15fc36b3e80b9d7f87f7dc90cd7a2845c5d8501c30f03379fcf14154f1680380', // SHA-256 for 3344
     name: 'Santosh (Warehouse & Dock Supervisor)',
     roleName: 'Warehouse Dock Supervisor',
     avatar: '📦',
-    badgeClass: 'badge-amber',
-    allowedTabs: [
-      'inward_scanner', 'outward_scanner', 'safelock', 'barcode_studio', 'qr_studio', 'staff_qr'
-    ]
+    badgeClass: 'badge-amber'
   },
   DRIVER: {
     id: 'tophan_driver',
-    pin: '5566',
+    pinHash: 'be41b7f1fa56ba2b0582910053c86cf6ee7e311efc51300220df0918bb9a287b', // SHA-256 for 5566
     name: 'Tophan Gouda (Fleet Logistics Lead)',
     roleName: 'Fleet Delivery Driver',
     avatar: '🚚',
-    badgeClass: 'badge-purple',
-    allowedTabs: [
-      'logistics_epod', 'outward_scanner'
-    ]
+    badgeClass: 'badge-purple'
   },
   ARCHITECT: {
     id: 'sunita_architect',
-    pin: '7788',
+    pinHash: '16740bf13991fe083fbe5820cc8da08a5d88e5a48f44a3cfcc283c27b2797ba7', // SHA-256 for 7788
     name: 'Ar. Sunita Patnaik (Studio Vastu)',
     roleName: 'VIP Architect Partner',
     avatar: '🏛️',
-    badgeClass: 'badge-emerald',
-    allowedTabs: [
-      'architects', 'documents'
-    ]
+    badgeClass: 'badge-emerald'
   }
 };
+
+export async function hashPin(pin) {
+  try {
+    const msgBuffer = new TextEncoder().encode(String(pin || '').trim());
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  } catch (e) {
+    return '';
+  }
+}
 
 // Helper for safe localStorage reading with fallback
 const getStored = (key, fallback) => {
@@ -109,14 +123,31 @@ const getStored = (key, fallback) => {
   return fallback;
 };
 
+const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30-Minute Inactivity Auto-Lock
+
 export function StoreProvider({ children }) {
-  // Authentication & Current User Session
+  // Authentication & Current User Session (Zero-Trust: null on clean session)
   const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem('OMNIBUILD_AUTH_USER');
-    if (saved) {
-      try { return JSON.parse(saved); } catch (e) { return USER_ROLES.OWNER; }
+    try {
+      const saved = localStorage.getItem('OMNIBUILD_AUTH_USER');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.roleKey && USER_ROLES[parsed.roleKey]) {
+          if (parsed.timestamp && (Date.now() - parsed.timestamp > SESSION_TIMEOUT_MS)) {
+            localStorage.removeItem('OMNIBUILD_AUTH_USER');
+            return null;
+          }
+          const baseUser = USER_ROLES[parsed.roleKey];
+          return {
+            ...baseUser,
+            allowedTabs: ROLE_PERMISSIONS[baseUser.id] || []
+          };
+        }
+      }
+    } catch (e) {
+      console.warn("Auth restoration error:", e);
     }
-    return USER_ROLES.OWNER; // Defaults to Store Owner for seamless startup
+    return null; // 🛡️ Zero-Trust: defaults to locked screen
   });
 
   // Navigation & Showcase Mode
@@ -239,13 +270,45 @@ export function StoreProvider({ children }) {
     setModalProps({});
   };
 
-  // Auth Handlers
-  const loginWithPin = (enteredPin) => {
-    const roleKey = Object.keys(USER_ROLES).find(k => USER_ROLES[k].pin === enteredPin);
+  // 🛡️ 30-Minute Inactivity Auto-Lock
+  useEffect(() => {
+    if (!currentUser) return;
+
+    let timer;
+    const resetActivityTimer = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        logout();
+        showToast("🔒 Session timed out after 30 minutes of inactivity.", false);
+      }, SESSION_TIMEOUT_MS);
+    };
+
+    const activityEvents = ['mousedown', 'mousemove', 'keydown', 'scroll', 'touchstart'];
+    activityEvents.forEach(evt => window.addEventListener(evt, resetActivityTimer, { passive: true }));
+    resetActivityTimer();
+
+    return () => {
+      clearTimeout(timer);
+      activityEvents.forEach(evt => window.removeEventListener(evt, resetActivityTimer));
+    };
+  }, [currentUser]);
+
+  // Auth Handlers (Web Crypto SHA-256 Verified)
+  const loginWithPin = async (enteredPin) => {
+    const hashed = await hashPin(enteredPin);
+    const roleKey = Object.keys(USER_ROLES).find(k => USER_ROLES[k].pinHash === hashed);
     if (roleKey) {
-      const user = USER_ROLES[roleKey];
+      const baseUser = USER_ROLES[roleKey];
+      const user = {
+        ...baseUser,
+        allowedTabs: ROLE_PERMISSIONS[baseUser.id] || []
+      };
       setCurrentUser(user);
-      localStorage.setItem('OMNIBUILD_AUTH_USER', JSON.stringify(user));
+      localStorage.setItem('OMNIBUILD_AUTH_USER', JSON.stringify({
+        id: user.id,
+        roleKey: roleKey,
+        timestamp: Date.now()
+      }));
       setActiveTab(user.allowedTabs[0] || 'executive');
       playSuccessChime();
       showToast(`🔓 Welcome, ${user.name}! (${user.roleName})`, true);
@@ -258,9 +321,21 @@ export function StoreProvider({ children }) {
   };
 
   const loginAsRole = (roleKey) => {
-    const user = USER_ROLES[roleKey] || USER_ROLES.OWNER;
+    if (!import.meta.env.DEV) {
+      showToast("🔒 Quick-switch is disabled in production. Please enter the role PIN.", false);
+      return;
+    }
+    const baseUser = USER_ROLES[roleKey] || USER_ROLES.OWNER;
+    const user = {
+      ...baseUser,
+      allowedTabs: ROLE_PERMISSIONS[baseUser.id] || []
+    };
     setCurrentUser(user);
-    localStorage.setItem('OMNIBUILD_AUTH_USER', JSON.stringify(user));
+    localStorage.setItem('OMNIBUILD_AUTH_USER', JSON.stringify({
+      id: user.id,
+      roleKey: roleKey,
+      timestamp: Date.now()
+    }));
     setActiveTab(user.allowedTabs[0] || 'executive');
     playSuccessChime();
     showToast(`🔓 Switched to profile: ${user.name}`, true);

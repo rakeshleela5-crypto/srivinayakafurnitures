@@ -34,8 +34,21 @@ export function LogisticsEpodView() {
     updateOrderStatus, 
     setActiveTab, 
     syncWithGoogleSheets, 
-    isSyncing 
+    isSyncing,
+    currentUser
   } = useStore();
+
+  const isExecutive = currentUser && (currentUser.id === 'rakesh' || currentUser.id === 'sunil_sales');
+
+  const maskPhone = (phone) => {
+    if (!phone) return '';
+    if (isExecutive) return phone;
+    const str = String(phone).trim();
+    if (str.length >= 10) {
+      return str.slice(0, 5) + '****' + str.slice(-1);
+    }
+    return str.slice(0, 2) + '****' + str.slice(-1);
+  };
 
   const [driverMobileMode, setDriverMobileMode] = useState(false);
   const [selectedDriverFilter, setSelectedDriverFilter] = useState('ALL');
@@ -274,7 +287,7 @@ export function LogisticsEpodView() {
                   <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-cyan)' }}>{stop.Order_ID}</td>
                   <td>
                     <div style={{ fontWeight: '800', color: '#FFFFFF' }}>{stop.Customer_Name}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>📍 {stop.Address} • 📞 {stop.Customer_Phone}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>📍 {stop.Address} • 📞 {maskPhone(stop.Customer_Phone)}</div>
                   </td>
                   <td>
                     <div style={{ fontWeight: '700', color: 'var(--accent-cyan)' }}>⏰ {stop.Time_Slot}</div>

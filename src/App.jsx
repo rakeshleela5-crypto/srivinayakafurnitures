@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { StoreProvider, useStore } from './context/StoreContext';
+import { StoreProvider, useStore, ROLE_PERMISSIONS } from './context/StoreContext';
 import { TopTicker, AppHeader, TabsRibbon, BottomDock } from './components/Navigation';
 import { ModalContainer } from './components/modals/ModalContainer';
 import { AuthLockScreen } from './components/AuthLockScreen';
@@ -165,8 +165,9 @@ function AppContent() {
   }
 
   const renderActiveView = () => {
-    // 🛡️ Strict RBAC Enforcement: Check if logged-in user is authorized for activeTab
-    if (currentUser && currentUser.allowedTabs && !currentUser.allowedTabs.includes(activeTab)) {
+    // 🛡️ Strict Server-Grade RBAC: Enforce against frozen in-memory ROLE_PERMISSIONS
+    const allowed = currentUser && currentUser.id ? (ROLE_PERMISSIONS[currentUser.id] || []) : [];
+    if (currentUser && !allowed.includes(activeTab)) {
       return <AccessDeniedView activeTab={activeTab} userRole={currentUser} />;
     }
 

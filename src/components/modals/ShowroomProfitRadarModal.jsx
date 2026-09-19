@@ -263,7 +263,7 @@ export function ShowroomProfitRadarModal({ isOpen, onClose }) {
                 <input 
                   type="password" 
                   maxLength={4} 
-                  placeholder="PIN 8899" 
+                  placeholder="PIN" 
                   value={enteredPin} 
                   onChange={e => setEnteredPin(e.target.value)} 
                   onKeyDown={e => e.key === 'Enter' && handleVerifyPin()}

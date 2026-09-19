@@ -957,7 +957,7 @@ export function VoicePosView() {
                   maxLength={4}
                   value={managerPin} 
                   onChange={e => setManagerPin(e.target.value)} 
-                  placeholder="Enter 8899"
+                  placeholder="••••"
                   style={{ letterSpacing: '8px', textAlign: 'center', fontSize: '18px' }}
                 />
               </div>

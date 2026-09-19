@@ -12,10 +12,17 @@ export async function onRequest(context) {
   const path = url.pathname;
   const method = request.method;
 
+  const origin = request.headers.get('Origin') || '';
+  const isAllowedOrigin = !origin || 
+    origin.includes('srivinayakafurnitures.rakeshleela5.workers.dev') ||
+    origin.includes('localhost') || 
+    origin.includes('127.0.0.1') ||
+    origin.includes('web.app');
+
   const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': isAllowedOrigin ? (origin || '*') : 'https://srivinayakafurnitures.rakeshleela5.workers.dev',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Director-Auth',
     'Content-Type': 'application/json'
   };
 
@@ -367,13 +374,21 @@ export async function onRequest(context) {
       }), { headers: corsHeaders });
     }
 
-    // 6. Safe Query Executor (for Live Database tab)
+    // 6. Safe Query Executor (Protected by Director Auth for mutations)
     if (path.endsWith('/query') && method === 'POST') {
+      const authKey = request.headers.get('Authorization') || request.headers.get('X-Director-Auth') || '';
       const { sql, params = [] } = await request.json();
       const trimmed = (sql || '').trim();
 
-      if (!trimmed.toLowerCase().startsWith('select') && !trimmed.toLowerCase().startsWith('insert') && !trimmed.toLowerCase().startsWith('update')) {
+      const isSelect = trimmed.toLowerCase().startsWith('select');
+      const isMutation = trimmed.toLowerCase().startsWith('insert') || trimmed.toLowerCase().startsWith('update');
+
+      if (!isSelect && !isMutation) {
         return new Response(JSON.stringify({ success: false, error: 'Only SELECT, INSERT, and UPDATE queries are permitted' }), { status: 403, headers: corsHeaders });
+      }
+
+      if (isMutation && !authKey.includes('8899') && !authKey.includes('director')) {
+        return new Response(JSON.stringify({ success: false, error: 'Unauthorized: Director PIN authorization required for database mutations' }), { status: 401, headers: corsHeaders });
       }
 
       const { results } = await env.DB.prepare(trimmed).bind(...params).all();

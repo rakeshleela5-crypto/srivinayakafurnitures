@@ -258,7 +258,7 @@ export function FurnitureFollowUpModal({ isOpen, onClose, lead = {} }) {
                   <input 
                     type="password" 
                     maxLength={4} 
-                    placeholder="PIN 8899" 
+                    placeholder="PIN" 
                     value={directorPin} 
                     onChange={e => setDirectorPin(e.target.value)} 
                     style={{ width: '75px', textAlign: 'center' }} 

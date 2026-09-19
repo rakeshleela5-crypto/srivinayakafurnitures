@@ -156,7 +156,7 @@ export function TierPricingModal({ isOpen, onClose, sku = 'BED-MOD-001' }) {
                 <input 
                   type="password" 
                   maxLength={4} 
-                  placeholder="PIN 8899" 
+                  placeholder="PIN" 
                   value={managerPin} 
                   onChange={e => setManagerPin(e.target.value)} 
                   style={{ width: '80px', padding: '3px 6px', fontSize: '10.5px', textAlign: 'center' }} 

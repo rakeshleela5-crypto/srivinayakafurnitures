@@ -22,11 +22,11 @@ This guide walks you through deploying a **100% Free 24/7 Cloud WhatsApp Gateway
 ### Step 2: Create a New Web Service
 1. In your Render Dashboard, click **New +** ➔ **Web Service**.
 2. Select **Existing image** (Deploy an existing image from a registry).
-3. In the **Image URL** box, enter:
+3. In the **Image URL** box, enter the updated official public Docker Hub URL:
    ```text
-   atendai/evolution-api:v2.1.0
+   docker.io/evoapicloud/evolution-api:latest
    ```
-   (or `atendai/evolution-api:latest`)
+   *(Note: The `docker.io/` prefix and `evoapicloud/` namespace are required by Render).*
 4. Click **Next**.
 
 ### Step 3: Configure Service Details

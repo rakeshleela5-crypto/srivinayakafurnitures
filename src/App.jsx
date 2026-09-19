@@ -29,6 +29,8 @@ const StaffInwardScannerView = React.lazy(() => import('./views/StaffInwardScann
 const StaffOutwardScannerView = React.lazy(() => import('./views/StaffOutwardScannerView').then(m => ({ default: m.StaffOutwardScannerView })));
 const MobileCustomerChatView = React.lazy(() => import('./views/MobileCustomerChatView').then(m => ({ default: m.MobileCustomerChatView })));
 const BankStatementLedgerView = React.lazy(() => import('./views/BankStatementLedgerView').then(m => ({ default: m.BankStatementLedgerView })));
+const ShowroomAiAgentsView = React.lazy(() => import('./views/ShowroomAiAgentsView'));
+const B2bInstitutionalProjectsView = React.lazy(() => import('./views/B2bInstitutionalProjectsView'));
 
 // Premium loading spinner shown while lazy chunks download
 function LazyLoadingFallback() {
@@ -173,6 +175,10 @@ function AppContent() {
         return <MobileCustomerChatView />;
       case 'executive':
         return <ExecutiveOverview />;
+      case 'b2b_projects':
+        return <B2bInstitutionalProjectsView />;
+      case 'ai_agents':
+        return <ShowroomAiAgentsView />;
       case 'voice_pos':
         return <VoicePosView />;
       case 'safelock':

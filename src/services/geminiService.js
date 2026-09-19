@@ -8,6 +8,9 @@
  * 3. Dynamic Multi-Lingual WhatsApp Concierge (Odia, Telugu, Hindi, English)
  */
 
+import { dispatchMultiProviderAi } from './aiRouterService';
+import { getGroundedRagPromptContext } from './catalogRagService';
+
 const LOCAL_STORAGE_KEY = 'OMNIBUILD_GEMINI_API_KEY';
 const GEMINI_MODELS = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'];
 
@@ -154,11 +157,6 @@ ${lowStockSummary || '• All primary SKUs above safety buffer.'}
 - Active Turnkey Villa Projects: ${vipProjects.length} (Sample: Dr. Subhashish Jena Farmhouse Villa Rs. 1.56L, Er. Pradeep Patnaik JK Paper Villa Rs. 4.20L)
 `;
 
-  // If no API Key is configured yet, use our intelligent local showroom neural engine
-  if (!apiKey) {
-    return simulateLocalShowroomAnswer(question, contextData, pendingOrders, totalPendingBalance);
-  }
-
   const systemInstruction = `You are the Lead Executive AI Copilot for Godrej Interio Rayagada (Shree Ganesh Enterprises), managed by Store Director Rakesh Nayak.
 You have real-time access to the store's Google Sheets database across all 43 master tables (Bank Transactions, Inquiries, Orders, Catalog, SmartKit, P&L).
 Answer concisely, with exact rupee figures, customer names, SKUs, and polite business tone.
@@ -166,25 +164,17 @@ If the user asks in Odia or Telugu, answer in that language with English numbers
 Always include actionable recommendations (e.g. prompt to call/WhatsApp pending balance customers, reconcile UTRs, or apply flash discounts on aging floor stock).`;
 
   try {
-    const data = await callGeminiApi(apiKey, {
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            { text: `${systemInstruction}\n\n${contextSummary}\n\nUSER QUESTION: "${question}"` }
-          ]
-        }
-      ],
-      generationConfig: {
-        temperature: 0.2,
-        maxOutputTokens: 800
-      }
+    const ragContext = getGroundedRagPromptContext(question);
+    const fullPrompt = `${contextSummary}${ragContext}\n\nUSER QUESTION: "${question}"`;
+    const answer = await dispatchMultiProviderAi({
+      prompt: fullPrompt,
+      systemInstruction,
+      maxTokens: 800,
+      fallbackFn: () => simulateLocalShowroomAnswer(question, contextData, pendingOrders, totalPendingBalance)
     });
-
-    const answerText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    return answerText || simulateLocalShowroomAnswer(question, contextData, pendingOrders, totalPendingBalance);
+    return answer || simulateLocalShowroomAnswer(question, contextData, pendingOrders, totalPendingBalance);
   } catch (error) {
-    console.error('Gemini API call failed:', error);
+    console.error('Showroom AI call failed:', error);
     return simulateLocalShowroomAnswer(question, contextData, pendingOrders, totalPendingBalance);
   }
 };
@@ -285,17 +275,13 @@ Tone Rules:
 - If ENGLISH: Warm, premium luxury concierge tone.
 - Keep it under 60 words. No robotic placeholders.`;
 
-  if (!apiKey) {
-    return simulateConciergeMessage(customerName, occasion, langUpper, category, budget, quoteId);
-  }
-
   try {
-    const data = await callGeminiApi(apiKey, {
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.3, maxOutputTokens: 250 }
+    const text = await dispatchMultiProviderAi({
+      prompt,
+      systemInstruction: 'You are an authentic, culturally respectful WhatsApp furniture sales copywriter.',
+      maxTokens: 250,
+      fallbackFn: () => simulateConciergeMessage(customerName, occasion, langUpper, category, budget, quoteId)
     });
-
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
     return text || simulateConciergeMessage(customerName, occasion, langUpper, category, budget, quoteId);
   } catch (err) {
     return simulateConciergeMessage(customerName, occasion, langUpper, category, budget, quoteId);

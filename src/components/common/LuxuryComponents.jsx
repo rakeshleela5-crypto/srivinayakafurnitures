@@ -93,3 +93,35 @@ export function BorderBeamCard({
     </div>
   );
 }
+
+/**
+ * Magic UI — Border Beam Badge
+ * Compact badge with glowing neon rim and soft pulsing dot.
+ */
+export function BorderBeamBadge({ text, variant = 'gold', className = '', style = {} }) {
+  const color = variant === 'cyan' ? '#06B6D4' : variant === 'emerald' ? '#10B981' : '#D4AF37';
+  return (
+    <span 
+      className={`border-beam-badge ${className}`}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '6px',
+        padding: '3px 10px',
+        borderRadius: '9999px',
+        fontSize: '10.5px',
+        fontWeight: '800',
+        letterSpacing: '0.5px',
+        background: 'rgba(15, 23, 42, 0.9)',
+        border: `1px solid ${color}`,
+        boxShadow: `0 0 10px ${color}33`,
+        color: '#FFFFFF',
+        ...style
+      }}
+    >
+      <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: color, boxShadow: `0 0 6px ${color}` }} />
+      {text}
+    </span>
+  );
+}
+

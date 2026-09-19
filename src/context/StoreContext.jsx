@@ -35,7 +35,7 @@ export const USER_ROLES = {
     avatar: '👑',
     badgeClass: 'badge-gold',
     allowedTabs: [
-      'executive', 'crm', 'voice_pos', 'architects',
+      'executive', 'b2b_projects', 'ai_agents', 'crm', 'voice_pos', 'architects',
       'autoprocure', 'inward_scanner', 'safelock', 'barcode_studio', 'qr_studio',
       'outward_scanner', 'logistics_epod', 'documents',
       'bank_ledger', 'whatsapp_bots', 'staff_qr', 'live_database'
@@ -49,7 +49,7 @@ export const USER_ROLES = {
     avatar: '💼',
     badgeClass: 'badge-cyan',
     allowedTabs: [
-      'voice_pos', 'crm', 'safelock', 'documents', 'barcode_studio', 'qr_studio'
+      'voice_pos', 'b2b_projects', 'ai_agents', 'crm', 'safelock', 'documents', 'barcode_studio', 'qr_studio'
     ]
   },
   WAREHOUSE: {

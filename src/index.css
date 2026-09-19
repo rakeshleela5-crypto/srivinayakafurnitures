@@ -75,8 +75,8 @@ body {
 }
 
 @keyframes aurora-float {
-  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.12; }
-  50% { transform: translate(30px, -20px) scale(1.08); opacity: 0.20; }
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.05; }
+  50% { transform: translate(25px, -15px) scale(1.04); opacity: 0.08; }
 }
 
 .ambient-glow-1 {
@@ -85,10 +85,10 @@ body {
   right: -100px;
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.16), transparent 70%);
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.07), transparent 65%);
   z-index: 0;
   pointer-events: none;
-  animation: aurora-float 12s ease-in-out infinite alternate;
+  animation: aurora-float 18s ease-in-out infinite alternate;
 }
 .ambient-glow-2 {
   position: fixed;
@@ -96,10 +96,10 @@ body {
   left: -120px;
   width: 700px;
   height: 700px;
-  background: radial-gradient(circle, rgba(212, 175, 55, 0.12), transparent 70%);
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.05), transparent 65%);
   z-index: 0;
   pointer-events: none;
-  animation: aurora-float 15s ease-in-out infinite alternate-reverse;
+  animation: aurora-float 22s ease-in-out infinite alternate-reverse;
 }
 
 /* Top Live Showroom Ticker */
@@ -185,9 +185,9 @@ header.app-header {
 }
 .btn-header-sync {
   position: relative;
-  background: linear-gradient(110deg, rgba(5, 150, 105, 0.2) 0%, rgba(16, 185, 129, 0.35) 45%, rgba(209, 250, 229, 0.6) 50%, rgba(16, 185, 129, 0.35) 55%, rgba(5, 150, 105, 0.2) 100%);
+  background: linear-gradient(110deg, rgba(6, 95, 70, 0.3) 0%, rgba(16, 185, 129, 0.25) 40%, rgba(52, 211, 153, 0.4) 50%, rgba(16, 185, 129, 0.25) 60%, rgba(6, 95, 70, 0.3) 100%);
   background-size: 200% 100%;
-  border: 1px solid var(--accent-emerald);
+  border: 1px solid rgba(16, 185, 129, 0.45);
   color: #A7F3D0;
   padding: 7px 16px;
   border-radius: 20px;
@@ -197,19 +197,19 @@ header.app-header {
   align-items: center;
   gap: 7px;
   cursor: pointer;
-  box-shadow: 0 0 16px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  animation: shimmer-sweep 6s linear infinite;
+  animation: shimmer-sweep 9s linear infinite;
   overflow: hidden;
 }
 .btn-header-sync:hover {
-  background-color: rgba(16, 185, 129, 0.35);
-  box-shadow: 0 0 24px rgba(16, 185, 129, 0.65);
-  transform: translateY(-1.5px) scale(1.02);
+  background-color: rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.45);
+  transform: translateY(-1.5px);
   color: #FFFFFF;
 }
 .btn-header-sync:active {
-  transform: translateY(1px) scale(0.97);
+  transform: translateY(1px) scale(0.98);
 }
 .pulse-dot-emerald {
   width: 8px;
@@ -357,110 +357,110 @@ header.app-header {
 /* Primary Buttons */
 .btn-luxury-gold {
   position: relative;
-  background: linear-gradient(110deg, #B45309 0%, #D4AF37 35%, #FFF8DC 50%, #D4AF37 65%, #B45309 100%);
+  background: linear-gradient(110deg, #A16207 0%, #CA8A04 30%, #EAB308 50%, #CA8A04 70%, #A16207 100%);
   background-size: 200% 100%;
   color: #070B14 !important;
   font-weight: 800;
   padding: 9px 18px;
   border-radius: 9px;
   font-size: 12.5px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(234, 179, 8, 0.4);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 4px 18px rgba(212, 175, 55, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 12px rgba(202, 138, 4, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2);
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  animation: shimmer-sweep 5s linear infinite;
+  animation: shimmer-sweep 8s linear infinite;
   overflow: hidden;
 }
 .btn-luxury-gold:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 6px 25px rgba(212, 175, 55, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 18px rgba(202, 138, 4, 0.45);
 }
 .btn-luxury-gold:active {
-  transform: translateY(1px) scale(0.97);
+  transform: translateY(1px) scale(0.98);
 }
 
 .btn-cyan {
   position: relative;
-  background: linear-gradient(110deg, #0369A1 0%, #38BDF8 35%, #E0F2FE 50%, #38BDF8 65%, #0369A1 100%);
+  background: linear-gradient(110deg, #0369A1 0%, #0284C7 30%, #38BDF8 50%, #0284C7 70%, #0369A1 100%);
   background-size: 200% 100%;
   color: #FFFFFF !important;
   font-weight: 800;
   padding: 9px 16px;
   border-radius: 9px;
   font-size: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(56, 189, 248, 0.35);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 4px 16px rgba(56, 189, 248, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  animation: shimmer-sweep 5s linear infinite;
+  animation: shimmer-sweep 8s linear infinite;
   overflow: hidden;
 }
 .btn-cyan:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 6px 24px rgba(56, 189, 248, 0.65);
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 18px rgba(56, 189, 248, 0.45);
 }
 .btn-cyan:active {
-  transform: translateY(1px) scale(0.97);
+  transform: translateY(1px) scale(0.98);
 }
 
 .btn-emerald {
   position: relative;
-  background: linear-gradient(110deg, #047857 0%, #10B981 35%, #D1FAE5 50%, #10B981 65%, #047857 100%);
+  background: linear-gradient(110deg, #047857 0%, #059669 30%, #10B981 50%, #059669 70%, #047857 100%);
   background-size: 200% 100%;
   color: #FFFFFF !important;
   font-weight: 800;
   padding: 9px 16px;
   border-radius: 9px;
   font-size: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(16, 185, 129, 0.35);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  animation: shimmer-sweep 5s linear infinite;
+  animation: shimmer-sweep 8s linear infinite;
   overflow: hidden;
 }
 .btn-emerald:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 6px 24px rgba(16, 185, 129, 0.65);
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45);
 }
 .btn-emerald:active {
-  transform: translateY(1px) scale(0.97);
+  transform: translateY(1px) scale(0.98);
 }
 
 .btn-purple {
   position: relative;
-  background: linear-gradient(110deg, #6D28D9 0%, #A855F7 35%, #F3E8FF 50%, #A855F7 65%, #6D28D9 100%);
+  background: linear-gradient(110deg, #6D28D9 0%, #7C3AED 30%, #A855F7 50%, #7C3AED 70%, #6D28D9 100%);
   background-size: 200% 100%;
   color: #FFFFFF !important;
   font-weight: 800;
   padding: 9px 16px;
   border-radius: 9px;
   font-size: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(168, 85, 247, 0.35);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
   transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  animation: shimmer-sweep 5s linear infinite;
+  animation: shimmer-sweep 8s linear infinite;
   overflow: hidden;
 }
 .btn-purple:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 6px 24px rgba(168, 85, 247, 0.65);
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 18px rgba(168, 85, 247, 0.45);
 }
 .btn-purple:active {
-  transform: translateY(1px) scale(0.97);
+  transform: translateY(1px) scale(0.98);
 }
 
 .btn-ghost-edit {
@@ -1100,7 +1100,7 @@ table.luxury-table tr:hover td {
   bottom: 0;
   background: radial-gradient(
     550px circle at var(--mouse-x, -1000px) var(--mouse-y, -1000px),
-    rgba(212, 175, 55, 0.14),
+    rgba(212, 175, 55, 0.07),
     transparent 50%
   );
   pointer-events: none;
@@ -1114,9 +1114,9 @@ table.luxury-table tr:hover td {
 }
 
 .spotlight-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(212, 175, 55, 0.38);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 24px rgba(212, 175, 55, 0.15);
+  transform: translateY(-1.5px);
+  border-color: rgba(212, 175, 55, 0.25);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55), 0 0 14px rgba(212, 175, 55, 0.08);
 }
 
 .spotlight-content {
@@ -1128,7 +1128,7 @@ table.luxury-table tr:hover td {
 .border-beam-card {
   position: relative;
   background: rgba(15, 23, 42, 0.88);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   overflow: hidden;
   padding: 1px;
@@ -1141,11 +1141,11 @@ table.luxury-table tr:hover td {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: conic-gradient(from 0deg, transparent 0 340deg, var(--accent-gold) 350deg, #FFFFFF 360deg);
-  animation: border-beam-spin 4.5s linear infinite;
+  background: conic-gradient(from 0deg, transparent 0 340deg, rgba(212, 175, 55, 0.6) 350deg, rgba(255, 255, 255, 0.8) 360deg);
+  animation: border-beam-spin 7.5s linear infinite;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.75;
+  opacity: 0.35;
 }
 
 .border-beam-inner {
@@ -1166,8 +1166,8 @@ table.luxury-table tr:hover td {
 .bottom-dock {
   background: rgba(11, 17, 31, 0.88) !important;
   backdrop-filter: blur(20px) saturate(180%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
 }
 
 .dock-item {
@@ -1175,7 +1175,7 @@ table.luxury-table tr:hover td {
 }
 
 .dock-item:hover {
-  transform: translateY(-4px) scale(1.08) !important;
+  transform: translateY(-2px) scale(1.04) !important;
   color: var(--accent-gold-light) !important;
 }
 
@@ -1189,9 +1189,9 @@ table.luxury-table tr:hover td {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 1.5px;
-  background: linear-gradient(90deg, transparent 0%, var(--accent-gold) 25%, var(--accent-cyan) 50%, var(--accent-emerald) 75%, transparent 100%);
-  opacity: 0.65;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(212, 175, 55, 0.3) 30%, rgba(56, 189, 248, 0.3) 70%, transparent 100%);
+  opacity: 0.35;
 }
 
 /* 5. Uiverse Neon Holographic Badges */

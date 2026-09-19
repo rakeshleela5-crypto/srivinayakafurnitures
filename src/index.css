@@ -68,26 +68,38 @@ body {
   background: var(--accent-gold);
 }
 
-/* Atmospheric Ambient Glows */
+/* Atmospheric Ambient Glows & Aurora Effects */
+@keyframes shimmer-sweep {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes aurora-float {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.12; }
+  50% { transform: translate(30px, -20px) scale(1.08); opacity: 0.20; }
+}
+
 .ambient-glow-1 {
   position: fixed;
   top: -120px;
   right: -100px;
-  width: 550px;
-  height: 550px;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.12), transparent 70%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.16), transparent 70%);
   z-index: 0;
   pointer-events: none;
+  animation: aurora-float 12s ease-in-out infinite alternate;
 }
 .ambient-glow-2 {
   position: fixed;
   bottom: -150px;
   left: -120px;
-  width: 650px;
-  height: 650px;
-  background: radial-gradient(circle, rgba(212, 175, 55, 0.08), transparent 70%);
+  width: 700px;
+  height: 700px;
+  background: radial-gradient(circle, rgba(212, 175, 55, 0.12), transparent 70%);
   z-index: 0;
   pointer-events: none;
+  animation: aurora-float 15s ease-in-out infinite alternate-reverse;
 }
 
 /* Top Live Showroom Ticker */
@@ -172,23 +184,32 @@ header.app-header {
   gap: 10px;
 }
 .btn-header-sync {
-  background: rgba(16, 185, 129, 0.12);
+  position: relative;
+  background: linear-gradient(110deg, rgba(5, 150, 105, 0.2) 0%, rgba(16, 185, 129, 0.35) 45%, rgba(209, 250, 229, 0.6) 50%, rgba(16, 185, 129, 0.35) 55%, rgba(5, 150, 105, 0.2) 100%);
+  background-size: 200% 100%;
   border: 1px solid var(--accent-emerald);
-  color: var(--accent-emerald);
-  padding: 6px 14px;
+  color: #A7F3D0;
+  padding: 7px 16px;
   border-radius: 20px;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 800;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   cursor: pointer;
-  transition: all 0.25s ease;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: shimmer-sweep 6s linear infinite;
+  overflow: hidden;
 }
 .btn-header-sync:hover {
-  background: rgba(16, 185, 129, 0.25);
-  box-shadow: var(--shadow-emerald);
-  transform: translateY(-1px);
+  background-color: rgba(16, 185, 129, 0.35);
+  box-shadow: 0 0 24px rgba(16, 185, 129, 0.65);
+  transform: translateY(-1.5px) scale(1.02);
+  color: #FFFFFF;
+}
+.btn-header-sync:active {
+  transform: translateY(1px) scale(0.97);
 }
 .pulse-dot-emerald {
   width: 8px;
@@ -335,87 +356,115 @@ header.app-header {
 
 /* Primary Buttons */
 .btn-luxury-gold {
-  background: linear-gradient(135deg, var(--accent-gold), #B45309);
-  color: #000000;
+  position: relative;
+  background: linear-gradient(110deg, #B45309 0%, #D4AF37 35%, #FFF8DC 50%, #D4AF37 65%, #B45309 100%);
+  background-size: 200% 100%;
+  color: #070B14 !important;
   font-weight: 800;
   padding: 9px 18px;
   border-radius: 9px;
   font-size: 12.5px;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.35);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.35);
-  transition: all 0.2s ease;
+  box-shadow: 0 4px 18px rgba(212, 175, 55, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: shimmer-sweep 5s linear infinite;
+  overflow: hidden;
 }
 .btn-luxury-gold:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 22px rgba(212, 175, 55, 0.55);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 25px rgba(212, 175, 55, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.6);
+}
+.btn-luxury-gold:active {
+  transform: translateY(1px) scale(0.97);
 }
 
 .btn-cyan {
-  background: linear-gradient(135deg, var(--accent-cyan), #0284C7);
-  color: #FFFFFF;
+  position: relative;
+  background: linear-gradient(110deg, #0369A1 0%, #38BDF8 35%, #E0F2FE 50%, #38BDF8 65%, #0369A1 100%);
+  background-size: 200% 100%;
+  color: #FFFFFF !important;
   font-weight: 800;
   padding: 9px 16px;
   border-radius: 9px;
   font-size: 12px;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.25);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.35);
-  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(56, 189, 248, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: shimmer-sweep 5s linear infinite;
+  overflow: hidden;
 }
 .btn-cyan:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.55);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 24px rgba(56, 189, 248, 0.65);
+}
+.btn-cyan:active {
+  transform: translateY(1px) scale(0.97);
 }
 
 .btn-emerald {
-  background: linear-gradient(135deg, var(--accent-emerald), #059669);
-  color: #FFFFFF;
+  position: relative;
+  background: linear-gradient(110deg, #047857 0%, #10B981 35%, #D1FAE5 50%, #10B981 65%, #047857 100%);
+  background-size: 200% 100%;
+  color: #FFFFFF !important;
   font-weight: 800;
   padding: 9px 16px;
   border-radius: 9px;
   font-size: 12px;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.25);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
-  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: shimmer-sweep 5s linear infinite;
+  overflow: hidden;
 }
 .btn-emerald:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.55);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 24px rgba(16, 185, 129, 0.65);
+}
+.btn-emerald:active {
+  transform: translateY(1px) scale(0.97);
 }
 
 .btn-purple {
-  background: linear-gradient(135deg, var(--accent-purple), #7C3AED);
-  color: #FFFFFF;
+  position: relative;
+  background: linear-gradient(110deg, #6D28D9 0%, #A855F7 35%, #F3E8FF 50%, #A855F7 65%, #6D28D9 100%);
+  background-size: 200% 100%;
+  color: #FFFFFF !important;
   font-weight: 800;
   padding: 9px 16px;
   border-radius: 9px;
   font-size: 12px;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.25);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 4px 14px rgba(168, 85, 247, 0.35);
-  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: shimmer-sweep 5s linear infinite;
+  overflow: hidden;
 }
 .btn-purple:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(168, 85, 247, 0.55);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 24px rgba(168, 85, 247, 0.65);
+}
+.btn-purple:active {
+  transform: translateY(1px) scale(0.97);
 }
 
 .btn-ghost-edit {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: var(--text-primary);
   font-weight: 700;
@@ -426,12 +475,17 @@ header.app-header {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .btn-ghost-edit:hover {
   background: rgba(255, 255, 255, 0.12);
-  border-color: var(--accent-cyan);
-  transform: translateY(-1px);
+  border-color: var(--accent-gold);
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+}
+.btn-ghost-edit:active {
+  transform: translateY(1px) scale(0.97);
 }
 
 /* Badges */
@@ -1021,6 +1075,154 @@ table.luxury-table tr:hover td {
   .print-page-break-avoid {
     page-break-inside: avoid !important;
   }
+}
+
+/* ==========================================================================
+ * ACETERNITY UI / MAGIC UI / UIVERSE LUXURY SUITE
+ * ========================================================================== */
+
+/* 1. Aceternity Spotlight Card */
+.spotlight-card {
+  position: relative;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  overflow: hidden;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.spotlight-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    550px circle at var(--mouse-x, -1000px) var(--mouse-y, -1000px),
+    rgba(212, 175, 55, 0.14),
+    transparent 50%
+  );
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.spotlight-card:hover::before {
+  opacity: 1;
+}
+
+.spotlight-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(212, 175, 55, 0.38);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65), 0 0 24px rgba(212, 175, 55, 0.15);
+}
+
+.spotlight-content {
+  position: relative;
+  z-index: 2;
+}
+
+/* 2. Magic UI Border Beam Card */
+.border-beam-card {
+  position: relative;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+  padding: 1px;
+}
+
+.border-beam-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(from 0deg, transparent 0 340deg, var(--accent-gold) 350deg, #FFFFFF 360deg);
+  animation: border-beam-spin 4.5s linear infinite;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.75;
+}
+
+.border-beam-inner {
+  position: relative;
+  z-index: 1;
+  background: rgba(11, 17, 31, 0.95);
+  border-radius: 15px;
+  height: 100%;
+  width: 100%;
+}
+
+@keyframes border-beam-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 3. Luxury Floating Bottom Dock with Active Magnetic Glow */
+.bottom-dock {
+  background: rgba(11, 17, 31, 0.88) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+}
+
+.dock-item {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.dock-item:hover {
+  transform: translateY(-4px) scale(1.08) !important;
+  color: var(--accent-gold-light) !important;
+}
+
+/* 4. Aurora Glowing Line Under App Header */
+.app-header {
+  position: relative;
+}
+.app-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent 0%, var(--accent-gold) 25%, var(--accent-cyan) 50%, var(--accent-emerald) 75%, transparent 100%);
+  opacity: 0.65;
+}
+
+/* 5. Uiverse Neon Holographic Badges */
+.badge-laser-gold {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #FFF8DC;
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  box-shadow: 0 0 12px rgba(212, 175, 55, 0.25);
+}
+
+.badge-laser-emerald {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #A7F3D0;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);
 }
 
 

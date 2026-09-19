@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../context/StoreContext';
 import CustomerOrderSearchSelector from '../components/common/CustomerOrderSearchSelector';
+import { SpotlightCard, BorderBeamCard, ShimmerButton } from '../components/common/LuxuryComponents';
 import { 
   TrendingUp, 
   ShieldCheck, 
@@ -506,7 +507,7 @@ export function ExecutiveOverview() {
       <div className="kpi-grid">
         
         {/* 1. Gross Showroom Revenue Card */}
-        <div 
+        <SpotlightCard 
           className="kpi-card" 
           onClick={() => {
             playScanBeep();
@@ -515,7 +516,6 @@ export function ExecutiveOverview() {
           style={{ 
             borderLeft: '4px solid var(--accent-gold)', 
             cursor: 'pointer', 
-            transition: 'all 0.2s ease',
             position: 'relative' 
           }}
           title="Click to inspect all customer transactions & add cash entries"
@@ -533,10 +533,10 @@ export function ExecutiveOverview() {
           <div style={{ fontSize: '9.5px', color: '#94A3B8', marginTop: '4px', borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '3px' }}>
             🔍 Click to view payment ledger & add cash entry
           </div>
-        </div>
+        </SpotlightCard>
 
         {/* 2. Active SafeLocks Card */}
-        <div 
+        <SpotlightCard 
           className="kpi-card" 
           onClick={() => {
             playScanBeep();
@@ -544,8 +544,7 @@ export function ExecutiveOverview() {
           }}
           style={{ 
             borderLeft: '4px solid var(--accent-cyan)', 
-            cursor: 'pointer', 
-            transition: 'all 0.2s ease' 
+            cursor: 'pointer' 
           }}
           title="Click to view locked suites, extend 48h locks, or open staging bay"
         >
@@ -558,10 +557,10 @@ export function ExecutiveOverview() {
           <div style={{ fontSize: '9.5px', color: '#94A3B8', marginTop: '4px', borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '3px' }}>
             ⏱️ Click to extend 48h locks or stage cartons
           </div>
-        </div>
+        </SpotlightCard>
 
         {/* 3. Pending Deliveries Card */}
-        <div 
+        <SpotlightCard 
           className="kpi-card" 
           onClick={() => {
             playScanBeep();
@@ -569,8 +568,7 @@ export function ExecutiveOverview() {
           }}
           style={{ 
             borderLeft: '4px solid var(--accent-amber)', 
-            cursor: 'pointer', 
-            transition: 'all 0.2s ease' 
+            cursor: 'pointer' 
           }}
           title="Click to track Tata Ace fleet, dispatch trucks, and issue ePOD OTP"
         >
@@ -583,10 +581,10 @@ export function ExecutiveOverview() {
           <div style={{ fontSize: '9.5px', color: '#94A3B8', marginTop: '4px', borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '3px' }}>
             🚚 Click for driver dispatch & WhatsApp ETA
           </div>
-        </div>
+        </SpotlightCard>
 
         {/* 4. Showroom Hot Leads Card */}
-        <div 
+        <SpotlightCard 
           className="kpi-card" 
           onClick={() => {
             playScanBeep();
@@ -594,8 +592,7 @@ export function ExecutiveOverview() {
           }}
           style={{ 
             borderLeft: '4px solid var(--accent-purple)', 
-            cursor: 'pointer', 
-            transition: 'all 0.2s ease' 
+            cursor: 'pointer' 
           }}
           title="Click to view high-intent walk-ins, send 1-click proposals, or log calls"
         >
@@ -608,10 +605,10 @@ export function ExecutiveOverview() {
           <div style={{ fontSize: '9.5px', color: '#94A3B8', marginTop: '4px', borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '3px' }}>
             🔥 Click to open CRM pipeline & send quotes
           </div>
-        </div>
+        </SpotlightCard>
 
         {/* 5. Architect Liability Due Card */}
-        <div 
+        <SpotlightCard 
           className="kpi-card" 
           onClick={() => {
             playScanBeep();
@@ -619,8 +616,7 @@ export function ExecutiveOverview() {
           }}
           style={{ 
             borderLeft: '4px solid var(--accent-emerald)', 
-            cursor: 'pointer', 
-            transition: 'all 0.2s ease' 
+            cursor: 'pointer' 
           }}
           title="Click to view architect balances, trigger UPI payouts, or send statements"
         >
@@ -635,7 +631,7 @@ export function ExecutiveOverview() {
           <div style={{ fontSize: '9.5px', color: '#94A3B8', marginTop: '4px', borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: '3px' }}>
             🏛️ Click to settle commissions & statements
           </div>
-        </div>
+        </SpotlightCard>
 
       </div>
 

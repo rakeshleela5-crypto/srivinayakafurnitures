@@ -40,15 +40,15 @@ export function setActiveWebhookUrl(url) {
 // 🛡️ ENTERPRISE API SECURITY LAYER: SHARED HMAC / API SECRET TOKEN
 // Prevents unauthorized webhook access, malicious crawlers, and foreign bots
 // ============================================================================
-export const OMNIBUILD_ENTERPRISE_SECRET_KEY = 'OMNIBUILD_SEC_TOKEN_2026_SOVEREIGN_7777';
+export const OMNIBUILD_ENTERPRISE_SECRET_KEY = import.meta.env?.VITE_WEBHOOK_SECRET || '';
 
 export function getEnterpriseAuthToken() {
   try {
     if (typeof window !== 'undefined' && window.localStorage) {
-      return localStorage.getItem('OMNIBUILD_AUTH_TOKEN') || OMNIBUILD_ENTERPRISE_SECRET_KEY;
+      return localStorage.getItem('OMNIBUILD_AUTH_TOKEN') || import.meta.env?.VITE_WEBHOOK_SECRET || '';
     }
   } catch (e) {}
-  return OMNIBUILD_ENTERPRISE_SECRET_KEY;
+  return import.meta.env?.VITE_WEBHOOK_SECRET || '';
 }
 
 export function setEnterpriseAuthToken(token) {
@@ -98,78 +98,7 @@ export async function dispatchWebhookAction(actionName, payload = {}, customWebh
 
   try {
     // ========================================================================
-    // ⚡ ULTRA-FAST SINGLE-PASS GET DISPATCH (< 2s, Native Google CORS Support)
-    // ========================================================================
-    const sanitizedParams = {
-      action: actionName,
-      client_timestamp: currentTimestamp,
-      auth_token: authToken
-    };
-
-    let hasComplexData = false;
-    for (const [key, val] of Object.entries(payload)) {
-      if (val !== undefined && val !== null) {
-        if (typeof val === 'object') {
-          hasComplexData = true;
-        } else {
-          sanitizedParams[key] = String(val);
-        }
-      }
-    }
-
-    if (hasComplexData) {
-      sanitizedParams['payload_json'] = JSON.stringify(payload);
-    }
-
-    const getParams = new URLSearchParams(sanitizedParams).toString();
-
-    // If query string is compact (< 1800 chars), execute fast GET with redirect: follow
-    if (getParams.length <= 1800) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 9000);
-
-        const response = await fetch(`${webhookUrl}?${getParams}`, {
-          method: 'GET',
-          redirect: 'follow',
-          signal: controller.signal
-        });
-
-        clearTimeout(timeoutId);
-
-        if (response.ok) {
-          const rawText = await response.text();
-          // 🛡️ CRITICAL GUARD: Detect HTML error responses from Google Apps Script
-          if (rawText.trim().startsWith('<') || rawText.includes('<!DOCTYPE') || rawText.includes('<html')) {
-            console.warn(`⚠️ [HTML ERROR SHIELDED - GET] Google Apps Script returned HTML error page.`);
-            return {
-              success: true,
-              action: actionName,
-              timestamp: currentTimestamp,
-              _source: 'LOCAL_FALLBACK_HTML_GUARD',
-              message: `Action ${actionName} recorded locally (Cloud returned HTML notice).`
-            };
-          }
-
-          try {
-            const serverResult = JSON.parse(rawText);
-            console.log(`[✅ REAL BACKEND RESPONSE - GET] Action: ${actionName}`, serverResult);
-            return {
-              ...serverResult,
-              _source: 'LIVE_BACKEND_RESPONSE',
-              _dispatched: true
-            };
-          } catch (jsonErr) {
-            console.warn(`[JSON parse warning]: ${jsonErr.message}`);
-          }
-        }
-      } catch (getErr) {
-        console.warn(`[GET error]: ${getErr.message}. Attempting POST fallback...`);
-      }
-    }
-
-    // ========================================================================
-    // 🚀 POST DISPATCH (For large payloads > 1800 chars or GET fallback)
+    // 🛡️ SECURE POST DISPATCH (Eliminates PII in GET query logs)
     // ========================================================================
     try {
       const postController = new AbortController();

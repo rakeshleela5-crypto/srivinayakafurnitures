@@ -236,59 +236,61 @@ export function AuthLockScreen() {
           </button>
         </div>
 
-        {/* 1-Click Quick-Switch Role Selector (Demo / Showroom Pills) */}
-        <div style={{ width: '100%', marginTop: '24px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px' }}>
-          <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--accent-gold-light)', textTransform: 'uppercase', textAlign: 'center', marginBottom: '8px' }}>
-            ⚡ 1-Click Fast Profile Switcher:
+        {/* 1-Click Quick-Switch Role Selector (Dev Only - Disabled in Production) */}
+        {import.meta.env.DEV && (
+          <div style={{ width: '100%', marginTop: '24px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '16px' }}>
+            <div style={{ fontSize: '10px', fontWeight: '800', color: 'var(--accent-gold-light)', textTransform: 'uppercase', textAlign: 'center', marginBottom: '8px' }}>
+              🛠️ Dev Quick-Switch Profile (Disabled in Production):
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <button 
+                className="btn-ghost-edit" 
+                style={{ justifyContent: 'space-between', padding: '6px 12px', fontSize: '11px', background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.3)' }}
+                onClick={() => loginAsRole('OWNER')}
+              >
+                <span>👑 <b>Rakesh (Store Owner)</b></span>
+                <span style={{ fontFamily: 'JetBrains Mono', color: 'var(--accent-gold-light)' }}>PIN: 8899</span>
+              </button>
+
+              <button 
+                className="btn-ghost-edit" 
+                style={{ justifyContent: 'space-between', padding: '6px 12px', fontSize: '11px' }}
+                onClick={() => loginAsRole('SALES')}
+              >
+                <span>💼 <b>Sunil (Sales Executive)</b></span>
+                <span style={{ fontFamily: 'JetBrains Mono', color: 'var(--accent-cyan)' }}>PIN: 1122</span>
+              </button>
+
+              <button 
+                className="btn-ghost-edit" 
+                style={{ justifyContent: 'space-between', padding: '6px 12px', fontSize: '11px' }}
+                onClick={() => loginAsRole('WAREHOUSE')}
+              >
+                <span>📦 <b>Santosh (Dock Supervisor)</b></span>
+                <span style={{ fontFamily: 'JetBrains Mono', color: 'var(--accent-amber)' }}>PIN: 3344</span>
+              </button>
+
+              <button 
+                className="btn-ghost-edit" 
+                style={{ justifyContent: 'space-between', padding: '6px 12px', fontSize: '11px' }}
+                onClick={() => loginAsRole('DRIVER')}
+              >
+                <span>🚚 <b>Tophan (Fleet Driver)</b></span>
+                <span style={{ fontFamily: 'JetBrains Mono', color: 'var(--accent-purple)' }}>PIN: 5566</span>
+              </button>
+
+              <button 
+                className="btn-ghost-edit" 
+                style={{ justifyContent: 'space-between', padding: '6px 12px', fontSize: '11px' }}
+                onClick={() => loginAsRole('ARCHITECT')}
+              >
+                <span>🏛️ <b>Ar. Sunita (Architect VIP)</b></span>
+                <span style={{ fontFamily: 'JetBrains Mono', color: 'var(--accent-emerald)' }}>PIN: 7788</span>
+              </button>
+            </div>
           </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <button 
-              className="btn-ghost-edit" 
-              style={{ justifyContent: 'space-between', padding: '6px 12px', fontSize: '11px', background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.3)' }}
-              onClick={() => loginAsRole('OWNER')}
-            >
-              <span>👑 <b>Rakesh (Store Owner)</b></span>
-              <span style={{ fontFamily: 'JetBrains Mono', color: 'var(--accent-gold-light)' }}>PIN: 8899</span>
-            </button>
-
-            <button 
-              className="btn-ghost-edit" 
-              style={{ justifyContent: 'space-between', padding: '6px 12px', fontSize: '11px' }}
-              onClick={() => loginAsRole('SALES')}
-            >
-              <span>💼 <b>Sunil (Sales Executive)</b></span>
-              <span style={{ fontFamily: 'JetBrains Mono', color: 'var(--accent-cyan)' }}>PIN: 1122</span>
-            </button>
-
-            <button 
-              className="btn-ghost-edit" 
-              style={{ justifyContent: 'space-between', padding: '6px 12px', fontSize: '11px' }}
-              onClick={() => loginAsRole('WAREHOUSE')}
-            >
-              <span>📦 <b>Santosh (Dock Supervisor)</b></span>
-              <span style={{ fontFamily: 'JetBrains Mono', color: 'var(--accent-amber)' }}>PIN: 3344</span>
-            </button>
-
-            <button 
-              className="btn-ghost-edit" 
-              style={{ justifyContent: 'space-between', padding: '6px 12px', fontSize: '11px' }}
-              onClick={() => loginAsRole('DRIVER')}
-            >
-              <span>🚚 <b>Tophan (Fleet Driver)</b></span>
-              <span style={{ fontFamily: 'JetBrains Mono', color: 'var(--accent-purple)' }}>PIN: 5566</span>
-            </button>
-
-            <button 
-              className="btn-ghost-edit" 
-              style={{ justifyContent: 'space-between', padding: '6px 12px', fontSize: '11px' }}
-              onClick={() => loginAsRole('ARCHITECT')}
-            >
-              <span>🏛️ <b>Ar. Sunita (VIP Partner)</b></span>
-              <span style={{ fontFamily: 'JetBrains Mono', color: 'var(--accent-emerald)' }}>PIN: 7788</span>
-            </button>
-          </div>
-        </div>
+        )}
 
       </div>
 

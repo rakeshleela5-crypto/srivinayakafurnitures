@@ -90,22 +90,26 @@ export function AppHeader() {
         >
           <span>{appMode === 'PRODUCTION' ? '🟢 LIVE CLOUD DATA' : '🎭 DEMO SHOWCASE'}</span>
         </button>
-        <button 
-          className="btn-ghost-edit" 
-          onClick={() => setActiveTab('bank_ledger')} 
-          style={{ fontSize: '11px', padding: '6px 12px', color: '#34D399', border: '1px solid rgba(52,211,153,0.4)', background: 'rgba(52,211,153,0.08)' }} 
-          title="Open Commercial Bank Ledger, Statement Reconciler & B2B RTGS"
-        >
-          <span>🏛️ Bank Ledger & RTGS</span>
-        </button>
-        <button 
-          className="btn-ghost-edit" 
-          onClick={() => openModal('store_settings')} 
-          style={{ fontSize: '11px', padding: '6px 12px', color: 'var(--accent-emerald)', border: '1px solid rgba(16,185,129,0.4)', background: 'rgba(16,185,129,0.08)' }} 
-          title="Configure Showroom Legal Entity, GSTIN, and Doorstep Merchant UPI VPA"
-        >
-          <span>⚙️ Identity & UPI</span>
-        </button>
+        {currentUser?.allowedTabs?.includes('bank_ledger') && (
+          <button 
+            className="btn-ghost-edit" 
+            onClick={() => setActiveTab('bank_ledger')} 
+            style={{ fontSize: '11px', padding: '6px 12px', color: '#34D399', border: '1px solid rgba(52,211,153,0.4)', background: 'rgba(52,211,153,0.08)' }} 
+            title="Open Commercial Bank Ledger, Statement Reconciler & B2B RTGS"
+          >
+            <span>🏛️ Bank Ledger & RTGS</span>
+          </button>
+        )}
+        {(currentUser?.id === 'rakesh' || currentUser?.allowedTabs?.includes('executive')) && (
+          <button 
+            className="btn-ghost-edit" 
+            onClick={() => openModal('store_settings')} 
+            style={{ fontSize: '11px', padding: '6px 12px', color: 'var(--accent-emerald)', border: '1px solid rgba(16,185,129,0.4)', background: 'rgba(16,185,129,0.08)' }} 
+            title="Configure Showroom Legal Entity, GSTIN, and Doorstep Merchant UPI VPA"
+          >
+            <span>⚙️ Identity & UPI</span>
+          </button>
+        )}
         <button 
           className="btn-ghost-edit" 
           onClick={() => openModal('dpdp_compliance')} 
@@ -114,17 +118,21 @@ export function AppHeader() {
         >
           <ShieldCheck size={13} /> <span>🛡️ DPDP 2023</span>
         </button>
-        <button 
-          className="btn-cyan" 
-          onClick={() => openModal('appsscript_hub')} 
-          style={{ fontSize: '11px', padding: '6px 14px', fontWeight: '800' }} 
-          title="Open Google Apps Script & Cloud Database Gateway (Master Webhook & 43 Tables)"
-        >
-          <span>⚡ Apps Script Hub</span>
-        </button>
-        <button className="btn-luxury-gold" onClick={() => setActiveTab('staff_qr')} style={{ padding: '6px 14px', fontSize: '11.5px' }}>
-          <span>📱 Staff QR</span>
-        </button>
+        {(currentUser?.id === 'rakesh' || currentUser?.allowedTabs?.includes('live_database')) && (
+          <button 
+            className="btn-cyan" 
+            onClick={() => openModal('appsscript_hub')} 
+            style={{ fontSize: '11px', padding: '6px 14px', fontWeight: '800' }} 
+            title="Open Google Apps Script & Cloud Database Gateway (Master Webhook & 43 Tables)"
+          >
+            <span>⚡ Apps Script Hub</span>
+          </button>
+        )}
+        {currentUser?.allowedTabs?.includes('staff_qr') && (
+          <button className="btn-luxury-gold" onClick={() => setActiveTab('staff_qr')} style={{ padding: '6px 14px', fontSize: '11.5px' }}>
+            <span>📱 Staff QR</span>
+          </button>
+        )}
         <button className="btn-header-sync" onClick={() => syncWithGoogleSheets(false)}>
           <RefreshCw size={13} className={isSyncing ? 'spin-anim' : ''} />
           <span>{isSyncing ? 'Syncing...' : '2-Way Webhook Sync'}</span>

@@ -9,12 +9,11 @@
  */
 
 const LOCAL_STORAGE_KEY = 'OMNIBUILD_GEMINI_API_KEY';
-const DEFAULT_API_KEY = 'AQ.Ab8RN6JOR_b1QOiC9XRKePx3FFmxWvwONYXt6NcdDSzWknt0Bg';
 const GEMINI_MODELS = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.5-flash-lite'];
 
 export const getGeminiApiKey = () => {
-  if (typeof window === 'undefined') return DEFAULT_API_KEY;
-  return localStorage.getItem(LOCAL_STORAGE_KEY) || import.meta.env?.VITE_GEMINI_API_KEY || DEFAULT_API_KEY;
+  if (typeof window === 'undefined') return import.meta.env?.VITE_GEMINI_API_KEY || '';
+  return localStorage.getItem(LOCAL_STORAGE_KEY) || import.meta.env?.VITE_GEMINI_API_KEY || '';
 };
 
 export const saveGeminiApiKey = (key) => {

@@ -133,6 +133,19 @@ function handleWebhookRequest(params, e) {
     }
   }
 
+  // 🛡️ ENTERPRISE AUTHORIZATION GUARD: Validate Shared Secret Key
+  var expectedSecret = PropertiesService.getScriptProperties().getProperty('OMNIBUILD_SECRET_KEY');
+  if (expectedSecret) {
+    var providedToken = params.auth_token || (e && e.parameter && e.parameter.auth_token);
+    if (!providedToken || providedToken !== expectedSecret) {
+      return ContentService.createTextOutput(JSON.stringify({
+        success: false,
+        error: "401 Unauthorized: Invalid or missing enterprise token",
+        timestamp: new Date().toISOString()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
   var action = params.action || "GET_ALL_STATUS";
 
   // Universal Bot Alias Normalizer: Maps BOT_01 -> SAFELOCK_ORDER, BOT_02 -> DECREMENT_STOCK, etc.

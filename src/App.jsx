@@ -67,10 +67,50 @@ function LazyLoadingFallback() {
   );
 }
 
+// 🛡️ Luxury Security Fallback for Unauthorized Role Terminals
+function AccessDeniedView({ activeTab, userRole }) {
+  return (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: '450px',
+      padding: '40px 24px',
+      textAlign: 'center',
+      gap: '16px'
+    }}>
+      <div style={{
+        width: '64px',
+        height: '64px',
+        borderRadius: '20px',
+        background: 'rgba(244, 63, 94, 0.12)',
+        border: '1px solid rgba(244, 63, 94, 0.35)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '28px',
+        boxShadow: '0 0 24px rgba(244, 63, 94, 0.2)'
+      }}>
+        🛡️
+      </div>
+      <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#FFFFFF', margin: 0 }}>
+        Restricted Security Terminal
+      </h2>
+      <p style={{ fontSize: '13px', color: '#94A3B8', maxWidth: '440px', lineHeight: '1.6' }}>
+        Your current profile (<span style={{ color: 'var(--accent-gold-light)', fontWeight: '700' }}>{userRole?.name || 'Guest'}</span>) does not have clearance to access the <span style={{ color: '#F43F5E', fontWeight: '700' }}>{activeTab}</span> terminal.
+      </p>
+      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+        Contact Store Director Rakesh or authenticate with an authorized role PIN.
+      </div>
+    </div>
+  );
+}
+
 function AppContent() {
   const { activeTab, setActiveTab, currentUser } = useStore();
   const [workerMode, setWorkerMode] = React.useState(() => {
-    return ['#inward', '#outward', '#barcode', '#qr-studio', '#logistics', '#qr', '#chat', '#concierge'].some(h => window.location.hash.toLowerCase().includes(h));
+    return ['#inward', '#outward', '#barcode', '#qr-studio', '#logistics', '#qr'].some(h => window.location.hash.toLowerCase().includes(h));
   });
 
   // URL Hash listener for direct worker and customer QR links
@@ -79,7 +119,6 @@ function AppContent() {
       const hash = window.location.hash.toLowerCase();
       if (hash.includes('chat') || hash.includes('concierge')) {
         setActiveTab('customer_chat');
-        setWorkerMode(true);
       } else if (hash.includes('inward')) {
         setActiveTab('inward_scanner');
         setWorkerMode(true);
@@ -105,14 +144,14 @@ function AppContent() {
     return () => window.removeEventListener('hashchange', handleHash);
   }, [setActiveTab]);
 
-  // Direct QR Hash routes bypass login screen
-  const isDirectWorkerHash = ['#inward', '#outward', '#barcode', '#qr-studio', '#logistics', '#qr', '#chat', '#concierge'].some(h => window.location.hash.toLowerCase().includes(h));
-  if (!currentUser && !isDirectWorkerHash && !workerMode) {
+  // Public customer concierge chat is accessible without employee login
+  const isCustomerChatHash = window.location.hash.toLowerCase().includes('chat') || window.location.hash.toLowerCase().includes('concierge');
+  if (!currentUser && !isCustomerChatHash) {
     return <AuthLockScreen />;
   }
 
   // Full-screen Standalone Mobile Customer AI Chat Experience
-  if (activeTab === 'customer_chat' || window.location.hash.toLowerCase().includes('chat') || window.location.hash.toLowerCase().includes('concierge')) {
+  if (activeTab === 'customer_chat' || isCustomerChatHash) {
     return (
       <>
         <Suspense fallback={<LazyLoadingFallback />}>
@@ -124,6 +163,11 @@ function AppContent() {
   }
 
   const renderActiveView = () => {
+    // 🛡️ Strict RBAC Enforcement: Check if logged-in user is authorized for activeTab
+    if (currentUser && currentUser.allowedTabs && !currentUser.allowedTabs.includes(activeTab)) {
+      return <AccessDeniedView activeTab={activeTab} userRole={currentUser} />;
+    }
+
     switch (activeTab) {
       case 'customer_chat':
         return <MobileCustomerChatView />;

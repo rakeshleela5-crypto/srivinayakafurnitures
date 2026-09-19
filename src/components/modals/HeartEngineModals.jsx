@@ -613,9 +613,9 @@ export function StoreSettingsModal({ isOpen, onClose }) {
                 textAlign: 'left'
               }}
             >
-              <div>○ Mode 2: Self-Hosted QR Gateway</div>
+              <div>○ Mode 2: 24/7 Cloud Gateway</div>
               <div style={{ fontSize: '9.5px', fontWeight: 'normal', marginTop: '2px', opacity: 0.85 }}>
-                Evolution API / Baileys • Headless Auto-Send
+                Oracle Cloud Always Free / Evolution API (No Sleep)
               </div>
             </button>
           </div>
@@ -633,12 +633,17 @@ export function StoreSettingsModal({ isOpen, onClose }) {
           {waDispatchMode === 'SELF_HOSTED_GATEWAY' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', background: 'rgba(0,0,0,0.25)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)' }}>
               <div>
-                <label style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block', marginBottom: '3px' }}>
-                  Gateway Server Endpoint URL (e.g. Railway / Render / Localhost)
-                </label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3px' }}>
+                  <label style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>
+                    Gateway Server Endpoint URL (Oracle Cloud VM / Railway / Docker)
+                  </label>
+                  <span style={{ fontSize: '9.5px', color: 'var(--accent-gold)', fontWeight: 'bold' }}>
+                    👑 Oracle Cloud 24/7 Ready
+                  </span>
+                </div>
                 <input
                   type="text"
-                  placeholder="https://my-evolution-api.up.railway.app or http://localhost:8080"
+                  placeholder="http://your-oracle-ip:8080 or https://wa.srivinayakafurnitures.com"
                   value={waGatewayUrl}
                   onChange={e => setWaGatewayUrl(e.target.value)}
                   style={{ width: '100%', padding: '7px 10px', background: '#070D18', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#FFFFFF', fontSize: '12px' }}

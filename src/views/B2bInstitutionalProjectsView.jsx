@@ -17,9 +17,23 @@ import {
   Sparkles,
   Search,
   Filter,
-  Users
+  Users,
+  Edit3,
+  Trash2,
+  ChevronRight,
+  CreditCard,
+  Archive
 } from 'lucide-react';
 import { SpotlightCard, ShimmerButton, BorderBeamBadge } from '../components/common/LuxuryComponents';
+
+const STAGES = [
+  { id: 'LEAD_INGESTION', label: '1. Lead Ingested', badge: 'badge-amber' },
+  { id: 'SITE_MEASUREMENT', label: '2. Site Measurement Scheduled', badge: 'badge-purple' },
+  { id: 'PROPOSAL_SENT', label: '3. Proposal & CAD Submitted', badge: 'badge-cyan' },
+  { id: 'TOKEN_RECEIVED', label: '4. 50% Token Advance Received', badge: 'badge-gold' },
+  { id: 'DEPOT_DISPATCH', label: '5. Depot Dispatch Confirmed', badge: 'badge-emerald' },
+  { id: 'HANDOVER_SETTLED', label: '6. Handover Completed & Settled', badge: 'badge-emerald' }
+];
 
 const INITIAL_B2B_PROJECTS = [
   {
@@ -35,7 +49,7 @@ const INITIAL_B2B_PROJECTS = [
     advancePaid: 420000,
     balanceDue: 420000,
     stage: 'DEPOT_DISPATCH',
-    stageLabel: '4. Depot Dispatch Confirmed',
+    stageLabel: '5. Depot Dispatch Confirmed',
     nextAction: 'Confirm delivery truck arrival & Carpenter Narayana assembly slot',
     nextDate: '2026-09-22',
     tierDiscount: '15% Institutional Rebate'
@@ -99,8 +113,12 @@ const INITIAL_B2B_PROJECTS = [
 export default function B2bInstitutionalProjectsView() {
   const [projects, setProjects] = useState(INITIAL_B2B_PROJECTS);
   const [selectedFilter, setSelectedFilter] = useState('ALL');
-  const [showAddModal, setShowAddModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Modals state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
+  const [incomingPayment, setIncomingPayment] = useState('');
 
   // New Project Form State
   const [newClientName, setNewClientName] = useState('');
@@ -125,6 +143,7 @@ export default function B2bInstitutionalProjectsView() {
     return matchesCat && matchesSearch;
   });
 
+  // Handler: Add New Project
   const handleAddNewProject = (e) => {
     e.preventDefault();
     if (!newClientName.trim()) return;
@@ -153,6 +172,63 @@ export default function B2bInstitutionalProjectsView() {
     setNewClientName('');
     setNewContact('');
     setNewPhone('');
+  };
+
+  // Handler: Save Edited Project
+  const handleSaveEditedProject = (e) => {
+    e.preventDefault();
+    if (!editingProject) return;
+
+    setProjects(projects.map(p => p.id === editingProject.id ? editingProject : p));
+    setEditingProject(null);
+  };
+
+  // Handler: Log Incoming Payment
+  const handleLogPayment = () => {
+    const amt = Number(incomingPayment);
+    if (!amt || amt <= 0 || !editingProject) return;
+
+    const updatedPaid = Math.min(editingProject.contractValue, editingProject.advancePaid + amt);
+    const updatedDue = Math.max(0, editingProject.contractValue - updatedPaid);
+
+    const updated = {
+      ...editingProject,
+      advancePaid: updatedPaid,
+      balanceDue: updatedDue,
+      stage: updatedPaid >= editingProject.contractValue ? 'HANDOVER_SETTLED' : 
+             updatedPaid >= (editingProject.contractValue * 0.5) ? 'TOKEN_RECEIVED' : editingProject.stage,
+      stageLabel: updatedPaid >= editingProject.contractValue ? '6. Handover Completed & Settled' :
+                  updatedPaid >= (editingProject.contractValue * 0.5) ? '4. 50% Token Advance Received' : editingProject.stageLabel
+    };
+
+    setEditingProject(updated);
+    setProjects(projects.map(p => p.id === updated.id ? updated : p));
+    setIncomingPayment('');
+  };
+
+  // Handler: Advance to Next Stage directly from Card
+  const handleAdvanceStage = (projId) => {
+    const target = projects.find(p => p.id === projId);
+    if (!target) return;
+
+    const currentIndex = STAGES.findIndex(s => s.id === target.stage);
+    if (currentIndex < STAGES.length - 1) {
+      const nextStage = STAGES[currentIndex + 1];
+      const updated = {
+        ...target,
+        stage: nextStage.id,
+        stageLabel: nextStage.label
+      };
+      setProjects(projects.map(p => p.id === projId ? updated : p));
+    }
+  };
+
+  // Handler: Delete / Archive Project
+  const handleDeleteProject = (projId) => {
+    if (window.confirm('Are you sure you want to archive this commercial project?')) {
+      setProjects(projects.filter(p => p.id !== projId));
+      if (editingProject?.id === projId) setEditingProject(null);
+    }
   };
 
   return (
@@ -341,8 +417,8 @@ export default function B2bInstitutionalProjectsView() {
                   />
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginTop: '6px' }}>
-                  <span style={{ color: '#10B981' }}>Advance: ₹{proj.advancePaid.toLocaleString('en-IN')}</span>
-                  <span style={{ color: '#EF4444' }}>Due: ₹{proj.balanceDue.toLocaleString('en-IN')}</span>
+                  <span style={{ color: '#10B981', fontWeight: '700' }}>Advance: ₹{proj.advancePaid.toLocaleString('en-IN')}</span>
+                  <span style={{ color: '#EF4444', fontWeight: '700' }}>Due: ₹{proj.balanceDue.toLocaleString('en-IN')}</span>
                 </div>
               </div>
 
@@ -354,16 +430,43 @@ export default function B2bInstitutionalProjectsView() {
               </div>
 
               {/* Actions Footer */}
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button
+                  className="btn-ghost-edit"
+                  style={{ padding: '8px 12px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  onClick={() => setEditingProject({ ...proj })}
+                  title="Edit details, change stage, or log payment"
+                >
+                  <Edit3 size={12} /> Edit / Log Payment
+                </button>
+
+                <button
+                  className="btn-cyan"
+                  style={{ padding: '8px 12px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  onClick={() => handleAdvanceStage(proj.id)}
+                  title="Advance project to next stage"
+                >
+                  <ChevronRight size={12} /> Next Stage
+                </button>
+
                 <button
                   className="btn-emerald"
-                  style={{ flex: 1, padding: '9px', fontSize: '11.5px' }}
+                  style={{ flex: 1, padding: '8px 12px', fontSize: '11.5px' }}
                   onClick={() => {
                     const text = encodeURIComponent(`Namaskar ${proj.contactPerson}! 🙏 This is Naresh / Director Rakesh from Sri Vinayaka Furnitures (Godrej Interio Rayagada). Regarding our commercial contract for ${proj.clientName} (${proj.roomsCount} Rooms): Next Step: ${proj.nextAction}. Current Balance: ₹${proj.balanceDue.toLocaleString('en-IN')}. Please confirm your availability today.`);
                     window.open(`https://wa.me/91${proj.phone.replace(/[^0-9]/g, '')}?text=${text}`, '_blank');
                   }}
                 >
-                  <Send size={13} /> WhatsApp Naresh Sir Follow-up
+                  <Send size={12} /> WhatsApp Follow-up
+                </button>
+
+                <button
+                  className="btn-ghost-edit"
+                  style={{ padding: '8px', color: '#EF4444' }}
+                  onClick={() => handleDeleteProject(proj.id)}
+                  title="Archive or Delete project"
+                >
+                  <Trash2 size={13} />
                 </button>
               </div>
 
@@ -371,6 +474,170 @@ export default function B2bInstitutionalProjectsView() {
           </SpotlightCard>
         ))}
       </div>
+
+      {/* ✏️ Modal: Edit Commercial Contract & Log Payment */}
+      {editingProject && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: '#0F172A', border: '1px solid rgba(212,175,55,0.4)', borderRadius: '16px', width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', padding: '24px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8)' }}>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '12px' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '17px', color: '#FFFFFF', fontWeight: '800' }}>
+                  ✏️ Edit Commercial Contract: {editingProject.clientName}
+                </h3>
+                <span style={{ fontSize: '11px', color: 'var(--accent-gold)' }}>ID: {editingProject.id}</span>
+              </div>
+              <button onClick={() => setEditingProject(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '18px', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            {/* Quick Payment Logger */}
+            <div style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '10px', padding: '14px', marginBottom: '18px' }}>
+              <div style={{ fontSize: '12px', fontWeight: '700', color: '#10B981', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                <CreditCard size={14} /> Log Incoming Client Payment
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <input
+                  type="number"
+                  placeholder="Enter amount (e.g. 100000)"
+                  value={incomingPayment}
+                  onChange={(e) => setIncomingPayment(e.target.value)}
+                  style={{ flex: 1, padding: '8px 12px', background: '#070D18', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#FFFFFF', fontSize: '13px' }}
+                />
+                <button
+                  type="button"
+                  className="btn-emerald"
+                  onClick={handleLogPayment}
+                  style={{ padding: '8px 16px', fontSize: '12px', whiteSpace: 'nowrap' }}
+                >
+                  + Add to Advance
+                </button>
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '6px' }}>
+                Currently Paid: <strong style={{ color: '#10B981' }}>₹{editingProject.advancePaid.toLocaleString('en-IN')}</strong> | Balance Due: <strong style={{ color: '#EF4444' }}>₹{editingProject.balanceDue.toLocaleString('en-IN')}</strong>
+              </div>
+            </div>
+
+            <form onSubmit={handleSaveEditedProject} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Client / Hotel Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingProject.clientName}
+                    onChange={(e) => setEditingProject({ ...editingProject, clientName: e.target.value })}
+                    style={{ width: '100%', padding: '8px 12px', background: '#070D18', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#FFFFFF', fontSize: '12.5px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Project Stage</label>
+                  <select
+                    value={editingProject.stage}
+                    onChange={(e) => {
+                      const found = STAGES.find(s => s.id === e.target.value);
+                      setEditingProject({
+                        ...editingProject,
+                        stage: e.target.value,
+                        stageLabel: found ? found.label : editingProject.stageLabel
+                      });
+                    }}
+                    style={{ width: '100%', padding: '8px 12px', background: '#070D18', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#FFFFFF', fontSize: '12.5px' }}
+                  >
+                    {STAGES.map(s => (
+                      <option key={s.id} value={s.id}>{s.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Contact Person</label>
+                  <input
+                    type="text"
+                    value={editingProject.contactPerson}
+                    onChange={(e) => setEditingProject({ ...editingProject, contactPerson: e.target.value })}
+                    style={{ width: '100%', padding: '8px 12px', background: '#070D18', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#FFFFFF', fontSize: '12.5px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>WhatsApp Phone</label>
+                  <input
+                    type="text"
+                    value={editingProject.phone}
+                    onChange={(e) => setEditingProject({ ...editingProject, phone: e.target.value })}
+                    style={{ width: '100%', padding: '8px 12px', background: '#070D18', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#FFFFFF', fontSize: '12.5px' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Total Contract Value (₹)</label>
+                  <input
+                    type="number"
+                    value={editingProject.contractValue}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setEditingProject({
+                        ...editingProject,
+                        contractValue: val,
+                        balanceDue: Math.max(0, val - editingProject.advancePaid)
+                      });
+                    }}
+                    style={{ width: '100%', padding: '8px 12px', background: '#070D18', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#FFFFFF', fontSize: '12.5px' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Rooms / Units</label>
+                  <input
+                    type="number"
+                    value={editingProject.roomsCount}
+                    onChange={(e) => setEditingProject({ ...editingProject, roomsCount: Number(e.target.value) })}
+                    style={{ width: '100%', padding: '8px 12px', background: '#070D18', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#FFFFFF', fontSize: '12.5px' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Scope of Work Specifications</label>
+                <textarea
+                  rows="2"
+                  value={editingProject.scope}
+                  onChange={(e) => setEditingProject({ ...editingProject, scope: e.target.value })}
+                  style={{ width: '100%', padding: '8px 12px', background: '#070D18', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#FFFFFF', fontSize: '12px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginBottom: '4px' }}>Next Milestone Action</label>
+                <input
+                  type="text"
+                  value={editingProject.nextAction}
+                  onChange={(e) => setEditingProject({ ...editingProject, nextAction: e.target.value })}
+                  style={{ width: '100%', padding: '8px 12px', background: '#070D18', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#FFFFFF', fontSize: '12.5px' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button
+                  type="button"
+                  className="btn-ghost-edit"
+                  onClick={() => setEditingProject(null)}
+                  style={{ flex: 1, padding: '10px' }}
+                >
+                  Cancel
+                </button>
+                <ShimmerButton variant="gold" type="submit" style={{ flex: 1 }}>
+                  Save Deal Changes
+                </ShimmerButton>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ➕ Modal: Add New Commercial Contract */}
       {showAddModal && (

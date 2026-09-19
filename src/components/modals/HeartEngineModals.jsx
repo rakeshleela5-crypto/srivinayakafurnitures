@@ -30,10 +30,12 @@ import {
   FileText,
   Printer,
   ShoppingBag,
-  Zap
+  Zap,
+  Cpu
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../../utils/audioUtils';
 import { dispatchWebhookAction } from '../../services/webhookService';
+import { getAiProviderKeys, saveAiProviderKey } from '../../services/aiRouterService';
 
 // ==============================================================================================
 // ❤️ HEART ENGINE 1: 3-TIER PRICING & PROFIT MARGIN MATRIX MODAL
@@ -346,11 +348,30 @@ export function StoreSettingsModal({ isOpen, onClose }) {
   const [directorPin, setDirectorPin] = useState('8899');
   const [hours, setHours] = useState('09:30 AM to 09:00 PM IST (Mon–Sun)');
 
+  // Multi-LLM Smart Router Keys
+  const [geminiKey, setGeminiKey] = useState('');
+  const [groqKey, setGroqKey] = useState('');
+  const [customEndpoint, setCustomEndpoint] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      const currentKeys = getAiProviderKeys();
+      setGeminiKey(currentKeys.geminiKey || '');
+      setGroqKey(currentKeys.groqKey || '');
+      setCustomEndpoint(currentKeys.customEndpoint || '');
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleSave = () => {
     playSuccessChime();
     triggerGoldenConfetti();
+
+    // Save AI provider keys into secure storage
+    saveAiProviderKey('gemini', geminiKey);
+    saveAiProviderKey('groq', groqKey);
+    saveAiProviderKey('customEndpoint', customEndpoint);
 
     dispatchWebhookAction('SAVE_COMPANY_IDENTITY', {
       store_name: storeName,
@@ -364,21 +385,21 @@ export function StoreSettingsModal({ isOpen, onClose }) {
       updated_timestamp: new Date().toISOString()
     });
 
-    showToast("⚙️ Showroom Commercial Identity & UPI VPA updated across all 16 tabs & invoices!", true);
+    showToast("⚙️ Showroom Identity, UPI VPA & AI Provider Keys updated successfully!", true);
     onClose();
   };
 
   return (
     <div className="modal-overlay" style={{ zIndex: 9999 }}>
-      <div className="modal-card" style={{ maxWidth: '640px', background: '#0B132B', border: '2px solid var(--accent-emerald)' }}>
+      <div className="modal-card" style={{ maxWidth: '640px', background: '#0B132B', border: '2px solid var(--accent-emerald)', maxHeight: '90vh', overflowY: 'auto' }}>
         <div className="modal-header">
           <div>
-            <span className="badge badge-emerald">❤️ COMMERCIAL IDENTITY HEART ENGINE 3</span>
+            <span className="badge badge-emerald">❤️ COMMERCIAL IDENTITY & AI HEART ENGINE</span>
             <h3 style={{ fontSize: '17px', fontWeight: '900', color: '#FFFFFF', marginTop: '2px' }}>
-              ⚙️ Showroom Identity, GST & UPI VPA Configurator
+              ⚙️ Showroom Identity, GST & Multi-LLM Settings
             </h3>
             <div style={{ fontSize: '11px', color: '#94A3B8' }}>
-              White-label configuration powering all invoices, tax certificates & dynamic QR codes
+              White-label configuration powering invoices, UPI VPAs, and Multi-LLM failover routing
             </div>
           </div>
           <button className="btn-close-modal" onClick={onClose}><X size={16} /></button>
@@ -423,6 +444,59 @@ export function StoreSettingsModal({ isOpen, onClose }) {
           <div className="form-field">
             <label>Showroom Operating Hours</label>
             <input value={hours} onChange={e => setHours(e.target.value)} />
+          </div>
+        </div>
+
+        {/* 🧠 Multi-LLM Smart AI Provider Keys Vault */}
+        <div style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(212,175,55,0.3)', borderRadius: '10px', padding: '14px', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+            <Cpu size={15} color="var(--accent-gold)" />
+            <div style={{ fontSize: '12.5px', fontWeight: '800', color: '#FFFFFF' }}>
+              Multi-LLM Smart Failover Provider Keys
+            </div>
+            <span className="badge badge-gold" style={{ fontSize: '9px' }}>FREE TIER ROUTER</span>
+          </div>
+          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+            Powers 24/7 AI Concierge, Voice POS, and Ask My Showroom with automatic failover (Gemini ➡️ Groq LLaMA 3.3 ➡️ Local).
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div>
+              <label style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block', marginBottom: '3px' }}>
+                Google Gemini API Key (Primary)
+              </label>
+              <input
+                type="password"
+                placeholder="AIzaSy..."
+                value={geminiKey}
+                onChange={e => setGeminiKey(e.target.value)}
+                style={{ width: '100%', padding: '7px 10px', background: '#070D18', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#FFFFFF', fontSize: '12px' }}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block', marginBottom: '3px' }}>
+                Groq Cloud API Key (LLaMA 3.3 70B Fast Failover)
+              </label>
+              <input
+                type="password"
+                placeholder="gsk_..."
+                value={groqKey}
+                onChange={e => setGroqKey(e.target.value)}
+                style={{ width: '100%', padding: '7px 10px', background: '#070D18', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#FFFFFF', fontSize: '12px' }}
+              />
+            </div>
+            <div>
+              <label style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block', marginBottom: '3px' }}>
+                Custom FreeLLMAPI Endpoint (Optional)
+              </label>
+              <input
+                type="text"
+                placeholder="http://localhost:3001 or https://custom-proxy.com"
+                value={customEndpoint}
+                onChange={e => setCustomEndpoint(e.target.value)}
+                style={{ width: '100%', padding: '7px 10px', background: '#070D18', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '6px', color: '#FFFFFF', fontSize: '12px' }}
+              />
+            </div>
           </div>
         </div>
 

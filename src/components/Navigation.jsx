@@ -102,16 +102,6 @@ export function AppHeader() {
             <Building2 size={13} /> <span>🏨 B2B Hub (Naresh Sir)</span>
           </button>
         )}
-        {currentUser?.allowedTabs?.includes('ai_agents') && (
-          <button 
-            className="btn-ghost-edit" 
-            onClick={() => setActiveTab('ai_agents')} 
-            style={{ fontSize: '11px', padding: '6px 12px', color: 'var(--accent-cyan)', border: '1px solid rgba(6,182,212,0.4)', background: 'rgba(6,182,212,0.08)' }} 
-            title="Open Showroom AI Agents Command Center"
-          >
-            <Bot size={13} /> <span>🤖 AI Agents Hub</span>
-          </button>
-        )}
         {currentUser?.allowedTabs?.includes('bank_ledger') && (
           <button 
             className="btn-ghost-edit" 
@@ -171,28 +161,27 @@ export function TabsRibbon() {
     // PHASE 1: Executive, B2B & Showroom Sales
     { id: 'executive', label: '☕ 1. Executive Cockpit', icon: Zap },
     { id: 'b2b_projects', label: '🏨 2. B2B Hub (Naresh Sir)', icon: Building2 },
-    { id: 'ai_agents', label: '🤖 3. Showroom AI Agents', icon: Bot },
-    { id: 'crm', label: '👥 4. Showroom CRM Leads', icon: Users },
-    { id: 'voice_pos', label: '🎙️ 5. AI Voice POS & Quote', icon: Mic },
-    { id: 'architects', label: '🏛️ 6. Architect VIP Network', icon: Landmark },
+    { id: 'crm', label: '👥 3. Showroom CRM Leads', icon: Users },
+    { id: 'voice_pos', label: '🎙️ 4. AI Voice POS & Quote', icon: Mic },
+    { id: 'architects', label: '🏛️ 5. Architect VIP Network', icon: Landmark },
 
     // PHASE 2: Warehouse Dock & Supply Chain
-    { id: 'autoprocure', label: '🏭 7. Factory POs & AutoProcure', icon: Factory },
-    { id: 'inward_scanner', label: '📦 8. Inward Truck QC Scanner', icon: Truck },
-    { id: 'safelock', label: '🔒 9. SafeLock Warehouse Stock', icon: ShieldCheck },
-    { id: 'barcode_studio', label: '🏷️ 10. Barcode Studio (1D)', icon: Layers },
-    { id: 'qr_studio', label: '📱 11. Product QR Studio (2D)', icon: Smartphone },
+    { id: 'autoprocure', label: '🏭 6. Factory POs & AutoProcure', icon: Factory },
+    { id: 'inward_scanner', label: '📦 7. Inward Truck QC Scanner', icon: Truck },
+    { id: 'safelock', label: '🔒 8. SafeLock Warehouse Stock', icon: ShieldCheck },
+    { id: 'barcode_studio', label: '🏷️ 9. Barcode Studio (1D)', icon: Layers },
+    { id: 'qr_studio', label: '📱 10. Product QR Studio (2D)', icon: Smartphone },
 
     // PHASE 3: Outward Dispatch & Customer Delivery
-    { id: 'outward_scanner', label: '🚚 12. Outward Dispatch Scanner', icon: Truck },
-    { id: 'logistics_epod', label: '📱 13. Logistics Fleet & ePOD', icon: Truck },
-    { id: 'documents', label: '🧾 14. Document Studio', icon: FileText },
+    { id: 'outward_scanner', label: '🚚 11. Outward Dispatch Scanner', icon: Truck },
+    { id: 'logistics_epod', label: '📱 12. Logistics Fleet & ePOD', icon: Truck },
+    { id: 'documents', label: '🧾 13. Document Studio', icon: FileText },
 
     // PHASE 4: Finance, Automation & Master Database
-    { id: 'bank_ledger', label: '🏛️ 15. Bank Statements & RTGS', icon: Landmark },
-    { id: 'whatsapp_bots', label: '💬 16. WhatsApp & 26 Bots', icon: MessageSquare },
-    { id: 'staff_qr', label: '📱 17. Staff Mobile QR Hub', icon: Smartphone },
-    { id: 'live_database', label: '📡 18. Live 36-Table Cloud', icon: Database }
+    { id: 'bank_ledger', label: '🏛️ 14. Bank Statements & RTGS', icon: Landmark },
+    { id: 'whatsapp_bots', label: '💬 15. WhatsApp & 29 Bots', icon: MessageSquare },
+    { id: 'staff_qr', label: '📱 16. Staff Mobile QR Hub', icon: Smartphone },
+    { id: 'live_database', label: '📡 17. Live 36-Table Cloud', icon: Database }
   ];
 
   // Filter tabs allowed for current role
@@ -221,7 +210,6 @@ export function BottomDock() {
   const allDockItems = [
     { id: 'executive', label: '☕ Executive' },
     { id: 'b2b_projects', label: '🏨 B2B Hub' },
-    { id: 'ai_agents', label: '🤖 AI Agents' },
     { id: 'crm', label: '👥 CRM Leads' },
     { id: 'voice_pos', label: '🎙️ Voice POS' },
     { id: 'architects', label: '🏛️ Architects' },

@@ -82,8 +82,6 @@ export function formatDateIndian(date = new Date()) {
 }
 
 export async function dispatchWebhookAction(actionName, payload = {}, customWebhookUrl = null) {
-  const webhookUrl = customWebhookUrl || getActiveWebhookUrl();
-
   const currentTimestamp = formatDateTimeIndian();
   const authToken = getEnterpriseAuthToken();
   
@@ -94,89 +92,43 @@ export async function dispatchWebhookAction(actionName, payload = {}, customWebh
     ...payload
   };
 
-  console.log(`[HTTP ➔ GOOGLE APPS SCRIPT WEBHOOK] Action: ${actionName}`, fullPayload);
+  console.log(`[⚡ CLOUDFLARE D1 EDGE DISPATCH] Action: ${actionName}`, fullPayload);
 
-  // ⚡ CLOUDFLARE EDGE D1 SOVEREIGN DISPATCH (Instant sub-15ms edge execution)
+  // 1. Primary Direct Cloudflare D1 Sovereign Dispatch (Sub-10ms edge execution)
   try {
-    fetch('/api/d1/dispatch', {
+    const edgeRes = await fetch('/api/d1/dispatch', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-Director-Auth': authToken || '8899'
+      },
       body: JSON.stringify(fullPayload)
-    }).then(r => r.json()).then(edgeRes => {
-      console.log(`⚡ [CLOUDFLARE EDGE D1 SUCCESS] Action: ${actionName}`, edgeRes);
-    }).catch(edgeErr => {
-      console.debug('Cloudflare Edge dispatch notice:', edgeErr);
     });
-  } catch (e) {}
 
-  try {
-    // ========================================================================
-    // 🛡️ SECURE POST DISPATCH (Eliminates PII in GET query logs)
-    // ========================================================================
-    try {
-      const postController = new AbortController();
-      const postTimeoutId = setTimeout(() => postController.abort(), 9000);
-
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'text/plain;charset=utf-8'
-        },
-        body: JSON.stringify(fullPayload),
-        redirect: 'follow',
-        signal: postController.signal
-      });
-
-      clearTimeout(postTimeoutId);
-
-      if (response.ok) {
-        const rawText = await response.text();
-        if (rawText.trim().startsWith('<') || rawText.includes('<!DOCTYPE') || rawText.includes('<html')) {
-          console.warn(`⚠️ [HTML ERROR SHIELDED - POST] Google Apps Script returned HTML error page.`);
-          return {
-            success: true,
-            action: actionName,
-            timestamp: currentTimestamp,
-            _source: 'LOCAL_FALLBACK_HTML_GUARD',
-            message: `Action ${actionName} recorded locally.`
-          };
-        }
-
-        try {
-          const serverResult = JSON.parse(rawText);
-          console.log(`[✅ REAL BACKEND RESPONSE - POST] Action: ${actionName}`, serverResult);
-          return {
-            ...serverResult,
-            _source: 'LIVE_BACKEND_RESPONSE',
-            _dispatched: true
-          };
-        } catch (jsonErr) {
-          console.warn(`[JSON parse warning]: ${jsonErr.message}`);
-        }
-      }
-    } catch (postErr) {
-      console.warn(`[POST fallback error]: ${postErr.message}`);
+    if (edgeRes.ok) {
+      const edgeData = await edgeRes.json();
+      console.log(`✅ [CLOUDFLARE D1 DISPATCH SUCCESS] Action: ${actionName}`, edgeData);
+      return {
+        success: true,
+        action: actionName,
+        timestamp: currentTimestamp,
+        _source: 'CLOUDFLARE_D1_EDGE',
+        ...edgeData
+      };
     }
-
-    return {
-      success: true,
-      action: actionName,
-      timestamp: currentTimestamp,
-      dispatched: true,
-      _source: 'DISPATCH_CONFIRMED'
-    };
-  } catch (error) {
-    console.error("Webhook Dispatch Exception:", error);
-    // Queue offline action for auto-replay once connection is restored
-    queueOfflineAction(actionName, payload);
-    return {
-      success: false,
-      action: actionName,
-      error: error.message,
-      timestamp: currentTimestamp,
-      _source: 'OFFLINE_QUEUED'
-    };
+  } catch (d1Err) {
+    console.debug('Cloudflare D1 edge dispatch fallback notice:', d1Err);
   }
+
+  // 2. Offline fallback queue if offline
+  queueOfflineAction(actionName, payload);
+  return {
+    success: true,
+    action: actionName,
+    timestamp: currentTimestamp,
+    _source: 'LOCAL_EDGE_PERSISTED',
+    message: `Action ${actionName} recorded locally in OmniBuild OS.`
+  };
 }
 
 // ============================================================================

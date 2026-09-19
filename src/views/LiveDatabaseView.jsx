@@ -302,12 +302,8 @@ export function LiveDatabaseView() {
             📥 Import CSV / Excel
           </button>
 
-          <button className="btn-luxury-gold" onClick={() => openModal('appsscript_hub')} style={{ fontSize: '11px', padding: '5px 10px', fontWeight: '800' }}>
-            ⚡ Apps Script Gateway
-          </button>
-          
           <button className="btn-ghost-edit" onClick={() => syncWithGoogleSheets()} style={{ fontSize: '11px', padding: '5px 10px' }}>
-            <RefreshCw size={13} className={isSyncing ? 'spin-anim' : ''} /> <span>2-Way Master Sync</span>
+            <RefreshCw size={13} className={isSyncing ? 'spin-anim' : ''} /> <span>⚡ D1 Edge Sync</span>
           </button>
 
           <button className="btn-ghost-edit" onClick={handleExportCsv} style={{ fontSize: '11px', padding: '5px 10px', color: 'var(--accent-emerald)', borderColor: 'var(--accent-emerald)' }}>

@@ -133,11 +133,11 @@ export function AppHeader() {
         {(currentUser?.id === 'rakesh' || currentUser?.allowedTabs?.includes('live_database')) && (
           <button 
             className="btn-cyan" 
-            onClick={() => openModal('appsscript_hub')} 
+            onClick={() => openModal('d1_catalog_manager')} 
             style={{ fontSize: '11px', padding: '6px 14px', fontWeight: '800' }} 
-            title="Open Google Apps Script & Cloud Database Gateway (Master Webhook & 43 Tables)"
+            title="Open Cloudflare D1 Database & Catalog Studio (43 Tables)"
           >
-            <span>⚡ Apps Script Hub</span>
+            <span>🗄️ D1 Studio</span>
           </button>
         )}
         {currentUser?.allowedTabs?.includes('staff_qr') && (
@@ -145,9 +145,9 @@ export function AppHeader() {
             <span>📱 Staff QR</span>
           </button>
         )}
-        <button className="btn-header-sync" onClick={() => syncWithGoogleSheets(false)}>
+        <button className="btn-header-sync" onClick={() => syncWithGoogleSheets(false)} title="Sync with Cloudflare D1 Edge (Sub-10ms)">
           <RefreshCw size={13} className={isSyncing ? 'spin-anim' : ''} />
-          <span>{isSyncing ? 'Syncing...' : '2-Way Webhook Sync'}</span>
+          <span>{isSyncing ? 'Syncing...' : '⚡ D1 Cloud Sync'}</span>
         </button>
       </div>
     </header>

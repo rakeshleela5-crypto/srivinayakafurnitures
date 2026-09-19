@@ -177,11 +177,10 @@ export function TabsRibbon() {
     { id: 'logistics_epod', label: '📱 12. Logistics Fleet & ePOD', icon: Truck },
     { id: 'documents', label: '🧾 13. Document Studio', icon: FileText },
 
-    // PHASE 4: Finance, Automation & Master Database
+    // PHASE 4: Finance, Staff Hub & Sovereign Cloudflare D1 Database
     { id: 'bank_ledger', label: '🏛️ 14. Bank Statements & RTGS', icon: Landmark },
-    { id: 'whatsapp_bots', label: '💬 15. WhatsApp & 29 Bots', icon: MessageSquare },
-    { id: 'staff_qr', label: '📱 16. Staff Mobile QR Hub', icon: Smartphone },
-    { id: 'live_database', label: '📡 17. Live 36-Table Cloud', icon: Database }
+    { id: 'staff_qr', label: '📱 15. Staff Mobile QR Hub', icon: Smartphone },
+    { id: 'live_database', label: '🗄️ 16. Live 43-Table D1 Edge', icon: Database }
   ];
 
   // Filter tabs allowed for current role
@@ -222,9 +221,8 @@ export function BottomDock() {
     { id: 'logistics_epod', label: '📱 Fleet ePOD' },
     { id: 'documents', label: '🧾 Documents' },
     { id: 'bank_ledger', label: '🏛️ Bank Ledger' },
-    { id: 'whatsapp_bots', label: '💬 WhatsApp' },
     { id: 'staff_qr', label: '📱 QR Hub' },
-    { id: 'live_database', label: '📡 36 Tables' }
+    { id: 'live_database', label: '🗄️ 43 Tables D1' }
   ];
 
   const visibleDockItems = currentUser?.allowedTabs

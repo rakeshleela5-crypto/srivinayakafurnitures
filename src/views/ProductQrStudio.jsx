@@ -21,6 +21,7 @@ import {
   Share2,
   Barcode,
   MessageSquare,
+  Database,
   Mic,
   Search,
   X,
@@ -473,12 +474,12 @@ export function ProductQrStudio() {
           <button 
             className="btn-purple" 
             onClick={() => {
-              setActiveTab('whatsapp_bots');
-              showToast("💬 Switched to WhatsApp AI Bots & Telemetry!", true);
+              setActiveTab('live_database');
+              showToast("🗄️ Switched to Cloudflare D1 Database Studio!", true);
             }}
             style={{ fontSize: '11px', padding: '5px 10px' }}
           >
-            <MessageSquare size={12} /> <span>WhatsApp Bots (Tab 9)</span>
+            <Database size={12} /> <span>Live D1 Database (Tab 16)</span>
           </button>
 
           <button 

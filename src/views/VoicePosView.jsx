@@ -861,6 +861,32 @@ export function VoicePosView() {
               📄 Proposal
             </button>
             <button 
+              className="btn-luxury-gold" 
+              style={{ fontSize: '10px', padding: '8px 4px', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '3px' }}
+              onClick={() => openModal('bluetooth_printer', { 
+                order: {
+                  order_id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
+                  customer_name: custName,
+                  customer_phone: custPhone,
+                  project_address: custAddress,
+                  items: cartItems.map(c => ({
+                    name: c.Product_Name,
+                    qty: c.qty,
+                    price: (c.Selling_Price_INR || 50000) * c.qty
+                  })),
+                  total_amount_inr: finalPayable,
+                  advance_paid_inr: advanceToken50,
+                  payment_mode: 'UPI Token',
+                  otp_code: '8899',
+                  assigned_driver: 'Tophan Gouda (Tata Ace OD-18-B-4491)',
+                  carpenter_assigned: 'Narayana Mistri (Lead Installer)'
+                }
+              })}
+              title="Print instant 3-Inch POS Receipt via Bluetooth Thermal Printer"
+            >
+              <Printer size={12} /> <span>🖨️ 3" Thermal Slip</span>
+            </button>
+            <button 
               className="btn-emerald" 
               style={{ fontSize: '10px', padding: '8px 2px', justifyContent: 'center' }}
               onClick={() => {

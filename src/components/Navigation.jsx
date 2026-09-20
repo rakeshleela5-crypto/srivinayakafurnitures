@@ -16,7 +16,9 @@ import {
   Zap,
   Smartphone,
   Building2,
-  Bot
+  Bot,
+  Printer,
+  Download
 } from 'lucide-react';
 
 export function TopTicker() {
@@ -54,6 +56,33 @@ export function TopTicker() {
 
 export function AppHeader() {
   const { storeMeta, syncWithGoogleSheets, isSyncing, setActiveTab, currentUser, logout, openModal, appMode, toggleAppMode } = useStore();
+  const [deferredPrompt, setDeferredPrompt] = React.useState(null);
+  const [isInstalled, setIsInstalled] = React.useState(false);
+
+  React.useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    if (typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstalled(true);
+    }
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+        setIsInstalled(true);
+      }
+    } else {
+      alert("📲 How to Install OmniBuild OS on your Device:\n\n• On Android: Tap Chrome Menu (⋮) → 'Install app' or 'Add to Home screen'.\n• On iPhone / iPad: Tap the Share button (⎋) → 'Add to Home Screen'.\n• On Windows / Mac: Look for the Install icon in the browser address bar!");
+    }
+  };
 
   return (
     <header className="app-header">
@@ -143,6 +172,24 @@ export function AppHeader() {
         {currentUser?.allowedTabs?.includes('staff_qr') && (
           <button className="btn-luxury-gold" onClick={() => setActiveTab('staff_qr')} style={{ padding: '6px 14px', fontSize: '11.5px' }}>
             <span>📱 Staff QR</span>
+          </button>
+        )}
+        <button 
+          className="btn-ghost-edit" 
+          onClick={() => openModal('bluetooth_printer')} 
+          style={{ fontSize: '11px', padding: '6px 12px', color: '#10B981', border: '1px solid rgba(16,185,129,0.4)', background: 'rgba(16,185,129,0.08)' }} 
+          title="Connect Hardware 3-Inch Bluetooth Thermal POS Receipt Printer"
+        >
+          <Printer size={13} /> <span>🖨️ 3" Thermal POS</span>
+        </button>
+        {!isInstalled && (
+          <button 
+            className="btn-luxury-gold" 
+            onClick={handleInstallClick} 
+            style={{ fontSize: '11px', padding: '6px 12px' }} 
+            title="Install OmniBuild OS to your Android / iPhone Home Screen"
+          >
+            <Download size={13} /> <span>📲 Install App</span>
           </button>
         )}
         <button className="btn-header-sync" onClick={() => syncWithGoogleSheets(false)} title="Sync with Cloudflare D1 Edge (Sub-10ms)">

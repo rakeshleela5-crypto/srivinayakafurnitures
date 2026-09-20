@@ -50,6 +50,7 @@ import { EnterpriseSecurityModal } from './EnterpriseSecurityModal';
 import { AppsScriptHubModal } from './AppsScriptHubModal';
 import { AgenticRagStudioModal } from './AgenticRagStudioModal';
 import { D1CatalogManagerModal } from './D1CatalogManagerModal';
+import { BluetoothPrinterModal } from './BluetoothPrinterModal';
 
 export function ModalContainer() {
   const { activeModal, modalProps, closeModal } = useStore();
@@ -157,6 +158,9 @@ export function ModalContainer() {
 
       {/* ⚡ CLOUDFLARE D1 CATALOG IMPORTER (Methods 1, 2, 3) */}
       <D1CatalogManagerModal isOpen={activeModal === 'd1_catalog_manager'} onClose={closeModal} />
+
+      {/* 🖨️ HARDWARE BLUETOOTH THERMAL RECEIPT PRINTER (3-INCH ESC/POS) */}
+      <BluetoothPrinterModal isOpen={activeModal === 'bluetooth_printer'} onClose={closeModal} order={modalProps?.order} />
     </>
   );
 }

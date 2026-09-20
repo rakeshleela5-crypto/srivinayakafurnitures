@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FCE043"/>
+      <stop offset="50%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#AA771C"/>
+    </linearGradient>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+  </defs>
+  <!-- Background with rounded corners -->
+  <rect width="512" height="512" rx="108" fill="url(#bgGrad)" stroke="#D4AF37" stroke-width="8"/>
+  
+  <!-- Outer Gold Decorative Ring -->
+  <circle cx="256" cy="256" r="195" fill="none" stroke="url(#goldGrad)" stroke-width="6" opacity="0.4"/>
+  <circle cx="256" cy="256" r="185" fill="none" stroke="url(#goldGrad)" stroke-width="2" stroke-dasharray="8 6" opacity="0.6"/>
+
+  <!-- Center Shield / Crest -->
+  <path d="M256 95 L375 145 V255 C375 330 256 395 256 395 C256 395 137 330 137 255 V145 Z" fill="rgba(212, 175, 55, 0.12)" stroke="url(#goldGrad)" stroke-width="8" stroke-linejoin="round"/>
+
+  <!-- GI Monogram -->
+  <text x="256" y="275" font-family="-apple-system, BlinkMacSystemFont, 'Outfit', 'Plus Jakarta Sans', sans-serif" font-size="120" font-weight="900" text-anchor="middle" fill="url(#goldGrad)" letter-spacing="4">GI</text>
+
+  <!-- Subtitle Tag -->
+  <text x="256" y="325" font-family="-apple-system, BlinkMacSystemFont, 'Outfit', 'Plus Jakarta Sans', sans-serif" font-size="24" font-weight="800" text-anchor="middle" fill="#FFFFFF" letter-spacing="8">RAYAGADA</text>
+
+  <!-- Crown Emoji Accent -->
+  <text x="256" y="165" font-size="36" text-anchor="middle">👑</text>
+</svg>

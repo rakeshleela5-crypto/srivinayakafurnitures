@@ -2,12 +2,15 @@
  * ⏰ Master Autonomous Cron Worker for OmniBuild OS™
  * Sri Vinayaka Furnitures (Godrej Interio Rayagada Flagship)
  * 
- * Manages 5 core showroom autonomous background schedules:
+ * Manages all 8 core showroom autonomous background schedules:
  * 1. 30 15 * * *  (09:00 PM IST Daily)   ➔ 9:00 PM EOD Cash & Sales Summary Slip
  * 2. 30 4 * * *   (10:00 AM IST Daily)   ➔ Morning Customer Follow-Up & Festive Offer Engine
  * 3. 0 * /2 * * * (Every 2 Hours)        ➔ SafeLock 48h Token Hold & Inventory Recovery Guard
- * 4. 0 10 * * *   (03:30 PM IST Daily)   ➔ Fleet Delivery Route Manifest & Driver Dispatch
- * 5. 30 4 * * 1   (Monday 10:00 AM IST)  ➔ Architect Weekly Volume & Commission Payout Ledger
+ * 4. 30 5 * * *   (11:00 AM IST Daily)   ➔ Floor Aging Stock Radar (>45 days display clearance)
+ * 5. 0 3 * * *    (08:30 AM IST Daily)   ➔ Automatic Bank UTR & UPI Reconciliation
+ * 6. 0 10 * * *   (03:30 PM IST Daily)   ➔ Fleet Delivery Route Manifest & Driver Dispatch
+ * 7. 30 4 * * 1   (Monday 10:00 AM IST)  ➔ Architect Weekly Volume & Commission Payout Ledger
+ * 8. 30 18 * * *  (12:00 AM Midnight IST)➔ Database Deduplication & Sovereign Cloud Backup to R2
  */
 
 const EDGE_BASE_URL = "https://srivinayakafurnitures.rakeshleela5.workers.dev/api/d1/cron";
@@ -28,6 +31,16 @@ const CRON_ROUTES = {
     title: "SafeLock 48-Hour Token Hold & Inventory Recovery Guard",
     description: "Releases unconfirmed tentative holds back into active warehouse stock"
   },
+  "30 5 * * *": {
+    endpoint: `${EDGE_BASE_URL}/floor-aging-radar`,
+    title: "11:00 AM Floor Aging Stock Radar Sentinel",
+    description: "Scans floor display units aging >45 days and prepares clearance spot discounts"
+  },
+  "0 3 * * *": {
+    endpoint: `${EDGE_BASE_URL}/bank-utr-reconcile`,
+    title: "08:30 AM Morning Bank UTR & Payment Auto-Reconciler",
+    description: "Matches incoming bank NEFT/UPI settlement UTRs against open customer balances"
+  },
   "0 10 * * *": {
     endpoint: `${EDGE_BASE_URL}/fleet-dispatch-manifest`,
     title: "03:30 PM Fleet Delivery Route Manifest & Driver Dispatch",
@@ -37,6 +50,11 @@ const CRON_ROUTES = {
     endpoint: `${EDGE_BASE_URL}/architect-commission`,
     title: "Monday 10:00 AM Architect Weekly Commission Payout",
     description: "Tallies weekly architect referral project volume and calculates net commission & TDS"
+  },
+  "30 18 * * *": {
+    endpoint: `${EDGE_BASE_URL}/midnight-maintenance-backup`,
+    title: "12:00 AM Midnight Database Maintenance & R2 Cloud Backup",
+    description: "Deduplicates tables, indexes foreign keys, and saves encrypted SQLite backup to R2"
   }
 };
 
@@ -76,7 +94,7 @@ export default {
     const url = new URL(request.url);
     const requestedJob = url.searchParams.get("job");
 
-    // If a specific job was requested via query parameter ?job=9pm-summary etc.
+    // If a specific job was requested via query parameter ?job=floor-aging-radar etc.
     if (requestedJob) {
       const matchedKey = Object.keys(CRON_ROUTES).find(key => 
         CRON_ROUTES[key].endpoint.endsWith(requestedJob) ||
@@ -113,7 +131,7 @@ export default {
       }
     }
 
-    // Default status overview listing all 5 automated cron jobs
+    // Default status overview listing all 8 automated cron jobs
     return new Response(JSON.stringify({
       system: "OmniBuild OS™ Master Cloudflare Cron Engine",
       showroom: "Sri Vinayaka Furnitures (Godrej Interio Rayagada)",

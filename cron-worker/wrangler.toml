@@ -4,9 +4,12 @@ compatibility_date = "2024-09-19"
 
 [triggers]
 crons = [
-  "30 15 * * *",
-  "30 4 * * *",
-  "0 */2 * * *",
-  "0 10 * * *",
-  "30 4 * * 1"
+  "30 15 * * *",   # 1. 09:00 PM IST Daily — Showroom EOD Cash & Sales Summary
+  "30 4 * * *",    # 2. 10:00 AM IST Daily — Customer Follow-Up & Festive Offer Engine
+  "0 */2 * * *",   # 3. Every 2 Hours — SafeLock 48h Token Hold & Inventory Recovery Guard
+  "30 5 * * *",    # 4. 11:00 AM IST Daily — Floor Aging Stock Radar (>45 days display clearance)
+  "0 3 * * *",     # 5. 08:30 AM IST Daily — Automatic Bank UTR & UPI Reconciliation
+  "0 10 * * *",    # 6. 03:30 PM IST Daily — Fleet Delivery Route Manifest & Driver Dispatch
+  "30 4 * * 1",    # 7. Monday 10:00 AM IST — Architect Weekly Volume & Commission Payout
+  "30 18 * * *"    # 8. 12:00 AM Midnight IST — Database Maintenance & Sovereign Cloud Backup to R2
 ]

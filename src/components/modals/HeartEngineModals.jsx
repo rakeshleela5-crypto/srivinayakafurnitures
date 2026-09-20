@@ -50,7 +50,7 @@ import {
 // ❤️ HEART ENGINE 1: 3-TIER PRICING & PROFIT MARGIN MATRIX MODAL
 // ==============================================================================================
 export function TierPricingModal({ isOpen, onClose, sku = 'BED-MOD-001' }) {
-  const { catalog, showToast } = useStore();
+  const { catalog, showToast, verifyDirectorPin } = useStore();
   const item = catalog.find(c => c.SKU === sku) || catalog[0];
 
   const [mrp, setMrp] = useState(item?.MRP_INR || 98000);
@@ -73,11 +73,12 @@ export function TierPricingModal({ isOpen, onClose, sku = 'BED-MOD-001' }) {
 
   if (!isOpen) return null;
 
-  const handleVerifyPin = () => {
-    if (managerPin === '8899') {
+  const handleVerifyPin = async () => {
+    const ok = await verifyDirectorPin(managerPin);
+    if (ok) {
       setPinVerified(true);
       playSuccessChime();
-      showToast("🔓 Director PIN 8899 Verified! Floor Price unlocked for editing.", true);
+      showToast("🔓 Director PIN Verified! Floor Price unlocked for editing.", true);
     } else {
       showToast("❌ Invalid Director PIN. Floor price protected.", false);
     }
@@ -95,7 +96,7 @@ export function TierPricingModal({ isOpen, onClose, sku = 'BED-MOD-001' }) {
       architect_net_rate: Number(architectRate),
       floor_price: Number(floorPrice),
       factory_cost: Number(factoryCost),
-      updated_by: "Director Rakesh (PIN 8899)",
+      updated_by: "Director Rakesh (Verified)",
       timestamp: new Date().toISOString()
     });
 
@@ -166,7 +167,7 @@ export function TierPricingModal({ isOpen, onClose, sku = 'BED-MOD-001' }) {
                 </button>
               </div>
             ) : (
-              <span style={{ fontSize: '10px', color: '#34D399' }}>✓ Unlocked with PIN 8899</span>
+              <span style={{ fontSize: '10px', color: '#34D399' }}>✓ Unlocked with Director Authorization</span>
             )}
           </div>
 
@@ -354,7 +355,7 @@ export function StoreSettingsModal({ isOpen, onClose }) {
   const [address, setAddress] = useState(storeMeta?.address || 'Main Road, Near Overbridge, Rayagada, Odisha 765001');
   const [phone, setPhone] = useState(storeMeta?.phone || '+91 93905 53301');
   const [upiVpa, setUpiVpa] = useState(storeMeta?.upiVpa || '9390553301@ybl');
-  const [directorPin, setDirectorPin] = useState('8899');
+  const [directorPin, setDirectorPin] = useState(storeMeta?.directorPin || '');
   const [hours, setHours] = useState('09:30 AM to 09:00 PM IST (Mon–Sun)');
 
   // Multi-LLM Smart Router Keys

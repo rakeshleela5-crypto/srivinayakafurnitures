@@ -81,7 +81,8 @@ export function formatDateIndian(date = new Date()) {
   return `${day}-${month}-${year}`;
 }
 
-export async function dispatchWebhookAction(actionName, payload = {}, customWebhookUrl = null) {
+export async function dispatchWebhookAction(actionName, payload = {}, options = {}) {
+  const isReplaying = typeof options === 'boolean' ? options : !!options?.isReplaying;
   const currentTimestamp = formatDateTimeIndian();
   const authToken = getEnterpriseAuthToken();
   
@@ -121,9 +122,11 @@ export async function dispatchWebhookAction(actionName, payload = {}, customWebh
   }
 
   // 2. Offline fallback queue if offline
-  queueOfflineAction(actionName, payload);
+  if (!isReplaying) {
+    queueOfflineAction(actionName, payload);
+  }
   return {
-    success: true,
+    success: false,
     action: actionName,
     timestamp: currentTimestamp,
     _source: 'LOCAL_EDGE_PERSISTED',
@@ -163,8 +166,8 @@ export async function flushOfflineQueue() {
 
     for (const item of queue) {
       try {
-        const res = await dispatchWebhookAction(item.actionName, item.payload);
-        if (res && res.success) {
+        const res = await dispatchWebhookAction(item.actionName, item.payload, { isReplaying: true });
+        if (res && res._source === 'CLOUDFLARE_D1_EDGE') {
           synced++;
         } else {
           remaining.push(item);

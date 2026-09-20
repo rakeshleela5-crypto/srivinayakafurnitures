@@ -1,6 +1,12 @@
-name = "srivinayaka-9pm-cron"
+name = "srivinayaka-master-cron"
 main = "index.js"
 compatibility_date = "2024-09-19"
 
 [triggers]
-crons = ["30 15 * * *"]
+crons = [
+  "30 15 * * *",
+  "30 4 * * *",
+  "0 */2 * * *",
+  "0 10 * * *",
+  "30 4 * * 1"
+]

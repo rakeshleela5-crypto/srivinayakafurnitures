@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS orders (
   delivery_schedule TEXT,
   assigned_driver TEXT,
   carpenter_assigned TEXT,
-  otp_code TEXT DEFAULT '8899',
+  otp_code TEXT DEFAULT '5842',
   payment_mode TEXT DEFAULT 'DYNAMIC_UPI_QR',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP

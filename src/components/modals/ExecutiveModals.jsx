@@ -816,7 +816,7 @@ export function OrderInvoiceModal({ isOpen, onClose, order = {} }) {
 }
 
 export function EodReconciliationModal({ isOpen, onClose }) {
-  const { eodSummary, setEodSummary, showToast } = useStore();
+  const { eodSummary, setEodSummary, showToast, verifyDirectorPin } = useStore();
   const [eodStep, setEodStep] = useState(1);
 
   // Denomination note counts state
@@ -833,7 +833,7 @@ export function EodReconciliationModal({ isOpen, onClose }) {
   const [upiSettled, setUpiSettled] = useState(124000);
   const [cardSettled, setCardSettled] = useState(0);
   const [cashierName, setCashierName] = useState("B. Santosh (Head Cashier)");
-  const [directorPin, setDirectorPin] = useState("8899");
+  const [directorPin, setDirectorPin] = useState("");
   const [pinVerified, setPinVerified] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
   const [language, setLanguage] = useState('EN');
@@ -863,13 +863,14 @@ export function EodReconciliationModal({ isOpen, onClose }) {
     setDenominations(prev => ({ ...prev, [denom]: num }));
   };
 
-  const handleVerifyPin = () => {
-    if (directorPin === '8899') {
+  const handleVerifyPin = async () => {
+    const ok = await verifyDirectorPin(directorPin);
+    if (ok) {
       setPinVerified(true);
       playSuccessChime();
-      showToast("🔓 Director PIN 8899 Verified! Register authorization approved.", true);
+      showToast("🔓 Director PIN Verified! Register authorization approved.", true);
     } else {
-      showToast("❌ Invalid Director PIN. Please enter 8899.", false);
+      showToast("❌ Invalid Director PIN.", false);
     }
   };
 
@@ -883,7 +884,7 @@ export function EodReconciliationModal({ isOpen, onClose }) {
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `📅 *ତାରିଖ:* ${dateStr} (${timeStr})\n` +
         `👤 *କ୍ୟାସିଅର୍ ସାଇନ୍:* ${cashierName}\n` +
-        `🔑 *ଡାଇରେକ୍ଟର PIN:* 8899 (ଅନୁମୋଦିତ ✓)\n\n` +
+        `🔑 *ଡାଇରେକ୍ଟର ଅନୁମୋଦନ:* ସତ୍ୟାପିତ ✓\n\n` +
         `💵 *ଗଣନା କରାଯାଇଥିବା ଟଙ୍କା (DENOMINATIONS):*\n` +
         `• ₹୫୦୦ × ${denominations[500]} = ₹${count500.toLocaleString()}\n` +
         `• ₹୨୦୦ × ${denominations[200]} = ₹${count200.toLocaleString()}\n` +
@@ -898,7 +899,7 @@ export function EodReconciliationModal({ isOpen, onClose }) {
         `• POS କାର୍ଡ ମେସିନ୍ ସ୍ୱାଇପ୍: ₹${Number(cardSettled).toLocaleString()}\n\n` +
         `🏆 *ଆଜିର ମୋଟ ସେଲ୍ସ (GROSS BILLING):* ₹${totalGrossDayRevenue.toLocaleString()} (${targetPct}% ଟାର୍ଗେଟ୍ ହାସଲ ✓)\n` +
         `⚖️ *ହିସାବ ତାରତମ୍ୟ:* ${cashDiscrepancy === 0 ? "₹୦.୦୦ (୧୦୦% ପରଫେକ୍ଟ୍ ମ୍ୟାଚ୍ ✓)" : `₹${cashDiscrepancy.toLocaleString()}`}\n` +
-        `🔒 *ସୁରକ୍ଷା ବ୍ୟାଗ୍ ସିଲ୍ ନମ୍ବର:* #VAULT-8899-RAYAGADA\n\n` +
+        `🔒 *ସୁରକ୍ଷା ବ୍ୟାଗ୍ ସିଲ୍ ନମ୍ବର:* #VAULT-SECURE-RAYAGADA\n\n` +
         `👉 *ଇ-ଅଡିଟ୍ ଦେଖନ୍ତୁ:* https://shreeganesh-godrej.web.app/#briefing`;
     }
 
@@ -907,7 +908,7 @@ export function EodReconciliationModal({ isOpen, onClose }) {
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `📅 *తేదీ:* ${dateStr} (${timeStr})\n` +
         `👤 *క్యాషియర్:* ${cashierName}\n` +
-        `🔑 *డైరెక్టర్ PIN:* 8899 (ధృవీకరించబడింది ✓)\n\n` +
+        `🔑 *డైరెక్టర్ ఆమోదం:* ధృవీకరించబడింది ✓\n\n` +
         `💵 *భౌతిక నగదు నోట్ల లెక్కింపు:*\n` +
         `• ₹500 × ${denominations[500]} = ₹${count500.toLocaleString()}\n` +
         `• ₹200 × ${denominations[200]} = ₹${count200.toLocaleString()}\n` +
@@ -922,7 +923,7 @@ export function EodReconciliationModal({ isOpen, onClose }) {
         `• POS కార్డ్ మిషన్: ₹${Number(cardSettled).toLocaleString()}\n\n` +
         `🏆 *మొత్తం రోజు విక్రయాలు:* ₹${totalGrossDayRevenue.toLocaleString()} (${targetPct}% సాధించబడింది ✓)\n` +
         `⚖️ *తేడా:* ${cashDiscrepancy === 0 ? "₹0.00 (100% పర్ఫెక్ట్ మ్యాచ్ ✓)" : `₹${cashDiscrepancy.toLocaleString()}`}\n` +
-        `🔒 *వాల్ట్ బ్యాగ్ సీల్:* #VAULT-8899-RAYAGADA\n\n` +
+        `🔒 *వాల్ట్ బ్యాగ్ సీల్:* #VAULT-SECURE-RAYAGADA\n\n` +
         `👉 *ఈ-ఆడిట్ షీట్:* https://shreeganesh-godrej.web.app/#briefing`;
     }
 
@@ -931,7 +932,7 @@ export function EodReconciliationModal({ isOpen, onClose }) {
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `📅 *दिनांक:* ${dateStr} (${timeStr})\n` +
         `👤 *कैशियर हस्ताक्षर:* ${cashierName}\n` +
-        `🔑 *डायरेक्टर पिन:* 8899 (सत्यापित ✓)\n\n` +
+        `🔑 *डायरेक्टर अनुमोदन:* सत्यापित ✓\n\n` +
         `💵 *फिजिकल कैश नोटों की गिनती:*\n` +
         `• ₹500 × ${denominations[500]} = ₹${count500.toLocaleString()}\n` +
         `• ₹200 × ${denominations[200]} = ₹${count200.toLocaleString()}\n` +
@@ -946,7 +947,7 @@ export function EodReconciliationModal({ isOpen, onClose }) {
         `• POS कार्ड मशीन स्वाइप: ₹${Number(cardSettled).toLocaleString()}\n\n` +
         `🏆 *आज की कुल ग्रॉस बिक्री:* ₹${totalGrossDayRevenue.toLocaleString()} (${targetPct}% टारगेट पूर्ण ✓)\n` +
         `⚖️ *कैश मिलान अंतर:* ${cashDiscrepancy === 0 ? "₹0.00 (100% परफेक्ट मैच ✓)" : `₹${cashDiscrepancy.toLocaleString()}`}\n` +
-        `🔒 *वॉल्ट सुरक्षा सील:* #VAULT-8899-RAYAGADA\n\n` +
+        `🔒 *वॉल्ट सुरक्षा सील:* #VAULT-SECURE-RAYAGADA\n\n` +
         `👉 *डिजिटल ईओडी शीट:* https://shreeganesh-godrej.web.app/#briefing`;
     }
 
@@ -955,7 +956,7 @@ export function EodReconciliationModal({ isOpen, onClose }) {
       `━━━━━━━━━━━━━━━━━━━━\n` +
       `📅 *Closing Date:* ${dateStr} at ${timeStr}\n` +
       `👤 *Cashier Sign-Off:* ${cashierName}\n` +
-      `🔑 *Director PIN:* 8899 (Verified ✓)\n\n` +
+      `🔑 *Director Sign-Off:* Verified ✓\n\n` +
       `💵 *PHYSICAL CASH DENOMINATION BREAKDOWN:*\n` +
       `• ₹500 × ${denominations[500]} = ₹${count500.toLocaleString()}\n` +
       `• ₹200 × ${denominations[200]} = ₹${count200.toLocaleString()}\n` +
@@ -970,7 +971,7 @@ export function EodReconciliationModal({ isOpen, onClose }) {
       `• POS Card Swipes: ₹${Number(cardSettled).toLocaleString()}\n\n` +
       `🏆 *TOTAL GROSS DAY BILLING:* ₹${totalGrossDayRevenue.toLocaleString()} (${targetPct}% of Day Target Achieved ✓)\n` +
       `⚖️ *Cash Discrepancy:* ${cashDiscrepancy === 0 ? "₹0.00 (PERFECT 100% MATCH ✓)" : `₹${cashDiscrepancy.toLocaleString()}`}\n` +
-      `🔒 *Tamper-Proof Safe Bag Seal:* #VAULT-8899-RAYAGADA\n\n` +
+      `🔒 *Tamper-Proof Safe Bag Seal:* #VAULT-SECURE-RAYAGADA\n\n` +
       `👉 *View Full Digital EOD Audit Sheet:* https://shreeganesh-godrej.web.app/#briefing\n` +
       `🏢 *Godrej Interio Rayagada Flagship Showroom*`;
   };
@@ -1271,7 +1272,7 @@ export function EodReconciliationModal({ isOpen, onClose }) {
                 3. EOD WhatsApp Closing Slip Language:
               </label>
               <span className="badge badge-gold" style={{ fontSize: '10px' }}>
-                🔒 Seal #VAULT-8899-RAYAGADA
+                🔒 Seal #VAULT-SECURE-RAYAGADA
               </span>
             </div>
 
@@ -1332,7 +1333,7 @@ export function EodReconciliationModal({ isOpen, onClose }) {
                     maxLength={4} 
                     value={directorPin} 
                     onChange={e => setDirectorPin(e.target.value)} 
-                    placeholder="PIN 8899"
+                    placeholder="••••"
                     style={{ textAlign: 'center', fontWeight: '800', letterSpacing: '4px' }}
                   />
                   <button type="button" className="btn-ghost-edit" onClick={handleVerifyPin} style={{ padding: '6px 10px', fontSize: '11px' }}>

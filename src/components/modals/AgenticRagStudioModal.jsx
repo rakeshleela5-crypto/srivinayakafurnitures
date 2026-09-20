@@ -24,13 +24,13 @@ import {
 import { playScanBeep, playSuccessChime } from '../../utils/audioUtils';
 
 export function AgenticRagStudioModal({ isOpen, onClose }) {
-  if (!isOpen) return null;
-
   const [query, setQuery] = useState('What is the warranty period on Godrej Centuro motorized recliner mechanism?');
   const [pipelineResult, setPipelineResult] = useState(() => runAgenticRagPipeline('What is the warranty period on Godrej Centuro motorized recliner mechanism?'));
   const [activeTab, setActiveTab] = useState('STUDIO'); // 'STUDIO' | 'KNOWLEDGE_BASE'
   const [copiedId, setCopiedId] = useState(null);
   const [selectedDoc, setSelectedDoc] = useState(null);
+
+  if (!isOpen) return null;
 
   const sampleQueries = [
     {

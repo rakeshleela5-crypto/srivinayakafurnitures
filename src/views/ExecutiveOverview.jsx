@@ -732,7 +732,7 @@ export function ExecutiveOverview() {
           transition: 'all 0.2s ease',
           boxShadow: '0 4px 20px rgba(0,0,0,0.25)'
         }}
-        title="Click to open Full Showroom Profit & Margin Radar Modal with Order-by-Order Ledger & PIN 8899 Shield"
+        title="Click to open Full Showroom Profit & Margin Radar Modal with Order-by-Order Ledger & Protected Margin Shield"
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '22px' }}>💎</span>

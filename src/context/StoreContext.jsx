@@ -101,6 +101,11 @@ export async function hashPin(pin) {
   }
 }
 
+export async function verifyDirectorPin(pin) {
+  const hash = await hashPin(pin);
+  return hash === USER_ROLES.OWNER.pinHash;
+}
+
 // Helper for safe localStorage reading with fallback
 const getStored = (key, fallback) => {
   try {
@@ -1017,7 +1022,8 @@ export function StoreProvider({ children }) {
       submitEpodDelivery,
       disburseArchitectPayout,
       registerNewSku,
-      triggerAppSheetBot
+      triggerAppSheetBot,
+      verifyDirectorPin
     }}>
       {children}
       {toastMessage && (

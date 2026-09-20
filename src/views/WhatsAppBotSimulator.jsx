@@ -537,7 +537,7 @@ export function WhatsAppBotSimulator() {
               onClick={() => {
                 setCallerMode('DIRECTOR');
                 if (viewMode === 'GRID') setViewMode('SPLIT');
-                showToast("👑 Switched to Director VIP Mode (PIN: 8899)");
+                showToast("👑 Switched to Director VIP Mode (Authorized)");
               }}
               style={{
                 background: callerMode === 'DIRECTOR' ? 'linear-gradient(135deg, #D4AF37, #B45309)' : 'rgba(255,255,255,0.08)',
@@ -885,7 +885,7 @@ export function WhatsAppBotSimulator() {
                 type="button"
                 onClick={() => {
                   setCallerMode('DIRECTOR');
-                  showToast("👑 Switched to Director VIP Mode (PIN: 8899 Active)");
+                  showToast("👑 Switched to Director VIP Mode (Authorized)");
                 }}
                 style={{
                   flex: 1,
@@ -903,7 +903,7 @@ export function WhatsAppBotSimulator() {
                   gap: '4px'
                 }}
               >
-                👑 Director VIP (PIN: 8899)
+                👑 Director VIP (Authorized)
               </button>
             </div>
 
@@ -1137,7 +1137,7 @@ export function WhatsAppBotSimulator() {
                 type="button"
                 onClick={() => {
                   setCallerMode('DIRECTOR');
-                  showToast("👑 Switched to Director VIP Mode (PIN: 8899 Active)");
+                  showToast("👑 Switched to Director VIP Mode (Authorized)");
                 }}
                 style={{
                   flex: 1,
@@ -1151,7 +1151,7 @@ export function WhatsAppBotSimulator() {
                   cursor: 'pointer'
                 }}
               >
-                👑 Director VIP (PIN: 8899)
+                👑 Director VIP (Authorized)
               </button>
             </div>
 

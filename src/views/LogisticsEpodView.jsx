@@ -78,7 +78,7 @@ export function LogisticsEpodView() {
       Status: statusBadge,
       Driver: order.Assigned_Driver || "Tophan Gouda (Tata Ace OD-18-A-1234)",
       Carpenter: order.Carpenter_Assigned || "Narayana Mistri",
-      OTP_Code: order.OTP_Code || "8899",
+      OTP_Code: order.OTP_Code || (order.Order_ID ? String(Math.abs(order.Order_ID.split('').reduce((acc, c) => ((acc << 5) - acc) + c.charCodeAt(0), 0)) % 9000 + 1000) : "5842"),
       RawOrder: order
     };
   });

@@ -20,7 +20,7 @@ import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../../uti
 import { dispatchWebhookAction } from '../../services/webhookService';
 
 export function FurnitureFollowUpModal({ isOpen, onClose, lead = {} }) {
-  const { showToast } = useStore();
+  const { showToast, verifyDirectorPin } = useStore();
 
   const customerName = lead.Customer_Name || "Dr. Subhashish Jena";
   const customerPhone = lead.Customer_Phone || "9437188291";
@@ -56,13 +56,14 @@ export function FurnitureFollowUpModal({ isOpen, onClose, lead = {} }) {
   const finalDiscountedPrice = standardFestivePrice - (pinVerified ? extraSpotDiscount : 0);
   const totalSavings = listMrp - finalDiscountedPrice;
 
-  const handleVerifyPin = () => {
-    if (directorPin === '8899') {
+  const handleVerifyPin = async () => {
+    const ok = await verifyDirectorPin(directorPin);
+    if (ok) {
       setPinVerified(true);
       playSuccessChime();
-      showToast("🔓 Director PIN 8899 Verified! Spot discount applied.", true);
+      showToast("🔓 Director PIN Verified! Spot discount applied.", true);
     } else {
-      showToast("❌ Invalid Director PIN. Enter 8899.", false);
+      showToast("❌ Invalid Director PIN.", false);
     }
   };
 
@@ -244,7 +245,7 @@ export function FurnitureFollowUpModal({ isOpen, onClose, lead = {} }) {
           </div>
 
           <div className="form-field">
-            <label style={{ color: '#F43F5E', fontWeight: '800' }}>4. 🏷️ Extra Spot Discount (PIN 8899 Protected)</label>
+            <label style={{ color: '#F43F5E', fontWeight: '800' }}>4. 🏷️ Extra Spot Discount (Director Protected)</label>
             <div style={{ display: 'flex', gap: '6px' }}>
               <input 
                 type="number" 

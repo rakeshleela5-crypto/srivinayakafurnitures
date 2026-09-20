@@ -148,7 +148,7 @@ export function LiveDatabaseView() {
       { QC_ID: "QC-2026-001", Order_ID: "ORD-101", Customer: "Dr. Subhashish Jena", Room_Dimensions: "16x14 ft", Fitment_Status: "PASSED_100%", Stairway_Clearance: "ADEQUATE", Inspected_By: "Narayana Mistri" }
     ],
     'Discounts_Override_Log': getCloudTable('Discounts_Override_Log') || [
-      { Override_ID: "OVR-8801", Date: "03-Sep-2026", Order_Ref: "ORD-POS-ADV", Discount_Amt_INR: 5000, Authorized_By: "Store Director (PIN 8899)", Reason: "Festive Spot Negotiation" }
+      { Override_ID: "OVR-8801", Date: "03-Sep-2026", Order_Ref: "ORD-POS-ADV", Discount_Amt_INR: 5000, Authorized_By: "Store Director (Verified)", Reason: "Festive Spot Negotiation" }
     ],
     'Profit_Radar_Audit_Log': getCloudTable('Profit_Radar_Audit_Log') || [
       { Audit_ID: "AUD-PR-101", Date: "03-Sep-2026", Gross_Revenue: 169000, Total_COGS: 104780, Net_Margin_INR: 64220, Margin_Pct: "38.0%", Health_Grade: "PLATINUM_GRADE" }

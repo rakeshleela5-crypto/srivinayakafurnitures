@@ -15,7 +15,7 @@ VALUES
 -- 2. Seed Active SafeLock Orders
 INSERT OR REPLACE INTO orders (order_id, customer_name, customer_phone, project_address, ordered_sku, item_names, total_amount_inr, advance_paid_inr, balance_due_inr, safelock_status, delivery_schedule, assigned_driver, carpenter_assigned, otp_code)
 VALUES
-  ('ORD-8921', 'Dr. Subhashish Jena', '9437188990', 'New Colony, Near District Hospital, Rayagada', 'BED-MOD-001', 'Kalista King Bed with Hydraulic Storage', 78247, 39123, 39124, 'SAFELOCKED (STAGED)', 'Today, 04:30 PM', 'Tophan Gouda (Tata Ace OD-18-A-1234)', 'Narayana Mistri', '8899'),
+  ('ORD-8921', 'Dr. Subhashish Jena', '9437188990', 'New Colony, Near District Hospital, Rayagada', 'BED-MOD-001', 'Kalista King Bed with Hydraulic Storage', 78247, 39123, 39124, 'SAFELOCKED (STAGED)', 'Today, 04:30 PM', 'Tophan Gouda (Tata Ace OD-18-A-1234)', 'Narayana Mistri', '8921'),
   ('ORD-8922', 'Smt. Gayatri Devi', '9437255660', 'Gayatri Nagar, Main Road, JK Pur', 'SOF-REC-002', 'Centuro Motorized Dual-Recliner Suite', 99890, 49945, 49945, 'ON_ROUTE (TRANSIT)', 'Today, 06:00 PM', 'Tophan Gouda (Tata Ace OD-18-A-1234)', 'Kailash Mistri', '4421'),
   ('ORD-8923', 'Er. Ashish Choudhury', '9437334411', 'Kasturi Nagar, 2nd Lane, Rayagada', 'ALM-SLM-003', 'Slimline Royal Burgundy 3-Door Wardrobe', 54400, 54400, 0, 'DELIVERED_COMPLETE', 'Delivered Yesterday', 'Tophan Gouda', 'Narayana Mistri', '1122');
 

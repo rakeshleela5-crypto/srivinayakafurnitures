@@ -41,7 +41,7 @@ import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../../uti
 import { dispatchWebhookAction } from '../../services/webhookService';
 
 export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
-  const { updateBotConfig, showToast } = useStore();
+  const { updateBotConfig, showToast, verifyDirectorPin } = useStore();
 
   const [botName, setBotName] = useState('');
   const [status, setStatus] = useState('ACTIVE');
@@ -100,7 +100,7 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
 
   const [promoCode, setPromoCode] = useState('RAYAGADA5000');
   const [audienceSegment, setAudienceSegment] = useState('HOT_LEADS');
-  const [directorPin, setDirectorPin] = useState('8899');
+  const [directorPin, setDirectorPin] = useState('');
   const [pinVerified, setPinVerified] = useState(false);
   const [hesitationReason, setHesitationReason] = useState('FAMILY_CONSULT');
   const [delayDays, setDelayDays] = useState(2);
@@ -121,13 +121,14 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
 
   const currentBotId = bot.botId || 'BOT-01';
 
-  const handleVerifyPin = () => {
-    if (directorPin === '8899') {
+  const handleVerifyPin = async () => {
+    const ok = await verifyDirectorPin(directorPin);
+    if (ok) {
       setPinVerified(true);
       playSuccessChime();
-      showToast("🔓 Director PIN 8899 Verified! Settings unlocked.", true);
+      showToast("🔓 Director PIN Verified! Settings unlocked.", true);
     } else {
-      showToast("❌ Invalid Director PIN. Enter 8899.", false);
+      showToast("❌ Invalid Director PIN.", false);
     }
   };
 
@@ -174,7 +175,7 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
           : `✨ *FESTIVE TEAK UTSAV — GODREJ INTERIO RAYAGADA*\nUse Promo Code *${promoCode}* for instant flat discount + 2x Free Ortho Memory Foam Pillows! Target: ${audienceSegment}.`;
 
       case 'BOT-12':
-        return `🔒 *GODREJ INTERIO RAYAGADA — 9:00 PM DAILY CASH CLOSING SLIP*\nTotal Gross Sales: ₹1,69,000 | Cash in Safe: ₹45,000 | UPI Settled: ₹1,24,000 | Zero Discrepancy ✓ | Director PIN: 8899.`;
+        return `🔒 *GODREJ INTERIO RAYAGADA — 9:00 PM DAILY CASH CLOSING SLIP*\nTotal Gross Sales: ₹1,69,000 | Cash in Safe: ₹45,000 | UPI Settled: ₹1,24,000 | Zero Discrepancy ✓ | Director Sign-Off: Verified ✓.`;
 
       case 'BOT-13':
         return `📐 *ROOM FITMENT & STAIRWAY CLEARANCE PASS*\nDelivery Floor: ${staircaseFloor} | 100% Knockdown 5-Box Assembly Guarantee | 3D AR Room Placement Link Active ✓.`;
@@ -264,7 +265,7 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
       threshold: threshold,
       enterprise_guards: updated.enterpriseGuards,
       preview_sample: getLocalizedBotPreview(language),
-      updated_by: "Store Director (PIN 8899)",
+      updated_by: "Store Director (Verified)",
       timestamp: new Date().toISOString()
     });
 
@@ -402,7 +403,7 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
                 <option value="Carpenter & Mistri Work Order Vault">🪚 Carpenter & Mistri Work Order Vault (₹500 Payout)</option>
                 <option value="Architect VIP Portal & UPI Payout Wallet">🏛️ Architect VIP Portal & UPI Wallet (Form 16A TDS)</option>
                 <option value="Factory Supplier WhatsApp PO">🏭 Factory Supplier WhatsApp PO (Godrej Plants)</option>
-                <option value="Owner Telegram & Email Daily Closing Slip">🔒 Owner Telegram & Email Closing Slip (PIN 8899)</option>
+                <option value="Owner Telegram & Email Daily Closing Slip">🔒 Owner Telegram & Email Closing Slip (Director Only)</option>
                 <option value="Bajaj Finserv & HDFC Consumer Finance Gateway">💳 Bajaj Finserv & HDFC Finance Gateway (0% EMI)</option>
                 <option value="Google Drive Document & Warranty PDF Archive">☁️ Google Drive Document & Warranty PDF Archive</option>
                 <option value="Showroom Live KPI Gauge & Database Sync Engine">📊 Showroom Live KPI Gauge & Database Sync Engine</option>
@@ -457,7 +458,7 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
                 <UserCheck size={13} color="var(--accent-gold)" /> Required Authorization Level
               </div>
               <select value={authRoleLevel} onChange={e => setAuthRoleLevel(e.target.value)} style={{ fontSize: '11px', padding: '4px 8px' }}>
-                <option value="DIRECTOR_PIN">Level 3: Director Only (PIN 8899)</option>
+                <option value="DIRECTOR_PIN">Level 3: Director Only (PIN Protected)</option>
                 <option value="MANAGER">Level 2: Store Manager</option>
                 <option value="ALL_STAFF">Level 1: Public / All Staff</option>
               </select>
@@ -721,7 +722,7 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
               <div className="form-field">
                 <label>Director Authorization PIN</label>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                  <input type="password" maxLength={4} value={directorPin} onChange={e => setDirectorPin(e.target.value)} placeholder="PIN 8899" style={{ width: '120px', textAlign: 'center' }} />
+                  <input type="password" maxLength={4} value={directorPin} onChange={e => setDirectorPin(e.target.value)} placeholder="••••" style={{ width: '120px', textAlign: 'center' }} />
                   <button type="button" className="btn-ghost-edit" onClick={handleVerifyPin}>{pinVerified ? '✓ Verified' : 'Verify PIN'}</button>
                 </div>
               </div>

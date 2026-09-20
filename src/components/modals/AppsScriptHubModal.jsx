@@ -31,8 +31,6 @@ import {
 } from '../../services/webhookService';
 
 export function AppsScriptHubModal({ isOpen, onClose }) {
-  if (!isOpen) return null;
-
   const [webhookUrlInput, setWebhookUrlInput] = useState(getActiveWebhookUrl());
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState(null);
@@ -40,10 +38,14 @@ export function AppsScriptHubModal({ isOpen, onClose }) {
   const [healMessage, setHealMessage] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Run a quick ping on modal mount
+  // Run a quick ping on modal open
   useEffect(() => {
-    handleRunDiagnostic();
-  }, []);
+    if (isOpen) {
+      handleRunDiagnostic();
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
 
   const handleSaveUrl = () => {
     playSuccessChime();

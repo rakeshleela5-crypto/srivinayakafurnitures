@@ -25,8 +25,6 @@ import {
 } from '../../services/webhookService';
 
 export function EnterpriseSecurityModal({ isOpen, onClose }) {
-  if (!isOpen) return null;
-
   const [activeToken, setActiveToken] = useState(getEnterpriseAuthToken());
   const [tokenCopied, setTokenCopied] = useState(false);
   const [showToken, setShowToken] = useState(false);
@@ -34,6 +32,8 @@ export function EnterpriseSecurityModal({ isOpen, onClose }) {
   const [testMessage, setTestMessage] = useState('');
   const [testLatency, setTestLatency] = useState(null);
   const [wafRuleCopied, setWafRuleCopied] = useState(false);
+
+  if (!isOpen) return null;
 
   const handleCopyToken = () => {
     navigator.clipboard.writeText(activeToken);

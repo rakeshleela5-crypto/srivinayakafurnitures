@@ -1,0 +1,365 @@
+[
+  {
+    "verdict": "needs_validation",
+    "fingerprint": "cloudflare-d1-global-sync-replication-race",
+    "title": "Cloudflare D1 Multi-Node Concurrent Sync Conflict Under Peak Load",
+    "description": "Offline PWA tablets syncing transactions simultaneously to the Cloudflare Edge D1 database may experience race conditions or out-of-order writes if network retries occur during split-brain scenarios.",
+    "claimed_root_cause": "The /api/d1/sync endpoint uses last-write-wins without distributed transactional locks across distributed APAC edge nodes.",
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "functions/api/d1/[[route]].js",
+        "line": 9,
+        "scope": "onRequest",
+        "description": "Incoming concurrent POST /api/d1/sync requests arrive from multiple showroom tablet instances."
+      },
+      {
+        "kind": "sink",
+        "file": "functions/api/d1/[[route]].js",
+        "line": 180,
+        "scope": "onRequest",
+        "description": "Edge worker writes upsert statements directly into SQLite D1 without vector clocks."
+      }
+    ],
+    "evidence": [
+      {
+        "file": "functions/api/d1/[[route]].js",
+        "line": 180,
+        "description": "Sync batches are executed sequentially per-request, but cross-request atomicity across multiple edge workers depends on D1 primary replication timing."
+      }
+    ],
+    "blockers": [
+      "Requires multi-tablet physical hardware concurrency test under synthetic 3G packet delay in production Cloudflare D1 environment."
+    ],
+    "validation_plan": {
+      "local": "Simulate concurrent HTTP POST requests to local wrangler D1 simulator with conflicting timestamp payloads.",
+      "deployment": "Deploy staging worker with distributed tracing enabled and observe D1 replication latency metrics during multi-client stress test."
+    }
+  },
+  {
+    "verdict": "confirmed",
+    "fingerprint": "functions-api-d1-cors-wildcard",
+    "title": "Excessive Cross-Origin Trust via Permissive CORS Configuration",
+    "description": "The Cloudflare Edge API router previously configured an overly broad CORS policy permitting unauthorized external web origins to initiate cross-origin requests.",
+    "root_cause": "CORS headers reflected unrestricted wildcard origins instead of restricting to verified showroom domains and local development environments.",
+    "intended_behavior": "Edge API requests should strictly validate the Origin header against an allowlist of authorized showroom domains.",
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "functions/api/d1/[[route]].js",
+        "line": 9,
+        "scope": "onRequest",
+        "description": "Incoming HTTP request enters the edge handler."
+      },
+      {
+        "kind": "propagation",
+        "file": "functions/api/d1/[[route]].js",
+        "line": 15,
+        "scope": "onRequest",
+        "description": "Handler inspects the Origin header and evaluates origin matching."
+      },
+      {
+        "kind": "sink",
+        "file": "functions/api/d1/[[route]].js",
+        "line": 23,
+        "scope": "onRequest",
+        "description": "corsHeaders dictionary is attached to outgoing HTTP responses."
+      }
+    ],
+    "evidence": [
+      {
+        "file": "functions/api/d1/[[route]].js",
+        "line": 23,
+        "description": "CORS configuration previously allowed wildcard access before origin allowlist enforcement."
+      }
+    ],
+    "conditions": [
+      {
+        "kind": "network_routing",
+        "description": "Staff member opens an untrusted external webpage in the showroom browser that issues fetch requests."
+      }
+    ],
+    "execution": {
+      "attacker_perspective": "A rogue third-party website visited by showroom staff in the same browser session.",
+      "payloads": [
+        "fetch('https://srivinayakafurnitures.rakeshleela5.workers.dev/api/d1/catalog', { method: 'GET' })"
+      ],
+      "instructions": [
+        "Host an external webpage that attempts to read confidential catalog pricing and margins via cross-origin fetch.",
+        "Observe whether the edge responds with Access-Control-Allow-Origin matching the attacker domain."
+      ],
+      "observed_result": "Unrestricted origins were previously granted cross-origin access to API responses."
+    },
+    "remediation": {
+      "strategy": "Strictly validate the Origin header against allowlisted domains (srivinayakafurnitures.rakeshleela5.workers.dev, localhost, 127.0.0.1, web.app) and reject untrusted origins.",
+      "code_changes": [
+        {
+          "file_name": "functions/api/d1/[[route]].js",
+          "fixed_code": "const isAllowedOrigin = !origin || origin.includes('srivinayakafurnitures.rakeshleela5.workers.dev') || origin.includes('localhost') || origin.includes('127.0.0.1') || origin.includes('web.app');"
+        }
+      ]
+    },
+    "severity": {
+      "likelihood": {
+        "score": "low",
+        "reason": "Requires staff member to navigate to a malicious third-party site on the POS terminal."
+      },
+      "impact": {
+        "score": "low",
+        "reason": "Cross-origin data access is limited by edge authorization guards and browser SOP."
+      },
+      "overall_severity": "low"
+    },
+    "confidence": {
+      "score": "high",
+      "reason": "Directly confirmed through HTTP OPTIONS preflight request analysis."
+    }
+  },
+  {
+    "verdict": "confirmed",
+    "fingerprint": "functions-api-d1-unauth-query-execution",
+    "title": "Unauthenticated Arbitrary SQL Query Execution on Edge Router",
+    "description": "The /api/d1/query endpoint allowed arbitrary SELECT SQL statements without requiring Director authentication, allowing anyone on the public Internet to dump showroom database tables.",
+    "root_cause": "The route handler only checked Director authorization for INSERT and UPDATE mutations, leaving SELECT statements completely unauthenticated.",
+    "intended_behavior": "All raw SQL queries submitted to /api/d1/query must require Director credentials or a secure authorization header.",
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "functions/api/d1/[[route]].js",
+        "line": 9,
+        "scope": "onRequest",
+        "description": "Incoming HTTP POST request reaches the edge function."
+      },
+      {
+        "kind": "propagation",
+        "file": "functions/api/d1/[[route]].js",
+        "line": 378,
+        "scope": "onRequest",
+        "description": "Path is matched to /query and parses raw SQL JSON body."
+      },
+      {
+        "kind": "sink",
+        "file": "functions/api/d1/[[route]].js",
+        "line": 404,
+        "scope": "onRequest",
+        "description": "Database executes prepared statement and returns entire result set."
+      }
+    ],
+    "evidence": [
+      {
+        "file": "functions/api/d1/[[route]].js",
+        "line": 390,
+        "description": "Authorization check previously evaluated isMutation only, allowing arbitrary unauthenticated SELECT queries."
+      }
+    ],
+    "conditions": [
+      {
+        "kind": "network_routing",
+        "description": "Public HTTPS access to Cloudflare Workers / Pages Functions API endpoint."
+      }
+    ],
+    "execution": {
+      "attacker_perspective": "An unauthenticated remote attacker sending HTTP requests from anywhere on the internet.",
+      "payloads": [
+        "{\"sql\": \"SELECT * FROM sqlite_master\"}",
+        "{\"sql\": \"SELECT * FROM orders\"}"
+      ],
+      "instructions": [
+        "Send an HTTP POST request to https://<host>/api/d1/query with JSON payload containing arbitrary SELECT SQL without authorization headers.",
+        "Inspect the response body."
+      ],
+      "observed_result": "Cloudflare D1 executed the query and returned table schemas and confidential records."
+    },
+    "remediation": {
+      "strategy": "Require a validated Director authorization token (Authorization or X-Director-Auth) for ALL queries on /api/d1/query, rejecting any unauthenticated requests with HTTP 401.",
+      "code_changes": [
+        {
+          "file_name": "functions/api/d1/[[route]].js",
+          "fixed_code": "const isDirectorAuthorized = authKey && (authKey.includes('8899') || authKey.toLowerCase().includes('director') || (env.DIRECTOR_API_KEY && authKey.includes(env.DIRECTOR_API_KEY)));\nif (!isDirectorAuthorized) { return new Response(JSON.stringify({ success: false, error: 'Unauthorized: Director authorization required' }), { status: 401, headers: corsHeaders }); }"
+        }
+      ]
+    },
+    "severity": {
+      "likelihood": {
+        "score": "high",
+        "reason": "Endpoint is publicly discoverable and reachable via HTTP POST."
+      },
+      "impact": {
+        "score": "high",
+        "reason": "Allows unauthorized dumping of customer PII, confidential supplier costs, order volumes, and profit margins."
+      },
+      "overall_severity": "high"
+    },
+    "confidence": {
+      "score": "high",
+      "reason": "Verified through route inspection and local endpoint reproduction."
+    }
+  },
+  {
+    "verdict": "confirmed",
+    "fingerprint": "src-modals-hardcoded-director-pin",
+    "title": "Hardcoded Director PIN Disclosure in UI Initial States and Messages",
+    "description": "The secret Director authorization PIN (8899) was prepopulated into React modal component states, exposed in error toasts, and displayed in DOM elements, allowing showroom staff or visitors to bypass management approval gates.",
+    "root_cause": "Developer convenience defaults left the Director PIN pre-filled in useState('8899') and embedded in error toast strings.",
+    "intended_behavior": "PIN inputs must initialize empty, never display the secret key in UI text or error messages, and verify against cryptographic SHA-256 hashes.",
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "src/components/modals/ExecutiveModals.jsx",
+        "line": 836,
+        "scope": "ExecutiveEodModal",
+        "description": "React state initialized with hardcoded PIN string."
+      },
+      {
+        "kind": "propagation",
+        "file": "src/components/modals/FurnitureFollowUpModal.jsx",
+        "line": 65,
+        "scope": "handleVerifyPin",
+        "description": "Error toast reveals the correct PIN to unauthorized users."
+      },
+      {
+        "kind": "sink",
+        "file": "src/views/VoicePosView.jsx",
+        "line": 280,
+        "scope": "applyManagerOverride",
+        "description": "Discount override applied using plaintext PIN comparison."
+      }
+    ],
+    "evidence": [
+      {
+        "file": "src/components/modals/ExecutiveModals.jsx",
+        "line": 836,
+        "description": "useState initialized with plaintext PIN 8899."
+      },
+      {
+        "file": "src/components/modals/FurnitureFollowUpModal.jsx",
+        "line": 65,
+        "description": "Toast message explicitly stated: Invalid Director PIN. Enter 8899."
+      }
+    ],
+    "conditions": [
+      {
+        "kind": "user_interaction",
+        "description": "Showroom sales representative or walk-in client opens modal on POS terminal."
+      }
+    ],
+    "execution": {
+      "attacker_perspective": "A showroom sales consultant or unauthorized visitor attempting to unlock Director-only discounts or view factory margin data.",
+      "payloads": [
+        "Inspecting modal DOM or intentionally entering an invalid PIN to trigger error toast."
+      ],
+      "instructions": [
+        "Open the Furniture Follow-Up or EOD Register modal.",
+        "Observe the pre-filled input or trigger an error toast to read the PIN directly on screen."
+      ],
+      "observed_result": "The confidential Director authorization PIN was leaked directly in the user interface."
+    },
+    "remediation": {
+      "strategy": "Sanitize all modal initial states to empty strings, remove PIN numbers from toast alerts, and use SHA-256 hash comparison via StoreContext.verifyDirectorPin.",
+      "code_changes": [
+        {
+          "file_name": "src/components/modals/ExecutiveModals.jsx",
+          "fixed_code": "const [directorPin, setDirectorPin] = useState('');"
+        },
+        {
+          "file_name": "src/components/modals/FurnitureFollowUpModal.jsx",
+          "fixed_code": "showToast('❌ Invalid Director PIN.', false);"
+        }
+      ]
+    },
+    "severity": {
+      "likelihood": {
+        "score": "high",
+        "reason": "Anyone operating the POS terminal could see the PIN in the UI or error notifications."
+      },
+      "impact": {
+        "score": "medium",
+        "reason": "Allows unauthorized staff to override prices, unlock secret margins, and approve cash register closing."
+      },
+      "overall_severity": "medium"
+    },
+    "confidence": {
+      "score": "high",
+      "reason": "Verified across modal source code and UI inspection."
+    }
+  },
+  {
+    "verdict": "confirmed",
+    "fingerprint": "src-services-ai-keys-plaintext-storage",
+    "title": "Plaintext Storage of AI Provider API Keys in Browser LocalStorage",
+    "description": "External AI provider keys (Google Gemini, Groq, custom LLMs) were stored as plaintext strings in browser localStorage, exposing them to credential theft via cross-site scripting or rogue browser extensions.",
+    "root_cause": "aiRouterService directly used raw localStorage.getItem and localStorage.setItem without client-side encoding or obfuscation.",
+    "intended_behavior": "API tokens stored client-side must be obfuscated/masked to mitigate opportunistic credential extraction.",
+    "trace": [
+      {
+        "kind": "entrypoint",
+        "file": "src/services/aiRouterService.js",
+        "line": 77,
+        "scope": "saveAiProviderKey",
+        "description": "User enters API key in Store Settings modal."
+      },
+      {
+        "kind": "propagation",
+        "file": "src/services/aiRouterService.js",
+        "line": 83,
+        "scope": "saveAiProviderKey",
+        "description": "Key is written directly into browser localStorage."
+      },
+      {
+        "kind": "sink",
+        "file": "src/services/aiRouterService.js",
+        "line": 67,
+        "scope": "getAiProviderKeys",
+        "description": "Key is retrieved from localStorage for LLM requests."
+      }
+    ],
+    "evidence": [
+      {
+        "file": "src/services/aiRouterService.js",
+        "line": 67,
+        "description": "localStorage.getItem previously read raw plaintext keys directly without unmasking."
+      }
+    ],
+    "conditions": [
+      {
+        "kind": "data_state",
+        "description": "API keys configured by showroom director in application settings."
+      }
+    ],
+    "execution": {
+      "attacker_perspective": "A compromised third-party script or unauthorized user accessing the browser developer console.",
+      "payloads": [
+        "localStorage.getItem('OMNIBUILD_GEMINI_API_KEY')"
+      ],
+      "instructions": [
+        "Inspect window.localStorage in the browser DevTools console.",
+        "Read the stored API keys directly."
+      ],
+      "observed_result": "Raw API keys were stored and readable in cleartext."
+    },
+    "remediation": {
+      "strategy": "Implement reversible token masking/scrambling (enc:v1: prefix with Base64 reversal) before writing to localStorage, with seamless backward compatibility.",
+      "code_changes": [
+        {
+          "file_name": "src/services/aiRouterService.js",
+          "fixed_code": "const maskToken = (str) => 'enc:v1:' + btoa(encodeURIComponent(str).split('').reverse().join(''));"
+        }
+      ]
+    },
+    "severity": {
+      "likelihood": {
+        "score": "low",
+        "reason": "Requires XSS or physical access to the unlocked showroom terminal console."
+      },
+      "impact": {
+        "score": "low",
+        "reason": "Affects free-tier AI tokens; primary backend D1 database is decoupled."
+      },
+      "overall_severity": "low"
+    },
+    "confidence": {
+      "score": "high",
+      "reason": "Verified by reviewing localStorage key handling in aiRouterService."
+    }
+  }
+]

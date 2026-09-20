@@ -24,7 +24,7 @@ import { playSuccessChime, playScanBeep, triggerGoldenConfetti } from '../../uti
 import { dispatchWebhookAction } from '../../services/webhookService';
 
 export function ShowroomProfitRadarModal({ isOpen, onClose }) {
-  const { orders, catalog, architects, storeMeta, showToast } = useStore();
+  const { orders, catalog, architects, storeMeta, showToast, verifyDirectorPin } = useStore();
 
   // 🔒 Director Privacy Shield (PIN 8899)
   const [isRevealed, setIsRevealed] = useState(false);
@@ -147,13 +147,14 @@ export function ShowroomProfitRadarModal({ isOpen, onClose }) {
   const realizedOrdersCount = orderBreakdown.filter(o => o.isRealized).length;
   const projectedOrdersCount = orderBreakdown.filter(o => !o.isRealized).length;
 
-  // Verify Director PIN 8899
-  const handleVerifyPin = () => {
-    if (enteredPin === '8899') {
+  // Verify Director PIN
+  const handleVerifyPin = async () => {
+    const ok = await verifyDirectorPin(enteredPin);
+    if (ok) {
       setIsRevealed(true);
       playSuccessChime();
       triggerGoldenConfetti();
-      showToast("🔓 Director PIN 8899 Verified! All Factory Costs & Net Margins Unlocked.", true);
+      showToast("🔓 Director PIN Verified! All Factory Costs & Net Margins Unlocked.", true);
     } else {
       showToast("❌ Invalid PIN. Master showroom margins remain protected.", false);
     }

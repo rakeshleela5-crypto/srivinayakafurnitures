@@ -22,8 +22,6 @@ import {
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../../utils/audioUtils';
 
 export function D1CatalogManagerModal({ isOpen, onClose }) {
-  if (!isOpen) return null;
-
   const { catalog, setCatalog, showToast } = useStore();
   const [activeTab, setActiveTab] = useState('METHOD_1'); // 'METHOD_1' | 'METHOD_3' | 'METHOD_2'
   const [isProcessing, setIsProcessing] = useState(false);
@@ -47,6 +45,8 @@ export function D1CatalogManagerModal({ isOpen, onClose }) {
     dimensions: '78 x 72 x 48 in',
     warranty_years: 10
   });
+
+  if (!isOpen) return null;
 
   // Handle File Upload
   const handleFileUpload = (e) => {

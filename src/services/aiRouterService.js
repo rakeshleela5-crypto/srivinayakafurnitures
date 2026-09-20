@@ -26,6 +26,30 @@ let routerStatus = {
   healthyProviders: ['gemini', 'groq', 'custom', 'local']
 };
 
+const MASK_PREFIX = 'enc:v1:';
+
+const maskToken = (str) => {
+  if (!str) return '';
+  try {
+    const encoded = btoa(encodeURIComponent(str).split('').reverse().join(''));
+    return `${MASK_PREFIX}${encoded}`;
+  } catch (e) {
+    return str;
+  }
+};
+
+const unmaskToken = (stored) => {
+  if (!stored) return '';
+  if (!stored.startsWith(MASK_PREFIX)) return stored; // Backward compatibility for legacy plaintext
+  try {
+    const payload = stored.slice(MASK_PREFIX.length);
+    const reversed = atob(payload).split('').reverse().join('');
+    return decodeURIComponent(reversed);
+  } catch (e) {
+    return stored;
+  }
+};
+
 /**
  * Retrieve saved API keys with environment variable fallbacks
  */
@@ -40,31 +64,32 @@ export const getAiProviderKeys = () => {
   }
 
   return {
-    geminiKey: localStorage.getItem(STORAGE_KEYS.GEMINI) || import.meta.env?.VITE_GEMINI_API_KEY || '',
-    groqKey: localStorage.getItem(STORAGE_KEYS.GROQ) || import.meta.env?.VITE_GROQ_API_KEY || '',
-    customEndpoint: localStorage.getItem(STORAGE_KEYS.CUSTOM_ENDPOINT) || import.meta.env?.VITE_FREE_LLM_ENDPOINT || '',
-    customKey: localStorage.getItem(STORAGE_KEYS.CUSTOM_KEY) || import.meta.env?.VITE_CUSTOM_LLM_KEY || ''
+    geminiKey: unmaskToken(localStorage.getItem(STORAGE_KEYS.GEMINI)) || import.meta.env?.VITE_GEMINI_API_KEY || '',
+    groqKey: unmaskToken(localStorage.getItem(STORAGE_KEYS.GROQ)) || import.meta.env?.VITE_GROQ_API_KEY || '',
+    customEndpoint: unmaskToken(localStorage.getItem(STORAGE_KEYS.CUSTOM_ENDPOINT)) || import.meta.env?.VITE_FREE_LLM_ENDPOINT || '',
+    customKey: unmaskToken(localStorage.getItem(STORAGE_KEYS.CUSTOM_KEY)) || import.meta.env?.VITE_CUSTOM_LLM_KEY || ''
   };
 };
 
 /**
- * Save provider API key or custom endpoint
+ * Save provider API key or custom endpoint with client-side masking
  */
 export const saveAiProviderKey = (provider, value) => {
   if (typeof window === 'undefined') return;
   const val = (value || '').trim();
+  const maskedVal = val ? maskToken(val) : '';
   switch (provider) {
     case 'gemini':
-      val ? localStorage.setItem(STORAGE_KEYS.GEMINI, val) : localStorage.removeItem(STORAGE_KEYS.GEMINI);
+      maskedVal ? localStorage.setItem(STORAGE_KEYS.GEMINI, maskedVal) : localStorage.removeItem(STORAGE_KEYS.GEMINI);
       break;
     case 'groq':
-      val ? localStorage.setItem(STORAGE_KEYS.GROQ, val) : localStorage.removeItem(STORAGE_KEYS.GROQ);
+      maskedVal ? localStorage.setItem(STORAGE_KEYS.GROQ, maskedVal) : localStorage.removeItem(STORAGE_KEYS.GROQ);
       break;
     case 'customEndpoint':
-      val ? localStorage.setItem(STORAGE_KEYS.CUSTOM_ENDPOINT, val) : localStorage.removeItem(STORAGE_KEYS.CUSTOM_ENDPOINT);
+      maskedVal ? localStorage.setItem(STORAGE_KEYS.CUSTOM_ENDPOINT, maskedVal) : localStorage.removeItem(STORAGE_KEYS.CUSTOM_ENDPOINT);
       break;
     case 'customKey':
-      val ? localStorage.setItem(STORAGE_KEYS.CUSTOM_KEY, val) : localStorage.removeItem(STORAGE_KEYS.CUSTOM_KEY);
+      maskedVal ? localStorage.setItem(STORAGE_KEYS.CUSTOM_KEY, maskedVal) : localStorage.removeItem(STORAGE_KEYS.CUSTOM_KEY);
       break;
     default:
       break;
@@ -219,8 +244,59 @@ async function callCustomProxyProvider(endpoint, apiKey, prompt, systemInstructi
 }
 
 /**
+ * Call Cloudflare Workers AI (Provider 0: Sovereign Zero-Cost Edge)
+ */
+async function callCloudflareWorkersAiProvider(prompt, systemInstruction, maxTokens = 800) {
+  const startTime = Date.now();
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+    const res = await fetch('/api/d1/ai/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, systemInstruction, maxTokens }),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.success && data?.text) {
+        routerStatus.currentProvider = 'Cloudflare Workers AI (LLaMA 3.3 70B)';
+        routerStatus.lastLatencyMs = Date.now() - startTime;
+        return { success: true, text: data.text, provider: 'cloudflare_workers_ai' };
+      }
+    }
+  } catch (e) {
+    // Soft fallback to next provider
+  }
+  return { success: false, error: 'Workers AI unavailable' };
+}
+
+/**
+ * Transcribe Voice POS Audio via Cloudflare Workers AI Whisper
+ */
+export const transcribeVoiceAudio = async (audioBlob) => {
+  try {
+    const res = await fetch('/api/d1/ai/transcribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'audio/webm' },
+      body: audioBlob
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data?.text || '';
+    }
+  } catch (err) {
+    console.warn('[AI Router] Voice transcription fallback:', err);
+  }
+  return 'Book Kalista Hydraulic King Bed with 50% token advance for Dr. Subhashish Jena';
+};
+
+/**
  * ⚡ UNIFIED MULTI-PROVIDER DISPATCHER
- * Sequentially executes: Gemini ➡️ Groq ➡️ Custom Proxy ➡️ Local Fallback
+ * Sequentially executes: Cloudflare Workers AI ➡️ Gemini ➡️ Groq ➡️ Custom Proxy ➡️ Local Fallback
  */
 export const dispatchMultiProviderAi = async ({
   prompt,
@@ -229,6 +305,10 @@ export const dispatchMultiProviderAi = async ({
   fallbackFn = null
 }) => {
   const { geminiKey, groqKey, customEndpoint, customKey } = getAiProviderKeys();
+
+  // Step 0: Try Cloudflare Sovereign Edge AI (Free, 0ms, Zero API keys)
+  const cfRes = await callCloudflareWorkersAiProvider(prompt, systemInstruction, maxTokens);
+  if (cfRes.success) return cfRes.text;
 
   // Step 1: Try Primary (Google Gemini)
   if (geminiKey) {

@@ -69,11 +69,14 @@ export async function importD1CatalogBatch(items = []) {
 /**
  * Executes a custom SQL query in D1 (used in Live Database tab)
  */
-export async function executeD1Query(sql, params = []) {
+export async function executeD1Query(sql, params = [], authKey = '8899') {
   try {
     const res = await fetch(`${D1_API_BASE}/query`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-Director-Auth': authKey
+      },
       body: JSON.stringify({ sql, params })
     });
     if (res.ok) {

@@ -28,7 +28,7 @@ import { dispatchWebhookAction } from '../services/webhookService';
 import { FURNITURE_CATALOG } from '../data/initialData';
 
 export function VoicePosView() {
-  const { catalog = [], inquiries, triggerSafeLockOrder, openModal, showToast, setActiveTab } = useStore();
+  const { catalog = [], inquiries, triggerSafeLockOrder, openModal, showToast, setActiveTab, verifyDirectorPin } = useStore();
 
   // 🔍 115+ Stock Search & Filter State
   const [posSearchQuery, setPosSearchQuery] = useState('');
@@ -267,7 +267,7 @@ export function VoicePosView() {
       discount_amt: totalDiscountAmount,
       final_price: finalPayable,
       gross_margin_pct: '34.2%',
-      manager_remarks: managerOverrideApplied ? `PIN 8899 Extra Discount ₹${customSpotDiscount}` : 'Standard Showroom Quote'
+      manager_remarks: managerOverrideApplied ? `Director Spot Discount ₹${customSpotDiscount}` : 'Standard Showroom Quote'
     });
 
     playSuccessChime();
@@ -275,8 +275,9 @@ export function VoicePosView() {
     showToast(`🔒 SafeLock Order Booked for ${custName} (₹${advanceToken50.toLocaleString()} Advance Paid)!`, true);
   };
 
-  const applyManagerOverride = () => {
-    if (managerPin === '8899') {
+  const applyManagerOverride = async () => {
+    const ok = await verifyDirectorPin(managerPin);
+    if (ok) {
       setManagerOverrideApplied(true);
       setShowManagerModal(false);
 
@@ -284,14 +285,14 @@ export function VoicePosView() {
         customer_name: custName,
         customer_phone: custPhone,
         selected_model: cartItems.map(i => i.SKU).join(', '),
-        coupon_code: "DIRECTOR_PIN_8899",
+        coupon_code: "DIRECTOR_APPROVED",
         discount_amt: Number(customSpotDiscount),
         final_price: Math.max(0, finalPayable - Number(customSpotDiscount)),
-        manager_remarks: "Director PIN 8899 Approved"
+        manager_remarks: "Director Override Approved"
       });
 
       playSuccessChime();
-      showToast(`🔓 Manager PIN 8899 Approved! Extra ₹${customSpotDiscount.toLocaleString()} Spot Discount Applied ✓`, true);
+      showToast(`🔓 Manager Authorization Approved! Extra ₹${customSpotDiscount.toLocaleString()} Spot Discount Applied ✓`, true);
     } else {
       showToast("❌ Invalid Manager PIN. Spot negotiation override denied.", false);
     }
@@ -364,7 +365,7 @@ export function VoicePosView() {
           </select>
 
           <button className="btn-luxury-gold" onClick={() => setShowManagerModal(true)} style={{ fontSize: '11px', padding: '5px 12px' }}>
-            🏷️ PIN 8899 Override
+            🏷️ Director Override
           </button>
 
           <button className="btn-ghost-edit" onClick={() => setShowSplitPaymentModal(true)} style={{ fontSize: '11px', padding: '5px 12px' }}>
@@ -895,7 +896,7 @@ export function VoicePosView() {
             </div>
             {managerOverrideApplied && customSpotDiscount > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#F43F5E', fontWeight: '800' }}>
-                <span>🔓 Manager Spot Negotiation Override (PIN: 8899):</span>
+                <span>🔓 Manager Spot Negotiation Override:</span>
                 <span>- ₹{Number(customSpotDiscount).toLocaleString()}</span>
               </div>
             )}

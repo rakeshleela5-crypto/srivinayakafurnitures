@@ -1,0 +1,302 @@
+[
+  {
+    "coverage_id": "functions%2Fapi%2Fd1%2F%5B%5Broute%5D%5D.js%23CORS%20Header::functions%2Fapi%2Fd1%2F%5B%5Broute%5D%5D.js%23isAllowedOrigin::functions%2Fapi%2Fd1::ATTACK-CLASSES.md%23Cross-origin%20resource%20sharing",
+    "canonical_refs": {
+      "surface": "functions/api/d1/[[route]].js#CORS Header",
+      "boundary": "functions/api/d1/[[route]].js#isAllowedOrigin",
+      "subsystem": "functions/api/d1",
+      "attack_class": "ATTACK-CLASSES.md#Cross-origin resource sharing"
+    },
+    "surface": "Edge API CORS Header",
+    "boundary": "Origin Allowlist Check",
+    "subsystem": "Edge API Router",
+    "attack_class": "Cross-origin resource sharing",
+    "starting_paths": [
+      "functions/api/d1/[[route]].js"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Cross-origin resource sharing",
+    "selected_companion_blocks": [],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "candidate",
+    "agent_id": "hunter-1",
+    "reviewed_paths": [
+      "functions/api/d1/[[route]].js"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "hunter-1",
+        "reviewed_paths": [
+          "functions/api/d1/[[route]].js"
+        ],
+        "invariant": "Edge router restricts cross-origin access to authorized showroom domains.",
+        "method": "source",
+        "result": "Previously reflected wildcard origin allowing cross-origin reads.",
+        "artifact": null
+      }
+    ],
+    "result_fingerprints": [
+      "functions-api-d1-cors-wildcard"
+    ],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "functions%2Fapi%2Fd1%2F%5B%5Broute%5D%5D.js%23POST%20%2Forders::functions%2Fapi%2Fd1%2F%5B%5Broute%5D%5D.js%23D1PreparedStatements::functions%2Fapi%2Fd1::ATTACK-CLASSES.md%23Injection",
+    "canonical_refs": {
+      "surface": "functions/api/d1/[[route]].js#POST /orders",
+      "boundary": "functions/api/d1/[[route]].js#D1PreparedStatements",
+      "subsystem": "functions/api/d1",
+      "attack_class": "ATTACK-CLASSES.md#Injection"
+    },
+    "surface": "D1 Orders Ingestion",
+    "boundary": "SQL Prepared Statement Binding",
+    "subsystem": "Edge API Router",
+    "attack_class": "Injection",
+    "starting_paths": [
+      "functions/api/d1/[[route]].js"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Injection",
+    "selected_companion_blocks": [],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "hunter-1",
+    "reviewed_paths": [
+      "functions/api/d1/[[route]].js"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "hunter-1",
+        "reviewed_paths": [
+          "functions/api/d1/[[route]].js"
+        ],
+        "invariant": "Order creation queries use parameterized binds to prevent SQL injection.",
+        "method": "source",
+        "result": "All INSERT operations use env.DB.prepare().bind() properly.",
+        "artifact": null
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "functions%2Fapi%2Fd1%2F%5B%5Broute%5D%5D.js%23POST%20%2Fquery::functions%2Fapi%2Fd1%2F%5B%5Broute%5D%5D.js%23isDirectorAuthorized::functions%2Fapi%2Fd1::ATTACK-CLASSES.md%23Access%20control",
+    "canonical_refs": {
+      "surface": "functions/api/d1/[[route]].js#POST /query",
+      "boundary": "functions/api/d1/[[route]].js#isDirectorAuthorized",
+      "subsystem": "functions/api/d1",
+      "attack_class": "ATTACK-CLASSES.md#Access control"
+    },
+    "surface": "D1 SQL Query API",
+    "boundary": "Director Authorization Check",
+    "subsystem": "Edge API Router",
+    "attack_class": "Access control",
+    "starting_paths": [
+      "functions/api/d1/[[route]].js"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Access control",
+    "selected_companion_blocks": [],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "candidate",
+    "agent_id": "hunter-1",
+    "reviewed_paths": [
+      "functions/api/d1/[[route]].js"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "hunter-1",
+        "reviewed_paths": [
+          "functions/api/d1/[[route]].js"
+        ],
+        "invariant": "Raw SQL queries require Director authentication header.",
+        "method": "source",
+        "result": "Endpoint permitted unauthenticated arbitrary SELECT queries before fix.",
+        "artifact": null
+      }
+    ],
+    "result_fingerprints": [
+      "functions-api-d1-unauth-query-execution"
+    ],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "functions%2Fapi%2Fd1%2F%5B%5Broute%5D%5D.js%23POST%20%2Fsync::functions%2Fapi%2Fd1%2F%5B%5Broute%5D%5D.js%23handleSyncBatches::functions%2Fapi%2Fd1::ATTACK-CLASSES.md%23Concurrency%20and%20race%20conditions",
+    "canonical_refs": {
+      "surface": "functions/api/d1/[[route]].js#POST /sync",
+      "boundary": "functions/api/d1/[[route]].js#handleSyncBatches",
+      "subsystem": "functions/api/d1",
+      "attack_class": "ATTACK-CLASSES.md#Concurrency and race conditions"
+    },
+    "surface": "Offline PWA D1 Batch Sync",
+    "boundary": "D1 Distributed Transaction Boundary",
+    "subsystem": "Edge Synchronization Engine",
+    "attack_class": "Concurrency and race conditions",
+    "starting_paths": [
+      "functions/api/d1/[[route]].js"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Concurrency and race conditions",
+    "selected_companion_blocks": [],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "candidate",
+    "agent_id": "hunter-1",
+    "reviewed_paths": [
+      "functions/api/d1/[[route]].js"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "hunter-1",
+        "reviewed_paths": [
+          "functions/api/d1/[[route]].js"
+        ],
+        "invariant": "Concurrent tablet syncs do not produce lost updates or split-brain state in D1.",
+        "method": "source",
+        "result": "Offline tablet sync concurrency across multi-region edge nodes needs runtime load test.",
+        "artifact": null
+      }
+    ],
+    "result_fingerprints": [
+      "cloudflare-d1-global-sync-replication-race"
+    ],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "src%2Fcomponents%2Fmodals%2FExecutiveModals.jsx%23directorPin::src%2Fcontext%2FStoreContext.jsx%23USER_ROLES.OWNER.pinHash::src%2Fcomponents%2Fmodals::ATTACK-CLASSES.md%23Credential%20handling",
+    "canonical_refs": {
+      "surface": "src/components/modals/ExecutiveModals.jsx#directorPin",
+      "boundary": "src/context/StoreContext.jsx#USER_ROLES.OWNER.pinHash",
+      "subsystem": "src/components/modals",
+      "attack_class": "ATTACK-CLASSES.md#Credential handling"
+    },
+    "surface": "Executive Modal Secret Inputs",
+    "boundary": "Cryptographic Hash Verification",
+    "subsystem": "Frontend UI Modals",
+    "attack_class": "Credential handling",
+    "starting_paths": [
+      "src/components/modals/ExecutiveModals.jsx",
+      "src/components/modals/FurnitureFollowUpModal.jsx"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Credential handling",
+    "selected_companion_blocks": [],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "candidate",
+    "agent_id": "hunter-1",
+    "reviewed_paths": [
+      "src/components/modals/ExecutiveModals.jsx",
+      "src/components/modals/FurnitureFollowUpModal.jsx"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "hunter-1",
+        "reviewed_paths": [
+          "src/components/modals/ExecutiveModals.jsx",
+          "src/components/modals/FurnitureFollowUpModal.jsx"
+        ],
+        "invariant": "Management authorization PIN is not disclosed in initial states or error toasts.",
+        "method": "source",
+        "result": "Hardcoded PIN was present in useState and error notifications.",
+        "artifact": null
+      }
+    ],
+    "result_fingerprints": [
+      "src-modals-hardcoded-director-pin"
+    ],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "src%2Fcontext%2FStoreContext.jsx%23verifyDirectorPin::src%2Fcontext%2FStoreContext.jsx%23hashPin::src%2Fcontext::ATTACK-CLASSES.md%23Authentication",
+    "canonical_refs": {
+      "surface": "src/context/StoreContext.jsx#verifyDirectorPin",
+      "boundary": "src/context/StoreContext.jsx#hashPin",
+      "subsystem": "src/context",
+      "attack_class": "ATTACK-CLASSES.md#Authentication"
+    },
+    "surface": "StoreContext Auth Guard",
+    "boundary": "SHA-256 Digest Verification",
+    "subsystem": "State Management",
+    "attack_class": "Authentication",
+    "starting_paths": [
+      "src/context/StoreContext.jsx"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Authentication",
+    "selected_companion_blocks": [],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "covered",
+    "agent_id": "hunter-1",
+    "reviewed_paths": [
+      "src/context/StoreContext.jsx"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "hunter-1",
+        "reviewed_paths": [
+          "src/context/StoreContext.jsx"
+        ],
+        "invariant": "StoreContext evaluates director authentication against SHA-256 hash.",
+        "method": "source",
+        "result": "SHA-256 hashing and role hash comparison confirmed intact.",
+        "artifact": null
+      }
+    ],
+    "result_fingerprints": [],
+    "unresolved": []
+  },
+  {
+    "coverage_id": "src%2Fservices%2FaiRouterService.js%23STORAGE_KEYS::src%2Fservices%2FaiRouterService.js%23maskToken::src%2Fservices::ATTACK-CLASSES.md%23Client-side%20storage",
+    "canonical_refs": {
+      "surface": "src/services/aiRouterService.js#STORAGE_KEYS",
+      "boundary": "src/services/aiRouterService.js#maskToken",
+      "subsystem": "src/services",
+      "attack_class": "ATTACK-CLASSES.md#Client-side storage"
+    },
+    "surface": "AI Provider Key Storage",
+    "boundary": "Storage Obfuscation Mask",
+    "subsystem": "AI Failover Router",
+    "attack_class": "Client-side storage",
+    "starting_paths": [
+      "src/services/aiRouterService.js"
+    ],
+    "ordinary_attack_class_block": "ATTACK-CLASSES.md#Client-side storage",
+    "selected_companion_blocks": [],
+    "excluded_blocks": [],
+    "prior_status": "new",
+    "attempts": [],
+    "wave": 1,
+    "status": "candidate",
+    "agent_id": "hunter-1",
+    "reviewed_paths": [
+      "src/services/aiRouterService.js"
+    ],
+    "local_checks": [
+      {
+        "agent_id": "hunter-1",
+        "reviewed_paths": [
+          "src/services/aiRouterService.js"
+        ],
+        "invariant": "AI API keys are obfuscated prior to writing to browser localStorage.",
+        "method": "source",
+        "result": "API keys were stored as raw plaintext strings.",
+        "artifact": null
+      }
+    ],
+    "result_fingerprints": [
+      "src-services-ai-keys-plaintext-storage"
+    ],
+    "unresolved": []
+  }
+]

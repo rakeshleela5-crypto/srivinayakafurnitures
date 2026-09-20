@@ -1,10 +1,10 @@
 -- ==============================================================================
--- OmniBuild OS™ — Cloudflare D1 Edge SQL Database Schema
+-- OmniBuild OS™ — Cloudflare D1 Edge SQL Database Master Schema
 -- Client: Sri Vinayaka Furnitures (Godrej Interio Rayagada Flagship)
 -- Database Engine: Cloudflare D1 (Serverless SQLite at the Edge)
 -- ==============================================================================
 
--- 1. Furniture Catalog (SKUs, Models, Pricing & Specifications)
+-- 1. Furniture Catalog (SKUs, Models, Pricing, Display Aging & Stock)
 CREATE TABLE IF NOT EXISTS catalog (
   sku TEXT PRIMARY KEY,
   product_name TEXT NOT NULL,
@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS catalog (
   architect_price_inr REAL,
   warehouse_qty INTEGER DEFAULT 0,
   floor_qty INTEGER DEFAULT 0,
+  showroom_display_qty INTEGER DEFAULT 1,
+  display_floor_days INTEGER DEFAULT 0,
   buffer_threshold INTEGER DEFAULT 2,
   finish TEXT,
   dimensions TEXT,
@@ -28,18 +30,28 @@ CREATE TABLE IF NOT EXISTS orders (
   order_id TEXT PRIMARY KEY,
   customer_name TEXT NOT NULL,
   customer_phone TEXT NOT NULL,
+  phone TEXT,
   project_address TEXT,
+  delivery_address TEXT,
   ordered_sku TEXT,
+  sku TEXT,
   item_names TEXT,
+  product_name TEXT,
+  items_json TEXT,
   total_amount_inr REAL NOT NULL,
   advance_paid_inr REAL DEFAULT 0,
+  advance_token_inr REAL DEFAULT 0,
   balance_due_inr REAL DEFAULT 0,
   safelock_status TEXT DEFAULT 'SAFELOCKED',
+  status TEXT DEFAULT 'SAFELOCKED',
   delivery_schedule TEXT,
   assigned_driver TEXT,
   carpenter_assigned TEXT,
   otp_code TEXT DEFAULT '5842',
   payment_mode TEXT DEFAULT 'DYNAMIC_UPI_QR',
+  architect_id TEXT,
+  architect_name TEXT,
+  manager_remarks TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -49,8 +61,10 @@ CREATE TABLE IF NOT EXISTS inquiries (
   inquiry_id TEXT PRIMARY KEY,
   customer_name TEXT NOT NULL,
   customer_phone TEXT NOT NULL,
+  phone TEXT,
   address TEXT DEFAULT 'Rayagada',
   category_models TEXT,
+  interested_category TEXT,
   budget_inr REAL DEFAULT 0,
   ai_intent_score TEXT DEFAULT '85%',
   assigned_staff TEXT DEFAULT 'Sunil (Sales Executive)',
@@ -63,6 +77,7 @@ CREATE TABLE IF NOT EXISTS inquiries (
 -- 4. Dynamic Payments & UPI Settlements
 CREATE TABLE IF NOT EXISTS payments (
   txn_id TEXT PRIMARY KEY,
+  payment_id TEXT,
   order_id TEXT,
   customer_name TEXT NOT NULL,
   payment_type TEXT DEFAULT 'ADVANCE_50',
@@ -70,7 +85,10 @@ CREATE TABLE IF NOT EXISTS payments (
   payment_mode TEXT DEFAULT 'DYNAMIC_UPI_QR',
   upi_vpa TEXT DEFAULT '9390553301@ybl',
   upi_transaction_ref TEXT,
+  utr_reference TEXT,
   reconciliation_status TEXT DEFAULT 'SETTLED',
+  status TEXT DEFAULT 'SETTLED',
+  bank_verified_at DATETIME,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (order_id) REFERENCES orders(order_id)
 );
@@ -79,6 +97,7 @@ CREATE TABLE IF NOT EXISTS payments (
 CREATE TABLE IF NOT EXISTS architects (
   architect_id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
+  architect_name TEXT,
   phone TEXT NOT NULL,
   firm_name TEXT,
   city TEXT DEFAULT 'Rayagada',
@@ -105,9 +124,91 @@ CREATE TABLE IF NOT EXISTS smartkit_boxes (
   FOREIGN KEY (order_id) REFERENCES orders(order_id)
 );
 
--- 7. High-Performance SQL Indexes for Sub-5ms Lookups
+-- 7. Daily Sales Summary (EOD 9:00 PM Automation)
+CREATE TABLE IF NOT EXISTS daily_sales_summary (
+  summary_date TEXT PRIMARY KEY,
+  day_name TEXT DEFAULT 'Today',
+  walkin_footfall INTEGER DEFAULT 0,
+  total_orders_booked INTEGER DEFAULT 0,
+  gross_sales_inr REAL DEFAULT 0,
+  advance_collected_inr REAL DEFAULT 0,
+  safelock_conversion_pct TEXT DEFAULT '75%',
+  upi_settled_inr REAL DEFAULT 0,
+  cash_in_safe_inr REAL DEFAULT 0,
+  discrepancy_inr REAL DEFAULT 0,
+  director_signoff TEXT DEFAULT 'VERIFIED ✓',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 8. EOD Cash & Safe Reconciliation Log
+CREATE TABLE IF NOT EXISTS eod_reconciliation_log (
+  log_id TEXT PRIMARY KEY,
+  closing_date TEXT NOT NULL,
+  opening_cash_inr REAL DEFAULT 0,
+  cash_collected_inr REAL DEFAULT 0,
+  cash_expense_inr REAL DEFAULT 0,
+  cash_in_safe_inr REAL DEFAULT 0,
+  upi_settled_inr REAL DEFAULT 0,
+  discrepancy_inr REAL DEFAULT 0,
+  audited_by TEXT DEFAULT 'Store Director (Verified)',
+  signoff_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 9. Architect Weekly Commission Ledger Log
+CREATE TABLE IF NOT EXISTS architect_commissions_log (
+  payout_id TEXT PRIMARY KEY,
+  architect_id TEXT NOT NULL,
+  architect_name TEXT NOT NULL,
+  project_count INTEGER DEFAULT 1,
+  weekly_volume_inr REAL NOT NULL,
+  commission_rate_pct REAL NOT NULL,
+  gross_commission_inr REAL NOT NULL,
+  tds_10pct_inr REAL NOT NULL,
+  net_payable_inr REAL NOT NULL,
+  payout_status TEXT DEFAULT 'PENDING_UPI',
+  settled_at DATETIME,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (architect_id) REFERENCES architects(architect_id)
+);
+
+-- 10. Bank Statement Reconciliation Transactions
+CREATE TABLE IF NOT EXISTS bank_statement_transactions (
+  bank_txn_id TEXT PRIMARY KEY,
+  value_date TEXT NOT NULL,
+  description TEXT NOT NULL,
+  credit_inr REAL DEFAULT 0,
+  debit_inr REAL DEFAULT 0,
+  utr_reference TEXT,
+  matched_order_id TEXT,
+  reconciliation_state TEXT DEFAULT 'UNMATCHED',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 11. Delivery Manifest & Driver Stops
+CREATE TABLE IF NOT EXISTS delivery_manifest_stops (
+  stop_id TEXT PRIMARY KEY,
+  manifest_date TEXT NOT NULL,
+  driver_name TEXT DEFAULT 'Tophan Gouda (Tata Ace OD-18-B-4491)',
+  lead_carpenter TEXT DEFAULT 'Narayana Mistri',
+  order_id TEXT NOT NULL,
+  stop_sequence INTEGER DEFAULT 1,
+  customer_name TEXT NOT NULL,
+  customer_phone TEXT NOT NULL,
+  delivery_address TEXT NOT NULL,
+  balance_due_inr REAL DEFAULT 0,
+  otp_code TEXT NOT NULL,
+  delivery_status TEXT DEFAULT 'SCHEDULED',
+  epod_signature_key TEXT,
+  epod_photo_key TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (order_id) REFERENCES orders(order_id)
+);
+
+-- 12. High-Performance SQL Indexes for Sub-5ms Lookups
 CREATE INDEX IF NOT EXISTS idx_orders_customer_phone ON orders(customer_phone);
-CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(safelock_status);
+CREATE INDEX IF NOT EXISTS idx_orders_safelock_status ON orders(safelock_status);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
 CREATE INDEX IF NOT EXISTS idx_catalog_category ON catalog(category);
 CREATE INDEX IF NOT EXISTS idx_payments_order_id ON payments(order_id);
 CREATE INDEX IF NOT EXISTS idx_inquiries_phone ON inquiries(customer_phone);
+CREATE INDEX IF NOT EXISTS idx_bank_utr ON bank_statement_transactions(utr_reference);

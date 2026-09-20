@@ -204,7 +204,84 @@ CREATE TABLE IF NOT EXISTS delivery_manifest_stops (
   FOREIGN KEY (order_id) REFERENCES orders(order_id)
 );
 
--- 12. High-Performance SQL Indexes for Sub-5ms Lookups
+-- 13. Godrej Factory Auto-PO Tracking
+CREATE TABLE IF NOT EXISTS factory_purchase_orders (
+  po_id TEXT PRIMARY KEY,
+  sku TEXT NOT NULL,
+  product_name TEXT NOT NULL,
+  factory_name TEXT DEFAULT 'Godrej Khalapur Plant',
+  order_qty INTEGER NOT NULL,
+  estimated_cost_inr REAL NOT NULL,
+  status TEXT DEFAULT 'DRAFTED_AUTO_CRON',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 14. Carpenter Hydraulic Assembly SLA Sentinel
+CREATE TABLE IF NOT EXISTS carpenter_installation_slas (
+  sla_id TEXT PRIMARY KEY,
+  order_id TEXT NOT NULL,
+  customer_name TEXT NOT NULL,
+  carpenter_name TEXT DEFAULT 'Narayana Mistri',
+  delivered_at DATETIME NOT NULL,
+  deadline_at DATETIME NOT NULL,
+  status TEXT DEFAULT 'ASSEMBLY_PENDING',
+  customer_rating INTEGER DEFAULT 5,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (order_id) REFERENCES orders(order_id)
+);
+
+-- 15. Customer 1-Year Bed Hydraulic Care & Anniversary
+CREATE TABLE IF NOT EXISTS customer_anniversary_log (
+  log_id TEXT PRIMARY KEY,
+  order_id TEXT NOT NULL,
+  customer_name TEXT NOT NULL,
+  customer_phone TEXT NOT NULL,
+  product_name TEXT NOT NULL,
+  purchased_date TEXT NOT NULL,
+  nudge_type TEXT DEFAULT '1_YEAR_HYDRAULIC_LUBRICATION',
+  status TEXT DEFAULT 'MESSAGE_DISPATCHED',
+  sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (order_id) REFERENCES orders(order_id)
+);
+
+-- 16. Bridal & Wedding Season VIP Suite Registry
+CREATE TABLE IF NOT EXISTS wedding_registry_leads (
+  registry_id TEXT PRIMARY KEY,
+  customer_name TEXT NOT NULL,
+  customer_phone TEXT NOT NULL,
+  wedding_date TEXT NOT NULL,
+  preferred_package TEXT DEFAULT 'Royal Bridal Teak Suite',
+  budget_inr REAL DEFAULT 250000,
+  status TEXT DEFAULT 'BRIDAL_CATALOG_SENT',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 17. Godrej Supplier Invoices & Early Payment Cash Discounts
+CREATE TABLE IF NOT EXISTS supplier_invoices_ledger (
+  invoice_id TEXT PRIMARY KEY,
+  supplier_name TEXT DEFAULT 'Godrej Interio Corporate',
+  invoice_date TEXT NOT NULL,
+  due_date TEXT NOT NULL,
+  invoice_amount_inr REAL NOT NULL,
+  discount_eligible_inr REAL DEFAULT 0,
+  status TEXT DEFAULT 'DISCOUNT_ALERTED',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 18. Factory Lorry Receipt (LR) & Transit Tracking
+CREATE TABLE IF NOT EXISTS transit_lr_tracking (
+  lr_number TEXT PRIMARY KEY,
+  transporter_name TEXT DEFAULT 'VRL Logistics / Safechem',
+  dispatch_date TEXT NOT NULL,
+  expected_delivery TEXT NOT NULL,
+  days_in_transit INTEGER DEFAULT 1,
+  boxes_count INTEGER NOT NULL,
+  status TEXT DEFAULT 'IN_TRANSIT',
+  insurance_claim_filed INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 19. High-Performance SQL Indexes for Sub-5ms Lookups
 CREATE INDEX IF NOT EXISTS idx_orders_customer_phone ON orders(customer_phone);
 CREATE INDEX IF NOT EXISTS idx_orders_safelock_status ON orders(safelock_status);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
@@ -212,3 +289,6 @@ CREATE INDEX IF NOT EXISTS idx_catalog_category ON catalog(category);
 CREATE INDEX IF NOT EXISTS idx_payments_order_id ON payments(order_id);
 CREATE INDEX IF NOT EXISTS idx_inquiries_phone ON inquiries(customer_phone);
 CREATE INDEX IF NOT EXISTS idx_bank_utr ON bank_statement_transactions(utr_reference);
+CREATE INDEX IF NOT EXISTS idx_factory_po_sku ON factory_purchase_orders(sku);
+CREATE INDEX IF NOT EXISTS idx_carpenter_sla ON carpenter_installation_slas(order_id);
+

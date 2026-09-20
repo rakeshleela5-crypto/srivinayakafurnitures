@@ -47,3 +47,36 @@ VALUES
 INSERT OR REPLACE INTO eod_reconciliation_log (log_id, closing_date, opening_cash_inr, cash_collected_inr, cash_expense_inr, cash_in_safe_inr, upi_settled_inr, discrepancy_inr, audited_by)
 VALUES
   ('EOD-2026-09-19', '2026-09-19', 20000, 45000, 7500, 57500, 185000, 0, 'Store Director (Verified)');
+
+-- 8. Seed Godrej Factory Auto-POs
+INSERT OR REPLACE INTO factory_purchase_orders (po_id, sku, product_name, factory_name, order_qty, estimated_cost_inr, status)
+VALUES
+  ('PO-KHL-101', 'BED-MOD-001', 'Kalista King Bed with Hydraulic Storage', 'Godrej Khalapur Plant', 4, 184000, 'DRAFTED_AUTO_CRON'),
+  ('PO-KHL-102', 'ALM-SLM-003', 'Slimline Tata CRCA 3-Door Steel Wardrobe', 'Godrej Khalapur Plant', 6, 192000, 'DISPATCHED_EX_FACTORY');
+
+-- 9. Seed Carpenter Installation SLAs
+INSERT OR REPLACE INTO carpenter_installation_slas (sla_id, order_id, customer_name, carpenter_name, delivered_at, deadline_at, status, customer_rating)
+VALUES
+  ('SLA-401', 'ORD-8921', 'Dr. Subhashish Jena', 'Narayana Mistri', datetime('now', '-4 hours'), datetime('now', '+20 hours'), 'IN_PROGRESS', 5),
+  ('SLA-402', 'ORD-8923', 'Er. Ashish Choudhury', 'Narayana Mistri', datetime('now', '-2 days'), datetime('now', '-1 day'), 'COMPLETED_VERIFIED', 5);
+
+-- 10. Seed Customer Anniversaries
+INSERT OR REPLACE INTO customer_anniversary_log (log_id, order_id, customer_name, customer_phone, product_name, purchased_date, nudge_type, status)
+VALUES
+  ('ANNIV-01', 'ORD-PREV-101', 'Prof. B. C. Panda', '9437199881', 'Godrej Kalista Hydraulic Bed', '2025-09-20', '1_YEAR_HYDRAULIC_LUBRICATION', 'MESSAGE_DISPATCHED');
+
+-- 11. Seed Wedding Registry Leads
+INSERT OR REPLACE INTO wedding_registry_leads (registry_id, customer_name, customer_phone, wedding_date, preferred_package, budget_inr, status)
+VALUES
+  ('WED-2026-01', 'Er. Soumya Ranjan & Smruti', '9437882211', '2026-11-28', 'Grand Royal Bridal Teak Bedroom Suite', 320000, 'BRIDAL_CATALOG_SENT');
+
+-- 12. Seed Supplier Invoices & Cash Discounts
+INSERT OR REPLACE INTO supplier_invoices_ledger (invoice_id, supplier_name, invoice_date, due_date, invoice_amount_inr, discount_eligible_inr, status)
+VALUES
+  ('INV-GDJ-9821', 'Godrej Interio Corporate Mumbai', '2026-09-15', '2026-09-25', 485000, 9700, 'DISCOUNT_ALERTED');
+
+-- 13. Seed Transit LR Tracking
+INSERT OR REPLACE INTO transit_lr_tracking (lr_number, transporter_name, dispatch_date, expected_delivery, days_in_transit, boxes_count, status)
+VALUES
+  ('LR-VRL-88219', 'VRL Logistics (Mumbai-Rayagada)', '2026-09-17', '2026-09-22', 3, 24, 'IN_TRANSIT');
+

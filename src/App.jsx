@@ -31,6 +31,7 @@ const MobileCustomerChatView = React.lazy(() => import('./views/MobileCustomerCh
 const BankStatementLedgerView = React.lazy(() => import('./views/BankStatementLedgerView').then(m => ({ default: m.BankStatementLedgerView })));
 const ShowroomAiAgentsView = React.lazy(() => import('./views/ShowroomAiAgentsView'));
 const B2bInstitutionalProjectsView = React.lazy(() => import('./views/B2bInstitutionalProjectsView'));
+const AutonomousFleetView = React.lazy(() => import('./views/AutonomousFleetView').then(m => ({ default: m.AutonomousFleetView })));
 
 // Premium loading spinner shown while lazy chunks download
 function LazyLoadingFallback() {
@@ -211,6 +212,8 @@ function AppContent() {
         return <StaffOutwardScannerView />;
       case 'staff_qr':
         return <StaffQrHubView />;
+      case 'autonomous_fleet':
+        return <AutonomousFleetView />;
       default:
         return <ExecutiveOverview />;
     }

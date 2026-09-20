@@ -292,3 +292,24 @@ CREATE INDEX IF NOT EXISTS idx_bank_utr ON bank_statement_transactions(utr_refer
 CREATE INDEX IF NOT EXISTS idx_factory_po_sku ON factory_purchase_orders(sku);
 CREATE INDEX IF NOT EXISTS idx_carpenter_sla ON carpenter_installation_slas(order_id);
 
+-- 20. Sovereign Autonomous Bot Fleet Dynamic Configurations
+CREATE TABLE IF NOT EXISTS bot_configurations (
+  bot_id TEXT PRIMARY KEY,
+  bot_name TEXT NOT NULL,
+  department TEXT NOT NULL,
+  is_enabled INTEGER DEFAULT 1,
+  schedule_cron TEXT NOT NULL,
+  scheduled_time_ist TEXT NOT NULL,
+  frequency_label TEXT NOT NULL,
+  threshold_value REAL DEFAULT 0,
+  discount_pct REAL DEFAULT 0,
+  recipient_phone TEXT DEFAULT '+91 93905 53301',
+  recipient_role TEXT DEFAULT 'Store Director',
+  whatsapp_template TEXT,
+  last_triggered_at DATETIME,
+  last_status TEXT DEFAULT 'IDLE',
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_bot_config_dept ON bot_configurations(department);
+
+

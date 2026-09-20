@@ -180,7 +180,10 @@ export function TabsRibbon() {
     // PHASE 4: Finance, Staff Hub & Sovereign Cloudflare D1 Database
     { id: 'bank_ledger', label: '🏛️ 14. Bank Statements & RTGS', icon: Landmark },
     { id: 'staff_qr', label: '📱 15. Staff Mobile QR Hub', icon: Smartphone },
-    { id: 'live_database', label: '🗄️ 16. Live 43-Table D1 Edge', icon: Database }
+    { id: 'live_database', label: '🗄️ 16. Live 43-Table D1 Edge', icon: Database },
+
+    // PHASE 5: Autonomous Edge Robotics & Cron Fleet
+    { id: 'autonomous_fleet', label: '🤖 17. 20-Bot Autonomous Fleet', icon: Bot }
   ];
 
   // Filter tabs allowed for current role
@@ -222,7 +225,8 @@ export function BottomDock() {
     { id: 'documents', label: '🧾 Documents' },
     { id: 'bank_ledger', label: '🏛️ Bank Ledger' },
     { id: 'staff_qr', label: '📱 QR Hub' },
-    { id: 'live_database', label: '🗄️ 43 Tables D1' }
+    { id: 'live_database', label: '🗄️ 43 Tables D1' },
+    { id: 'autonomous_fleet', label: '🤖 20-Bot Fleet' }
   ];
 
   const visibleDockItems = currentUser?.allowedTabs

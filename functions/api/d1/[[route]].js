@@ -957,6 +957,41 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ success: true, count: results?.length || 0, payments: results || [] }), { headers: corsHeaders });
     }
 
+    if (path.endsWith('/bots/config') && method === 'GET') {
+      const { results } = await env.DB.prepare('SELECT * FROM bot_configurations ORDER BY bot_id ASC;').all();
+      return new Response(JSON.stringify({ success: true, count: results?.length || 0, bots: results || [] }), { headers: corsHeaders });
+    }
+
+    if (path.endsWith('/bots/config') && method === 'POST') {
+      const b = await request.json();
+      await env.DB.prepare(`
+        UPDATE bot_configurations 
+        SET is_enabled = ?,
+            scheduled_time_ist = ?,
+            frequency_label = ?,
+            threshold_value = ?,
+            discount_pct = ?,
+            recipient_phone = ?,
+            recipient_role = ?,
+            whatsapp_template = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE bot_id = ?;
+      `).bind(
+        b.is_enabled ? 1 : 0,
+        b.scheduled_time_ist || '09:00 PM',
+        b.frequency_label || 'Daily',
+        Number(b.threshold_value || 0),
+        Number(b.discount_pct || 0),
+        b.recipient_phone || '+91 93905 53301',
+        b.recipient_role || 'Store Director',
+        b.whatsapp_template || '',
+        b.bot_id
+      ).run();
+
+      const updated = await env.DB.prepare('SELECT * FROM bot_configurations WHERE bot_id = ? LIMIT 1;').bind(b.bot_id).first();
+      return new Response(JSON.stringify({ success: true, updatedBot: updated }), { headers: corsHeaders });
+    }
+
     // 3. Universal Webhook Dispatch Handler (Replaces Apps Script!)
     if (path.endsWith('/dispatch') && method === 'POST') {
       const body = await request.json();
@@ -1390,6 +1425,45 @@ async function handleFallbackSimulation(path, method, request, corsHeaders) {
       status: 'READY_TO_BIND',
       engine: 'Cloudflare D1 (Pending Dashboard Binding)',
       message: 'Cloudflare Edge Engine active.'
+    }), { headers: corsHeaders });
+  }
+
+  if (path.includes('/bots/config')) {
+    if (method === 'POST') {
+      const b = await request.json();
+      return new Response(JSON.stringify({
+        success: true,
+        simulated: true,
+        updatedBot: b,
+        message: `Bot ${b.bot_id} configuration updated successfully on Cloudflare Edge!`
+      }), { headers: corsHeaders });
+    }
+    return new Response(JSON.stringify({
+      success: true,
+      simulated: true,
+      count: 20,
+      bots: [
+        { bot_id: "BOT-01", bot_name: "9:00 PM EOD Cash & Sales Summary Slip", department: "Executive Sales", is_enabled: 1, schedule_cron: "30 15 * * *", scheduled_time_ist: "09:00 PM", frequency_label: "Daily at 9:00 PM", threshold_value: 0, discount_pct: 0, recipient_phone: "+91 93905 53301", recipient_role: "Store Director", whatsapp_template: "🔒 *GODREJ INTERIO RAYAGADA — DAILY CLOSING SLIP*\nDate: {date} | Gross Sales: ₹{gross_sales}\nUPI: ₹{upi_total} | Cash in Safe: ₹{cash_total}\nVerified ✓" },
+        { bot_id: "BOT-02", bot_name: "10:00 AM Morning Customer Walk-In Follow-Up", department: "CRM & VIP Sales", is_enabled: 1, schedule_cron: "30 4 * * *", scheduled_time_ist: "10:00 AM", frequency_label: "Daily at 10:00 AM", threshold_value: 48, discount_pct: 10, recipient_phone: "+91 94374 11223", recipient_role: "Customer Lead", whatsapp_template: "Namaste {customer_name} ji! Thank you for visiting Godrej Interio Rayagada. Book your {product_name} today to get Complimentary Ortho Pillows!" },
+        { bot_id: "BOT-03", bot_name: "SafeLock 48-Hour Token Hold Recovery Guard", department: "Stock Protection", is_enabled: 1, schedule_cron: "0 */2 * * *", scheduled_time_ist: "Every 2 Hours", frequency_label: "Every 2 Hours", threshold_value: 48, discount_pct: 0, recipient_phone: "+91 93905 53301", recipient_role: "Sales Consultant", whatsapp_template: "⚠️ SafeLock Notice: Hold expired for Order #{order_id} ({customer_name}). Reserved unit returned to warehouse dock." },
+        { bot_id: "BOT-04", bot_name: "11:00 AM Floor Aging Display Clearance Radar", department: "Merchandising", is_enabled: 1, schedule_cron: "30 5 * * *", scheduled_time_ist: "11:00 AM", frequency_label: "Daily at 11:00 AM", threshold_value: 45, discount_pct: 18, recipient_phone: "+91 93905 53301", recipient_role: "Store Director", whatsapp_template: "🏷️ Floor Aging Clearance: SKU {sku} ({product_name}) on floor for {days} days. Proposed 18% spot clearance discount." },
+        { bot_id: "BOT-05", bot_name: "08:30 AM Bank Statement UTR Auto-Reconciler", department: "Finance & Accounts", is_enabled: 1, schedule_cron: "0 3 * * *", scheduled_time_ist: "08:30 AM", frequency_label: "Daily at 8:30 AM", threshold_value: 0, discount_pct: 0, recipient_phone: "+91 93905 53301", recipient_role: "Accountant Kishore", whatsapp_template: "🏛️ Bank Settlement Notice: UTR {utr_reference} for ₹{amount} reconciled against Order #{order_id}. Balance updated." },
+        { bot_id: "BOT-06", bot_name: "03:30 PM Fleet Route Manifest & Driver Dispatch", department: "Logistics & Delivery", is_enabled: 1, schedule_cron: "0 10 * * *", scheduled_time_ist: "03:30 PM", frequency_label: "Daily at 3:30 PM", threshold_value: 0, discount_pct: 0, recipient_phone: "+91 94371 00291", recipient_role: "Driver Tophan Gouda", whatsapp_template: "🚚 Rayagada Fleet Manifest: {stop_count} deliveries scheduled for today. Stop 1: {first_address} (OTP: {otp_code})." },
+        { bot_id: "BOT-07", bot_name: "Monday 10:00 AM Architect Commission & TDS", department: "B2B Design Partners", is_enabled: 1, schedule_cron: "30 4 * * 1", scheduled_time_ist: "10:00 AM", frequency_label: "Weekly Monday", threshold_value: 10, discount_pct: 10, recipient_phone: "+91 94375 00981", recipient_role: "Architect Partner", whatsapp_template: "🏛️ Architect Partner Ledger: Weekly commission ₹{commission_amount} generated after 10% TDS deduction. Payment processed via UPI." },
+        { bot_id: "BOT-08", bot_name: "12:00 AM Midnight Database Maintenance & R2 Backup", department: "Sovereign Cloud Ops", is_enabled: 1, schedule_cron: "30 18 * * *", scheduled_time_ist: "12:00 AM", frequency_label: "Daily Midnight", threshold_value: 0, discount_pct: 0, recipient_phone: "+91 93905 53301", recipient_role: "Store Director", whatsapp_template: "💾 Midnight R2 Cloud Backup: Database integrity verified, 17 tables archived and locked into sovereign cloud storage." },
+        { bot_id: "BOT-09", bot_name: "Godrej Khalapur Factory Auto-PO Generator", department: "Procurement", is_enabled: 1, schedule_cron: "0 */4 * * *", scheduled_time_ist: "Every 4 Hours", frequency_label: "Every 4 Hours", threshold_value: 1, discount_pct: 0, recipient_phone: "+91 93905 53301", recipient_role: "Procurement Desk", whatsapp_template: "🏭 Factory Replenishment PO: Stock for {product_name} dropped to {warehouse_qty} units. Auto-PO #{po_id} drafted for Khalapur factory." },
+        { bot_id: "BOT-10", bot_name: "05:00 PM Carpenter Hydraulic Assembly SLA Sentinel", department: "Field Service", is_enabled: 1, schedule_cron: "30 11 * * *", scheduled_time_ist: "05:00 PM", frequency_label: "Daily at 5:00 PM", threshold_value: 24, discount_pct: 0, recipient_phone: "+91 94372 88192", recipient_role: "Lead Carpenter Narayana", whatsapp_template: "🪚 Installation SLA Reminder: Order #{order_id} ({customer_name}) was delivered yesterday. Hydraulic assembly must be completed today." },
+        { bot_id: "BOT-11", bot_name: "12:00 PM Customer 1-Year Bed Care & Anniversary", department: "Customer Retention", is_enabled: 1, schedule_cron: "30 6 * * *", scheduled_time_ist: "12:00 PM", frequency_label: "Daily at 12:00 PM", threshold_value: 365, discount_pct: 0, recipient_phone: "+91 94371 99881", recipient_role: "Customer", whatsapp_template: "Namaste {customer_name} ji! Exactly 1 year ago, you welcomed your Godrej {product_name}. We are offering a complimentary hydraulic lubrication checkup!" },
+        { bot_id: "BOT-12", bot_name: "1st of Month 09:00 AM GST 3B Outward Tax Summary", department: "Taxation & Audit", is_enabled: 1, schedule_cron: "30 3 1 * *", scheduled_time_ist: "09:00 AM", frequency_label: "Monthly 1st at 9:00 AM", threshold_value: 18, discount_pct: 0, recipient_phone: "+91 93905 53301", recipient_role: "Chartered Accountant", whatsapp_template: "📊 Rayagada Showroom GST 3B Outward Tax Summary: Monthly Turnover ₹{turnover} | CGST ₹{cgst} | SGST ₹{sgst}. Ready for filing." },
+        { bot_id: "BOT-13", bot_name: "08:00 PM Staff Sales Leaderboard & Incentives", department: "HR & Motivation", is_enabled: 1, schedule_cron: "30 14 * * *", scheduled_time_ist: "08:00 PM", frequency_label: "Daily at 8:00 PM", threshold_value: 0, discount_pct: 1.5, recipient_phone: "+91 93905 53301", recipient_role: "Sales Floor Group", whatsapp_template: "🏆 Today’s Sales Leaderboard: 🥇 {champion_name} booked ₹{champion_sales} ({order_count} bookings). Team gross: ₹{total_sales}!" },
+        { bot_id: "BOT-14", bot_name: "06:00 PM Google 5-Star Review Booster", department: "Brand Reputation", is_enabled: 1, schedule_cron: "30 12 * * *", scheduled_time_ist: "06:00 PM", frequency_label: "Daily at 6:00 PM", threshold_value: 2, discount_pct: 0, recipient_phone: "+91 94371 88291", recipient_role: "Delivered Customer", whatsapp_template: "Dear {customer_name} ji, how is your new {product_name}? Share a 1-click Google review to get a ₹500 showroom voucher: {review_url}" },
+        { bot_id: "BOT-15", bot_name: "10:00 AM Bridal & Wedding Season VIP Suite Registry", department: "VIP Weddings", is_enabled: 1, schedule_cron: "30 4 * * *", scheduled_time_ist: "10:00 AM", frequency_label: "Daily at 10:00 AM", threshold_value: 21, discount_pct: 15, recipient_phone: "+91 94378 82211", recipient_role: "Wedding Lead", whatsapp_template: "💐 Congratulations {couple_name}! Planning your wedding? Explore our Grand Royal Bridal Bedroom Suites with complimentary mattress upgrade." },
+        { bot_id: "BOT-16", bot_name: "04:00 PM Delivered Orders Balance Due Recovery Chaser", department: "Credit Control", is_enabled: 1, schedule_cron: "30 10 * * *", scheduled_time_ist: "04:00 PM", frequency_label: "Daily at 4:00 PM", threshold_value: 48, discount_pct: 0, recipient_phone: "+91 94370 19283", recipient_role: "Customer Balance Due", whatsapp_template: "Namaste {customer_name} ji, outstanding balance of ₹{balance_due} is pending for Order #{order_id}. Pay securely via UPI: {upi_link}" },
+        { bot_id: "BOT-17", bot_name: "Wed 11:00 AM Godrej 2% Early Cash Discount Optimizer", department: "Treasury", is_enabled: 1, schedule_cron: "30 5 * * 3", scheduled_time_ist: "11:00 AM", frequency_label: "Weekly Wednesday", threshold_value: 3, discount_pct: 2, recipient_phone: "+91 93905 53301", recipient_role: "Store Director", whatsapp_template: "🏷️ Supplier Discount Alert: Pay Godrej Invoice #{invoice_id} before {due_date} to save ₹{discount_savings} with 2% early cash settlement." },
+        { bot_id: "BOT-18", bot_name: "02:00 PM Factory LR Transit & Cargo Damage Radar", department: "Freight", is_enabled: 1, schedule_cron: "30 8 * * *", scheduled_time_ist: "02:00 PM", frequency_label: "Daily at 2:00 PM", threshold_value: 5, discount_pct: 0, recipient_phone: "+91 93905 53301", recipient_role: "Warehouse Manager", whatsapp_template: "🚚 Freight Alert: Truck LR #{lr_number} from Khalapur plant is on day {transit_days} in transit ({box_count} cartons). Status: {status}." },
+        { bot_id: "BOT-19", bot_name: "Every 30 Min SmartKit 5-Box Dock Integrity Guard", department: "Quality Assurance", is_enabled: 1, schedule_cron: "*/30 * * * *", scheduled_time_ist: "Every 30 Mins", frequency_label: "Every 30 Minutes", threshold_value: 5, discount_pct: 0, recipient_phone: "+91 93905 53301", recipient_role: "Dock Supervisor", whatsapp_template: "📦 SmartKit Dock Audit: Order #{order_id} has {scanned_boxes}/5 boxes staged. Ready for driver handover." },
+        { bot_id: "BOT-20", bot_name: "Sunday 11:30 PM Zero Trust Security & Vault Digest", department: "Cyber Governance", is_enabled: 1, schedule_cron: "0 18 * * 0", scheduled_time_ist: "11:30 PM", frequency_label: "Weekly Sunday", threshold_value: 7, discount_pct: 0, recipient_phone: "+91 93905 53301", recipient_role: "Store Director", whatsapp_template: "🛡️ Weekly Cyber Security Digest: Zero unauthorized Director PIN attempts. 7/7 encrypted R2 cloud snapshots verified." }
+      ]
     }), { headers: corsHeaders });
   }
 

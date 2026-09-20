@@ -31,7 +31,7 @@ export const ROLE_PERMISSIONS = Object.freeze({
     'executive', 'b2b_projects', 'crm', 'voice_pos', 'architects',
     'autoprocure', 'inward_scanner', 'safelock', 'barcode_studio', 'qr_studio',
     'outward_scanner', 'logistics_epod', 'documents',
-    'bank_ledger', 'staff_qr', 'live_database'
+    'bank_ledger', 'staff_qr', 'live_database', 'autonomous_fleet'
   ]),
   sunil_sales: Object.freeze([
     'voice_pos', 'b2b_projects', 'crm', 'safelock', 'documents', 'barcode_studio', 'qr_studio'

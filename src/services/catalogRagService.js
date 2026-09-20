@@ -7,10 +7,13 @@
  * 2. Reciprocal Rank Fusion (RRF)
  * 3. Document Grader (evaluates if retrieved document is relevant before answering)
  * 4. Official Godrej Interio citation & page grounding (Zero Hallucinations)
+ * 5. Full In-Place CMS: Add, Edit, Delete, Auto-Keyword Extractor & JSON Sync
  */
 
-// Grounded Master Knowledge Base for Godrej Interio Rayagada
-export const GODREJ_KNOWLEDGE_DOCS = [
+export const STORAGE_KEY = 'OMNIBUILD_GODREJ_KNOWLEDGE_DOCS_V1';
+
+// Factory Master Knowledge Base for Godrej Interio Rayagada
+export const DEFAULT_GODREJ_KNOWLEDGE_DOCS = [
   {
     id: 'DOC-WARR-01',
     title: 'Centuro Motorized Recliner Warranty & German Mechanism Specs',
@@ -78,6 +81,172 @@ export const GODREJ_KNOWLEDGE_DOCS = [
 ];
 
 /**
+ * Loads documents from localStorage or returns factory defaults
+ */
+export const getStoredKnowledgeDocs = () => {
+  if (typeof window === 'undefined') return DEFAULT_GODREJ_KNOWLEDGE_DOCS;
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {
+    console.warn('Failed to parse stored knowledge docs from localStorage:', e);
+  }
+  return DEFAULT_GODREJ_KNOWLEDGE_DOCS;
+};
+
+/**
+ * Saves documents list to localStorage and updates in-memory reference
+ */
+export const saveStoredKnowledgeDocs = (docs) => {
+  if (!Array.isArray(docs)) return false;
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(docs));
+    } catch (e) {
+      console.error('Failed to save knowledge docs to localStorage:', e);
+      return false;
+    }
+  }
+  // Sync in-memory proxy
+  GODREJ_KNOWLEDGE_DOCS.length = 0;
+  docs.forEach(d => GODREJ_KNOWLEDGE_DOCS.push(d));
+  return true;
+};
+
+// Export active array (pre-populated and kept in sync)
+export const GODREJ_KNOWLEDGE_DOCS = [...getStoredKnowledgeDocs()];
+
+/**
+ * Saves or updates a single knowledge document
+ */
+export const saveKnowledgeDoc = (doc) => {
+  const currentDocs = getStoredKnowledgeDocs();
+  const id = doc.id || `DOC-CUSTOM-${Date.now().toString(36).toUpperCase()}`;
+  
+  // Ensure keywords exist
+  const keywords = Array.isArray(doc.keywords) && doc.keywords.length > 0
+    ? doc.keywords
+    : autoExtractKeywords(doc.content, doc.title);
+
+  const updatedDoc = {
+    ...doc,
+    id,
+    title: doc.title?.trim() || 'Untitled Knowledge Policy',
+    category: doc.category || 'WARRANTY_SPECS',
+    citation: doc.citation?.trim() || 'Godrej Interio Showroom Policy 2026',
+    content: doc.content?.trim() || '',
+    keywords: keywords.map(k => k.toLowerCase().trim()).filter(Boolean),
+    updatedAt: new Date().toISOString()
+  };
+
+  const existingIndex = currentDocs.findIndex(d => d.id === id);
+  let newDocs;
+  if (existingIndex >= 0) {
+    newDocs = [...currentDocs];
+    newDocs[existingIndex] = updatedDoc;
+  } else {
+    newDocs = [updatedDoc, ...currentDocs];
+  }
+
+  saveStoredKnowledgeDocs(newDocs);
+  return updatedDoc;
+};
+
+/**
+ * Deletes a document by ID
+ */
+export const deleteKnowledgeDoc = (docId) => {
+  const currentDocs = getStoredKnowledgeDocs();
+  const filtered = currentDocs.filter(d => d.id !== docId);
+  saveStoredKnowledgeDocs(filtered);
+  return filtered;
+};
+
+/**
+ * Resets knowledge base back to official Godrej defaults
+ */
+export const resetKnowledgeDocsToDefault = () => {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+  saveStoredKnowledgeDocs(DEFAULT_GODREJ_KNOWLEDGE_DOCS);
+  return DEFAULT_GODREJ_KNOWLEDGE_DOCS;
+};
+
+/**
+ * Smart Keyword Auto-Extractor (Zero jargon for showroom client)
+ * Scans title and text, strips stop words, extracts top 12-16 high-signal search tokens.
+ */
+export const autoExtractKeywords = (content = '', title = '') => {
+  const stopWords = new Set([
+    'the', 'and', 'with', 'for', 'this', 'that', 'from', 'are', 'was', 'were',
+    'been', 'have', 'has', 'had', 'our', 'all', 'any', 'each', 'more', 'than',
+    'into', 'under', 'over', 'per', 'also', 'such', 'upon', 'which', 'their',
+    'there', 'what', 'when', 'where', 'who', 'how', 'why', 'can', 'may', 'will',
+    'must', 'standard', 'tested', 'page', 'section', 'manual', 'handbook', 'specs',
+    'specifications', 'godrej', 'interio', 'features', 'guarantee', 'warranty',
+    'about', 'after', 'before', 'between', 'both', 'through', 'during', 'without'
+  ]);
+
+  const rawTokens = tokenize(`${title} ${title} ${content}`); // Title given double weight
+  const frequencies = {};
+
+  rawTokens.forEach(t => {
+    if (t.length > 2 && !stopWords.has(t) && !/^\d+$/.test(t)) {
+      frequencies[t] = (frequencies[t] || 0) + 1;
+    }
+  });
+
+  const sorted = Object.keys(frequencies).sort((a, b) => frequencies[b] - frequencies[a]);
+  const extracted = sorted.slice(0, 14);
+
+  // If title has specific key codes (e.g. 710, CRCA, BWP), ensure they are included
+  const codes = `${title} ${content}`.match(/\b([A-Z0-9-]{3,10}|710|304|160)\b/g) || [];
+  codes.forEach(c => {
+    const low = c.toLowerCase();
+    if (!extracted.includes(low) && extracted.length < 16) {
+      extracted.push(low);
+    }
+  });
+
+  return extracted;
+};
+
+/**
+ * Exports all active docs as pretty JSON string
+ */
+export const exportKnowledgeDocsAsJson = () => {
+  const docs = getStoredKnowledgeDocs();
+  return JSON.stringify(docs, null, 2);
+};
+
+/**
+ * Imports docs from a JSON string with verification
+ */
+export const importKnowledgeDocsFromJson = (jsonString) => {
+  try {
+    const parsed = JSON.parse(jsonString);
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      throw new Error('Invalid JSON: Must be an array of knowledge documents.');
+    }
+    // Basic structural validation
+    const validDocs = parsed.filter(d => d.title && d.content);
+    if (validDocs.length === 0) {
+      throw new Error('No valid documents found with title and content.');
+    }
+    saveStoredKnowledgeDocs(validDocs);
+    return { success: true, count: validDocs.length };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+};
+
+/**
  * Tokenizes text into normalized word stems
  */
 function tokenize(text) {
@@ -137,7 +306,9 @@ export const searchGroundedKnowledge = (query, topK = 2) => {
   const queryTokens = tokenize(query);
   if (queryTokens.length === 0) return [];
 
-  const rankedDocs = GODREJ_KNOWLEDGE_DOCS.map(doc => {
+  const activeDocs = getStoredKnowledgeDocs();
+
+  const rankedDocs = activeDocs.map(doc => {
     const docTokens = tokenize(`${doc.title} ${doc.content}`);
     const bm25Score = calculateBm25Score(queryTokens, docTokens);
     const semanticScore = calculateSemanticScore(queryTokens, doc.keywords);

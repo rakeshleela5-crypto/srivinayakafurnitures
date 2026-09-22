@@ -211,3 +211,235 @@ export function generateBoxesForProduct(product) {
     };
   });
 }
+
+/**
+ * 🛠️ OmniBuild OS™ — Enterprise Live Bill of Materials (BOM) & Kit Assembly Engine
+ * Maps assembled showroom SKUs into constituent child components with interchangeable options.
+ */
+export function getProductBomRecipe(product) {
+  if (!product) return null;
+
+  const sku = product.SKU || 'SKU-001';
+  const name = product.Product_Name || 'Furniture Unit';
+  const cat = (product.Main_Category || '').toLowerCase();
+  const subCat = (product.Sub_Category || '').toLowerCase();
+  const mfgCode = product.mfgCode || product.Manufacturer_Code || sku;
+
+  // 🗄️ STORAGE & ALMIRAH (The exact problem from the audio: Body + Door finish swap)
+  if (cat.includes('storage') || cat.includes('wardrobe') || subCat.includes('almirah') || name.toLowerCase().includes('almirah')) {
+    return {
+      masterSku: sku,
+      masterName: name,
+      mfgCode: mfgCode,
+      kitType: 'KNOCKDOWN_ALMIRAH_ASSEMBLY',
+      isAssembledUnit: true,
+      readyStockUnits: Number(product.Stock_Count) || 4,
+      components: [
+        {
+          componentId: `COMP-${sku}-BODY`,
+          name: 'Main Almirah Carcass Body Unit (Heavy CRCA Steel)',
+          partCode: 'CRCA-BDY-01',
+          requiredQty: 1,
+          unit: 'Pcs',
+          unitCostINR: Math.round((product.Selling_Price_INR || 25000) * 0.45),
+          warehouseLocation: 'Bay C-04 (Almirah Stack)',
+          currentStock: 8,
+          isInterchangeable: false
+        },
+        {
+          componentId: `COMP-${sku}-DOOR`,
+          name: 'Door Shutters Panel Set',
+          partCode: 'SHUTTER-SET-02',
+          requiredQty: 2,
+          unit: 'Pairs',
+          unitCostINR: Math.round((product.Selling_Price_INR || 25000) * 0.35),
+          warehouseLocation: 'Rack D-12 (Shutters & Glass)',
+          currentStock: 14,
+          isInterchangeable: true,
+          selectedOption: 'Royal Walnut Finish',
+          availableOptions: [
+            { name: 'Royal Walnut Finish', code: 'OPT-RW', deltaINR: 0, stock: 6 },
+            { name: 'Classic Teak Wood Polish', code: 'OPT-CT', deltaINR: 500, stock: 4 },
+            { name: 'Matt Charcoal Grey', code: 'OPT-CG', deltaINR: 0, stock: 3 },
+            { name: 'Glossy Ivory White', code: 'OPT-IW', deltaINR: 750, stock: 2 },
+            { name: 'Dual-Tone Metallic Blue', code: 'OPT-MB', deltaINR: 1200, stock: 2 }
+          ]
+        },
+        {
+          componentId: `COMP-${sku}-LOCKER`,
+          name: 'Internal Secret Locker Compartment & Shelves',
+          partCode: 'LCK-SHLF-03',
+          requiredQty: 1,
+          unit: 'Box',
+          unitCostINR: Math.round((product.Selling_Price_INR || 25000) * 0.12),
+          warehouseLocation: 'Bin E-02 (Hardware & Lockers)',
+          currentStock: 19,
+          isInterchangeable: false
+        },
+        {
+          componentId: `COMP-${sku}-LOCKPACK`,
+          name: 'Godrej Ultra 4-Way Brass Lock & Hardware Fitting Pack',
+          partCode: 'FITT-GDRJ-04',
+          requiredQty: 1,
+          unit: 'Kit',
+          unitCostINR: Math.round((product.Selling_Price_INR || 25000) * 0.08),
+          warehouseLocation: 'Hardware Vault A-01',
+          currentStock: 35,
+          isInterchangeable: true,
+          selectedOption: 'Standard Keyed Lock Pack',
+          availableOptions: [
+            { name: 'Standard Keyed Lock Pack', code: 'OPT-KEY', deltaINR: 0, stock: 25 },
+            { name: 'Godrej Biometric Smart Fingerprint Lock', code: 'OPT-BIO', deltaINR: 3800, stock: 8 }
+          ]
+        }
+      ]
+    };
+  }
+
+  // 🏢 OFFICE WORKSTATION & TABLES (The exact 6-8 component problem from the audio)
+  if (cat.includes('office') || subCat.includes('desk') || subCat.includes('workstation') || name.toLowerCase().includes('workstation') || name.toLowerCase().includes('table')) {
+    return {
+      masterSku: sku,
+      masterName: name,
+      mfgCode: mfgCode,
+      kitType: 'OFFICE_WORKSTATION_ASSEMBLY',
+      isAssembledUnit: true,
+      readyStockUnits: Number(product.Stock_Count) || 6,
+      components: [
+        {
+          componentId: `COMP-${sku}-TOP`,
+          name: 'Pre-Laminated Desktop Slab (1500 x 750 mm)',
+          partCode: 'DESK-TOP-1575',
+          requiredQty: 1,
+          unit: 'Slab',
+          unitCostINR: Math.round((product.Selling_Price_INR || 16000) * 0.38),
+          warehouseLocation: 'Rack B-01 (Laminated Slabs)',
+          currentStock: 11,
+          isInterchangeable: true,
+          selectedOption: 'Highland Pine Prelam Top',
+          availableOptions: [
+            { name: 'Highland Pine Prelam Top', code: 'OPT-TOP-HP', deltaINR: 0, stock: 5 },
+            { name: 'Bavarian Beech Prelam Top', code: 'OPT-TOP-BB', deltaINR: 0, stock: 4 },
+            { name: 'Solid Teak Veneer Premium Top', code: 'OPT-TOP-TV', deltaINR: 2200, stock: 2 }
+          ]
+        },
+        {
+          componentId: `COMP-${sku}-LEGS`,
+          name: 'Heavy CRCA Steel Triangular Loop Legs (Set of 2)',
+          partCode: 'LEG-CRCA-TR2',
+          requiredQty: 2,
+          unit: 'Pairs',
+          unitCostINR: Math.round((product.Selling_Price_INR || 16000) * 0.28),
+          warehouseLocation: 'Pipe Yard Bay P-01',
+          currentStock: 18,
+          isInterchangeable: true,
+          selectedOption: 'Powder-Coated Matte Black Legs',
+          availableOptions: [
+            { name: 'Powder-Coated Matte Black Legs', code: 'OPT-LEG-BLK', deltaINR: 0, stock: 12 },
+            { name: 'Pure Snow White Powder Coated', code: 'OPT-LEG-WHT', deltaINR: 0, stock: 6 }
+          ]
+        },
+        {
+          componentId: `COMP-${sku}-STABILITY-PIPE`,
+          name: 'Steel Stability Tie-Beam Crossbar (1" Sq Hollow Pipe)',
+          partCode: 'TIE-PIPE-1IN',
+          requiredQty: 2,
+          unit: 'Pipes',
+          unitCostINR: Math.round((product.Selling_Price_INR || 16000) * 0.12),
+          warehouseLocation: 'Pipe Yard Bay P-03',
+          currentStock: 42,
+          isInterchangeable: false
+        },
+        {
+          componentId: `COMP-${sku}-MODESTY`,
+          name: 'Perforated Metal Modesty Panel with Cable Raceway',
+          partCode: 'MOD-MET-PAN',
+          requiredQty: 1,
+          unit: 'Panel',
+          unitCostINR: Math.round((product.Selling_Price_INR || 16000) * 0.14),
+          warehouseLocation: 'Rack B-04',
+          currentStock: 15,
+          isInterchangeable: false
+        },
+        {
+          componentId: `COMP-${sku}-FASTENERS`,
+          name: 'Leveling Bushing, Allen Bolts & Anchor Brackets Pack',
+          partCode: 'FST-BRK-KIT',
+          requiredQty: 1,
+          unit: 'Pouch',
+          unitCostINR: Math.round((product.Selling_Price_INR || 16000) * 0.08),
+          warehouseLocation: 'Hardware Vault A-03',
+          currentStock: 60,
+          isInterchangeable: false
+        }
+      ]
+    };
+  }
+
+  // 🛏️ BEDROOM & BEDS (5-Box Knockdown Modular)
+  return {
+    masterSku: sku,
+    masterName: name,
+    mfgCode: mfgCode,
+    kitType: 'MODULAR_KNOCKDOWN_KIT',
+    isAssembledUnit: true,
+    readyStockUnits: Number(product.Stock_Count) || 3,
+    components: generateBoxesForProduct(product).map((box, idx) => ({
+      componentId: `COMP-${sku}-${box.letter}`,
+      name: box.name,
+      partCode: `BOX-${box.letter}`,
+      requiredQty: 1,
+      unit: 'Carton Box',
+      unitCostINR: Math.round((product.Selling_Price_INR || 40000) / (product.Total_Component_Boxes || 4)),
+      warehouseLocation: `Floor Zone ${box.letter}`,
+      currentStock: 5 + idx,
+      isInterchangeable: false
+    }))
+  };
+}
+
+/**
+ * 🔨 Instant De-Kit / Disassemble Utility:
+ * Breaks 1 Assembled Finished SKU back into individual component inventory entries.
+ */
+export function disassembleKitToComponents(product, quantity = 1) {
+  const recipe = getProductBomRecipe(product);
+  if (!recipe || !recipe.components) return [];
+
+  return recipe.components.map(comp => ({
+    componentId: comp.componentId,
+    partCode: comp.partCode,
+    name: comp.name,
+    creditedQty: comp.requiredQty * quantity,
+    unit: comp.unit,
+    warehouseLocation: comp.warehouseLocation,
+    unitCostINR: comp.unitCostINR,
+    totalCreditValueINR: comp.unitCostINR * comp.requiredQty * quantity,
+    action: 'CREDIT_TO_COMPONENT_STOCK'
+  }));
+}
+
+/**
+ * ⚡ Live Inventory Deduction Calculation:
+ * When an assembled product is sold or outwarded, calculates component deductions.
+ */
+export function calculateKitDeduction(product, quantity = 1) {
+  const recipe = getProductBomRecipe(product);
+  if (!recipe || !recipe.components) {
+    return [{
+      sku: product?.SKU || 'SKU-UNKNOWN',
+      name: product?.Product_Name || 'Item',
+      deductedQty: quantity
+    }];
+  }
+
+  return recipe.components.map(comp => ({
+    componentId: comp.componentId,
+    name: comp.name,
+    partCode: comp.partCode,
+    deductedQty: comp.requiredQty * quantity,
+    unit: comp.unit,
+    warehouseLocation: comp.warehouseLocation
+  }));
+}
+

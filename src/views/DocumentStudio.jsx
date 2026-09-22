@@ -1012,6 +1012,31 @@ export function DocumentStudio() {
 
               <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '10px' }}>
                 <label style={{ fontSize: '10.5px', color: '#94A3B8' }}>Authorized Signatory Name:</label>
+                <div style={{ display: 'flex', gap: '4px', margin: '4px 0 6px 0', flexWrap: 'wrap' }}>
+                  {[
+                    'Naresh Kumar (Managing Director)',
+                    'Rakesh (Store Director & Ops)',
+                    'Authorized Signatory'
+                  ].map(name => (
+                    <button
+                      key={name}
+                      type="button"
+                      onClick={() => setDocData({ ...docData, signatoryName: name })}
+                      style={{
+                        padding: '3px 8px',
+                        borderRadius: '4px',
+                        fontSize: '10px',
+                        fontWeight: '600',
+                        background: docData.signatoryName.includes(name.split(' ')[0]) ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.05)',
+                        color: docData.signatoryName.includes(name.split(' ')[0]) ? '#FCD34D' : '#94A3B8',
+                        border: docData.signatoryName.includes(name.split(' ')[0]) ? '1px solid #D4AF37' : '1px solid rgba(255,255,255,0.1)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {name.split(' ')[0]}
+                    </button>
+                  ))}
+                </div>
                 <input 
                   type="text" 
                   value={docData.signatoryName} 
@@ -1198,15 +1223,31 @@ export function DocumentStudio() {
                       <span>₹{calculatedGrandTotal.toLocaleString()}</span>
                     </div>
 
-                    {/* Seal and Signatory */}
+                    {/* Official Seal and Signatory */}
                     <div style={{ marginTop: '14px', textAlign: 'right', borderTop: '1px dashed #CBD5E1', paddingTop: '8px' }}>
                       {docData.showDigitalStamp ? (
-                        <div style={{ display: 'inline-block', textAlign: 'center' }}>
-                          <div style={{ fontSize: '10px', color: '#047857', fontWeight: '800', border: '1.5px solid #047857', padding: '2px 8px', borderRadius: '4px', display: 'inline-block' }}>
-                            ✓ DIGITALLY AUTHENTICATED
+                        <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
+                          <div style={{
+                            border: '2px solid #004C8F',
+                            borderRadius: '8px',
+                            padding: '6px 12px',
+                            background: 'rgba(0, 76, 143, 0.04)',
+                            transform: 'rotate(-2deg)',
+                            boxShadow: '0 2px 8px rgba(0, 76, 143, 0.1)',
+                            textAlign: 'center'
+                          }}>
+                            <div style={{ fontSize: '9px', fontWeight: '900', color: '#004C8F', letterSpacing: '0.8px' }}>
+                              ★ SHREE GANESH ENTERPRISES ★
+                            </div>
+                            <div style={{ fontSize: '10px', fontWeight: '800', color: '#0284C7', margin: '1px 0' }}>
+                              GODREJ INTERIO RAYAGADA
+                            </div>
+                            <div style={{ fontSize: '9px', color: '#004C8F', fontWeight: '700' }}>
+                              ✓ DIGITALLY SIGNED &amp; SEALED
+                            </div>
                           </div>
-                          <div style={{ fontSize: '11px', fontWeight: '800', color: '#0F172A', marginTop: '4px' }}>{docData.signatoryName}</div>
-                          <div style={{ fontSize: '10px', color: '#64748B' }}>Shree Ganesh Enterprises</div>
+                          <div style={{ fontSize: '11px', fontWeight: '900', color: '#0F172A', marginTop: '6px' }}>{docData.signatoryName}</div>
+                          <div style={{ fontSize: '9.5px', color: '#64748B' }}>Authorized Signatory • Rayagada, Odisha</div>
                         </div>
                       ) : (
                         <div>

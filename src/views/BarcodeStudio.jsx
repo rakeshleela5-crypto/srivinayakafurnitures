@@ -111,7 +111,7 @@ export function BarcodeStudio() {
       const q = catalogSearchQuery.toLowerCase().trim();
       if (!q) return matchesCat;
 
-      const fullStr = `${item.SKU || ''} ${item.Product_Name || ''} ${item.Main_Category || ''} ${item.Sub_Category || ''} ${item.Material_Spec || ''} ${item.Default_Supplier || ''} ${item.Price_Tier || ''}`.toLowerCase();
+      const fullStr = `${item.SKU || ''} ${item.Product_Name || ''} ${item.Main_Category || ''} ${item.Sub_Category || ''} ${item.Material_Spec || ''} ${item.Default_Supplier || ''} ${item.Price_Tier || ''} ${(item.aliases || []).join(' ')} ${item.mfgCode || ''}`.toLowerCase();
       return matchesCat && fullStr.includes(q);
     });
   }, [catalog, catalogSearchQuery, catalogCategoryFilter]);
@@ -442,6 +442,27 @@ export function BarcodeStudio() {
             style={{ fontSize: '11px', padding: '6px 12px', fontWeight: '900', boxShadow: '0 0 15px rgba(212,175,55,0.4)' }}
           >
             <Sparkles size={13} /> ➕ Register New SKU Barcode
+          </button>
+
+          <button 
+            className="btn-ghost-edit"
+            onClick={() => {
+              const currentProd = catalog.find(c => c.SKU === skuCode) || {
+                SKU: skuCode,
+                Product_Name: productName,
+                Main_Category: category,
+                Material_Spec: material,
+                Dimensions: dimensions,
+                Selling_Price_INR: sellingPrice,
+                Total_Component_Boxes: boxCount
+              };
+              openModal('kit_assembly', { product: currentProd });
+              playScanBeep();
+            }}
+            style={{ fontSize: '11px', padding: '6px 12px', fontWeight: '800', background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.4)', color: '#FCD34D' }}
+            title="Inspect Child BOM Recipe, Swap Component Finishes, or De-Kit into Warehouse"
+          >
+            <Boxes size={13} /> 🛠️ BOM Kit Studio
           </button>
 
           <button 

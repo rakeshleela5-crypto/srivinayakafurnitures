@@ -43,6 +43,7 @@ import {
 import { BANK_ACCOUNTS, INITIAL_BANK_TRANSACTIONS } from '../data/initialBankData';
 import { playSuccessChime, playScanBeep, triggerGoldenConfetti } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
+import { generateTallyPrimeXml, generateTallyExcelCsv, downloadFile } from '../services/tallyExportService';
 
 export function BankStatementLedgerView() {
   const { 
@@ -192,10 +193,12 @@ export function BankStatementLedgerView() {
   // =========================================================================
   // 🧮 FINANCIAL SUMMARY TOTALS
   // =========================================================================
-  const { totalInward, totalOutward, netCashFlow, pendingCount } = useMemo(() => {
+  const { totalInward, totalOutward, netCashFlow, pendingCount, totalSuspenseOutflow, suspenseCount } = useMemo(() => {
     let inAmt = 0;
     let outAmt = 0;
     let pending = 0;
+    let suspenseAmt = 0;
+    let suspenseCnt = 0;
 
     transactions.forEach(tx => {
       if (tx.reconciliationStatus === 'VOIDED') return;
@@ -207,15 +210,37 @@ export function BankStatementLedgerView() {
       if (tx.reconciliationStatus === 'PENDING_UTR_CLEARANCE' || tx.reconciliationStatus === 'UNALLOCATED') {
         pending++;
       }
+      if (tx.reconciliationStatus === 'UNBILLED_SUSPENSE_OUTFLOW' || tx.linkedEntityType === 'SUSPENSE_UNBILLED') {
+        suspenseAmt += Number(tx.amount || 0);
+        suspenseCnt++;
+      }
     });
 
     return {
       totalInward: inAmt,
       totalOutward: outAmt,
       netCashFlow: inAmt - outAmt,
-      pendingCount: pending
+      pendingCount: pending,
+      totalSuspenseOutflow: suspenseAmt,
+      suspenseCount: suspenseCnt
     };
   }, [transactions]);
+
+  // 📥 Tally Prime 1-Click Export Handlers
+  const handleExportTallyXml = () => {
+    playSuccessChime();
+    triggerGoldenConfetti();
+    const xml = generateTallyPrimeXml({ orders, bankTransactions: transactions, companyName: "Shree Ganesh Enterprises" });
+    downloadFile(xml, `Tally_Prime_Vouchers_${new Date().toISOString().slice(0, 10)}.xml`, 'application/xml');
+    showToast(`📥 Exported Tally Prime XML for ${orders.length} Invoices & ${transactions.length} Bank Vouchers!`, true);
+  };
+
+  const handleExportTallyExcel = () => {
+    playSuccessChime();
+    const csv = generateTallyExcelCsv({ orders, bankTransactions: transactions });
+    downloadFile(csv, `Tally_Prime_Ledger_Data_${new Date().toISOString().slice(0, 10)}.csv`, 'text/csv;charset=utf-8;');
+    showToast(`📊 Exported Tally Prime Excel CSV!`, true);
+  };
 
   // Copy helper
   const handleCopy = (text, fieldId) => {
@@ -657,7 +682,9 @@ export function BankStatementLedgerView() {
       if (!matchesSearch) return false;
       if (activeFilter === 'INWARD') return tx.flowType === 'INWARD_CREDIT';
       if (activeFilter === 'OUTWARD') return tx.flowType === 'OUTWARD_DEBIT';
+      if (activeFilter === 'SUSPENSE') return tx.reconciliationStatus === 'UNBILLED_SUSPENSE_OUTFLOW' || tx.linkedEntityType === 'SUSPENSE_UNBILLED';
       if (activeFilter === 'PENDING') return tx.reconciliationStatus === 'PENDING_UTR_CLEARANCE' || tx.reconciliationStatus === 'UNALLOCATED';
+      if (activeFilter === 'CANARA') return tx.bankAccountId === 'CANARA_CURRENT';
       if (activeFilter === 'HDFC') return tx.bankAccountId === 'HDFC_CURRENT';
       if (activeFilter === 'SBI') return tx.bankAccountId === 'SBI_CURRENT';
       return true;
@@ -671,14 +698,33 @@ export function BankStatementLedgerView() {
       <div className="tab-action-ribbon" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span className="badge badge-gold">🏛️ TAB 5B: BANK STATEMENTS &amp; RTGS RECONCILER</span>
-          <span className="badge badge-emerald">DUAL BANK AUTO-SYNC ACTIVE</span>
+          <span className="badge badge-emerald">CANARA + HDFC + SBI TRI-BANK SYNC ACTIVE</span>
           <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-            HDFC Operating (***2481) + SBI Commercial (***9182)
+            Canara (***9201) • HDFC (***2481) • SBI (***9182)
           </span>
         </div>
 
-        {/* Quick Action Buttons */}
+        {/* Quick Action Buttons & Tally Prime Bridge */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {/* 📥 1-CLICK TALLY PRIME EXPORT */}
+          <button
+            onClick={handleExportTallyXml}
+            className="btn-luxury-gold"
+            style={{ fontSize: '11.5px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '6px' }}
+            title="Download Pure Tally Prime XML File"
+          >
+            <Download size={14} /> Export Tally Prime XML
+          </button>
+
+          <button
+            onClick={handleExportTallyExcel}
+            className="btn-ghost-edit"
+            style={{ fontSize: '11.5px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid rgba(212,175,55,0.4)', color: 'var(--accent-gold-light)' }}
+            title="Export Tally-Structured Excel / CSV"
+          >
+            <FileSpreadsheet size={13} /> Tally Excel
+          </button>
+
           <button
             onClick={() => setShowInwardModal(true)}
             className="btn-emerald"
@@ -692,7 +738,7 @@ export function BankStatementLedgerView() {
             className="btn-ghost-edit"
             style={{ fontSize: '11.5px', padding: '6px 14px', color: 'var(--accent-rose)', border: '1px solid rgba(244,63,94,0.4)', background: 'rgba(244,63,94,0.08)', display: 'flex', alignItems: 'center', gap: '6px' }}
           >
-            <ArrowUpRight size={14} /> - Log Factory PO Debit (₹)
+            <ArrowUpRight size={14} /> - Log Factory PO / Suspense Debit (₹)
           </button>
 
           <button
@@ -823,6 +869,55 @@ export function BankStatementLedgerView() {
           </div>
         </div>
 
+        {/* Card 5: Canara Bank Operating Current A/c */}
+        <div className="glass-panel" style={{ padding: '16px', border: '1px solid rgba(0,133,202,0.4)', background: 'linear-gradient(135deg, rgba(11,19,43,0.9), rgba(15,23,42,0.95))' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#0085CA' }} />
+              <span style={{ fontSize: '11px', fontWeight: '800', color: '#38BDF8', letterSpacing: '0.5px' }}>CANARA OPERATING A/C</span>
+            </div>
+            <button 
+              onClick={() => handleCopy("110028919201", "canara_acc")}
+              className="btn-ghost-edit"
+              style={{ padding: '2px 6px', fontSize: '10px' }}
+              title="Copy A/c Number"
+            >
+              {copiedField === 'canara_acc' ? <Check size={11} color="var(--accent-emerald)" /> : <Copy size={11} />}
+            </button>
+          </div>
+          <div style={{ marginTop: '10px' }}>
+            <div style={{ fontSize: '22px', fontWeight: '900', color: '#FFFFFF' }}>
+              ₹{Number(bankAccounts.find(a => a.id === 'CANARA_CURRENT')?.currentBalance || 4215000).toLocaleString('en-IN')}
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'monospace', marginTop: '3px' }}>
+              A/c: 110028919201 • IFSC: CNRB0002891
+            </div>
+            <div style={{ fontSize: '10.5px', color: '#38BDF8', marginTop: '2px' }}>
+              Operating &amp; Vendor Advance Outflows
+            </div>
+          </div>
+        </div>
+
+        {/* Card 6: Audit Suspense & Unbilled Payments (The Rs. 60-70L Deficit from Audio) */}
+        <div className="glass-panel" style={{ padding: '16px', border: '1px solid rgba(245,158,11,0.4)', background: 'linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95))' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '11px', fontWeight: '800', color: '#F59E0B', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <AlertTriangle size={13} /> AUDIT SUSPENSE DEFICIT
+            </span>
+            <span className="badge badge-amber" style={{ fontSize: '10px', padding: '2px 6px' }}>
+              {suspenseCount} Unbilled Payments
+            </span>
+          </div>
+          <div style={{ marginTop: '10px' }}>
+            <div style={{ fontSize: '22px', fontWeight: '900', color: '#F59E0B' }}>
+              ₹{totalSuspenseOutflow.toLocaleString('en-IN')}
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '3px' }}>
+              Bank debits lacking purchase bills (CA Audit Deficit)
+            </div>
+          </div>
+        </div>
+
       </div>
 
       {/* 🏛️ 3. SHOWROOM OFFICIAL BENEFICIARY DETAILS (FOR WHATSAPP SHARE) */}
@@ -876,7 +971,9 @@ export function BankStatementLedgerView() {
             { id: 'ALL', label: `All (${transactions.filter(t => t.reconciliationStatus !== 'VOIDED').length})` },
             { id: 'INWARD', label: '📥 Inward Credits' },
             { id: 'OUTWARD', label: '📤 Factory Debits' },
+            { id: 'SUSPENSE', label: `⚠️ Suspense Deficit (${suspenseCount})` },
             { id: 'PENDING', label: `⏳ Pending (${pendingCount})` },
+            { id: 'CANARA', label: '🏛️ Canara A/c' },
             { id: 'HDFC', label: '🏦 HDFC A/c' },
             { id: 'SBI', label: '🏛️ SBI A/c' }
           ].map(tab => (
@@ -952,11 +1049,17 @@ export function BankStatementLedgerView() {
 
                       {/* 2. Flow / Mode */}
                       <td style={{ padding: '10px' }}>
-                        <span className={`badge ${isVoided ? 'badge-amber' : (isInward ? 'badge-emerald' : 'badge-rose')}`} style={{ fontSize: '10px', padding: '2px 6px' }}>
-                          {isVoided ? 'VOIDED' : (isInward ? 'INWARD CREDIT' : 'OUTWARD DEBIT')}
-                        </span>
+                        {tx.reconciliationStatus === 'UNBILLED_SUSPENSE_OUTFLOW' ? (
+                          <span className="badge badge-amber" style={{ fontSize: '10px', padding: '2px 6px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                            <AlertTriangle size={10} /> UNBILLED SUSPENSE
+                          </span>
+                        ) : (
+                          <span className={`badge ${isVoided ? 'badge-amber' : (isInward ? 'badge-emerald' : 'badge-rose')}`} style={{ fontSize: '10px', padding: '2px 6px' }}>
+                            {isVoided ? 'VOIDED' : (isInward ? 'INWARD CREDIT' : 'OUTWARD DEBIT')}
+                          </span>
+                        )}
                         <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)', marginTop: '3px' }}>
-                          {tx.paymentMode} • {tx.bankAccountName?.split(' ')[0] || 'HDFC'}
+                          {tx.paymentMode} • {tx.bankAccountName?.split(' ')[0] || 'Canara'}
                         </div>
                       </td>
 
@@ -1016,6 +1119,21 @@ export function BankStatementLedgerView() {
                           >
                             <Edit size={11} /> Edit
                           </button>
+
+                          {/* 1.1 Link Purchase Bill for Suspense Items */}
+                          {tx.reconciliationStatus === 'UNBILLED_SUSPENSE_OUTFLOW' && (
+                            <button
+                              onClick={() => {
+                                handleOpenEdit(tx);
+                                showToast(`🔗 Select incoming Purchase Bill / Factory PO to clear Suspense #${tx.id}`, true);
+                              }}
+                              className="btn-cyan"
+                              style={{ padding: '3px 7px', fontSize: '10px', display: 'flex', alignItems: 'center', gap: '3px' }}
+                              title="Link Tax Invoice to Clear Audit Suspense"
+                            >
+                              <Link size={11} /> Link Bill
+                            </button>
+                          )}
 
                           {/* 2. Official WhatsApp Money Receipt */}
                           {isInward && (

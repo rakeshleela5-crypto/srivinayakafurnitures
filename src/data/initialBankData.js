@@ -27,10 +27,73 @@ export const BANK_ACCOUNTS = [
     currentBalance: 1480000,
     upiId: "shreeganesh.godrej@sbi",
     color: "#280071"
+  },
+  {
+    id: "CANARA_CURRENT",
+    bankName: "Canara Bank",
+    accountName: "Sri Vinayaka Stores / Shree Ganesh Ent.",
+    accountNumber: "110028919201",
+    accountType: "Current Account (Operating & Vendor Outflows)",
+    ifsc: "CNRB0002891",
+    branch: "New Bus Stand Branch, Rayagada (Odisha 765001)",
+    currentBalance: 4215000,
+    upiId: "srivinayaka.canara@okaxis",
+    color: "#0085CA"
   }
 ];
 
 export const INITIAL_BANK_TRANSACTIONS = [
+  {
+    id: "TXN-BNK-2026-8815",
+    dateTime: "14-Sep-2026 03:45 PM",
+    flowType: "OUTWARD_DEBIT",
+    bankAccountId: "CANARA_CURRENT",
+    bankAccountName: "Canara Bank Current A/c (***9201)",
+    paymentMode: "RTGS",
+    utrNumber: "CNRBR52026091488190",
+    partyName: "Sri Balaji Plywood & Metals (Local Fabricator)",
+    partyCategory: "Raw Material & Tube Supplier",
+    amount: 500000,
+    linkedEntityType: "SUSPENSE_UNBILLED",
+    linkedId: "",
+    reconciliationStatus: "UNBILLED_SUSPENSE_OUTFLOW",
+    notes: "⚠️ Advance RTGS transfer sent by Owner without Tax Invoice — Pending bill for steel tubes/plywood",
+    loggedBy: "Accountant"
+  },
+  {
+    id: "TXN-BNK-2026-8814",
+    dateTime: "11-Sep-2026 12:15 PM",
+    flowType: "OUTWARD_DEBIT",
+    bankAccountId: "CANARA_CURRENT",
+    bankAccountName: "Canara Bank Current A/c (***9201)",
+    paymentMode: "NEFT",
+    utrNumber: "CNRBN5202609110029",
+    partyName: "Showroom Interior Lighting & Display Upgrade",
+    partyCategory: "CapEx & Store Maintenance",
+    amount: 80000,
+    linkedEntityType: "SUSPENSE_UNBILLED",
+    linkedId: "",
+    reconciliationStatus: "UNBILLED_SUSPENSE_OUTFLOW",
+    notes: "Direct bank debit for electrical track lighting fixture setup — Bill receipt pending from contractor",
+    loggedBy: "Accountant"
+  },
+  {
+    id: "TXN-BNK-2026-8813",
+    dateTime: "10-Sep-2026 05:20 PM",
+    flowType: "INWARD_CREDIT",
+    bankAccountId: "CANARA_CURRENT",
+    bankAccountName: "Canara Bank Current A/c (***9201)",
+    paymentMode: "NEFT",
+    utrNumber: "SBIN92026091044812",
+    partyName: "Collectorate Office Rayagada (Govt Order)",
+    partyCategory: "Govt Tender & Institutional",
+    amount: 150000,
+    linkedEntityType: "CUSTOMER_ADVANCE",
+    linkedId: "ADV-GOV-2026-091",
+    reconciliationStatus: "VERIFIED_AND_MATCHED",
+    notes: "Token advance received for 10x Office Desks & Steel Almirahs (Tender PO in process)",
+    loggedBy: "Store Director"
+  },
   {
     id: "TXN-BNK-2026-8812",
     dateTime: "03-Sep-2026 11:30 AM",

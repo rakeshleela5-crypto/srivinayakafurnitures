@@ -795,6 +795,61 @@ export function StoreProvider({ children }) {
     return catalogItem;
   };
 
+  // 6.2 Merge Accidental Duplicate SKU into Master SKU (e.g., "Lexus" into "CH 1018")
+  const mergeDuplicateProduct = (duplicateSku, masterSku) => {
+    const dupItem = catalog.find(c => c.SKU === duplicateSku);
+    const masterItem = catalog.find(c => c.SKU === masterSku);
+
+    if (!dupItem || !masterItem) {
+      showToast('⚠️ Could not find both duplicate and master SKUs to merge.', false);
+      return;
+    }
+
+    const dupInv = inventory.find(i => i.SKU === duplicateSku);
+    const dupStock = Number(dupInv?.Warehouse_Qty || 0);
+
+    // 1. Add duplicate name/sku to master product aliases
+    const updatedAliases = Array.from(new Set([
+      ...(masterItem.aliases || []),
+      dupItem.Product_Name,
+      dupItem.SKU,
+      dupItem.mfgCode || ''
+    ].filter(Boolean)));
+
+    // 2. Transfer stock to master
+    setInventory(prev => prev.map(inv => {
+      if (inv.SKU === masterSku) {
+        return {
+          ...inv,
+          Warehouse_Qty: Number(inv.Warehouse_Qty || 0) + dupStock
+        };
+      }
+      return inv;
+    }).filter(inv => inv.SKU !== duplicateSku));
+
+    // 3. Update master catalog item with merged aliases & remove duplicate
+    setCatalog(prev => prev.map(cat => {
+      if (cat.SKU === masterSku) {
+        return {
+          ...cat,
+          aliases: updatedAliases
+        };
+      }
+      return cat;
+    }).filter(cat => cat.SKU !== duplicateSku));
+
+    playSuccessChime();
+    triggerGoldenConfetti();
+    showToast(`🔗 Merged duplicate "${dupItem.Product_Name}" into Master SKU "${masterItem.SKU}"! Aliases updated and stock consolidated.`, true);
+
+    dispatchWebhookAction('MERGE_DUPLICATE_SKU', {
+      duplicate_sku: duplicateSku,
+      master_sku: masterSku,
+      transferred_stock: dupStock,
+      updated_aliases: updatedAliases
+    });
+  };
+
   // 7. AppSheet Bot Cloud Execution
   const triggerAppSheetBot = (botId, botName) => {
     playScanBeep();
@@ -1022,6 +1077,7 @@ export function StoreProvider({ children }) {
       submitEpodDelivery,
       disburseArchitectPayout,
       registerNewSku,
+      mergeDuplicateProduct,
       triggerAppSheetBot,
       verifyDirectorPin
     }}>

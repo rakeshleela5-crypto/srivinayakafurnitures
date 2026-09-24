@@ -963,11 +963,27 @@ export function StoreProvider({ children }) {
       if (edgeRes.ok) {
         const edgeJson = await edgeRes.json();
         if (edgeJson.success && edgeJson.data) {
-          if (Array.isArray(edgeJson.data.orders) && edgeJson.data.orders.length > 0) setOrders(edgeJson.data.orders);
-          if (Array.isArray(edgeJson.data.catalog) && edgeJson.data.catalog.length > 0) setCatalog(edgeJson.data.catalog);
-          if (Array.isArray(edgeJson.data.inquiries) && edgeJson.data.inquiries.length > 0) setInquiries(edgeJson.data.inquiries);
-          if (Array.isArray(edgeJson.data.architects) && edgeJson.data.architects.length > 0) setArchitects(edgeJson.data.architects);
-          if (Array.isArray(edgeJson.data.payments) && edgeJson.data.payments.length > 0) setPaymentsLog(edgeJson.data.payments);
+          const d = edgeJson.data;
+          if (Array.isArray(d.orders) && d.orders.length > 0) setOrders(d.orders);
+          if (Array.isArray(d.catalog) && d.catalog.length > 0) setCatalog(d.catalog);
+          if (Array.isArray(d.inquiries) && d.inquiries.length > 0) setInquiries(d.inquiries);
+          if (Array.isArray(d.architects) && d.architects.length > 0) setArchitects(d.architects);
+          if (Array.isArray(d.payments) && d.payments.length > 0) setPaymentsLog(d.payments);
+          if (Array.isArray(d.vipProjects) && d.vipProjects.length > 0) setVipProjects(d.vipProjects);
+          if (Array.isArray(d.floorAgingStock) && d.floorAgingStock.length > 0) setFloorAgingStock(d.floorAgingStock);
+          if (Array.isArray(d.smartKitBoxes) && d.smartKitBoxes.length > 0) setSmartKitBoxes(d.smartKitBoxes);
+          if (Array.isArray(d.bankTransactions) && d.bankTransactions.length > 0) setBankTransactions(d.bankTransactions);
+          if (Array.isArray(d.documentsLog) && d.documentsLog.length > 0) setDocumentsLog(d.documentsLog);
+          if (Array.isArray(d.drivers) && d.drivers.length > 0) setDrivers(d.drivers);
+          if (Array.isArray(d.routeStops) && d.routeStops.length > 0) setRouteStops(d.routeStops);
+          if (d.targets && typeof d.targets === 'object') setTargets(prev => ({ ...prev, ...d.targets }));
+          if (d.eodSummary && typeof d.eodSummary === 'object') setEodSummary(prev => ({ ...prev, ...d.eodSummary }));
+          if (Array.isArray(d.botConfigurations) && d.botConfigurations.length > 0) {
+            setBots(prev => prev.map(b => {
+              const match = d.botConfigurations.find(bc => (bc.bot_id || bc.botId) === (b.bot_id || b.botId));
+              return match ? { ...b, ...match } : b;
+            }));
+          }
         }
       }
       if (!silent) {

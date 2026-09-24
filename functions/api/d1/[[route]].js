@@ -4,7 +4,426 @@
  * Runs at the Cloudflare Edge (Workers / Pages Functions)
  * Completely replaces Google Sheets, Google Apps Script, and AppSheet!
  * ==============================================================================
- */
+// ==============================================================================
+// 🔄 DUAL-KEY NORMALIZERS (Bridging SQLite snake_case & React PascalCase)
+// ==============================================================================
+function normalizeOrder(o) {
+  if (!o) return o;
+  const orderId = o.order_id || o.Order_ID || '';
+  const customerName = o.customer_name || o.Customer_Name || '';
+  const phone = o.customer_phone || o.Customer_Phone || o.phone || '';
+  const address = o.project_address || o.Project_Address || o.delivery_address || '';
+  const sku = o.ordered_sku || o.Ordered_SKU || o.sku || '';
+  const totalAmount = Number(o.total_amount_inr ?? o.Total_Amount_INR ?? 0);
+  const advance = Number(o.advance_paid_inr ?? o.advance_token_inr ?? o.Advance_Paid_INR ?? 0);
+  const balance = Number(o.balance_due_inr ?? o.Balance_Due_INR ?? (totalAmount - advance));
+  const safelockStatus = o.safelock_status || o.SafeLock_Status || o.status || 'SAFELOCKED (RESERVED)';
+  const driver = o.assigned_driver || o.Assigned_Driver || '';
+  const deliverySchedule = o.delivery_schedule || o.Delivery_Schedule || 'Today, 04:30 PM';
+  const carpenter = o.carpenter_assigned || o.Carpenter_Assigned || 'Narayana Mistri';
+  const otp = o.otp_code || o.OTP_Code || '5842';
+  const smartkit = o.smartkit_status || o.SmartKit_Status || '5/5 Staged';
+  const createdDate = o.created_at || o.Created_Date || '';
+
+  return {
+    ...o,
+    order_id: orderId,
+    Order_ID: orderId,
+    customer_name: customerName,
+    Customer_Name: customerName,
+    customer_phone: phone,
+    Customer_Phone: phone,
+    project_address: address,
+    Project_Address: address,
+    ordered_sku: sku,
+    Ordered_SKU: sku,
+    total_amount_inr: totalAmount,
+    Total_Amount_INR: totalAmount,
+    advance_paid_inr: advance,
+    Advance_Paid_INR: advance,
+    balance_due_inr: balance,
+    Balance_Due_INR: balance,
+    safelock_status: safelockStatus,
+    SafeLock_Status: safelockStatus,
+    status: safelockStatus,
+    assigned_driver: driver,
+    Assigned_Driver: driver,
+    delivery_schedule: deliverySchedule,
+    Delivery_Schedule: deliverySchedule,
+    carpenter_assigned: carpenter,
+    Carpenter_Assigned: carpenter,
+    otp_code: otp,
+    OTP_Code: otp,
+    smartkit_status: smartkit,
+    SmartKit_Status: smartkit,
+    created_at: createdDate,
+    Created_Date: createdDate
+  };
+}
+
+function normalizeCatalog(c) {
+  if (!c) return c;
+  const sku = c.sku || c.SKU || '';
+  const name = c.product_name || c.Product_Name || '';
+  const category = c.category || c.Main_Category || 'Bedroom';
+  const mrp = Number(c.mrp_inr ?? c.MRP_INR ?? 0);
+  const price = Number(c.selling_price_inr ?? c.Selling_Price_INR ?? 0);
+  const whQty = Number(c.warehouse_qty ?? c.Warehouse_Qty ?? 0);
+  const flQty = Number(c.floor_qty ?? c.Floor_Qty ?? 0);
+  const warranty = Number(c.warranty_years ?? c.Warranty_Years ?? 5);
+  const dimensions = c.dimensions || c.Dimensions || '';
+
+  return {
+    ...c,
+    sku,
+    SKU: sku,
+    product_name: name,
+    Product_Name: name,
+    category,
+    Main_Category: category,
+    mrp_inr: mrp,
+    MRP_INR: mrp,
+    selling_price_inr: price,
+    Selling_Price_INR: price,
+    warehouse_qty: whQty,
+    Warehouse_Qty: whQty,
+    floor_qty: flQty,
+    Floor_Qty: flQty,
+    warranty_years: warranty,
+    Warranty_Years: warranty,
+    dimensions,
+    Dimensions: dimensions
+  };
+}
+
+function normalizeInquiry(i) {
+  if (!i) return i;
+  const inqId = i.inquiry_id || i.Inquiry_ID || '';
+  const name = i.customer_name || i.Customer_Name || '';
+  const phone = i.customer_phone || i.Customer_Phone || i.phone || '';
+  const category = i.category_models || i.Category_Models || i.interested_category || '';
+  const budget = Number(i.budget_inr ?? i.Budget_INR ?? 0);
+  const intent = i.ai_intent_score || i.AI_Intent_Score || '85%';
+  const status = i.status || i.Status || 'HOT_LEAD';
+
+  return {
+    ...i,
+    inquiry_id: inqId,
+    Inquiry_ID: inqId,
+    customer_name: name,
+    Customer_Name: name,
+    customer_phone: phone,
+    Customer_Phone: phone,
+    category_models: category,
+    Category_Models: category,
+    budget_inr: budget,
+    Budget_INR: budget,
+    ai_intent_score: intent,
+    AI_Intent_Score: intent,
+    status,
+    Status: status
+  };
+}
+
+function normalizeArchitect(a) {
+  if (!a) return a;
+  const id = a.architect_id || a.Architect_ID || '';
+  const name = a.name || a.architect_name || a.Full_Name || '';
+  const firm = a.firm_name || a.Firm_Name || '';
+  const phone = a.phone || a.Phone_Number || '';
+  const tier = a.tier || a.Tier_Slab || 'GOLD_TIER';
+  const rate = a.commission_pct || a.Commission_Rate || '10.0%';
+  const volume = Number(a.total_referred_volume_inr ?? a.Total_Sales_INR ?? 0);
+  const balance = Number(a.balance_due_inr ?? a.Balance_Due_INR ?? 0);
+  const upi = a.upi_id || a.UPI_Bank || '';
+
+  return {
+    ...a,
+    architect_id: id,
+    Architect_ID: id,
+    name,
+    architect_name: name,
+    Full_Name: name,
+    firm_name: firm,
+    Firm_Name: firm,
+    phone,
+    Phone_Number: phone,
+    tier,
+    Tier_Slab: tier,
+    commission_pct: rate,
+    Commission_Rate: rate,
+    total_referred_volume_inr: volume,
+    Total_Sales_INR: volume,
+    balance_due_inr: balance,
+    Balance_Due_INR: balance,
+    upi_id: upi,
+    UPI_Bank: upi
+  };
+}
+
+function normalizePayment(p) {
+  if (!p) return p;
+  const txnId = p.txn_id || p.Txn_ID || '';
+  const orderId = p.order_id || p.Order_ID || '';
+  const name = p.customer_name || p.Customer_Name || '';
+  const amt = Number(p.amount_inr ?? p.Amount_INR ?? p.amount ?? 0);
+  const mode = p.payment_mode || p.Payment_Mode || 'DYNAMIC_UPI_QR';
+  const status = p.reconciliation_status || p.Status || p.status || 'SETTLED';
+
+  return {
+    ...p,
+    txn_id: txnId,
+    Txn_ID: txnId,
+    order_id: orderId,
+    Order_ID: orderId,
+    customer_name: name,
+    Customer_Name: name,
+    amount_inr: amt,
+    Amount_INR: amt,
+    payment_mode: mode,
+    Payment_Mode: mode,
+    reconciliation_status: status,
+    Status: status
+  };
+}
+
+function normalizeVipProject(v) {
+  if (!v) return v;
+  const id = v.project_id || v.id || '';
+  const name = v.client_name || v.name || '';
+  const location = v.location || v.villa_location || '';
+  const val = Number(v.total_budget_inr ?? v.total_deal_value_inr ?? v.value ?? 0);
+  const adv = Number(v.advance ?? (val * 0.5));
+  const stg = v.current_stage || v.stage || '50% Token Pending';
+  const status = v.status || 'SAFELOCKED & STAGED';
+  const arch = v.architect_partner || v.architect || '';
+  const phone = v.client_phone || v.phone || '';
+
+  return {
+    ...v,
+    project_id: id,
+    id,
+    client_name: name,
+    name,
+    location,
+    total_budget_inr: val,
+    value: val,
+    advance: adv,
+    current_stage: stg,
+    stage: stg,
+    status,
+    architect_partner: arch,
+    architect: arch,
+    client_phone: phone,
+    phone
+  };
+}
+
+function normalizeFloorAging(fa) {
+  if (!fa) return fa;
+  const sku = fa.sku || '';
+  const name = fa.description || fa.name || '';
+  const days = Number(fa.showroom_age_days ?? fa.floorDays ?? 0);
+  const mrp = Number(fa.current_mrp ?? fa.mrp ?? 0);
+  const disc = Number(fa.flash_sale_discount_pct ?? fa.discountPct ?? 15);
+  const clearance = fa.clearancePrice ?? Math.round(mrp * (1 - disc / 100));
+
+  return {
+    ...fa,
+    sku,
+    description: name,
+    name,
+    showroom_age_days: days,
+    floorDays: days,
+    current_mrp: mrp,
+    mrp,
+    flash_sale_discount_pct: disc,
+    discountPct: disc,
+    clearancePrice: clearance
+  };
+}
+
+function normalizeSmartKitBox(b) {
+  if (!b) return b;
+  const barcode = b.box_barcode || b.Barcode || b.Box_ID || 'SK-BED-01-A';
+  const name = b.product_name || b.Component_Name || `Box ${b.box_number || 1}/${b.total_boxes || 5}`;
+  const status = b.box_status || b.Status || 'VERIFIED_STAGED';
+  return {
+    ...b,
+    Box_ID: barcode,
+    box_barcode: barcode,
+    Barcode: barcode,
+    Component_Name: name,
+    product_name: name,
+    Status: status,
+    box_status: status,
+    Weight_KG: b.Weight_KG || '25.0 kg',
+    Staged_By: b.Staged_By || 'Staff Rakesh'
+  };
+}
+
+function normalizeBankTxn(t) {
+  if (!t) return t;
+  const id = t.bank_txn_id || t.id || `TXN-BNK-${Date.now()}`;
+  const amount = Number(t.amount_inr ?? t.amount ?? 0);
+  const utr = t.utr_no || t.utrNumber || '';
+  const recon = t.reconciliation_status || t.reconciliationStatus || 'RECONCILED';
+  const type = t.txn_type || t.flowType || (amount < 0 ? 'OUTWARD_DEBIT' : 'INWARD_CREDIT');
+  return {
+    ...t,
+    id,
+    bank_txn_id: id,
+    amount: Math.abs(amount),
+    amount_inr: amount,
+    utrNumber: utr,
+    utr_no: utr,
+    reconciliationStatus: recon,
+    reconciliation_status: recon,
+    flowType: type,
+    txn_type: type,
+    bankAccountId: t.bankAccountId || 'CANARA_CURRENT',
+    bankAccountName: t.bank_name || t.bankAccountName || 'Canara Bank Current A/c (***9201)',
+    paymentMode: t.paymentMode || 'NEFT_RTGS_UPI',
+    partyName: t.partyName || t.customer_name || 'Customer / Vendor',
+    dateTime: t.date || t.dateTime || new Date().toISOString().slice(0, 10)
+  };
+}
+
+function normalizeDocLog(d) {
+  if (!d) return d;
+  const docId = d.doc_id || d.Doc_ID || `DOC-${Date.now()}`;
+  const refId = d.reference_no || d.ref_id || d.Entity_Ref_ID || '';
+  const recipient = d.recipient_name || d.Customer_Vendor_Name || 'Customer';
+  const total = Number(d.total_amount_inr ?? d.amount_inr ?? d.Total_Amount_INR ?? 0);
+  const type = d.doc_type || d.Doc_Type || 'INVOICE';
+  const status = d.status || d.Status || 'GENERATED_LEGAL_COMPLIANT';
+  return {
+    ...d,
+    Doc_ID: docId,
+    doc_id: docId,
+    Doc_Type: type,
+    doc_type: type,
+    Entity_Ref_ID: refId,
+    ref_id: refId,
+    reference_no: refId,
+    Customer_Vendor_Name: recipient,
+    recipient_name: recipient,
+    Total_Amount_INR: total,
+    total_amount_inr: total,
+    amount_inr: total,
+    Status: status,
+    status: status,
+    Generated_Date_Time: d.timestamp || d.created_at || d.Generated_Date_Time || new Date().toISOString()
+  };
+}
+
+function normalizeDriver(dr) {
+  if (!dr) return dr;
+  const id = dr.driver_id || dr.Driver_ID || 'DRV-01';
+  const name = dr.driver_name || dr.Name || 'Tophan Gouda';
+  const phone = dr.phone || dr.Phone || '9437155667';
+  const vehicle = dr.vehicle_no || dr.Vehicle || 'Tata Ace (OD-18-A-1234)';
+  const status = dr.active_status || dr.Status || 'AVAILABLE';
+  return {
+    ...dr,
+    Driver_ID: id,
+    driver_id: id,
+    Name: name,
+    driver_name: name,
+    Phone: phone,
+    phone,
+    Vehicle: vehicle,
+    vehicle_no: vehicle,
+    Status: status,
+    active_status: status,
+    Route: dr.Route || 'Rayagada Town & Gayatri Nagar',
+    Capacity_KG: dr.Capacity_KG || '1000 kg',
+    CSAT: dr.CSAT || '4.9 ⭐'
+  };
+}
+
+function normalizeRouteStop(rs) {
+  if (!rs) return rs;
+  const stopNo = Number(rs.stop_order ?? rs.Stop_No ?? 1);
+  const orderId = rs.order_id || rs.Order_ID || 'ORD-8921';
+  const customerName = rs.customer_name || rs.Customer_Name || 'Customer';
+  const address = rs.destination_area || rs.Address || 'Rayagada';
+  const timeSlot = rs.estimated_delivery_time || rs.Time_Slot || '04:00 PM';
+  const status = rs.status || rs.Status || 'PENDING';
+  return {
+    ...rs,
+    Stop_No: stopNo,
+    stop_order: stopNo,
+    Order_ID: orderId,
+    order_id: orderId,
+    Customer_Name: customerName,
+    customer_name: customerName,
+    Address: address,
+    destination_area: address,
+    Time_Slot: timeSlot,
+    estimated_delivery_time: timeSlot,
+    Status: status,
+    status: status,
+    Items: rs.Items || 'Furniture Package',
+    Amount_Due: Number(rs.Amount_Due ?? rs.balance_due_inr ?? 0),
+    Payment_Mode: rs.Payment_Mode || 'DYNAMIC_UPI_QR'
+  };
+}
+
+function normalizeTargets(row) {
+  if (!row) return null;
+  const monthly = Number(row.target_revenue_inr ?? row.monthly_target_inr ?? row.monthlyTargetINR ?? 4500000);
+  const achieved = Number(row.achieved_amount_inr ?? row.currentAchievedINR ?? 3845000);
+  return {
+    ...row,
+    monthlyTargetINR: monthly,
+    target_revenue_inr: monthly,
+    currentAchievedINR: achieved,
+    achieved_amount_inr: achieved,
+    todayTargetINR: Number(row.todayTargetINR ?? 150000),
+    todayAchievedINR: Number(row.todayAchievedINR ?? 169000),
+    walkin_target: Number(row.walkin_target ?? row.walkInTarget ?? 25),
+    walkInTarget: Number(row.walkin_target ?? row.walkInTarget ?? 25),
+    activeSafeLocksCount: Number(row.activeSafeLocksCount ?? 8),
+    pendingDeliveriesCount: Number(row.pendingDeliveriesCount ?? 4),
+    hotInquiriesCount: Number(row.hotInquiriesCount ?? 6),
+    architectPayoutDueINR: Number(row.architectPayoutDueINR ?? 37225)
+  };
+}
+
+function normalizeEod(row) {
+  if (!row) return null;
+  const cash = Number(row.cash_in_safe_inr ?? row.cashDrawerINR ?? 45000);
+  const upi = Number(row.upi_settled_inr ?? row.upiSettledINR ?? 124000);
+  const total = Number(row.total_sales_inr ?? row.totalGrossINR ?? (cash + upi));
+  return {
+    ...row,
+    cashDrawerINR: cash,
+    cash_in_safe_inr: cash,
+    upiSettledINR: upi,
+    upi_settled_inr: upi,
+    totalGrossINR: total,
+    total_sales_inr: total,
+    safeLockCount: Number(row.safeLockCount ?? 4),
+    closedBy: row.director_signoff || row.closedBy || 'Rakesh (Store Manager)',
+    status: row.status || (row.director_signoff?.includes('VERIFIED') ? 'LOCKED_REGISTER_CLOSED' : 'OPEN_REGISTER')
+  };
+}
+
+function normalizeBotConfig(b) {
+  if (!b) return b;
+  const id = b.bot_id || b.botId || 'BOT-01';
+  const isEnabled = b.is_enabled === 1 || b.is_enabled === true || b.status === 'ACTIVE';
+  return {
+    ...b,
+    bot_id: id,
+    botId: id,
+    name: b.bot_name || b.name || 'Bot',
+    bot_name: b.bot_name || b.name || 'Bot',
+    is_enabled: isEnabled,
+    status: isEnabled ? 'ACTIVE' : 'DISABLED'
+  };
+}
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -910,23 +1329,47 @@ export async function onRequest(context) {
 
     // 2. Full Showroom Master Sync (Replaces slow Google Sheets sync!)
     if (path.endsWith('/sync-all') || (path.endsWith('/sync') && method === 'GET')) {
-      const [ordersRes, catalogRes, inquiriesRes, architectsRes, paymentsRes] = await Promise.all([
-        env.DB.prepare('SELECT * FROM orders ORDER BY created_at DESC;').all(),
-        env.DB.prepare('SELECT * FROM catalog ORDER BY category, product_name;').all(),
-        env.DB.prepare('SELECT * FROM inquiries ORDER BY created_at DESC;').all(),
-        env.DB.prepare('SELECT * FROM architects ORDER BY total_referred_volume_inr DESC;').all(),
-        env.DB.prepare('SELECT * FROM payments ORDER BY created_at DESC LIMIT 100;').all()
+      const [
+        ordersRes, catalogRes, inquiriesRes, architectsRes, paymentsRes,
+        vipRes, floorRes, smartKitRes, bankRes, docRes,
+        driversRes, stopsRes, targetsRes, eodRes, botsRes
+      ] = await Promise.all([
+        env.DB.prepare('SELECT * FROM orders ORDER BY created_at DESC;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM catalog ORDER BY category, product_name;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM inquiries ORDER BY created_at DESC;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM architects ORDER BY total_referred_volume_inr DESC;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM payments ORDER BY created_at DESC LIMIT 100;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM vip_villa_projects ORDER BY project_id DESC;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM floor_aging_sentinel ORDER BY showroom_age_days DESC;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM smartkit_boxes ORDER BY scanned_at DESC;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM bank_transactions_log ORDER BY date DESC LIMIT 100;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM document_generation_log ORDER BY timestamp DESC LIMIT 50;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM fleet_drivers ORDER BY total_trips_completed DESC;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM delivery_route_stops ORDER BY stop_order ASC;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM store_sales_targets ORDER BY target_id DESC LIMIT 1;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM eod_reconciliation_log ORDER BY signoff_timestamp DESC LIMIT 1;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM bot_configurations ORDER BY bot_id ASC;').all().catch(() => ({ results: [] }))
       ]);
 
       return new Response(JSON.stringify({
         success: true,
         source: 'Cloudflare D1 Edge SQL (0ms Google Sheets Latency)',
         data: {
-          orders: ordersRes.results || [],
-          catalog: catalogRes.results || [],
-          inquiries: inquiriesRes.results || [],
-          architects: architectsRes.results || [],
-          payments: paymentsRes.results || []
+          orders: (ordersRes.results || []).map(normalizeOrder),
+          catalog: (catalogRes.results || []).map(normalizeCatalog),
+          inquiries: (inquiriesRes.results || []).map(normalizeInquiry),
+          architects: (architectsRes.results || []).map(normalizeArchitect),
+          payments: (paymentsRes.results || []).map(normalizePayment),
+          vipProjects: (vipRes.results || []).map(normalizeVipProject),
+          floorAgingStock: (floorRes.results || []).map(normalizeFloorAging),
+          smartKitBoxes: (smartKitRes.results || []).map(normalizeSmartKitBox),
+          bankTransactions: (bankRes.results || []).map(normalizeBankTxn),
+          documentsLog: (docRes.results || []).map(normalizeDocLog),
+          drivers: (driversRes.results || []).map(normalizeDriver),
+          routeStops: (stopsRes.results || []).map(normalizeRouteStop),
+          targets: normalizeTargets(targetsRes.results?.[0]),
+          eodSummary: normalizeEod(eodRes.results?.[0]),
+          botConfigurations: (botsRes.results || []).map(normalizeBotConfig)
         }
       }), { headers: corsHeaders });
     }
@@ -996,17 +1439,21 @@ export async function onRequest(context) {
     if (path.endsWith('/dispatch') && method === 'POST') {
       const body = await request.json();
       const action = body.action || body.actionName;
-      const p = body.payload || body.params || {};
+      const p = body.payload || body.params || body || {};
 
       switch (action) {
-        case 'CREATE_SAFELOCK_ORDER': {
+        // 1. SafeLock Order Placement
+        case 'CREATE_SAFELOCK_ORDER':
+        case 'SYSTEM_2_VOICE_ORDER':
+        case 'SAFELOCK_ORDER':
+        case 'CONVERT_INQUIRY_TO_ORDER': {
           const orderId = p.order_id || p.Order_ID || `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
-          const sku = p.sku || p.Ordered_SKU || '';
+          const sku = p.sku || p.Ordered_SKU || p.ordered_sku || '';
           const customerName = p.customer_name || p.Customer_Name || 'Walk-in Customer';
-          const customerPhone = p.customer_phone || p.Customer_Phone || '';
-          const address = p.project_address || p.Project_Address || 'Rayagada';
-          const totalAmt = Number(p.total_amount_inr || p.Total_Amount_INR || 0);
-          const advance = Number(p.advance_paid_inr || p.Advance_Paid_INR || 0);
+          const customerPhone = p.customer_phone || p.Customer_Phone || p.phone || '';
+          const address = p.project_address || p.Project_Address || p.address || 'Rayagada';
+          const totalAmt = Number(p.total_amount_inr || p.Total_Amount_INR || p.amount || 0);
+          const advance = Number(p.advance_paid_inr || p.Advance_Paid_INR || p.advance_amount || 0);
           const balance = totalAmt - advance;
           const otp = p.otp_code || p.OTP_Code || String(Math.floor(1000 + Math.random() * 9000));
 
@@ -1044,17 +1491,20 @@ export async function onRequest(context) {
           }), { headers: corsHeaders });
         }
 
-        case 'RECORD_PAYMENT': {
-          const txnId = p.txn_id || `TXN-${Date.now().toString().slice(-6)}`;
+        // 2. Payments & UPI Settlements
+        case 'RECORD_PAYMENT':
+        case 'RECORD_UPI_PAYMENT':
+        case 'SPLIT_PAYMENT_SETTLEMENT': {
+          const txnId = p.txn_id || p.Txn_ID || `TXN-${Date.now().toString().slice(-6)}`;
           const orderId = p.order_id || p.Order_ID;
-          const amt = Number(p.amount || p.amount_inr || 0);
-          const customerName = p.customer_name || 'Customer';
+          const amt = Number(p.amount || p.amount_inr || p.Amount_INR || 0);
+          const customerName = p.customer_name || p.Customer_Name || 'Customer';
 
           const ops = [
             env.DB.prepare(`
               INSERT OR REPLACE INTO payments (txn_id, order_id, customer_name, amount_inr, payment_mode, reconciliation_status)
               VALUES (?, ?, ?, ?, ?, 'SETTLED');
-            `).bind(txnId, orderId, customerName, amt, p.payment_mode || 'DYNAMIC_UPI_QR')
+            `).bind(txnId, orderId || 'GENERAL_RECON', customerName, amt, p.payment_mode || p.Payment_Mode || 'DYNAMIC_UPI_QR')
           ];
 
           if (orderId) {
@@ -1072,15 +1522,22 @@ export async function onRequest(context) {
           }), { headers: corsHeaders });
         }
 
+        // 3. Order Status & Deliveries
         case 'UPDATE_ORDER_STATUS':
+        case 'UPDATE_ORDER_RECORD':
         case 'DISPATCH_VEHICLE_TRANSIT':
-        case 'COMPLETE_DELIVERY_EPOD': {
+        case 'DISPATCH_FLEET_VEHICLE':
+        case 'COMPLETE_DELIVERY_EPOD':
+        case 'SUBMIT_EPOD_DELIVERY':
+        case 'RESCHEDULE_ORDER_DELIVERY': {
           const orderId = p.order_id || p.Order_ID;
-          const status = p.status || p.new_status || (action === 'COMPLETE_DELIVERY_EPOD' ? 'DELIVERED_COMPLETE' : 'ON_ROUTE (TRANSIT)');
+          const status = p.status || p.new_status || (action.includes('EPOD') ? 'DELIVERED_COMPLETE' : 'ON_ROUTE (TRANSIT)');
           
-          await env.DB.prepare('UPDATE orders SET safelock_status = ?, updated_at = CURRENT_TIMESTAMP WHERE order_id = ?;')
-            .bind(status, orderId)
-            .run();
+          if (orderId) {
+            await env.DB.prepare('UPDATE orders SET safelock_status = ?, updated_at = CURRENT_TIMESTAMP WHERE order_id = ?;')
+              .bind(status, orderId)
+              .run();
+          }
 
           return new Response(JSON.stringify({
             success: true,
@@ -1090,20 +1547,24 @@ export async function onRequest(context) {
           }), { headers: corsHeaders });
         }
 
-        case 'CREATE_INQUIRY': {
-          const inqId = p.inquiry_id || `INQ-${Date.now().toString().slice(-4)}`;
+        // 4. Inquiries & CRM Leads
+        case 'CREATE_INQUIRY':
+        case 'LOG_WALKIN_LEAD':
+        case 'LOG_INQUIRY':
+        case 'UPDATE_INQUIRY_LEAD': {
+          const inqId = p.inquiry_id || p.Inquiry_ID || `INQ-${Date.now().toString().slice(-4)}`;
           await env.DB.prepare(`
             INSERT OR REPLACE INTO inquiries 
             (inquiry_id, customer_name, customer_phone, address, category_models, budget_inr, ai_intent_score, notes)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?);
           `).bind(
             inqId,
-            p.customer_name || 'Walk-In',
-            p.customer_phone || '',
-            p.address || 'Rayagada',
-            p.category_models || 'Living Room / Bedroom',
-            Number(p.budget_inr || 100000),
-            p.ai_intent_score || '85% (HOT)',
+            p.customer_name || p.Customer_Name || 'Walk-In',
+            p.customer_phone || p.Customer_Phone || p.phone || '',
+            p.address || p.Address || 'Rayagada',
+            p.category_models || p.Category_Models || p.interested_category || 'Living Room / Bedroom',
+            Number(p.budget_inr || p.Budget_INR || 100000),
+            p.ai_intent_score || p.AI_Intent_Score || '85% (HOT)',
             p.notes || ''
           ).run();
 
@@ -1114,7 +1575,173 @@ export async function onRequest(context) {
           }), { headers: corsHeaders });
         }
 
-        case 'LOCK_9PM_EOD_REGISTER': {
+        // 5. VIP Villa Turnkey Projects
+        case 'ADD_VIP_VILLA_PROJECT':
+        case 'ADD_VIP_PROJECT':
+        case 'UPDATE_VIP_VILLA_PROJECT':
+        case 'UPDATE_VIP_PROJECT': {
+          const projectId = p.project_id || p.id || `VIP-${Date.now().toString().slice(-3)}`;
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO vip_villa_projects 
+            (project_id, client_name, location, total_budget_inr, architect_partner, scope_description, current_stage, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+          `).bind(
+            projectId,
+            p.client_name || p.name || 'VIP Client',
+            p.location || 'Rayagada Villa',
+            Number(p.total_budget_inr || p.value || 250000),
+            p.architect_partner || p.architect || 'Direct Client',
+            p.scope_description || 'Turnkey Interior Package',
+            p.current_stage || p.stage || 'In Progress',
+            p.status || 'SAFELOCKED & STAGED'
+          ).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            projectId,
+            message: `VIP Villa Project #${projectId} updated in Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 6. Floor Aging Stock Sentinel
+        case 'ADD_FLOOR_AGING_STOCK':
+        case 'ADD_FLOOR_AGING_SKU':
+        case 'UPDATE_FLOOR_AGING_STOCK':
+        case 'UPDATE_FLOOR_AGING_SKU':
+        case 'RESET_FLOOR_AGE':
+        case 'RESET_FLOOR_AGING_STOCK': {
+          const sku = p.sku || p.SKU;
+          if (sku) {
+            const ageDays = action.includes('RESET') ? 0 : Number(p.showroom_age_days ?? p.floorDays ?? 45);
+            await env.DB.prepare(`
+              INSERT OR REPLACE INTO floor_aging_sentinel 
+              (sku, description, showroom_age_days, current_mrp, flash_sale_discount_pct, updated_at)
+              VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP);
+            `).bind(
+              sku,
+              p.description || p.name || 'Floor Display Model',
+              ageDays,
+              Number(p.current_mrp || p.mrp || 50000),
+              Number(p.flash_sale_discount_pct || p.discountPct || 15)
+            ).run();
+          }
+
+          return new Response(JSON.stringify({
+            success: true,
+            sku,
+            message: `Floor aging sentinel for SKU ${sku} synchronized to Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 7. Factory Purchase Orders
+        case 'GENERATE_FACTORY_PO':
+        case 'UPDATE_PURCHASE_ORDER':
+        case 'RECEIVE_INWARD_PO_QC':
+        case 'RECORD_FACTORY_PAYMENT_VOUCHER': {
+          const poId = p.po_id || p.poId || `PO-2026-${Date.now().toString().slice(-3)}`;
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO purchase_orders_log 
+            (po_id, factory_name, sku, product_name, order_qty, total_amount_inr, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?);
+          `).bind(
+            poId,
+            p.factory_name || p.supplier || 'Godrej Khalapur Plant',
+            p.sku || 'SKU-FACTORY-01',
+            p.product_name || p.product || 'Factory Order',
+            Number(p.order_qty || p.qty || 1),
+            Number(p.total_amount_inr || p.amount || 50000),
+            p.status || 'DRAFTED'
+          ).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            poId,
+            message: `Factory PO #${poId} logged to Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 8. Architect Partner Registration & Commissions
+        case 'REGISTER_ARCHITECT_PARTNER':
+        case 'UPDATE_ARCHITECT_PROFILE':
+        case 'LOG_ARCHITECT_COMMISSION_PAYOUT':
+        case 'DISBURSE_ARCHITECT_COMMISSION':
+        case 'SYSTEM_7_VIP_COMMISSION': {
+          const archId = p.architect_id || p.Architect_ID || p.archId || `VIP-ARC-${Date.now().toString().slice(-3)}`;
+          const payoutAmt = Number(p.amount || p.payout_amount_inr || p.amount_inr || 0);
+
+          if (action.includes('COMMISSION') || action.includes('DISBURSE') || action.includes('PAYOUT')) {
+            if (payoutAmt > 0) {
+              await env.DB.prepare('UPDATE architects SET total_payout_settled_inr = total_payout_settled_inr + ?, balance_due_inr = MAX(0, balance_due_inr - ?) WHERE architect_id = ?;')
+                .bind(payoutAmt, payoutAmt, archId)
+                .run();
+            }
+          } else {
+            await env.DB.prepare(`
+              INSERT OR REPLACE INTO architects 
+              (architect_id, name, firm_name, phone, tier, commission_pct, upi_id)
+              VALUES (?, ?, ?, ?, ?, ?, ?);
+            `).bind(
+              archId,
+              p.name || p.Full_Name || p.architect_name || 'Architect Partner',
+              p.firm_name || p.Firm_Name || 'Architecture Studio',
+              p.phone || p.Phone_Number || '',
+              p.tier || p.Tier_Slab || 'GOLD_TIER',
+              Number(p.commission_pct || p.Commission_Rate || 10),
+              p.upi_id || p.UPI_Bank || ''
+            ).run();
+          }
+
+          return new Response(JSON.stringify({
+            success: true,
+            archId,
+            message: `Architect ${archId} transaction recorded in Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 9. Document Generation Log
+        case 'LOG_DOCUMENT_GENERATION': {
+          const docId = p.doc_id || p.Doc_ID || `DOC-${Date.now().toString().slice(-4)}`;
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO document_generation_log 
+            (doc_id, doc_type, ref_id, recipient_name, amount_inr, timestamp, status)
+            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?);
+          `).bind(
+            docId,
+            p.doc_type || p.Doc_Type || 'INVOICE',
+            p.ref_id || p.Entity_Ref_ID || '',
+            p.recipient_name || p.Customer_Vendor_Name || 'Customer',
+            Number(p.amount_inr || p.Total_Amount_INR || 0),
+            p.status || 'GENERATED'
+          ).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            docId,
+            message: `Document ${docId} logged in Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 10. Store Sales Targets
+        case 'UPDATE_SALES_TARGETS': {
+          const monthYear = new Date().toISOString().slice(0, 7);
+          const revTarget = Number(p.target_revenue_inr || p.monthlyTargetINR || 1500000);
+          const walkTarget = Number(p.walkin_target || p.walkInTarget || 25);
+
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO store_sales_targets 
+            (target_id, month_year, target_revenue_inr, walkin_target)
+            VALUES (1, ?, ?, ?);
+          `).bind(monthYear, revTarget, walkTarget).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            message: `Store targets updated in Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 11. End-of-Day Cash & Safe Locking
+        case 'LOCK_9PM_EOD_REGISTER':
+        case 'DISPATCH_DIRECTOR_EOD_WHATSAPP': {
           const eodId = p.closing_id || `EOD-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-RAYAGADA`;
           const dateStr = p.date || new Date().toISOString().slice(0, 10);
           const totalGross = Number(p.gross_day_sales_inr || p.total_gross_inr || 0);
@@ -1148,8 +1775,11 @@ export async function onRequest(context) {
           }), { headers: corsHeaders });
         }
 
+        // 12. Catalog & Stock Inward / Outward
         case 'REGISTER_NEW_SKU':
-        case 'UPDATE_CATALOG_ITEM': {
+        case 'UPDATE_CATALOG_ITEM':
+        case 'BULK_CATALOG_IMPORT':
+        case 'OVERRIDE_STOCK_QTY': {
           const sku = p.sku || p.SKU;
           if (sku) {
             const sellingPrice = Number(p.sellingPrice || p.selling_price_inr || p.Selling_Price_INR || 0);
@@ -1220,19 +1850,24 @@ export async function onRequest(context) {
           }), { headers: corsHeaders });
         }
 
+        // 13. Bank Statements & Reconciliation
         case 'LOG_BANK_TRANSACTION':
-        case 'RECONCILE_BANK_UTR': {
+        case 'RECONCILE_BANK_UTR':
+        case 'UPDATE_BANK_TRANSACTION':
+        case 'UPDATE_BANK_TXN_STATUS': {
           const txnId = p.txn_id || p.Txn_ID || `TXN-${Date.now().toString().slice(-6)}`;
           await env.DB.prepare(`
-            INSERT OR REPLACE INTO payments (txn_id, order_id, customer_name, amount_inr, payment_mode, reconciliation_status)
-            VALUES (?, ?, ?, ?, ?, ?);
+            INSERT OR REPLACE INTO bank_transactions_log 
+            (bank_txn_id, bank_name, utr_no, date, amount_inr, txn_type, reconciliation_status)
+            VALUES (?, ?, ?, ?, ?, ?, ?);
           `).bind(
             txnId,
-            p.order_id || 'GENERAL_RECON',
-            p.customer_name || p.party_name || 'Bank Transaction',
+            p.bank_name || p.bankAccountId || 'HDFC Bank Ltd, Rayagada',
+            p.utr_no || p.utrNumber || p.utr_reference || `UTR-${Date.now()}`,
+            p.date || new Date().toISOString().slice(0, 10),
             Number(p.amount_inr || p.amount || 0),
-            p.payment_mode || 'NEFT_RTGS_UPI',
-            p.status || 'SETTLED'
+            p.txn_type || 'CREDIT',
+            p.status || p.reconciliation_status || 'RECONCILED'
           ).run();
           return new Response(JSON.stringify({
             success: true,
@@ -1241,22 +1876,7 @@ export async function onRequest(context) {
           }), { headers: corsHeaders });
         }
 
-        case 'DISBURSE_ARCHITECT_COMMISSION': {
-          const archId = p.archId || p.architect_id;
-          const amt = Number(p.amount || 0);
-          if (archId) {
-            await env.DB.prepare('UPDATE architects SET total_payout_settled_inr = total_payout_settled_inr + ?, balance_due_inr = MAX(0, balance_due_inr - ?) WHERE architect_id = ?;')
-              .bind(amt, amt, archId)
-              .run();
-          }
-          return new Response(JSON.stringify({
-            success: true,
-            archId,
-            amount: amt,
-            message: `Commission of ₹${amt} disbursed to Architect ${archId} in Cloudflare D1`
-          }), { headers: corsHeaders });
-        }
-
+        // 14. SmartKit 5-Box Flat-Pack Staging
         case 'SMARTKIT_BOX_STAGED': {
           const boxBarcode = p.box_barcode || p.boxBarcode;
           if (boxBarcode) {
@@ -1809,7 +2429,17 @@ async function handleFallbackSimulation(path, method, request, corsHeaders) {
         catalog: [],
         inquiries: [],
         architects: [],
-        payments: []
+        payments: [],
+        vipProjects: [],
+        floorAgingStock: [],
+        smartKitBoxes: [],
+        bankTransactions: [],
+        documentsLog: [],
+        drivers: [],
+        routeStops: [],
+        targets: null,
+        eodSummary: null,
+        botConfigurations: []
       }
     }), { headers: corsHeaders });
   }

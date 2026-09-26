@@ -33,7 +33,7 @@ export function LiveDatabaseView() {
 
   // Active Category & Active Table
   const [activeCategory, setActiveCategory] = useState('ALL');
-  const [selectedTableName, setSelectedTableName] = useState('inventory_stock');
+  const [selectedTableName, setSelectedTableName] = useState('catalog');
   const [tablesList, setTablesList] = useState([]);
   const [tableData, setTableData] = useState({
     columns: [],
@@ -71,15 +71,20 @@ export function LiveDatabaseView() {
         const json = await res.json();
         if (json.success && json.tables) {
           setTablesList(json.tables);
-          if (json.tables.length > 0 && !selectedTableName) {
-            setSelectedTableName(json.tables[0].tableName);
-          }
+          const hasCatalog = json.tables.find(t => t.tableName === 'catalog');
+          setSelectedTableName(hasCatalog ? 'catalog' : json.tables[0].tableName);
         }
       }
     } catch (err) {
       console.warn('Could not fetch tables list from edge, using fallback list', err);
-      // Hardened fallback tables list
+      // Hardened fallback tables list with core operational tables first
       setTablesList([
+        { tableName: 'catalog', category: '📦 Inventory & Godown' },
+        { tableName: 'orders', category: '🛒 Sales & Counter POS' },
+        { tableName: 'inquiries', category: '🛒 Sales & Counter POS' },
+        { tableName: 'payments', category: '💰 Accounts & Reconciliation' },
+        { tableName: 'architects', category: '🛒 Sales & Counter POS' },
+        { tableName: 'smartkit_boxes', category: '📦 Inventory & Godown' },
         { tableName: 'inventory_stock', category: '📦 Inventory & Godown' },
         { tableName: 'floor_aging_sentinel', category: '📦 Inventory & Godown' },
         { tableName: 'transactions_log', category: '🛒 Sales & Counter POS' },

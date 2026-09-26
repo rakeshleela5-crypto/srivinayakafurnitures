@@ -11,6 +11,12 @@ const TABLE_CATEGORIES = {
   SALES_POS: {
     category: '🛒 Sales & Counter POS',
     tables: [
+      'catalog',
+      'orders',
+      'inquiries',
+      'payments',
+      'architects',
+      'smartkit_boxes',
       'transactions_log',
       'quote_log',
       'commercial_quotations_log',
@@ -23,6 +29,7 @@ const TABLE_CATEGORIES = {
   STOCK_GODOWN: {
     category: '📦 Inventory & Godown',
     tables: [
+      'catalog',
       'inventory_stock',
       'floor_aging_sentinel',
       'purchase_orders_log',
@@ -87,6 +94,27 @@ function getCategoryForTable(tableName) {
 
 // Fallback Schema Metadata for Local Dev Preview
 const FALLBACK_SCHEMAS = {
+  catalog: [
+    { cid: 0, name: 'sku', type: 'TEXT', notnull: 1, pk: 1 },
+    { cid: 1, name: 'product_name', type: 'TEXT', notnull: 1, pk: 0 },
+    { cid: 2, name: 'main_category', type: 'TEXT', notnull: 1, pk: 0 },
+    { cid: 3, name: 'sub_category', type: 'TEXT', notnull: 0, pk: 0 },
+    { cid: 4, name: 'mrp_inr', type: 'REAL', notnull: 1, pk: 0 },
+    { cid: 5, name: 'selling_price_inr', type: 'REAL', notnull: 1, pk: 0 },
+    { cid: 6, name: 'stock_available', type: 'INTEGER', notnull: 0, pk: 0 },
+    { cid: 7, name: 'material_spec', type: 'TEXT', notnull: 0, pk: 0 },
+    { cid: 8, name: 'warranty_years', type: 'INTEGER', notnull: 0, pk: 0 }
+  ],
+  orders: [
+    { cid: 0, name: 'order_id', type: 'TEXT', notnull: 1, pk: 1 },
+    { cid: 1, name: 'customer_name', type: 'TEXT', notnull: 1, pk: 0 },
+    { cid: 2, name: 'customer_phone', type: 'TEXT', notnull: 1, pk: 0 },
+    { cid: 3, name: 'ordered_sku', type: 'TEXT', notnull: 1, pk: 0 },
+    { cid: 4, name: 'total_amount_inr', type: 'REAL', notnull: 1, pk: 0 },
+    { cid: 5, name: 'advance_token_inr', type: 'REAL', notnull: 0, pk: 0 },
+    { cid: 6, name: 'safelock_status', type: 'TEXT', notnull: 0, pk: 0 },
+    { cid: 7, name: 'delivery_schedule', type: 'TEXT', notnull: 0, pk: 0 }
+  ],
   inventory_stock: [
     { cid: 0, name: 'sku', type: 'TEXT', notnull: 1, pk: 1 },
     { cid: 1, name: 'product_name', type: 'TEXT', notnull: 1, pk: 0 },
@@ -149,6 +177,16 @@ const FALLBACK_SCHEMAS = {
 
 // Fallback Sample Rows for Local Dev Preview
 const FALLBACK_ROWS = {
+  catalog: [
+    { sku: 'BED-MOD-001', product_name: 'Solid Teak King Bed (72" x 78")', main_category: 'Bedroom', sub_category: 'Double Bed', mrp_inr: 72000, selling_price_inr: 62000, stock_available: 5, material_spec: 'CPT Seasoned Teak Wood', warranty_years: 10 },
+    { sku: 'WDR-MOD-001', product_name: 'Godrej Sliding Wardrobe (3-Door)', main_category: 'Storage', sub_category: 'Almirah', mrp_inr: 54000, selling_price_inr: 48000, stock_available: 3, material_spec: 'CRCA Anti-Rust Steel', warranty_years: 10 },
+    { sku: 'SOF-MOD-001', product_name: 'Royal Chesterfield 3+2 Velvet Sofa', main_category: 'Living', sub_category: 'Sofa Set', mrp_inr: 85000, selling_price_inr: 74000, stock_available: 2, material_spec: 'Hydrophobic Grade-A Velvet', warranty_years: 5 },
+    { sku: 'DIN-MOD-001', product_name: 'Solid Sheesham 6-Seater Dining Set', main_category: 'Dining', sub_category: 'Dining Table', mrp_inr: 48000, selling_price_inr: 42000, stock_available: 4, material_spec: 'North Indian Sheesham', warranty_years: 7 }
+  ],
+  orders: [
+    { order_id: 'ORD-8921', customer_name: 'Dr. Subhashish Jena', customer_phone: '9437188291', ordered_sku: 'BED-MOD-001', total_amount_inr: 62000, advance_token_inr: 31000, safelock_status: 'SAFELOCKED (RESERVED)', delivery_schedule: 'Today, 04:30 PM' },
+    { order_id: 'ORD-9104', customer_name: 'Advocate B. K. Patnaik', customer_phone: '9861054321', ordered_sku: 'DIN-MOD-001', total_amount_inr: 42000, advance_token_inr: 21000, safelock_status: 'DISPATCH_IN_TRANSIT', delivery_schedule: 'Tomorrow, 11:00 AM' }
+  ],
   inventory_stock: [
     { sku: 'BED-MOD-001', product_name: 'Solid Teak King Bed (72" x 78")', category: 'Bedroom', showroom_display_qty: 1, warehouse_reserve_qty: 4, buffer_threshold: 2, reorder_status: 'SUFFICIENT_STOCK', updated_at: '2026-09-26 18:30:00' },
     { sku: 'WDR-MOD-001', product_name: 'Godrej Sliding Wardrobe (3-Door)', category: 'Storage', showroom_display_qty: 1, warehouse_reserve_qty: 2, buffer_threshold: 2, reorder_status: 'LOW_STOCK_ALERT', updated_at: '2026-09-26 18:30:00' },
@@ -183,7 +221,7 @@ export async function onRequestGet(context) {
   const { request, env } = context;
   const url = new URL(request.url);
   const action = url.searchParams.get('action') || 'fetch_table';
-  const tableName = url.searchParams.get('table') || 'inventory_stock';
+  const tableName = url.searchParams.get('table') || 'catalog';
   const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
   const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '50', 10)));
   const search = (url.searchParams.get('search') || '').trim();

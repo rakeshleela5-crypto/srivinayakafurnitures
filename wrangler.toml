@@ -1,0 +1,9 @@
+name = "srivinayakafurnitures"
+pages_build_output_dir = "dist"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "srivinayaka-db"
+database_id = "dec7abfc-0131-434b-9d31-fa19770a6203"

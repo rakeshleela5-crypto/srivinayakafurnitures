@@ -217,6 +217,31 @@ const FALLBACK_ROWS = {
   ]
 };
 
+const ALLOWED_ORIGINS = [
+  'https://srivinayakafurnitures.pages.dev',
+  'https://srivinayakafurnitures.com',
+  'http://localhost:5173',
+  'http://localhost:4173'
+];
+
+function getCorsOrigin(request) {
+  const origin = request.headers.get('Origin') || '';
+  return ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+}
+
+export async function onRequestOptions(context) {
+  const { request } = context;
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': getCorsOrigin(request),
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+      'Access-Control-Max-Age': '86400'
+    }
+  });
+}
+
 export async function onRequestGet(context) {
   const { request, env } = context;
   const url = new URL(request.url);
@@ -228,9 +253,13 @@ export async function onRequestGet(context) {
 
   const headers = {
     'Content-Type': 'application/json; charset=utf-8',
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': getCorsOrigin(request),
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
   };
 
   try {

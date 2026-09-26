@@ -24,3 +24,16 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment & Secrets Hygiene (OWASP Hardening)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+*.crt
+.wrangler/
+wrangler.state
+*.sqlite3
+*.db

@@ -57,6 +57,7 @@ import { FurnitureVariantMatrixModal } from './FurnitureVariantMatrixModal';
 import { CustomerKhataLedgerModal } from './CustomerKhataLedgerModal';
 import { EwayBillGeneratorModal } from './EwayBillGeneratorModal';
 import { EnterprisePipelineModal } from './EnterprisePipelineModal';
+import FeatureFlagConsoleModal from './FeatureFlagConsoleModal';
 
 export function ModalContainer() {
   const { activeModal, modalProps, closeModal } = useStore();
@@ -185,6 +186,9 @@ export function ModalContainer() {
 
       {/* 📑 ENTERPRISE DOCUMENT PIPELINE LIFECYCLE (ERPNEXT BENCHMARK) */}
       <EnterprisePipelineModal isOpen={activeModal === 'enterprise_pipeline'} onClose={closeModal} pipelineData={modalProps?.pipelineData || modalProps} />
+
+      {/* 🎛️ ENTERPRISE FEATURE FLAG & CANARY ROLLOUT CONSOLE (ARCHITECTURE PILLAR #12) */}
+      <FeatureFlagConsoleModal isOpen={activeModal === 'feature_flags_console'} onClose={closeModal} />
     </>
   );
 }

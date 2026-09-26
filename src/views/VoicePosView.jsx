@@ -1018,6 +1018,16 @@ export function VoicePosView() {
             >
               🚚 E-Way Bill ({finalPayable >= 50000 ? 'Mandatory' : 'Optional'})
             </button>
+
+            <button 
+              type="button"
+              className="btn-ghost-edit" 
+              onClick={() => openModal('feature_flags_console')}
+              style={{ gridColumn: 'span 2', justifyContent: 'center', padding: '7px', fontSize: '10.5px', color: 'var(--accent-gold-light)', border: '1px dashed rgba(212,175,55,0.4)', background: 'rgba(212,175,55,0.04)' }}
+              title="Architecture Pillar #12: Edge-Native Feature Flag & Canary Rollout Console"
+            >
+              🎛️ Feature Flags & Canary Console (Pillar #12)
+            </button>
           </div>
 
           {/* Submit SafeLock Order Button */}

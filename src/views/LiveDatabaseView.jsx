@@ -500,6 +500,15 @@ export function LiveDatabaseView() {
           >
             🏛️ Customer Khata Ledgers
           </button>
+
+          <button 
+            type="button" 
+            className="btn-ghost-edit" 
+            onClick={() => openModal('feature_flags_console')}
+            style={{ fontSize: '11px', color: 'var(--accent-purple)' }}
+          >
+            🎛️ Feature Flags Console (#12)
+          </button>
         </div>
       </div>
 

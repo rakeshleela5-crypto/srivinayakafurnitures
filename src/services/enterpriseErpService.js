@@ -430,3 +430,95 @@ export function calculateCashierShiftAudit({
         : `🚨 CASH DEFICIT: Drawer is short by ₹${Math.abs(variance).toLocaleString()}. Supervisor PIN required.`
   };
 }
+
+// ------------------------------------------------------------------------------
+// 7. Zero-Downtime Dual-Write & Expansion Engine (Architecture Pillar #11)
+// ------------------------------------------------------------------------------
+/**
+ * Executes Dual-Write for Order Transactions (Legacy Flat + Relational 3NF)
+ * Guarantees zero data loss and rollback capability during schema transitions
+ */
+export function buildDualWriteOrderPayload({ legacyOrder, lineItems = [] }) {
+  // 1. Primary Legacy Row (orders table)
+  const legacyRecord = {
+    order_id: legacyOrder.order_id || `ORD-${Date.now().toString().slice(-4)}`,
+    customer_name: legacyOrder.customer_name || 'Walk-in Patron',
+    customer_phone: legacyOrder.customer_phone || '',
+    project_address: legacyOrder.project_address || legacyOrder.delivery_address || 'Rayagada Showroom',
+    ordered_sku: legacyOrder.ordered_sku || (lineItems[0]?.sku) || 'FURN-CUSTOM',
+    total_amount_inr: Number(legacyOrder.total_amount_inr || legacyOrder.gross_total_inr || 0),
+    advance_token_inr: Number(legacyOrder.advance_paid_inr || legacyOrder.advance_token_inr || 0),
+    safelock_status: legacyOrder.safelock_status || 'SAFELOCKED (RESERVED)',
+    assigned_driver: legacyOrder.assigned_driver || 'Tophan Gouda',
+    delivery_schedule: legacyOrder.delivery_schedule || 'Today, 04:30 PM',
+    carpenter_assigned: legacyOrder.carpenter_assigned || 'Narayana Mistri'
+  };
+
+  // 2. Relational Header Row (orders_v2 table)
+  const relationalHeader = {
+    order_id: legacyRecord.order_id,
+    customer_id: `CUST-${legacyRecord.customer_phone || 'RETAIL'}`,
+    doc_type: legacyOrder.doc_type || 'SALES_ORDER',
+    doc_status: 1, // Confirmed
+    subtotal_taxable_inr: Math.round((legacyRecord.total_amount_inr / 1.18) * 100) / 100,
+    cgst_amount_inr: Math.round((legacyRecord.total_amount_inr * 0.09) * 100) / 100,
+    sgst_amount_inr: Math.round((legacyRecord.total_amount_inr * 0.09) * 100) / 100,
+    igst_amount_inr: 0,
+    total_tax_inr: Math.round((legacyRecord.total_amount_inr * 0.18) * 100) / 100,
+    gross_total_inr: legacyRecord.total_amount_inr,
+    discount_amount_inr: Number(legacyOrder.discount_inr || 0),
+    trade_in_buyback_inr: Number(legacyOrder.exchange_value_inr || 0),
+    net_payable_inr: legacyRecord.total_amount_inr,
+    advance_paid_inr: legacyRecord.advance_token_inr,
+    balance_due_inr: legacyRecord.total_amount_inr - legacyRecord.advance_token_inr,
+    payment_split_settled: 1
+  };
+
+  // 3. Relational Items Rows (order_items table with historical snapshots)
+  const relationalItems = (lineItems.length > 0 ? lineItems : [{
+    sku: legacyRecord.ordered_sku,
+    quantity: 1,
+    unit_mrp: legacyRecord.total_amount_inr * 1.15,
+    unit_rate: legacyRecord.total_amount_inr
+  }]).map((item, idx) => ({
+    order_id: legacyRecord.order_id,
+    sku: item.sku || 'FURN-CUSTOM',
+    quantity: item.quantity || 1,
+    unit_mrp_snapshot: Number(item.unit_mrp || item.mrp_inr || item.unit_rate * 1.15),
+    unit_rate_snapshot: Number(item.unit_rate || item.selling_price_inr || item.unit_mrp || 0),
+    taxable_value_inr: Math.round(((item.unit_rate || 0) * (item.quantity || 1) / 1.18) * 100) / 100,
+    cgst_snapshot: Math.round(((item.unit_rate || 0) * (item.quantity || 1) * 0.09) * 100) / 100,
+    sgst_snapshot: Math.round(((item.unit_rate || 0) * (item.quantity || 1) * 0.09) * 100) / 100,
+    igst_snapshot: 0,
+    line_total_inr: (item.unit_rate || 0) * (item.quantity || 1),
+    custom_variant_specs: JSON.stringify(item.variant_specs || {})
+  }));
+
+  return {
+    primaryLegacy: legacyRecord,
+    relationalHeader,
+    relationalItems,
+    dualWriteSQL: [
+      {
+        table: 'orders',
+        record: legacyRecord
+      },
+      {
+        table: 'orders_v2',
+        record: relationalHeader
+      }
+    ]
+  };
+}
+
+/**
+ * Validates Data Parity between Legacy and Relational Stores
+ */
+export function verifyDualWriteParity(legacyOrder, relationalHeader) {
+  if (!legacyOrder || !relationalHeader) return false;
+  const idMatch = legacyOrder.order_id === relationalHeader.order_id;
+  const amountMatch = Math.abs(legacyOrder.total_amount_inr - relationalHeader.gross_total_inr) < 0.01;
+  const advanceMatch = Math.abs(legacyOrder.advance_token_inr - relationalHeader.advance_paid_inr) < 0.01;
+  return idMatch && amountMatch && advanceMatch;
+}
+

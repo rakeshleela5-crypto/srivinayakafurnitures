@@ -52,6 +52,11 @@ import { AgenticRagStudioModal } from './AgenticRagStudioModal';
 import { D1CatalogManagerModal } from './D1CatalogManagerModal';
 import { BluetoothPrinterModal } from './BluetoothPrinterModal';
 import { KitAssemblyModal } from './KitAssemblyModal';
+import { SplitTenderPosModal } from './SplitTenderPosModal';
+import { FurnitureVariantMatrixModal } from './FurnitureVariantMatrixModal';
+import { CustomerKhataLedgerModal } from './CustomerKhataLedgerModal';
+import { EwayBillGeneratorModal } from './EwayBillGeneratorModal';
+import { EnterprisePipelineModal } from './EnterprisePipelineModal';
 
 export function ModalContainer() {
   const { activeModal, modalProps, closeModal } = useStore();
@@ -165,6 +170,21 @@ export function ModalContainer() {
 
       {/* 🖨️ HARDWARE BLUETOOTH THERMAL RECEIPT PRINTER (3-INCH ESC/POS) */}
       <BluetoothPrinterModal isOpen={activeModal === 'bluetooth_printer'} onClose={closeModal} order={modalProps?.order} />
+
+      {/* ⚡ MULTI-TENDER POS TERMINAL (ODOO & VERTEX-POS BENCHMARK) */}
+      <SplitTenderPosModal isOpen={activeModal === 'split_tender_pos'} onClose={closeModal} billData={modalProps?.billData || modalProps} />
+
+      {/* 📐 MULTIDIMENSIONAL FURNITURE VARIANT MATRIX (MEDUSA BENCHMARK) */}
+      <FurnitureVariantMatrixModal isOpen={activeModal === 'furniture_variant_matrix'} onClose={closeModal} productData={modalProps?.productData || modalProps} />
+
+      {/* 🏛️ CUSTOMER KHATA & ACCOUNT STATEMENT LEDGER (CRATER BENCHMARK) */}
+      <CustomerKhataLedgerModal isOpen={activeModal === 'customer_khata'} onClose={closeModal} customerData={modalProps?.customerData || modalProps} />
+
+      {/* 🚚 OFFICIAL NIC E-WAY BILL PAYLOAD GENERATOR (INDIA-COMPLIANCE BENCHMARK) */}
+      <EwayBillGeneratorModal isOpen={activeModal === 'eway_bill_generator'} onClose={closeModal} invoiceData={modalProps?.invoiceData || modalProps} />
+
+      {/* 📑 ENTERPRISE DOCUMENT PIPELINE LIFECYCLE (ERPNEXT BENCHMARK) */}
+      <EnterprisePipelineModal isOpen={activeModal === 'enterprise_pipeline'} onClose={closeModal} pipelineData={modalProps?.pipelineData || modalProps} />
     </>
   );
 }

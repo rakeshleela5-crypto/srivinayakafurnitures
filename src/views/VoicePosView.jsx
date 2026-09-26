@@ -812,14 +812,30 @@ export function VoicePosView() {
             <FileText size={15} /> 📑 Master Commercial Quotation (WhatsApp / Gmail / Print)
           </button>
 
-          {/* Action Closing Tools & The 5 Schemes */}
+          {/* Action Closing Tools & Enterprise Benchmark Engines */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '6px' }}>
             <button 
               className="btn-purple" 
-              style={{ fontSize: '10px', padding: '8px 2px', justifyContent: 'center' }}
-              onClick={() => openModal('custom_finish', { sku: cartItems[0]?.SKU || 'BED-MOD-001' })}
+              style={{ fontSize: '10px', padding: '8px 2px', justifyContent: 'center', background: 'linear-gradient(135deg, rgba(168,85,247,0.25), rgba(14,165,233,0.15))', border: '1px solid #C084FC' }}
+              onClick={() => openModal('furniture_variant_matrix', { 
+                productData: {
+                  sku: cartItems[0]?.SKU || 'BED-MOD-001',
+                  name: cartItems[0]?.Product_Name || 'Master Furniture Piece',
+                  basePrice: cartItems[0]?.Selling_Price_INR || 54000,
+                  onApply: (customItem) => {
+                    setCartItems(prev => {
+                      const updated = [...prev];
+                      if (updated[0]) {
+                        updated[0] = { ...updated[0], ...customItem, qty: updated[0].qty || 1 };
+                      }
+                      return updated;
+                    });
+                  }
+                }
+              })}
+              title="Medusa-style 4D Variant Matrix: Wood, Finish, Size, and Upholstery Customization"
             >
-              🧵 Finish
+              📐 4D Matrix
             </button>
             <button 
               className="btn-ghost-edit" 
@@ -940,6 +956,68 @@ export function VoicePosView() {
               <span>50% Advance Token (Dynamic UPI QR):</span>
               <span>₹{advanceToken50.toLocaleString()}</span>
             </div>
+          </div>
+
+          {/* Enterprise Benchmark Retail OS Action Suite */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <button 
+              type="button"
+              className="btn-luxury-gold" 
+              onClick={() => openModal('split_tender_pos', {
+                totalAmount: finalPayable,
+                customerName: custName,
+                customerPhone: custPhone,
+                address: custAddress,
+                items: cartItems.map(c => ({ name: c.Product_Name, qty: c.qty, price: (c.Selling_Price_INR || 50000) * c.qty }))
+              })} 
+              style={{ justifyContent: 'center', padding: '11px', fontSize: '12px', fontWeight: '900', background: 'linear-gradient(135deg, rgba(212,175,55,0.3), rgba(16,185,129,0.2))', border: '1px solid var(--accent-gold)' }}
+              title="Odoo/Vertex Split Tender: Split across Cash, UPI QR, Card EDC & Khata"
+            >
+              ⚡ Split Tender POS (Odoo)
+            </button>
+
+            <button 
+              type="button"
+              className="btn-purple" 
+              onClick={() => openModal('enterprise_pipeline', {
+                totalAmount: finalPayable,
+                customerName: custName,
+                customerPhone: custPhone,
+                address: custAddress,
+                items: cartItems.map(c => ({ name: c.Product_Name, qty: c.qty, price: (c.Selling_Price_INR || 50000), hsn: '940350' }))
+              })} 
+              style={{ justifyContent: 'center', padding: '11px', fontSize: '12px', fontWeight: '900' }}
+              title="ERPNext Pipeline: Quote -> Sales Order -> Delivery Note -> Tax Invoice"
+            >
+              📑 ERP Pipeline (ERPNext)
+            </button>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <button 
+              type="button"
+              className="btn-ghost-edit" 
+              onClick={() => openModal('customer_khata', { customerName: custName, phone: custPhone })}
+              style={{ justifyContent: 'center', padding: '9px', fontSize: '11px', color: 'var(--accent-gold-light)', border: '1px solid rgba(212,175,55,0.3)' }}
+              title="Crater Benchmark: Customer Credit Ledger & Milestone Aging Statements"
+            >
+              🏛️ Customer Khata (Crater)
+            </button>
+
+            <button 
+              type="button"
+              className="btn-ghost-edit" 
+              onClick={() => openModal('eway_bill_generator', {
+                totalAmount: finalPayable,
+                customerName: custName,
+                customerAddress: custAddress,
+                items: cartItems.map(c => ({ name: c.Product_Name, qty: c.qty, price: c.Selling_Price_INR || 50000, hsnCode: '940350' }))
+              })}
+              style={{ justifyContent: 'center', padding: '9px', fontSize: '11px', color: 'var(--accent-cyan)', border: '1px solid rgba(14,165,233,0.3)' }}
+              title="India-Compliance Benchmark: Statutory E-Way Bill NIC JSON Generator"
+            >
+              🚚 E-Way Bill ({finalPayable >= 50000 ? 'Mandatory' : 'Optional'})
+            </button>
           </div>
 
           {/* Submit SafeLock Order Button */}

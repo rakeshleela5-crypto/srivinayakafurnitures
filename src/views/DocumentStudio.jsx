@@ -481,8 +481,8 @@ export function DocumentStudio() {
           })}
         </div>
 
-        {/* Load From Order Quick Search */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* Load From Order Quick Search & Enterprise Benchmark Tools */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <span style={{ fontSize: '11px', color: 'var(--accent-gold)', fontWeight: '700' }}>Load Order:</span>
           <CustomerOrderSearchSelector
             selectedOrderId={selectedOrder.Order_ID}
@@ -494,8 +494,40 @@ export function DocumentStudio() {
             }}
             placeholder="🔍 Pick Order to auto-fill..."
             allowAll={false}
-            style={{ width: '220px' }}
+            style={{ width: '200px' }}
           />
+
+          <button
+            type="button"
+            className="btn-ghost-edit"
+            onClick={() => openModal('eway_bill_generator', {
+              docNumber: docData.docNumber,
+              totalAmount: calculatedGrandTotal,
+              customerName: docData.customerName,
+              customerAddress: docData.customerAddress,
+              items: docData.items
+            })}
+            style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--accent-cyan)', borderColor: 'rgba(14,165,233,0.3)' }}
+            title="India-Compliance: Generate official government NIC E-Way Bill JSON payload"
+          >
+            <Truck size={12} /> E-Way Bill ({calculatedGrandTotal >= 50000 ? 'Mandatory' : 'Optional'})
+          </button>
+
+          <button
+            type="button"
+            className="btn-ghost-edit"
+            onClick={() => openModal('enterprise_pipeline', {
+              customerName: docData.customerName,
+              customerPhone: docData.customerPhone,
+              address: docData.customerAddress,
+              totalAmount: calculatedGrandTotal,
+              items: docData.items.map(i => ({ name: i.name, qty: i.qty, price: i.rate, hsn: i.hsnCode || '9403' }))
+            })}
+            style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--accent-gold-light)', borderColor: 'rgba(212,175,55,0.3)' }}
+            title="ERPNext: Track document in Quotation -> Sales Order -> Delivery Note -> Tax Invoice pipeline"
+          >
+            <FileText size={12} /> ERP Pipeline
+          </button>
         </div>
 
       </div>

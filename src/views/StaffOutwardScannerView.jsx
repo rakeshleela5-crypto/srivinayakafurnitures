@@ -619,19 +619,15 @@ export function StaffOutwardScannerView() {
   };
 
   // Release Vehicle Action
-  const handleReleaseVehicle = () => {
+  const handleReleaseVehicle = async () => {
     if (!isFullyLoaded) {
       showToast(`🚨 PARTIAL LOAD BLOCKED: Missing ${totalBoxesRequired - loadedBoxes.length} cartons! Do not release truck.`, false);
       return;
     }
 
     updateOrderStatus(selectedOrderId, `DISPATCHED_IN_TRANSIT (${activeDriver.Vehicle})`);
-    playSafeLockSound();
-    playSuccessChime();
-    triggerGoldenConfetti();
-    showToast(`🚀 Vehicle Released! Gate Pass generated & WhatsApp alert sent to ${editCustomerName} (OTP: 8921)!`, true);
 
-    dispatchWebhookAction('OUTWARD_DISPATCH_SCAN', {
+    const dispatchRes = await dispatchWebhookAction('OUTWARD_DISPATCH_SCAN', {
       order_id: selectedOrderId,
       driver: activeDriver.Name,
       vehicle: activeDriver.Vehicle,
@@ -650,6 +646,15 @@ export function StaffOutwardScannerView() {
       box_details: JSON.stringify(boxDetails),
       dispatch_timestamp: new Date().toISOString()
     });
+
+    if (dispatchRes && dispatchRes.success) {
+      playSafeLockSound();
+      playSuccessChime();
+      triggerGoldenConfetti();
+      showToast(`🚀 Vehicle Released! Outward dispatch confirmed in Cloudflare D1 & Gate Pass issued for ${editCustomerName}!`, true);
+    } else {
+      showToast(`⚠️ Outward dispatch saved locally (${dispatchRes?.error || 'D1 offline'})`, false);
+    }
 
     setLoadedBoxes([]);
   };

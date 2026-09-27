@@ -158,18 +158,23 @@ export function ExecutiveOverview() {
   };
 
   // 1-Click Save Target Calibration
-  const handleSaveCalibration = () => {
-    playSuccessChime();
-    triggerGoldenConfetti();
+  const handleSaveCalibration = async () => {
     setIsCalibratorOpen(false);
-    showToast(`🎯 Store Targets Calibrated: Monthly Goal ₹${(Number(editableTarget) || 0).toLocaleString()} (Walk-in Quota: ${editableWalkInTarget}/day)!`, true);
     
-    dispatchWebhookAction('UPDATE_SALES_TARGETS', {
+    const dispatchRes = await dispatchWebhookAction('UPDATE_SALES_TARGETS', {
       monthly_target: editableTarget,
       walkin_quota: editableWalkInTarget,
       festive_boost: festiveBoostPct,
       timestamp: new Date().toISOString()
     });
+
+    if (dispatchRes && dispatchRes.success) {
+      playSuccessChime();
+      triggerGoldenConfetti();
+      showToast(`🎯 Store Targets Calibrated & Synced to Cloudflare D1: Goal ₹${(Number(editableTarget) || 0).toLocaleString()} (Walk-in: ${editableWalkInTarget}/day)!`, true);
+    } else {
+      showToast(`🎯 Store Targets updated locally`, false);
+    }
   };
 
   // Generate 1-Click Executive AI Evening Briefing for WhatsApp
@@ -218,27 +223,30 @@ export function ExecutiveOverview() {
   };
 
   // 1-Click Direct Gatepass Issuer from Executive Table
-  const handleQuickIssueGatepass = (order) => {
+  const handleQuickIssueGatepass = async (order) => {
     playScanBeep();
     showToast(`🔍 Running 1-Click Staging Verification for Order #${order.Order_ID}...`, true);
     
-    setTimeout(() => {
+    await new Promise(r => setTimeout(r, 400));
+    const newStatus = "5/5 STAGED (DOCK GATEPASS ISSUED ✓)";
+    updateOrderStatus(order.Order_ID, newStatus);
+    
+    const dispatchRes = await dispatchWebhookAction('SMARTKIT_BOX_STAGED', {
+      bot_id: 'BOT-03',
+      order_id: order.Order_ID,
+      customer_name: order.Customer_Name,
+      product: order.Ordered_SKU,
+      staged_status: '5/5_STAGED_DOCK_GATEPASS_ISSUED',
+      driver: order.Assigned_Driver || 'Tophan Gouda (Tata Ace)'
+    });
+    
+    if (dispatchRes && dispatchRes.success) {
       playSuccessChime();
       triggerGoldenConfetti();
-      const newStatus = "5/5 STAGED (DOCK GATEPASS ISSUED ✓)";
-      updateOrderStatus(order.Order_ID, newStatus);
-      
-      dispatchWebhookAction('SMARTKIT_BOX_STAGED', {
-        bot_id: 'BOT-03',
-        order_id: order.Order_ID,
-        customer_name: order.Customer_Name,
-        product: order.Ordered_SKU,
-        staged_status: '5/5_STAGED_DOCK_GATEPASS_ISSUED',
-        driver: order.Assigned_Driver || 'Tophan Gouda (Tata Ace)'
-      });
-      
-      showToast(`🔒 Gatepass Issued for Order #${order.Order_ID} (${order.Customer_Name})! Dock 1 Clear for Truck Loading.`, true);
-    }, 600);
+      showToast(`🔒 Gatepass Issued for Order #${order.Order_ID} (${order.Customer_Name})! Staged in Cloudflare D1.`, true);
+    } else {
+      showToast(`🔒 Gatepass staged locally for Order #${order.Order_ID}`, false);
+    }
   };
 
   return (
@@ -1046,16 +1054,20 @@ export function ExecutiveOverview() {
                   <button 
                     className="btn-cyan"
                     style={{ fontSize: '10px', padding: '4px 6px' }}
-                    onClick={() => {
+                    onClick={async () => {
                       resetFloorAge(item.sku);
-                      dispatchWebhookAction('RESET_FLOOR_AGING_STOCK', {
+                      const res = await dispatchWebhookAction('RESET_FLOOR_AGING_STOCK', {
                         sku: item.sku,
                         name: item.name,
                         floorDays: 1,
                         bay: item.bay,
                         mrp: item.mrp
                       });
-                      showToast(`🔄 Display age reset for ${item.name}!`, true);
+                      if (res && res.success) {
+                        showToast(`🔄 Display age reset for ${item.name} in Cloudflare D1!`, true);
+                      } else {
+                        showToast(`🔄 Display age reset locally for ${item.name}`, false);
+                      }
                     }}
                     title="Reset to Day 1 (Swapped Unit)"
                   >

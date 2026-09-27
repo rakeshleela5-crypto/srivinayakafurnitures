@@ -116,12 +116,26 @@ export async function dispatchWebhookAction(actionName, payload = {}, options = 
         _source: 'CLOUDFLARE_D1_EDGE',
         ...edgeData
       };
+    } else {
+      const errData = await edgeRes.json().catch(() => ({ error: `HTTP ${edgeRes.status} Error` }));
+      console.error(`❌ [CLOUDFLARE D1 DISPATCH REJECTED] Action: ${actionName}`, errData);
+      if (!isReplaying) {
+        queueOfflineAction(actionName, payload);
+      }
+      return {
+        success: false,
+        action: actionName,
+        timestamp: currentTimestamp,
+        _source: 'LOCAL_EDGE_PERSISTED',
+        error: errData.error || `HTTP ${edgeRes.status} Server Error`,
+        message: errData.error || `Action ${actionName} failed on server and was queued locally.`
+      };
     }
   } catch (d1Err) {
-    console.debug('Cloudflare D1 edge dispatch fallback notice:', d1Err);
+    console.warn('Cloudflare D1 edge dispatch network notice:', d1Err);
   }
 
-  // 2. Offline fallback queue if offline
+  // 2. Offline fallback queue if network unavailable
   if (!isReplaying) {
     queueOfflineAction(actionName, payload);
   }
@@ -130,6 +144,7 @@ export async function dispatchWebhookAction(actionName, payload = {}, options = 
     action: actionName,
     timestamp: currentTimestamp,
     _source: 'LOCAL_EDGE_PERSISTED',
+    error: 'Network offline. Action preserved in offline transaction queue.',
     message: `Action ${actionName} recorded locally in OmniBuild OS.`
   };
 }

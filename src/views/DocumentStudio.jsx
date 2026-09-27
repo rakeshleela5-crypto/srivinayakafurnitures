@@ -53,8 +53,9 @@ export function DocumentStudio() {
 
   const fullCatalog = (catalog && catalog.length > 0) ? catalog : FURNITURE_CATALOG;
 
-  // Active Document Type
+  // Active Document Type & Statutory GST Rule 48 Multi-Copy
   const [selectedDocType, setSelectedDocType] = useState('tax_invoice');
+  const [rule48Copy, setRule48Copy] = useState('ORIGINAL FOR RECIPIENT');
   const [selectedOrder, setSelectedOrder] = useState(orders[0] || {});
   
   // Editor Active Tab inside the Live Editor sidebar: 'meta' | 'items' | 'logistics' | 'signatory'
@@ -436,6 +437,7 @@ export function DocumentStudio() {
           </span>
           {[
             { id: 'tax_invoice', label: '📄 Official GST Tax Invoice', icon: FileText },
+            { id: 'bill_of_supply', label: '📜 Bill of Supply (Rule 49)', icon: FileText },
             { id: 'proforma_invoice', label: '💼 Commercial Proforma', icon: Receipt },
             { id: 'delivery_challan', label: '🚚 Delivery Challan (DC-01)', icon: Truck },
             { id: 'warranty_card', label: '🛡️ 10-Year Warranty Card', icon: Award },
@@ -454,6 +456,7 @@ export function DocumentStudio() {
                 onClick={() => {
                   setSelectedDocType(doc.id);
                   const prefix = doc.id === 'tax_invoice' ? 'INV' :
+                                 doc.id === 'bill_of_supply' ? 'BOS' :
                                  doc.id === 'proforma_invoice' ? 'PRO' :
                                  doc.id === 'delivery_challan' ? 'DC' :
                                  doc.id === 'warranty_card' ? 'GDJ-WAR' :
@@ -531,6 +534,44 @@ export function DocumentStudio() {
         </div>
 
       </div>
+
+      {/* 🏛️ GST RULE 48 STATUTORY PRINT COPY SELECTOR */}
+      {(selectedDocType === 'tax_invoice' || selectedDocType === 'bill_of_supply') && (
+        <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', padding: '8px 14px', borderRadius: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '11px', fontWeight: '900', color: '#10B981', letterSpacing: '0.5px' }}>
+              📜 GST RULE 48 STATUTORY PRINT COPY:
+            </span>
+            {[
+              'ORIGINAL FOR RECIPIENT',
+              'DUPLICATE FOR TRANSPORTER',
+              'TRIPLICATE FOR SUPPLIER'
+            ].map(cp => (
+              <button
+                key={cp}
+                type="button"
+                onClick={() => setRule48Copy(cp)}
+                style={{
+                  fontSize: '10.5px',
+                  fontWeight: rule48Copy === cp ? '900' : '600',
+                  padding: '4px 10px',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  border: rule48Copy === cp ? '1px solid #10B981' : '1px solid rgba(255,255,255,0.1)',
+                  background: rule48Copy === cp ? '#065F46' : 'rgba(0,0,0,0.3)',
+                  color: rule48Copy === cp ? '#FFFFFF' : '#94A3B8',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {cp}
+              </button>
+            ))}
+          </div>
+          <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>
+            Mandated by Central Goods and Services Tax Rules, 2017
+          </div>
+        </div>
+      )}
 
       {/* 🚀 MASTER DUAL-PANE COCKPIT: LIVE EDITOR (LEFT) ↔ A4 CANVAS (RIGHT) */}
       <div style={{ display: 'grid', gridTemplateColumns: '430px 1fr', gap: '18px', alignItems: 'start' }}>
@@ -1137,9 +1178,9 @@ export function DocumentStudio() {
             </div>
 
             {/* ===================================================================== */}
-            {/* 1. DOCUMENT TEMPLATE: OFFICIAL GST TAX INVOICE                        */}
+            {/* 1. DOCUMENT TEMPLATE: OFFICIAL GST TAX INVOICE & BILL OF SUPPLY       */}
             {/* ===================================================================== */}
-            {selectedDocType === 'tax_invoice' && (
+            {(selectedDocType === 'tax_invoice' || selectedDocType === 'bill_of_supply') && (
               <div className="printable-area" style={{ background: '#FFFFFF', color: '#000000', padding: '36px', fontFamily: 'Inter, system-ui, sans-serif' }}>
                 
                 {/* Header with Store Info & Invoice Details */}
@@ -1152,7 +1193,17 @@ export function DocumentStudio() {
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '18px', fontWeight: '900', color: '#0284C7', letterSpacing: '0.5px' }}>TAX INVOICE</div>
+                    <div style={{ fontSize: '18px', fontWeight: '900', color: selectedDocType === 'bill_of_supply' ? '#D97706' : '#0284C7', letterSpacing: '0.5px' }}>
+                      {selectedDocType === 'bill_of_supply' ? 'BILL OF SUPPLY' : 'TAX INVOICE'}
+                    </div>
+                    <div style={{ fontSize: '10px', fontWeight: '800', color: '#475569', letterSpacing: '1px', textTransform: 'uppercase', marginTop: '1px' }}>
+                      ({rule48Copy})
+                    </div>
+                    {selectedDocType === 'bill_of_supply' && (
+                      <div style={{ fontSize: '9px', color: '#64748B', maxWidth: '240px', marginTop: '1px' }}>
+                        Composition taxable person / Exempt supply
+                      </div>
+                    )}
                     <div style={{ fontSize: '13px', fontWeight: '800', color: '#0F172A', marginTop: '2px' }}>Invoice No: {docData.docNumber}</div>
                     <div style={{ fontSize: '11px', color: '#64748B', marginTop: '2px' }}>Date: {docData.docDate} {docData.docTime}</div>
                   </div>
@@ -1232,27 +1283,34 @@ export function DocumentStudio() {
                       <span>₹{calculatedTaxableSubtotal.toLocaleString()}</span>
                     </div>
 
-                    {docData.taxType === 'INTRA_STATE' ? (
-                      <>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569' }}>
-                          <span>CGST (9%):</span>
-                          <span>₹{Math.round(calculatedCgst).toLocaleString()}</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569' }}>
-                          <span>SGST (9%):</span>
-                          <span>₹{Math.round(calculatedSgst).toLocaleString()}</span>
-                        </div>
-                      </>
-                    ) : (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569' }}>
-                        <span>IGST (18%):</span>
-                        <span>₹{Math.round(calculatedIgst).toLocaleString()}</span>
+                    {selectedDocType === 'bill_of_supply' ? (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#D97706', fontWeight: '800' }}>
+                        <span>GST Tax Rate:</span>
+                        <span>0% NIL (Bill of Supply)</span>
                       </div>
+                    ) : (
+                      docData.taxType === 'INTRA_STATE' ? (
+                        <>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569' }}>
+                            <span>CGST (9%):</span>
+                            <span>₹{Math.round(calculatedCgst).toLocaleString()}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569' }}>
+                            <span>SGST (9%):</span>
+                            <span>₹{Math.round(calculatedSgst).toLocaleString()}</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569' }}>
+                          <span>IGST (18%):</span>
+                          <span>₹{Math.round(calculatedIgst).toLocaleString()}</span>
+                        </div>
+                      )
                     )}
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: '900', fontSize: '16px', borderTop: '2px solid #0F172A', paddingTop: '6px', marginTop: '4px', color: '#047857' }}>
                       <span>Grand Total:</span>
-                      <span>₹{calculatedGrandTotal.toLocaleString()}</span>
+                      <span>₹{(selectedDocType === 'bill_of_supply' ? calculatedTaxableSubtotal : calculatedGrandTotal).toLocaleString()}</span>
                     </div>
 
                     {/* Official Seal and Signatory */}

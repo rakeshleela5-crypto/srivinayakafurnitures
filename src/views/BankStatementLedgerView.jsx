@@ -44,6 +44,7 @@ import { BANK_ACCOUNTS, INITIAL_BANK_TRANSACTIONS } from '../data/initialBankDat
 import { playSuccessChime, playScanBeep, triggerGoldenConfetti } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
 import { generateTallyPrimeXml, generateTallyExcelCsv, downloadFile } from '../services/tallyExportService';
+import { generateGstr1Json, generateGstr3bSummary } from '../services/gstComplianceService';
 
 export function BankStatementLedgerView() {
   const { 
@@ -59,7 +60,9 @@ export function BankStatementLedgerView() {
     bankAccounts,
     setBankAccounts,
     bankTransactions: transactions,
-    setBankTransactions: setTransactions
+    setBankTransactions: setTransactions,
+    openModal,
+    storeMeta
   } = useStore();
 
   // Persist transactions to localStorage
@@ -242,6 +245,31 @@ export function BankStatementLedgerView() {
     showToast(`📊 Exported Tally Prime Excel CSV!`, true);
   };
 
+  // 🏛️ Official GSTR-1 Portal JSON Export Handler
+  const handleExportGstr1Json = () => {
+    playSuccessChime();
+    triggerGoldenConfetti();
+    const gstr1 = generateGstr1Json({
+      orders,
+      supplierGstin: storeMeta?.gstin || '21AABCS1234F1Z8',
+      filingPeriod: '092026'
+    });
+    downloadFile(JSON.stringify(gstr1, null, 2), `GSTR1_Offline_Return_092026_${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
+    showToast(`🏛️ Exported official GSTR-1 JSON for GST Offline Portal Tool!`, true);
+  };
+
+  // 📊 Official GSTR-3B Summary Export Handler
+  const handleExportGstr3b = () => {
+    playSuccessChime();
+    const summary = generateGstr3bSummary({
+      orders,
+      supplierGstin: storeMeta?.gstin || '21AABCS1234F1Z8',
+      filingPeriod: '092026'
+    });
+    downloadFile(JSON.stringify(summary, null, 2), `GSTR3B_Summary_092026_${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
+    showToast(`📊 Exported official GSTR-3B Summary Report!`, true);
+  };
+
   // Copy helper
   const handleCopy = (text, fieldId) => {
     navigator.clipboard.writeText(text);
@@ -254,7 +282,7 @@ export function BankStatementLedgerView() {
   // =========================================================================
   // 📥 LOG INWARD TRANSACTION
   // =========================================================================
-  const handleLogInward = (e) => {
+  const handleLogInward = async (e) => {
     e.preventDefault();
     playSuccessChime();
     triggerGoldenConfetti();
@@ -303,8 +331,8 @@ export function BankStatementLedgerView() {
       }, ...(prev || [])]);
     }
 
-    // Dispatch Webhook to Google Sheets
-    dispatchWebhookAction('LOG_BANK_TRANSACTION', {
+    // Dispatch Webhook to Cloudflare D1
+    const dispatchRes = await dispatchWebhookAction('LOG_BANK_TRANSACTION', {
       transaction_id: newTxn.id,
       flow_type: 'INWARD_CREDIT',
       bank_account: newTxn.bankAccountName,
@@ -320,13 +348,17 @@ export function BankStatementLedgerView() {
     });
 
     setShowInwardModal(false);
-    showToast(`✅ Inward Bank Credit ₹${(Number(newTxn?.amount) || 0).toLocaleString()} (UTR: ${newTxn.utrNumber}) logged & synced!`, true);
+    if (dispatchRes && dispatchRes.success) {
+      showToast(`✅ Inward Bank Credit ₹${(Number(newTxn?.amount) || 0).toLocaleString()} (UTR: ${newTxn.utrNumber}) logged to Cloudflare D1!`, true);
+    } else {
+      showToast(`✅ Inward Credit logged locally (${newTxn.utrNumber})`, false);
+    }
   };
 
   // =========================================================================
   // 📤 LOG OUTWARD TRANSACTION
   // =========================================================================
-  const handleLogOutward = (e) => {
+  const handleLogOutward = async (e) => {
     e.preventDefault();
     playSuccessChime();
 
@@ -351,8 +383,8 @@ export function BankStatementLedgerView() {
     const updated = [newTxn, ...transactions];
     saveTransactions(updated);
 
-    // Dispatch Webhook to Google Sheets
-    dispatchWebhookAction('LOG_BANK_TRANSACTION', {
+    // Dispatch Webhook to Cloudflare D1
+    const dispatchRes = await dispatchWebhookAction('LOG_BANK_TRANSACTION', {
       transaction_id: newTxn.id,
       flow_type: 'OUTWARD_DEBIT',
       bank_account: newTxn.bankAccountName,
@@ -368,7 +400,11 @@ export function BankStatementLedgerView() {
     });
 
     setShowOutwardModal(false);
-    showToast(`📤 Factory Outward PO Payment ₹${(Number(newTxn?.amount) || 0).toLocaleString()} logged to Bank Ledger!`, true);
+    if (dispatchRes && dispatchRes.success) {
+      showToast(`📤 Factory Outward PO Payment ₹${(Number(newTxn?.amount) || 0).toLocaleString()} logged to Cloudflare D1 Ledger!`, true);
+    } else {
+      showToast(`📤 Outward Payment recorded locally`, false);
+    }
   };
 
   // =========================================================================
@@ -395,7 +431,7 @@ export function BankStatementLedgerView() {
     setShowEditModal(true);
   };
 
-  const handleSaveEdit = (e) => {
+  const handleSaveEdit = async (e) => {
     e.preventDefault();
     playSuccessChime();
 
@@ -461,8 +497,8 @@ export function BankStatementLedgerView() {
       });
     }
 
-    // Google Sheets Webhook Dispatch
-    dispatchWebhookAction('UPDATE_BANK_TRANSACTION', {
+    // Cloudflare D1 Webhook Dispatch
+    const dispatchRes = await dispatchWebhookAction('UPDATE_BANK_TRANSACTION', {
       transaction_id: editForm.id,
       amount: editForm.amount,
       flow_type: editForm.flowType,
@@ -478,13 +514,17 @@ export function BankStatementLedgerView() {
     });
 
     setShowEditModal(false);
-    showToast(`✏️ Transaction ${editForm.id} successfully updated & synced to Google Sheets!`, true);
+    if (dispatchRes && dispatchRes.success) {
+      showToast(`✏️ Transaction ${editForm.id} successfully updated in Cloudflare D1!`, true);
+    } else {
+      showToast(`✏️ Transaction ${editForm.id} updated locally`, false);
+    }
   };
 
   // =========================================================================
   // 🗑️ VOID / DELETE TRANSACTION
   // =========================================================================
-  const handleVoidTransaction = (txnId) => {
+  const handleVoidTransaction = async (txnId) => {
     if (!window.confirm(`Are you sure you want to VOID transaction ${txnId}? This will remove it from active revenue totals.`)) {
       return;
     }
@@ -492,29 +532,37 @@ export function BankStatementLedgerView() {
     const updated = transactions.map(t => t.id === txnId ? { ...t, reconciliationStatus: 'VOIDED' } : t);
     saveTransactions(updated);
 
-    dispatchWebhookAction('UPDATE_BANK_TXN_STATUS', {
+    const dispatchRes = await dispatchWebhookAction('UPDATE_BANK_TXN_STATUS', {
       transaction_id: txnId,
       new_status: 'VOIDED'
     });
 
-    showToast(`⚠️ Transaction ${txnId} marked as VOIDED.`, true);
+    if (dispatchRes && dispatchRes.success) {
+      showToast(`⚠️ Transaction ${txnId} marked as VOIDED in Cloudflare D1.`, true);
+    } else {
+      showToast(`⚠️ Transaction ${txnId} marked as VOIDED locally.`, false);
+    }
   };
 
   // =========================================================================
   // 🔄 1-CLICK RECONCILE UTR STATUS
   // =========================================================================
-  const handleReconcileStatus = (txnId, utr) => {
+  const handleReconcileStatus = async (txnId, utr) => {
     playSuccessChime();
     const updated = transactions.map(t => t.id === txnId ? { ...t, reconciliationStatus: 'VERIFIED_AND_MATCHED' } : t);
     saveTransactions(updated);
 
-    dispatchWebhookAction('RECONCILE_BANK_UTR', {
+    const dispatchRes = await dispatchWebhookAction('RECONCILE_BANK_UTR', {
       transaction_id: txnId,
       utr_number: utr,
       new_status: 'VERIFIED_AND_MATCHED'
     });
 
-    showToast(`🛡️ UTR ${utr} successfully marked as VERIFIED & MATCHED!`, true);
+    if (dispatchRes && dispatchRes.success) {
+      showToast(`🛡️ UTR ${utr} verified & reconciled in Cloudflare D1!`, true);
+    } else {
+      showToast(`🛡️ UTR ${utr} marked as matched locally`, false);
+    }
   };
 
   // =========================================================================
@@ -706,6 +754,26 @@ export function BankStatementLedgerView() {
 
         {/* Quick Action Buttons & Tally Prime Bridge */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          {/* 🏛️ 1-CLICK GSTR-1 PORTAL JSON */}
+          <button
+            onClick={handleExportGstr1Json}
+            className="btn-emerald"
+            style={{ fontSize: '11.5px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '6px', background: '#065F46', borderColor: '#10B981' }}
+            title="Download Official GSTR-1 JSON for gst.gov.in Offline Tool"
+          >
+            <Download size={14} /> GSTR-1 Portal JSON
+          </button>
+
+          {/* ⚡ OPEN TALLY POWER MODE MODAL */}
+          <button
+            onClick={() => openModal('tally_power_mode')}
+            className="btn-luxury-gold"
+            style={{ fontSize: '11.5px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #064E3B, #022C22)', border: '1px solid #10B981', color: '#6EE7B7' }}
+            title="Open Gateway of Tally™ Double-Entry Ledger Drill-Down (Alt+T)"
+          >
+            <span>⚡ Tally Drill-Down [Alt+T]</span>
+          </button>
+
           {/* 📥 1-CLICK TALLY PRIME EXPORT */}
           <button
             onClick={handleExportTallyXml}

@@ -89,16 +89,20 @@ export function LogisticsEpodView() {
     return matchesDriver && matchesCustomer;
   });
 
-  const handleMarkInTransit = (orderId, driverName) => {
+  const handleMarkInTransit = async (orderId, driverName) => {
     playScanBeep();
     updateOrderStatus(orderId, `DISPATCHED_IN_TRANSIT (${driverName || 'Tata Ace OD-18-A-1234'})`);
     
-    dispatchWebhookAction('DISPATCH_VEHICLE_TRANSIT', {
+    const dispatchRes = await dispatchWebhookAction('DISPATCH_VEHICLE_TRANSIT', {
       order_id: orderId,
       driver: driverName || 'Tophan Gouda (Tata Ace OD-18-A-1234)'
     });
 
-    showToast(`🚚 Order #${orderId} marked IN-TRANSIT on Tata Ace! Synced to Google Sheets.`, true);
+    if (dispatchRes && dispatchRes.success) {
+      showToast(`🚚 Order #${orderId} marked IN-TRANSIT on Tata Ace! Confirmed in Cloudflare D1.`, true);
+    } else {
+      showToast(`🚚 Order #${orderId} marked IN-TRANSIT locally`, false);
+    }
   };
 
   return (

@@ -789,11 +789,12 @@ export async function onRequest(context) {
         const orderQty = Math.max(4, (item.buffer_threshold * 2) - item.warehouse_qty);
         const estCost = Math.round(orderQty * (Number(item.selling_price_inr || 40000) * 0.60));
 
+        const todayStr = new Date().toISOString().slice(0, 10);
         await env.DB.prepare(`
-          INSERT OR REPLACE INTO factory_purchase_orders 
-          (po_id, sku, product_name, factory_name, order_qty, estimated_cost_inr, status)
-          VALUES (?, ?, ?, 'Godrej Khalapur Plant', ?, ?, 'DRAFTED_AUTO_CRON');
-        `).bind(poId, item.sku, item.product_name, orderQty, estCost).run();
+          INSERT OR REPLACE INTO purchase_orders_log 
+          (po_id, po_date, depot_source, factory_name, supplier, sku, product_name, order_qty, items_count, total_value_inr, total_amount_inr, transporter, lr_docket_no, truck_indent_no, expected_delivery, status)
+          VALUES (?, ?, 'Godrej Khalapur Plant', 'Godrej Khalapur Plant', 'Godrej Khalapur Plant', ?, ?, ?, ?, ?, ?, 'Godrej Dedicated Freight', ?, ?, 'Within 7 Business Days', 'DRAFTED_AUTO_CRON');
+        `).bind(poId, todayStr, item.sku, item.product_name, orderQty, orderQty, estCost, estCost, `LR-AUTO-${Date.now().toString().slice(-5)}`, `IND-AUTO-${poId}`).run();
 
         draftedPOs.push({ poId, sku: item.sku, name: item.product_name, qty: orderQty, estCostINR: estCost });
       }
@@ -1401,6 +1402,11 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ success: true, count: results?.length || 0, payments: results || [] }), { headers: corsHeaders });
     }
 
+    if ((path.endsWith('/purchase-orders') || path.endsWith('/purchase_orders')) && method === 'GET') {
+      const { results } = await env.DB.prepare('SELECT * FROM purchase_orders_log ORDER BY po_date DESC;').all();
+      return new Response(JSON.stringify({ success: true, count: results?.length || 0, purchaseOrders: results || [] }), { headers: corsHeaders });
+    }
+
     if (path.endsWith('/bots/config') && method === 'GET') {
       const { results } = await env.DB.prepare('SELECT * FROM bot_configurations ORDER BY bot_id ASC;').all();
       return new Response(JSON.stringify({ success: true, count: results?.length || 0, bots: results || [] }), { headers: corsHeaders });
@@ -1636,28 +1642,82 @@ export async function onRequest(context) {
 
         // 7. Factory Purchase Orders
         case 'GENERATE_FACTORY_PO':
-        case 'UPDATE_PURCHASE_ORDER':
-        case 'RECEIVE_INWARD_PO_QC':
         case 'RECORD_FACTORY_PAYMENT_VOUCHER': {
           const poId = p.po_id || p.poId || `PO-2026-${Date.now().toString().slice(-3)}`;
+          const poDate = p.created_at || p.po_date || new Date().toISOString().slice(0, 10);
+          const supplier = p.supplier || p.factory_name || 'Godrej Khalapur Plant';
+          const sku = p.sku || 'SKU-FACTORY-01';
+          const productName = p.product_name || p.product || sku || 'Factory Order';
+          const qty = Number(p.order_qty || p.qty || p.items_count || 1);
+          const totalVal = Number(p.total_value || p.total_value_inr || p.total_amount_inr || p.amount || 0);
+          const lrNo = p.lr_number || p.lr_docket_no || `LR-${Math.floor(100000 + Math.random() * 900000)}`;
+          const truckIndent = p.truck_indent_no || `IND-${poId}`;
+          const advance = Number(p.advance_paid || p.advance_paid_inr || 0);
+          const balance = Number(p.balance_due || p.balance_due_inr || (totalVal - advance));
+
           await env.DB.prepare(`
             INSERT OR REPLACE INTO purchase_orders_log 
-            (po_id, factory_name, sku, product_name, order_qty, total_amount_inr, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?);
+            (po_id, po_date, depot_source, factory_name, supplier, sku, product_name, order_qty, items_count, total_value_inr, total_amount_inr, transporter, lr_docket_no, truck_indent_no, expected_delivery, status, advance_paid_inr, balance_due_inr, items_json, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
           `).bind(
             poId,
-            p.factory_name || p.supplier || 'Godrej Khalapur Plant',
-            p.sku || 'SKU-FACTORY-01',
-            p.product_name || p.product || 'Factory Order',
-            Number(p.order_qty || p.qty || 1),
-            Number(p.total_amount_inr || p.amount || 50000),
-            p.status || 'DRAFTED'
+            poDate,
+            supplier,
+            supplier,
+            supplier,
+            sku,
+            productName,
+            qty,
+            qty,
+            totalVal,
+            totalVal,
+            p.transporter || 'Godrej Dedicated Logistics',
+            lrNo,
+            truckIndent,
+            p.expected_delivery || 'Within 7 Business Days',
+            p.status || 'PO_ACTIVE',
+            advance,
+            balance,
+            p.items_json || '[]',
+            p.notes || ''
           ).run();
 
           return new Response(JSON.stringify({
             success: true,
             poId,
             message: `Factory PO #${poId} logged to Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        case 'UPDATE_PURCHASE_ORDER':
+        case 'RECEIVE_INWARD_PO_QC': {
+          const poId = p.po_id || p.poId;
+          const status = p.status || (action === 'RECEIVE_INWARD_PO_QC' ? 'INWARD_RECEIVED' : 'PO_UPDATED');
+          const notes = p.notes || p.inspector_remarks || '';
+
+          if (poId) {
+            const batchOps = [
+              env.DB.prepare('UPDATE purchase_orders_log SET status = ?, notes = CASE WHEN ? != "" THEN ? ELSE notes END WHERE po_id = ?;')
+                .bind(status, notes, notes, poId)
+            ];
+
+            // If inward QC confirmed and SKU/qty provided, auto-increment catalog warehouse qty
+            const sku = p.sku;
+            const qty = Number(p.total_sets_received || p.qty || 0);
+            if (sku && qty > 0) {
+              batchOps.push(
+                env.DB.prepare('UPDATE catalog SET warehouse_qty = warehouse_qty + ?, updated_at = CURRENT_TIMESTAMP WHERE sku = ?;').bind(qty, sku)
+              );
+            }
+
+            await env.DB.batch(batchOps);
+          }
+
+          return new Response(JSON.stringify({
+            success: true,
+            poId,
+            status,
+            message: `Factory PO #${poId} status updated to ${status} in Cloudflare D1!`
           }), { headers: corsHeaders });
         }
 
@@ -1776,11 +1836,10 @@ export async function onRequest(context) {
           }), { headers: corsHeaders });
         }
 
-        // 12. Catalog & Stock Inward / Outward
+        // 12. Catalog Management
         case 'REGISTER_NEW_SKU':
         case 'UPDATE_CATALOG_ITEM':
-        case 'BULK_CATALOG_IMPORT':
-        case 'OVERRIDE_STOCK_QTY': {
+        case 'BULK_CATALOG_IMPORT': {
           const sku = p.sku || p.SKU;
           if (sku) {
             const sellingPrice = Number(p.sellingPrice || p.selling_price_inr || p.Selling_Price_INR || 0);
@@ -1807,6 +1866,27 @@ export async function onRequest(context) {
             success: true,
             sku,
             message: `Catalog SKU ${sku} synchronized to Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 12B. Safe Stock Override (without wiping catalog details!)
+        case 'OVERRIDE_STOCK_QTY': {
+          const sku = p.sku || p.SKU;
+          const changeWh = Number(p.adjust_warehouse_qty ?? p.changeWh ?? 0);
+          const explicitWh = p.warehouse_qty !== undefined ? Number(p.warehouse_qty) : null;
+          if (sku) {
+            if (explicitWh !== null) {
+              await env.DB.prepare('UPDATE catalog SET warehouse_qty = ?, updated_at = CURRENT_TIMESTAMP WHERE sku = ?;')
+                .bind(explicitWh, sku).run();
+            } else {
+              await env.DB.prepare('UPDATE catalog SET warehouse_qty = MAX(0, warehouse_qty + ?), updated_at = CURRENT_TIMESTAMP WHERE sku = ?;')
+                .bind(changeWh, sku).run();
+            }
+          }
+          return new Response(JSON.stringify({
+            success: true,
+            sku,
+            message: `Warehouse stock adjusted in D1 for SKU ${sku}`
           }), { headers: corsHeaders });
         }
 
@@ -1879,7 +1959,10 @@ export async function onRequest(context) {
 
         // 14. SmartKit 5-Box Flat-Pack Staging
         case 'SMARTKIT_BOX_STAGED': {
+          const orderId = p.order_id || p.orderId || '';
           const boxBarcode = p.box_barcode || p.boxBarcode;
+          const sku = p.product || p.sku || 'BED-MOD-001';
+
           if (boxBarcode) {
             await env.DB.prepare(`
               INSERT OR REPLACE INTO smartkit_boxes 
@@ -1887,17 +1970,126 @@ export async function onRequest(context) {
               VALUES (?, ?, ?, ?, ?, ?, 'STAGED', CURRENT_TIMESTAMP);
             `).bind(
               boxBarcode,
-              p.order_id || p.orderId || '',
-              p.sku || '',
-              p.product_name || p.productName || '',
+              orderId,
+              sku,
+              p.product_name || p.productName || sku,
               Number(p.box_number || p.boxNumber || 1),
-              Number(p.total_boxes || p.totalBoxes || 1)
+              Number(p.total_boxes || p.totalBoxes || 5)
             ).run();
+          } else if (orderId) {
+            // Batch stage all 5 component boxes for the order and unlock gatepass
+            const boxOps = [];
+            for (let boxNo = 1; boxNo <= 5; boxNo++) {
+              const bCode = `SK-${orderId}-B0${boxNo}`;
+              boxOps.push(
+                env.DB.prepare(`
+                  INSERT OR REPLACE INTO smartkit_boxes 
+                  (box_barcode, order_id, sku, product_name, box_number, total_boxes, box_status, scanned_at)
+                  VALUES (?, ?, ?, ?, ?, 5, 'STAGED', CURRENT_TIMESTAMP);
+                `).bind(bCode, orderId, sku, sku, boxNo)
+              );
+            }
+            boxOps.push(
+              env.DB.prepare("UPDATE orders SET safelock_status = '5/5_STAGED_DOCK_GATEPASS_ISSUED', updated_at = CURRENT_TIMESTAMP WHERE order_id = ?;").bind(orderId)
+            );
+            await env.DB.batch(boxOps);
           }
+
           return new Response(JSON.stringify({
             success: true,
+            orderId,
             boxBarcode,
-            message: `SmartKit Box ${boxBarcode} staged in Cloudflare D1!`
+            message: `SmartKit 5-Box Staging verified and recorded in Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 15. Commercial Quotations & Voice POS
+        case 'CREATE_COMMERCIAL_QUOTE':
+        case 'LOG_QUOTE_PROPOSAL': {
+          const quoteId = p.quote_id || `QUO-${Date.now().toString().slice(-4)}`;
+          const clientName = p.customer_name || p.client_name || 'Walk-in Customer';
+          const phone = p.customer_phone || p.phone || '';
+          const quoteVal = Number(p.final_price || p.quote_value_inr || p.deal_amount_inr || p.base_price || 0);
+          const items = p.selected_model || p.items_breakdown || 'Showroom Selection';
+
+          const batchOps = [
+            env.DB.prepare(`
+              INSERT OR REPLACE INTO commercial_quotations_log 
+              (quote_id, client_name, phone, quote_value_inr, items_count, gst_included, valid_until, dispatched_via, status)
+              VALUES (?, ?, ?, ?, 1, 'YES (18% Split CGST 9% + SGST 9%)', DATE('now', '+7 days'), 'WHATSAPP_PDF', 'DISPATCHED_WHATSAPP_PDF');
+            `).bind(quoteId, clientName, phone, quoteVal),
+
+            env.DB.prepare(`
+              INSERT OR REPLACE INTO quote_log 
+              (proposal_id, proposal_date, customer_name, phone, room_type, items_breakdown, deal_amount_inr, advance_token_inr, status)
+              VALUES (?, DATE('now'), ?, ?, 'Custom Suite', ?, ?, ?, 'SAFELOCKED_CONFIRMED ✓');
+            `).bind(quoteId, clientName, phone, items, quoteVal, Number(p.discount_amt || 0))
+          ];
+
+          await env.DB.batch(batchOps);
+
+          return new Response(JSON.stringify({
+            success: true,
+            quoteId,
+            message: `Commercial Quote #${quoteId} logged in Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 16. Spot Manager Negotiation Overrides
+        case 'APPLY_MANAGER_DISCOUNT': {
+          const overrideId = `DISC-${Date.now().toString().slice(-4)}`;
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO discounts_override_log 
+            (override_id, date, order_ref, customer_name, original_amount, discount_amt_inr, authorized_by, reason)
+            VALUES (?, DATE('now'), ?, ?, ?, ?, 'Store Director (PIN 8899)', ?);
+          `).bind(
+            overrideId,
+            p.order_id || 'SPOT-OVERRIDE',
+            p.customer_name || 'Showroom Client',
+            Number(p.final_price || 0) + Number(p.discount_amt || 0),
+            Number(p.discount_amt || 0),
+            p.manager_remarks || 'Director Approved Spot Discount'
+          ).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            overrideId,
+            message: `Manager discount override logged in Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 17. Transit Damage Claims
+        case 'FILE_TRANSIT_DAMAGE_CLAIM': {
+          const alertId = `CLM-${Date.now().toString().slice(-4)}`;
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO store_alerts_log 
+            (alert_id, timestamp, alert_type, message, severity, status)
+            VALUES (?, CURRENT_TIMESTAMP, 'TRANSIT_DAMAGE_CLAIM', ?, 'CRITICAL', 'PENDING_RESOLVE');
+          `).bind(
+            alertId,
+            `Damage Claim LR #${p.bilty_no || 'N/A'} (Truck ${p.truck_no || 'N/A'}, Transporter: ${p.transporter || 'N/A'}). Severity: ${p.damage_severity || 'HIGH'}. Notes: ${p.notes || p.damage_summary || ''}`
+          ).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            alertId,
+            message: `Transit damage claim logged to Cloudflare D1 store alerts!`
+          }), { headers: corsHeaders });
+        }
+
+        // 18. Token Hold Expiry Policy
+        case 'UPDATE_TOKEN_HOLD_POLICY': {
+          const hours = Number(p.token_hold_hours || 72);
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO store_alerts_log 
+            (alert_id, timestamp, alert_type, message, severity, status)
+            VALUES ('POLICY-TOKEN-HOLD', CURRENT_TIMESTAMP, 'SYSTEM_CONFIG', ?, 'LOW', 'ACTIVE');
+          `).bind(`Token hold policy updated to ${hours} hours`).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            tokenHoldHours: hours,
+            message: `Token hold policy of ${hours}h saved to Cloudflare D1!`
           }), { headers: corsHeaders });
         }
 

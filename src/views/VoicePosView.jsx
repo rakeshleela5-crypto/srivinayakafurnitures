@@ -236,7 +236,7 @@ export function VoicePosView() {
     }));
   };
 
-  const handleConfirmOrder = () => {
+  const handleConfirmOrder = async () => {
     const skuList = cartItems.map(i => `${i.SKU} (${i.Product_Name}) x${i.qty}`).join(', ');
     const giftList = [freePillows ? '2x Ortho Pillows (FREE)' : '', freeProtector ? 'Mattress Protector (FREE)' : ''].filter(Boolean).join(', ');
     
@@ -257,8 +257,8 @@ export function VoicePosView() {
       }))
     });
 
-    // Webhook dispatch to Quote_Log
-    dispatchWebhookAction('CREATE_COMMERCIAL_QUOTE', {
+    // Webhook dispatch to Quote_Log & Commercial Quotations
+    const dispatchRes = await dispatchWebhookAction('CREATE_COMMERCIAL_QUOTE', {
       customer_name: custName,
       customer_phone: custPhone,
       selected_model: skuList,
@@ -270,9 +270,13 @@ export function VoicePosView() {
       manager_remarks: managerOverrideApplied ? `Director Spot Discount ₹${customSpotDiscount}` : 'Standard Showroom Quote'
     });
 
-    playSuccessChime();
-    triggerGoldenConfetti();
-    showToast(`🔒 SafeLock Order Booked for ${custName} (₹${advanceToken50.toLocaleString()} Advance Paid)!`, true);
+    if (dispatchRes && dispatchRes.success) {
+      playSuccessChime();
+      triggerGoldenConfetti();
+      showToast(`🔒 SafeLock Order Booked & Logged to Cloudflare D1 for ${custName} (₹${advanceToken50.toLocaleString()} Advance Paid)!`, true);
+    } else {
+      showToast(`🔒 SafeLock Order recorded locally for ${custName}`, false);
+    }
   };
 
   const applyManagerOverride = async () => {
@@ -281,7 +285,7 @@ export function VoicePosView() {
       setManagerOverrideApplied(true);
       setShowManagerModal(false);
 
-      dispatchWebhookAction('APPLY_MANAGER_DISCOUNT', {
+      const dispatchRes = await dispatchWebhookAction('APPLY_MANAGER_DISCOUNT', {
         customer_name: custName,
         customer_phone: custPhone,
         selected_model: cartItems.map(i => i.SKU).join(', '),
@@ -291,17 +295,21 @@ export function VoicePosView() {
         manager_remarks: "Director Override Approved"
       });
 
-      playSuccessChime();
-      showToast(`🔓 Manager Authorization Approved! Extra ₹${customSpotDiscount.toLocaleString()} Spot Discount Applied ✓`, true);
+      if (dispatchRes && dispatchRes.success) {
+        playSuccessChime();
+        showToast(`🔓 Manager Authorization Approved & Logged in Cloudflare D1! Extra ₹${Number(customSpotDiscount).toLocaleString()} Spot Discount Applied ✓`, true);
+      } else {
+        showToast(`🔓 Spot Discount applied locally (₹${customSpotDiscount})`, false);
+      }
     } else {
       showToast("❌ Invalid Manager PIN. Spot negotiation override denied.", false);
     }
   };
 
-  const handleSaveSplitPayment = () => {
+  const handleSaveSplitPayment = async () => {
     setShowSplitPaymentModal(false);
 
-    dispatchWebhookAction("SPLIT_PAYMENT_SETTLEMENT", {
+    const dispatchRes = await dispatchWebhookAction("SPLIT_PAYMENT_SETTLEMENT", {
       order_id: "ORD-POS-" + Math.floor(100 + Math.random() * 900),
       customer_name: custName,
       cash_amount: cashAmount,
@@ -310,8 +318,12 @@ export function VoicePosView() {
       timestamp: new Date().toISOString()
     });
 
-    playSuccessChime();
-    showToast(`💳 Split Payment (Cash: ₹${cashAmount.toLocaleString()}, UPI: ₹${upiAmount.toLocaleString()}, EMI: ₹${emiAmount.toLocaleString()}) recorded to Payments_Log!`, true);
+    if (dispatchRes && dispatchRes.success) {
+      playSuccessChime();
+      showToast(`💳 Split Payment (Cash: ₹${cashAmount.toLocaleString()}, UPI: ₹${upiAmount.toLocaleString()}, EMI: ₹${emiAmount.toLocaleString()}) settled in Cloudflare D1!`, true);
+    } else {
+      showToast(`💳 Split Payment recorded locally`, false);
+    }
   };
 
   const formatTimer = (sec) => {

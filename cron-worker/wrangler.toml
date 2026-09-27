@@ -3,24 +3,8 @@ main = "index.js"
 compatibility_date = "2024-09-19"
 
 [triggers]
+# Cloudflare Free plan allows up to 5 cron triggers per account.
+# A single master 30-minute cron trigger orchestrates all 20 showroom bots with sub-second accuracy.
 crons = [
-  "30 15 * * *",   # 1.  09:00 PM IST Daily — Showroom EOD Cash & Sales Summary Slip
-  "30 4 * * *",    # 2.  10:00 AM IST Daily — Customer Follow-Up & Bridal Registry
-  "0 */2 * * *",   # 3.  Every 2 Hours — SafeLock 48h Token Hold Recovery Guard
-  "30 5 * * *",    # 4.  11:00 AM IST Daily — Floor Aging Display Clearance Radar
-  "0 3 * * *",     # 5.  08:30 AM IST Daily — Morning Bank UTR & Payment Auto-Reconciliation
-  "0 10 * * *",    # 6.  03:30 PM IST Daily — Fleet Route Manifest & Driver Dispatch
-  "30 4 * * 1",    # 7.  Monday 10:00 AM IST — Architect Weekly Volume & Commission Payout
-  "30 18 * * *",   # 8.  12:00 AM Midnight IST — D1 Database Maintenance & R2 Cloud Backup
-  "0 */4 * * *",   # 9.  Every 4 Hours — Godrej Khalapur Factory Auto-PO Generator
-  "30 11 * * *",   # 10. 05:00 PM IST Daily — Carpenter Hydraulic Assembly SLA Sentinel
-  "30 6 * * *",    # 11. 12:00 PM IST Daily — Customer 1-Year Bed Care & Anniversary Nudge
-  "30 3 1 * *",    # 12. 1st of Month 09:00 AM IST — Monthly GST 3B Outward Tax Summary
-  "30 14 * * *",   # 13. 08:00 PM IST Daily — Staff Sales Target & Incentive Leaderboard
-  "30 12 * * *",   # 14. 06:00 PM IST Daily — Google 5-Star Review & Photo Referral Booster
-  "30 10 * * *",   # 15. 04:00 PM IST Daily — Delivered Orders Balance Due Recovery Chaser
-  "30 5 * * 3",    # 16. Wednesday 11:00 AM IST — Godrej 2% Early Cash Discount Optimizer
-  "30 8 * * *",    # 17. 02:00 PM IST Daily — Factory LR Transit & Cargo Damage Radar
-  "*/30 * * * *",  # 18. Every 30 Minutes — SmartKit 5-Box Dock Loading Integrity Guard
-  "0 18 * * 0"     # 19. Sunday 11:30 PM IST — Zero Trust Security & Vault Digest
+  "*/30 * * * *"  # Master Fleet Trigger: evaluates and executes due bots every 30 minutes
 ]

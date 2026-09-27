@@ -73,6 +73,20 @@ export function AgenticRagStudioModal({ isOpen, onClose }) {
   const [importJsonText, setImportJsonText] = useState('');
   const [backupFeedback, setBackupFeedback] = useState(null);
 
+  // Filtered knowledge documents (unconditionally before early returns)
+  const filteredDocs = useMemo(() => {
+    return docsList.filter(doc => {
+      const matchCategory = selectedCategory === 'ALL' || doc.category === selectedCategory;
+      const q = searchFilter.toLowerCase().trim();
+      const matchSearch = !q || 
+        (doc.title || '').toLowerCase().includes(q) ||
+        (doc.citation || '').toLowerCase().includes(q) ||
+        (doc.content || '').toLowerCase().includes(q) ||
+        (doc.keywords || []).some(k => k.toLowerCase().includes(q));
+      return matchCategory && matchSearch;
+    });
+  }, [docsList, selectedCategory, searchFilter]);
+
   if (!isOpen) return null;
 
   const sampleQueries = [
@@ -110,20 +124,6 @@ export function AgenticRagStudioModal({ isOpen, onClose }) {
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
-
-  // Filtered knowledge documents
-  const filteredDocs = useMemo(() => {
-    return docsList.filter(doc => {
-      const matchCategory = selectedCategory === 'ALL' || doc.category === selectedCategory;
-      const q = searchFilter.toLowerCase().trim();
-      const matchSearch = !q || 
-        (doc.title || '').toLowerCase().includes(q) ||
-        (doc.citation || '').toLowerCase().includes(q) ||
-        (doc.content || '').toLowerCase().includes(q) ||
-        (doc.keywords || []).some(k => k.toLowerCase().includes(q));
-      return matchCategory && matchSearch;
-    });
-  }, [docsList, selectedCategory, searchFilter]);
 
   // Open Edit Form
   const handleOpenEdit = (doc) => {

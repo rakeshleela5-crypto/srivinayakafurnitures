@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useStore } from '../context/StoreContext';
 import { 
   Factory, 
@@ -185,6 +185,51 @@ export function AutoProcureView() {
     return ["ALL", ...Array.from(cats)];
   }, [catalog]);
 
+  // 🔄 Hydrate live Factory POs directly from Cloudflare D1 on mount
+  useEffect(() => {
+    async function loadLivePOs() {
+      try {
+        const res = await fetch('/api/d1/purchase-orders');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.purchaseOrders && data.purchaseOrders.length > 0) {
+            setPoHistory(prev => {
+              const liveList = data.purchaseOrders.map(p => {
+                let parsedItems = [];
+                try {
+                  parsedItems = p.items_json ? JSON.parse(p.items_json) : [];
+                } catch {
+                  parsedItems = [];
+                }
+                return {
+                  po_id: p.po_id,
+                  supplier: p.supplier || p.factory_name || p.depot_source || 'Godrej Factory',
+                  sku: p.sku || 'SKU-FACTORY-01',
+                  items: parsedItems.length > 0 ? parsedItems : [{ sku: p.sku || 'SKU-FACTORY-01', product_name: p.product_name || 'Factory Order', qty: p.order_qty || p.items_count || 1, unit_cost: p.total_amount_inr || p.total_value_inr || 0 }],
+                  qty: Number(p.order_qty || p.items_count || 1),
+                  total_value: Number(p.total_amount_inr || p.total_value_inr || 0),
+                  advance_paid: Number(p.advance_paid_inr || 0),
+                  balance_due: Number(p.balance_due_inr || 0),
+                  transporter: p.transporter || 'Godrej Dedicated Logistics',
+                  lr_number: p.lr_docket_no || p.lr_number || '',
+                  status: p.status || 'PO_ACTIVE',
+                  created_at: p.po_date || new Date().toISOString().slice(0, 10),
+                  notes: p.notes || ''
+                };
+              });
+              const liveIds = new Set(liveList.map(p => p.po_id));
+              const localUnique = prev.filter(p => !liveIds.has(p.po_id));
+              return [...liveList, ...localUnique];
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('Live PO fetch notice:', err);
+      }
+    }
+    loadLivePOs();
+  }, []);
+
   // Filtered Catalog Items for Live Search Drawer
   const filteredCatalog = useMemo(() => {
     return catalog.filter(item => {
@@ -359,7 +404,7 @@ export function AutoProcureView() {
   };
 
   // 📝 Generate Multi-SKU Factory PO
-  const handleGenerateFactoryPO = () => {
+  const handleGenerateFactoryPO = async () => {
     const newPoId = `PO-2026-${Math.floor(900 + Math.random() * 99)}`;
     const expectedArrival = getExpectedDateStr(leadDays);
 
@@ -389,22 +434,33 @@ export function AutoProcureView() {
       created_at: new Date().toLocaleDateString('en-IN') + ' ' + new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
     };
 
-    setPoHistory([newPoRecord, ...poHistory]);
+    // Update local state immediately so user sees it in the table
+    setPoHistory(prev => [newPoRecord, ...prev]);
 
-    // Dispatch to D1 Edge Supply Chain & Pipeline (purchase_orders_log)
-    dispatchWebhookAction("GENERATE_FACTORY_PO", {
+    // Dispatch to Cloudflare D1 (purchase_orders_log) and await real confirmation
+    showToast(`⏳ Syncing PO #${newPoId} to Cloudflare D1 SQL...`);
+    const dispatchRes = await dispatchWebhookAction("GENERATE_FACTORY_PO", {
       po_id: newPoId,
       supplier,
+      factory_name: supplier,
       sku: newPoRecord.sku,
+      product_name: poItems[0]?.product_name || 'Godrej Factory Order',
       qty: totalSetsQty,
+      order_qty: totalSetsQty,
+      items_count: totalSetsQty,
       gross_list_total: grossListValue,
       trade_discount: discountAmount,
       freight_charges: Number(freightCharges) || 0,
       total_value: grandTotalValue,
+      total_amount_inr: grandTotalValue,
+      total_value_inr: grandTotalValue,
       advance_paid: advancePaidCalculated,
+      advance_paid_inr: advancePaidCalculated,
       balance_due: balanceDueCalculated,
+      balance_due_inr: balanceDueCalculated,
       transporter,
       lr_number: newPoRecord.lr_number,
+      lr_docket_no: newPoRecord.lr_number,
       payment_terms: paymentTerms,
       expected_delivery: expectedArrival,
       status: "PO_ACTIVE",
@@ -412,9 +468,13 @@ export function AutoProcureView() {
       notes: poNotes
     });
 
-    playSuccessChime();
-    triggerGoldenConfetti();
-    showToast(`🏭 Official Factory PO #${newPoId} (₹${grandTotalValue.toLocaleString()}) generated & logged to Cloudflare D1 Supply Chain!`, true);
+    if (dispatchRes && dispatchRes.success) {
+      playSuccessChime();
+      triggerGoldenConfetti();
+      showToast(`🏭 Official Factory PO #${newPoId} (₹${grandTotalValue.toLocaleString()}) verified & recorded in Cloudflare D1!`, true);
+    } else {
+      showToast(`⚠️ PO #${newPoId} saved locally. Cloudflare sync note: ${dispatchRes?.error || 'queued for retry'}`, false);
+    }
   };
 
   // ✏️ Open PO Edit Modal
@@ -428,7 +488,8 @@ export function AutoProcureView() {
   };
 
   // 📦 1-Click Receive Inward Truck at Dock
-  const handleReceiveShipment = (targetPo) => {
+  // 📦 1-Click Receive Inward Truck at Dock
+  const handleReceiveShipment = async (targetPo) => {
     // Restock all items inside this PO
     if (targetPo.items && Array.isArray(targetPo.items)) {
       targetPo.items.forEach(it => {
@@ -441,7 +502,7 @@ export function AutoProcureView() {
     setPoHistory(poHistory.map(p => p.po_id === targetPo.po_id ? { ...p, status: "INWARD_RECEIVED" } : p));
 
     // Dispatch inward QC log to Cloudflare D1 (purchase_orders_log)
-    dispatchWebhookAction("RECEIVE_INWARD_PO_QC", {
+    const dispatchRes = await dispatchWebhookAction("RECEIVE_INWARD_PO_QC", {
       po_id: targetPo.po_id,
       factory_plant: targetPo.supplier,
       transporter: targetPo.transporter,
@@ -452,8 +513,12 @@ export function AutoProcureView() {
       timestamp: new Date().toISOString()
     });
 
-    playSuccessChime();
-    showToast(`📦 Inward Truck Received: +${targetPo.qty} Sets added across inventory!`, true);
+    if (dispatchRes && dispatchRes.success) {
+      playSuccessChime();
+      showToast(`📦 Inward Truck Received: +${targetPo.qty} Sets verified & logged to Cloudflare D1!`, true);
+    } else {
+      showToast(`⚠️ Inward QC recorded locally (${dispatchRes?.error || 'D1 offline'})`, false);
+    }
   };
 
   // 📲 Send WhatsApp Purchase Order to Manufacturer
@@ -495,14 +560,18 @@ export function AutoProcureView() {
   };
 
   // 🗑️ Cancel PO
-  const handleCancelPO = (targetPoId) => {
+  const handleCancelPO = async (targetPoId) => {
     setPoHistory(poHistory.map(p => p.po_id === targetPoId ? { ...p, status: "CANCELLED" } : p));
-    dispatchWebhookAction("UPDATE_PURCHASE_ORDER", {
+    const dispatchRes = await dispatchWebhookAction("UPDATE_PURCHASE_ORDER", {
       po_id: targetPoId,
       status: "CANCELLED",
       notes: "Cancelled by Store Director"
     });
-    showToast(`🔴 Factory PO #${targetPoId} marked as Cancelled.`, true);
+    if (dispatchRes && dispatchRes.success) {
+      showToast(`🔴 Factory PO #${targetPoId} marked as Cancelled in Cloudflare D1.`, true);
+    } else {
+      showToast(`⚠️ PO #${targetPoId} cancelled locally (${dispatchRes?.error || 'D1 offline'})`, false);
+    }
   };
 
   // Filtered PO History

@@ -114,8 +114,8 @@ export function StaffInwardScannerView() {
     }
   };
 
-  const handleAutoFileDamageClaim = (report) => {
-    dispatchWebhookAction('FILE_TRANSIT_DAMAGE_CLAIM', {
+  const handleAutoFileDamageClaim = async (report) => {
+    const dispatchRes = await dispatchWebhookAction('FILE_TRANSIT_DAMAGE_CLAIM', {
       truck_no: truckNumber,
       bilty_no: biltyNumber,
       sku: selectedPoSku,
@@ -125,8 +125,12 @@ export function StaffInwardScannerView() {
       notes: report.damage_details,
       photo_attached: selectedPhotoForQc ? "BASE64_IMAGE_ATTACHED" : "NO_PHOTO"
     });
-    playSuccessChime();
-    showToast(`🚨 Transit Damage Claim logged to Google Sheets for LR #${biltyNumber}! Driver alerted before gate exit.`, true);
+    if (dispatchRes && dispatchRes.success) {
+      playSuccessChime();
+      showToast(`🚨 Transit Damage Claim logged to Cloudflare D1 Store Alerts for LR #${biltyNumber}!`, true);
+    } else {
+      showToast(`⚠️ Claim logged locally (${dispatchRes?.error || 'D1 offline'})`, false);
+    }
   };
 
   // Edit Shipment Header Drawer
@@ -638,7 +642,7 @@ export function StaffInwardScannerView() {
   };
 
   // Complete Inward Action
-  const handleCompleteInward = () => {
+  const handleCompleteInward = async () => {
     const missingBoxes = customBoxes.filter(b => b.condition === 'SHORTAGE_MISSING' || !verifiedBoxes.includes(b.id));
     const damagedBoxes = customBoxes.filter(b => b.condition === 'INTERNAL_DAMAGE');
 
@@ -647,12 +651,8 @@ export function StaffInwardScannerView() {
     }
 
     adjustStock(selectedPoSku, inwardQuantity, 0, `Factory Truck Inward QC: +${inwardQuantity} sets (${batchNo}) received & verified`);
-    playSafeLockSound();
-    playSuccessChime();
-    triggerGoldenConfetti();
-    showToast(`🎉 Inward QC Complete! +${inwardQuantity} Sets of ${selectedPoSku} (${totalShipmentWeight} KG) added to ${storageBay}!`, true);
 
-    dispatchWebhookAction('INWARD_STOCK_SCAN', {
+    const dispatchRes = await dispatchWebhookAction('INWARD_STOCK_SCAN', {
       sku: selectedPoSku,
       quantity: inwardQuantity,
       batch_no: batchNo,
@@ -668,6 +668,15 @@ export function StaffInwardScannerView() {
       damage_photos_count: damageSnapshots.length,
       boxes_breakdown: JSON.stringify(customBoxes)
     });
+
+    if (dispatchRes && dispatchRes.success) {
+      playSafeLockSound();
+      playSuccessChime();
+      triggerGoldenConfetti();
+      showToast(`🎉 Inward QC Complete! +${inwardQuantity} Sets of ${selectedPoSku} (${totalShipmentWeight} KG) synchronized to Cloudflare D1 (${storageBay})!`, true);
+    } else {
+      showToast(`⚠️ Inward recorded locally (+${inwardQuantity} ${selectedPoSku})`, false);
+    }
 
     setVerifiedBoxes([]);
   };

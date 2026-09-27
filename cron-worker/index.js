@@ -57,6 +57,11 @@ const CRON_ROUTES = {
     title: "03:30 PM Fleet Route Manifest & Driver Dispatch",
     dept: "Logistics & Delivery"
   },
+  "30 4 * * MON": {
+    endpoints: [`${EDGE_BASE_URL}/architect-commission`],
+    title: "Monday 10:00 AM Architect Commission & TDS Ledger",
+    dept: "B2B Design Partners"
+  },
   "30 4 * * 1": {
     endpoints: [`${EDGE_BASE_URL}/architect-commission`],
     title: "Monday 10:00 AM Architect Commission & TDS Ledger",
@@ -102,6 +107,11 @@ const CRON_ROUTES = {
     title: "04:00 PM Delivered Orders Balance Due Recovery Chaser",
     dept: "Credit Control & Cash Flow"
   },
+  "30 5 * * WED": {
+    endpoints: [`${EDGE_BASE_URL}/supplier-early-discount`],
+    title: "Wednesday 11:00 AM Godrej 2% Early Cash Discount Optimizer",
+    dept: "Treasury & Supplier Relations"
+  },
   "30 5 * * 3": {
     endpoints: [`${EDGE_BASE_URL}/supplier-early-discount`],
     title: "Wednesday 11:00 AM Godrej 2% Early Cash Discount Optimizer",
@@ -117,6 +127,11 @@ const CRON_ROUTES = {
     title: "Every 30 Min SmartKit 5-Box Dock Loading Integrity Guard",
     dept: "Warehouse Quality Assurance"
   },
+  "0 18 * * SUN": {
+    endpoints: [`${EDGE_BASE_URL}/security-vault-digest`],
+    title: "Sunday 11:30 PM Zero Trust Security & Vault Digest",
+    dept: "Director Cyber Governance"
+  },
   "0 18 * * 0": {
     endpoints: [`${EDGE_BASE_URL}/security-vault-digest`],
     title: "Sunday 11:30 PM Zero Trust Security & Vault Digest",
@@ -124,33 +139,119 @@ const CRON_ROUTES = {
   }
 };
 
+/**
+ * Checks if a 5-part cron expression is due at the given UTC time
+ */
+function isJobDue(cronStr, date = new Date()) {
+  const parts = cronStr.trim().split(/\s+/);
+  if (parts.length < 5) return false;
+  const [minPart, hourPart, domPart, monthPart, dowPart] = parts;
+
+  const currentMin = date.getUTCMinutes();
+  const currentHour = date.getUTCHours();
+  const currentDate = date.getUTCDate();
+  const currentMonth = date.getUTCMonth() + 1; // 1-12
+  const currentDow = date.getUTCDay(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+
+  // Check minute (+/- 5 min window for Cloudflare edge scheduler jitter)
+  function matchMin(p, m) {
+    if (p === "*") return true;
+    if (p === "*/30") return Math.abs(m - 0) <= 5 || Math.abs(m - 30) <= 5 || Math.abs(m - 60) <= 5;
+    const target = parseInt(p, 10);
+    return !isNaN(target) && Math.abs(m - target) <= 5;
+  }
+
+  // Check hour
+  function matchHour(p, h) {
+    if (p === "*") return true;
+    if (p === "*/2") return h % 2 === 0;
+    if (p === "*/4") return h % 4 === 0;
+    const target = parseInt(p, 10);
+    return !isNaN(target) && target === h;
+  }
+
+  // Check day of month
+  function matchDom(p, d) {
+    if (p === "*") return true;
+    const target = parseInt(p, 10);
+    return !isNaN(target) && target === d;
+  }
+
+  // Check month
+  function matchMonth(p, mo) {
+    if (p === "*") return true;
+    const target = parseInt(p, 10);
+    return !isNaN(target) && target === mo;
+  }
+
+  // Check day of week
+  function matchDow(p, dow) {
+    if (p === "*") return true;
+    const pUpper = p.toUpperCase();
+    if (pUpper === "SUN" || pUpper === "0" || pUpper === "7") return dow === 0;
+    if (pUpper === "MON" || pUpper === "1") return dow === 1;
+    if (pUpper === "TUE" || pUpper === "2") return dow === 2;
+    if (pUpper === "WED" || pUpper === "3") return dow === 3;
+    if (pUpper === "THU" || pUpper === "4") return dow === 4;
+    if (pUpper === "FRI" || pUpper === "5") return dow === 5;
+    if (pUpper === "SAT" || pUpper === "6") return dow === 6;
+    return false;
+  }
+
+  return matchMin(minPart, currentMin) &&
+         matchHour(hourPart, currentHour) &&
+         matchDom(domPart, currentDate) &&
+         matchMonth(monthPart, currentMonth) &&
+         matchDow(dowPart, currentDow);
+}
+
 export default {
   /**
    * Scheduled hook invoked automatically by Cloudflare Edge cron scheduler
    */
   async scheduled(event, env, ctx) {
     const cronSchedule = event.cron;
-    const taskConfig = CRON_ROUTES[cronSchedule];
+    const now = new Date();
+    console.log(`[Cron Master] Edge scheduler triggered: "${cronSchedule}" at UTC ${now.toISOString()}`);
 
-    if (!taskConfig) {
-      console.warn(`[Cron Router] Unknown cron trigger: ${cronSchedule}`);
+    let tasksToRun = [];
+
+    // If an individual custom schedule triggered directly
+    if (cronSchedule && cronSchedule !== "*/30 * * * *" && CRON_ROUTES[cronSchedule]) {
+      tasksToRun = [CRON_ROUTES[cronSchedule]];
+    } else {
+      // Master 30-minute scheduler tick: evaluate which fleet bots are due now
+      const seenTitles = new Set();
+      for (const [sched, config] of Object.entries(CRON_ROUTES)) {
+        if (!seenTitles.has(config.title) && isJobDue(sched, now)) {
+          seenTitles.add(config.title);
+          tasksToRun.push(config);
+        }
+      }
+    }
+
+    if (tasksToRun.length === 0) {
+      console.log(`[Cron Master] No specific fleet jobs due at this interval.`);
       return;
     }
 
-    console.log(`[Cron Router] Running: ${taskConfig.title} (${cronSchedule})`);
-    
-    for (const endpoint of taskConfig.endpoints) {
-      try {
-        const response = await fetch(endpoint, {
-          headers: {
-            "X-Cron-Signature": "CLOUDFLARE_CRON_SCHEDULED_TRIGGER",
-            "User-Agent": "OmniBuild-20Bot-Fleet/2.0"
-          }
-        });
-        const result = await response.json();
-        console.log(`[Cron Success] ${endpoint}:`, JSON.stringify(result));
-      } catch (err) {
-        console.error(`[Cron Error] Failed running ${endpoint}:`, err);
+    console.log(`[Cron Master] Executing ${tasksToRun.length} due fleet job(s)...`);
+
+    for (const taskConfig of tasksToRun) {
+      console.log(`[Cron Router] Running: ${taskConfig.title}`);
+      for (const endpoint of taskConfig.endpoints) {
+        try {
+          const response = await fetch(endpoint, {
+            headers: {
+              "X-Cron-Signature": "CLOUDFLARE_CRON_SCHEDULED_TRIGGER",
+              "User-Agent": "OmniBuild-20Bot-Fleet/2.0"
+            }
+          });
+          const result = await response.json();
+          console.log(`[Cron Success] ${endpoint}:`, JSON.stringify(result));
+        } catch (err) {
+          console.error(`[Cron Error] Failed running ${endpoint}:`, err);
+        }
       }
     }
   },

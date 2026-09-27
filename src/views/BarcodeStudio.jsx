@@ -382,9 +382,7 @@ export function BarcodeStudio() {
         return updated;
       });
 
-      showToast(`💾 Barcode specs saved for ${skuCode} & synced to Google Sheets!`, true);
-
-      await dispatchWebhookAction('UPDATE_CATALOG_ITEM', {
+      const dispatchRes = await dispatchWebhookAction('UPDATE_CATALOG_ITEM', {
         sku: skuCode,
         product_name: productName,
         category: category,
@@ -397,6 +395,12 @@ export function BarcodeStudio() {
         assigned_bay: storageBay,
         batch_no: batchNo
       });
+
+      if (dispatchRes && dispatchRes.success) {
+        showToast(`💾 Barcode specs saved for ${skuCode} & synced to Cloudflare D1!`, true);
+      } else {
+        showToast(`💾 Barcode specs saved locally for ${skuCode}`, false);
+      }
     }
   };
 

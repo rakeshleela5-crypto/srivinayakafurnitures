@@ -59,6 +59,7 @@ import { EwayBillGeneratorModal } from './EwayBillGeneratorModal';
 import { EnterprisePipelineModal } from './EnterprisePipelineModal';
 import FeatureFlagConsoleModal from './FeatureFlagConsoleModal';
 import { QuotationCardPrototypes } from '../prototypes/QuotationCardPrototypes';
+import { TallyPowerModeModal } from '../tally/TallyPowerModeModal';
 
 export function ModalContainer() {
   const { activeModal, modalProps, closeModal } = useStore();
@@ -202,6 +203,9 @@ export function ModalContainer() {
 
       {/* 🎛️ ENTERPRISE FEATURE FLAG & CANARY ROLLOUT CONSOLE (ARCHITECTURE PILLAR #12) */}
       <FeatureFlagConsoleModal isOpen={activeModal === 'feature_flags_console'} onClose={closeModal} />
+
+      {/* ⚡ GATEWAY OF TALLY™ KEYBOARD POWER MODE & STATUTORY GST ENGINE */}
+      <TallyPowerModeModal isOpen={activeModal === 'tally_power_mode'} onClose={closeModal} />
 
       {/* 🎨 DIVERGENT UI PROTOTYPING LAB (#27) */}
       {activeModal === 'ui_prototyping_lab' && (

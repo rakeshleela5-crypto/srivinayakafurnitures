@@ -84,6 +84,17 @@ export function AppHeader() {
     }
   };
 
+  React.useEffect(() => {
+    const handleGlobalShortcuts = (e) => {
+      if (e.altKey && (e.key === 't' || e.key === 'T')) {
+        e.preventDefault();
+        openModal('tally_power_mode');
+      }
+    };
+    window.addEventListener('keydown', handleGlobalShortcuts);
+    return () => window.removeEventListener('keydown', handleGlobalShortcuts);
+  }, [openModal]);
+
   return (
     <header className="app-header">
       <div className="brand-box">
@@ -95,6 +106,25 @@ export function AppHeader() {
       </div>
 
       <div className="header-actions">
+        {/* ⚡ Gateway of Tally Power Mode Trigger */}
+        <button 
+          className="btn-luxury-gold" 
+          onClick={() => openModal('tally_power_mode')} 
+          style={{ 
+            fontSize: '11px', 
+            padding: '6px 14px', 
+            background: 'linear-gradient(135deg, #064E3B, #022C22)', 
+            border: '1px solid #10B981', 
+            color: '#6EE7B7', 
+            fontWeight: '900',
+            letterSpacing: '0.5px',
+            boxShadow: '0 0 14px rgba(16,185,129,0.2)'
+          }} 
+          title="Switch to Gateway of Tally™ Keyboard Fast-Billing & Double-Entry Ledgers (Alt+T)"
+        >
+          <span>⚡ TALLY POWER MODE [Alt+T]</span>
+        </button>
+
         {currentUser && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span className={`badge ${currentUser.badgeClass}`} style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>

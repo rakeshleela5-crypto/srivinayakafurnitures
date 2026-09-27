@@ -221,7 +221,7 @@ export function ProductQrStudio() {
   };
 
   // Submit & Register Brand New Custom SKU
-  const handleRegisterNewSkuSubmit = (e) => {
+  const handleRegisterNewSkuSubmit = async (e) => {
     e?.preventDefault();
     if (!newSkuForm.sku.trim()) {
       showToast('❌ Please enter or generate a SKU code!');
@@ -270,7 +270,10 @@ export function ProductQrStudio() {
         Image_URL: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600"
       };
       setCatalog([newCatItem, ...catalog]);
-      dispatchWebhookAction('REGISTER_NEW_SKU', payload);
+      const dispatchRes = await dispatchWebhookAction('REGISTER_NEW_SKU', payload);
+      if (dispatchRes && dispatchRes.success) {
+        showToast(`✨ SKU ${payload.sku} registered and stored in Cloudflare D1!`, true);
+      }
     }
 
     // Set active in QR Studio
@@ -315,8 +318,8 @@ export function ProductQrStudio() {
     }
   };
 
-  // Save / Update to Master Catalog & Google Sheets
-  const handleSaveToCatalog = () => {
+  // Save / Update to Master Catalog & Cloudflare D1
+  const handleSaveToCatalog = async () => {
     const updatedItem = {
       SKU: skuCode,
       Product_Name: productName,
@@ -343,11 +346,7 @@ export function ProductQrStudio() {
     setCatalog(newCatalog);
     try { localStorage.setItem('OMNIBUILD_CATALOG', JSON.stringify(newCatalog)); } catch (e) {}
 
-    playSuccessChime();
-    triggerGoldenConfetti();
-    showToast(`💾 Saved SKU ${skuCode} to Master Catalog & Synced to Google Sheets!`, true);
-
-    dispatchWebhookAction('UPDATE_CATALOG_ITEM', {
+    const dispatchRes = await dispatchWebhookAction('UPDATE_CATALOG_ITEM', {
       sku: skuCode,
       product_name: productName,
       category: category,
@@ -370,6 +369,14 @@ export function ProductQrStudio() {
       qr_url: getQrPayload(),
       selling_price: Number(sellingPrice)
     });
+
+    if (dispatchRes && dispatchRes.success) {
+      playSuccessChime();
+      triggerGoldenConfetti();
+      showToast(`💾 Saved SKU ${skuCode} to Master Catalog & Synced to Cloudflare D1!`, true);
+    } else {
+      showToast(`💾 SKU ${skuCode} saved locally`, false);
+    }
   };
 
   // Calculate Advance Token

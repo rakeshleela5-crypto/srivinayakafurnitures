@@ -119,10 +119,14 @@ export function ShowroomCrmView() {
   };
 
   // 🗑️ Delete / Void Lead
-  const handleDeleteLead = (inqId) => {
+  const handleDeleteLead = async (inqId) => {
     setInquiries(inquiries.filter(i => i.Inquiry_ID !== inqId));
-    dispatchWebhookAction("DELETE_INQUIRY_LEAD", { inquiry_id: inqId });
-    showToast(`🗑️ Inquiry Lead #${inqId} removed & synced to Google Sheets.`, true);
+    const dispatchRes = await dispatchWebhookAction("DELETE_INQUIRY_LEAD", { inquiry_id: inqId });
+    if (dispatchRes && dispatchRes.success) {
+      showToast(`🗑️ Inquiry Lead #${inqId} deleted from Cloudflare D1.`, true);
+    } else {
+      showToast(`🗑️ Inquiry Lead #${inqId} deleted locally.`, false);
+    }
   };
 
   return (

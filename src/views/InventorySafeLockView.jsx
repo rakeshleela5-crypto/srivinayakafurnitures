@@ -74,28 +74,32 @@ export function InventorySafeLockView() {
   const stagedCount = smartKitBoxes.filter(b => b.Status === 'VERIFIED_STAGED').length;
   const isAllStaged = stagedCount === smartKitBoxes.length;
 
-  const runAllBoxScan = () => {
+  const runAllBoxScan = async () => {
     setIsLaserSweeping(true);
     playScanBeep();
     showToast("🔍 Running 5-Box Laser Sweep Staging Verification...", true);
 
-    setTimeout(() => {
-      smartKitBoxes.forEach(box => verifySmartKitBox(box.Box_ID));
-      setIsLaserSweeping(false);
+    await new Promise(r => setTimeout(r, 600));
+    smartKitBoxes.forEach(box => verifySmartKitBox(box.Box_ID));
+    
+    const targetOrderId = selectedOrderObj?.Order_ID || 'ORD-2026-001';
+    const dispatchRes = await dispatchWebhookAction('SMARTKIT_BOX_STAGED', {
+      order_id: targetOrderId,
+      customer_name: selectedOrderObj?.Customer_Name || 'Dr. Subhashish Jena',
+      product: selectedSku,
+      staged_status: '5/5_STAGED_DOCK_GATEPASS_ISSUED',
+      driver: 'Tophan Gouda (Tata Ace OD-18-A-1234)'
+    });
+
+    setIsLaserSweeping(false);
+    if (dispatchRes && dispatchRes.success) {
       playSuccessChime();
       playSafeLockSound();
       triggerGoldenConfetti();
-      
-      dispatchWebhookAction('SMARTKIT_BOX_STAGED', {
-        order_id: selectedOrderObj?.Order_ID || 'ORD-2026-001',
-        customer_name: selectedOrderObj?.Customer_Name || 'Dr. Subhashish Jena',
-        product: selectedSku,
-        staged_status: '5/5_STAGED_DOCK_GATEPASS_ISSUED',
-        driver: 'Tophan Gouda (Tata Ace OD-18-A-1234)'
-      });
-
-      showToast("🔒 5/5 Boxes Staged & Verified! Gate-Pass Dispatch Lock Released & Synced to Google Sheets.", true);
-    }, 1000);
+      showToast("🔒 5/5 Boxes Staged & Verified! Gate-Pass Dispatch Lock Released & Synced to Cloudflare D1.", true);
+    } else {
+      showToast(`⚠️ Staged locally (${dispatchRes?.error || 'D1 offline'})`, false);
+    }
   };
 
   return (
@@ -373,10 +377,14 @@ export function InventorySafeLockView() {
             </div>
             <button 
               className="btn-luxury-gold" 
-              onClick={() => { 
+              onClick={async () => { 
                 setShowConfigModal(false); 
-                dispatchWebhookAction('UPDATE_TOKEN_HOLD_POLICY', { token_hold_hours: tokenHoldHours });
-                showToast(`⏳ Token Hold Expiry updated to ${tokenHoldHours} hours (${tokenHoldHours / 24} days)!`, true); 
+                const res = await dispatchWebhookAction('UPDATE_TOKEN_HOLD_POLICY', { token_hold_hours: tokenHoldHours });
+                if (res && res.success) {
+                  showToast(`⏳ Token Hold Expiry updated to ${tokenHoldHours} hours (${tokenHoldHours / 24} days) in Cloudflare D1!`, true);
+                } else {
+                  showToast(`⏳ Token Policy saved locally (${tokenHoldHours}h)`, false);
+                }
               }} 
               style={{ width: '100%', justifyContent: 'center' }}
             >

@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 concurrency:
@@ -11,9 +14,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  test-and-deploy:
     runs-on: ubuntu-latest
-    name: Build & Deploy to Cloudflare Pages
+    name: Test, Build & Deploy OmniBuild OS
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -27,10 +30,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Run Sovereign Edge & Chaos Test Suite (46 Tests)
+        run: npm test
+
       - name: Build production bundle
         run: npm run build
 
-      - name: Deploy to Cloudflare Pages
+      - name: Deploy to Cloudflare Pages (Production)
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}

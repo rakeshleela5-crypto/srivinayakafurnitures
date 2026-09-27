@@ -130,7 +130,7 @@ export function MobileCustomerChatView() {
       recovery_step: 1
     });
     playSuccessChime();
-    showToast(`🚀 BOT-27 AI Concierge Recovery dispatched & logged to Google Sheets!`, true);
+    showToast(`🚀 BOT-27 AI Concierge Recovery dispatched & logged to Cloudflare D1!`, true);
   };
 
   // Interactive Product Customization & Tuner
@@ -183,7 +183,7 @@ export function MobileCustomerChatView() {
       const prodName = catalog.find(c => c.SKU === currentSku)?.Product_Name || 'Godrej Luxury Collection';
       const isUltraVipLead = effectiveBudget >= 120000 || shoppingOccasion === 'WEDDING';
 
-      // 1. Silent Background Synchronization to Google Sheets (Table 6: Inquiries_Log)
+      // 1. Silent Background Synchronization to Cloudflare D1 (inquiries table)
       dispatchWebhookAction('BOT_27_CONCIERGE_LEAD_RECOVERY', {
         customer_name: custName,
         customer_phone: custPhone,
@@ -225,14 +225,14 @@ export function MobileCustomerChatView() {
     }
   }, [dwellSeconds, highestBudget, customerProfile, leadName, leadPhone, leadAddress, currentSku, catalog, shoppingOccasion, portalLang, setInquiries, showToast]);
 
-  // Silent Background Cloud Sync with Google Sheets on QR scan
+  // Silent Background Cloud Sync with Cloudflare D1 on QR scan
   useEffect(() => {
-    async function syncCatalogWithGoogleSheets() {
+    async function syncCatalogWithCloudflareD1() {
       try {
         const res = await dispatchWebhookAction('GET_ALL_STATUS', {});
         if (res && res.success) {
           setCloudSynced(true);
-          console.log('📡 [Mobile Concierge] Live Google Sheets Catalog Synced');
+          console.log('📡 [Mobile Concierge] Live Cloudflare D1 Catalog Synced');
         }
       } catch (err) {
         console.warn('Offline fallback active for mobile chat:', err);
@@ -265,7 +265,7 @@ export function MobileCustomerChatView() {
     return '✨ Premium Room Refresh';
   };
 
-  // Handle Lead Registration (Saves to Google Sheets & CRM with Occasion & Intent Score)
+  // Handle Lead Registration (Saves to Cloudflare D1 & CRM with Occasion & Intent Score)
   const handleRegisterLead = (e) => {
     if (e) e.preventDefault();
     if (!leadName.trim() || !leadPhone.trim()) {

@@ -140,7 +140,7 @@ export function WhatsAppBotSimulator() {
 
       return {
         title: "👑 Executive Director Copilot",
-        text: `Namaskar Directors Naresh & Naren! 🔓 VIP Executive Mode Active. Full 52-Table Enterprise D1 & Google Sheets telemetry online. You can ask me for today's bank balance, UTR status, hot concierge leads, sales collections, factory purchase costs, profit margins, low stock alerts, or customer balances.`
+        text: `Namaskar Directors Naresh & Naren! 🔓 VIP Executive Mode Active. Full 52-Table Sovereign Cloudflare D1 Edge Database telemetry online. You can ask me for today's bank balance, UTR status, hot concierge leads, sales collections, factory purchase costs, profit margins, low stock alerts, or customer balances.`
       };
     }
 
@@ -280,10 +280,10 @@ export function WhatsAppBotSimulator() {
       'BOT-14': "🎉 0% NO-COST EMI FINANCING OPTIONS\nOrder: {Order_ID} ({Customer_Name} - ₹{Amount})\n• 3 Months: ₹{EMI_3M}/mo\n• 6 Months: ₹{EMI_6M}/mo\n• 9 Months: ₹{EMI_9M}/mo\nZero Down-Payment with Bajaj Finserv at Rayagada Store!",
       'BOT-15': "🛡️ OFFICIAL 10-YEAR WARRANTY CERTIFICATE\nDear {Customer_Name}, congratulations on your new {Product_Name}!\n• Serial No: GI-RAY-2026-881\n• Coverage: 10 Years Comprehensive Godrej Warranty\nPDF Certificate: https://godrejinterio.com/warranty/{Order_ID}",
       'BOT-16': "🔥 WALK-IN HOT LEAD ALERT\nLead: {Customer_Name} ({Address})\nProduct Scanned: {Product_Name} ({SKU})\nAI Interest Score: 94% (Hot Buyer)\nFollow-up Task Assigned to Sales Desk ✓",
-      'BOT-17': "🛡️ DATABASE INTEGRITY & DEDUPLICATION\nScanned all 21 Google Sheets tables.\n0 duplicate rows found. Index integrity 100% verified.",
+      'BOT-17': "🛡️ DATABASE INTEGRITY & DEDUPLICATION\nScanned all 52 Cloudflare D1 tables.\n0 duplicate rows found. Index integrity 100% verified.",
       'BOT-18': "🏭 FACTORY SHIPMENT INWARD QC\nSupplier: {Supplier_Name}\nPO: #PO-2026-881 | Cartons: 10/10 Verified\nZero Transit Damage ➔ Stock Added to Dock-A1 ✓",
       'BOT-19': "📊 STORE TARGET PACING GAUGE\nToday Achieved: ₹1,69,000 (112% of Daily Target)\nMonthly Run-Rate: ₹38.45L / ₹45.00L (85.4% Achieved) ✓",
-      'BOT-20': "🔄 MASTER 2-WAY CLOUD WEBHOOK ENGINE\nLive Bi-Directional Webhook Active with Google Apps Script.\nAll 21 tables synchronized in real-time.",
+      'BOT-20': "🔄 MASTER SOVEREIGN EDGE D1 ENGINE\nLive Bi-Directional Webhook Active with Cloudflare D1 Edge.\nAll 52 tables synchronized in real-time.",
       'BOT-21': "🚨 FLOOR AGING DISPLAY ALERT — GODREJ INTERIO RAYAGADA\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nModel: {Product_Name} ({SKU})\n⏱️ Display Age: 52 Days in Bay 3 (₹78,000 Capital Locked)\n\n⚡ Recommended Action:\n1. Launch 20% Flash Clearance Flyer\n2. Swap display piece with fresh warehouse carton stock.",
       'BOT-22': "👑 VIP TURNKEY VILLA MILESTONE CONFIRMATION\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nNamaskar {Customer_Name}! 🙏\nYour {Address} Villa Bedroom Suite is 100% staged!\n\n• Total Project Value: ₹{Amount}\n• Stage 1 (50% Booking Advance): ₹{Advance_Amount} [PAID ✓]\n• Stage 2 (40% Factory Dispatch): ₹{Stage2_Amount} [DUE ON LOADING]\n• Stage 3 (10% Final Assembly): ₹{Stage3_Amount} [UPON MISTRI SIGN-OFF]\n\nShowroom Helpline: +91 93905 53301 | Shree Ganesh Enterprises",
       'BOT-23': "🏭 FACTORY PO & LR BILTY SYNCED\nPO: {PO_Number} ({Manufacturer_Plant})\n• Transporter: {Transporter} | LR Bilty #: {LR_Number}\n• Expected Delivery: {Expected_Delivery} | Status: IN_TRANSIT ✓\nWarehouse receiving dock alerted for carton barcode scanning upon arrival.",

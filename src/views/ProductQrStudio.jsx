@@ -916,7 +916,7 @@ export function ProductQrStudio() {
                   onClick={handleSaveToCatalog}
                   style={{ flex: 1, marginLeft: '10px', justifyContent: 'center', padding: '10px', fontSize: '12px', fontWeight: '900' }}
                 >
-                  <Save size={14} /> 💾 Save to Google Sheets
+                  <Save size={14} /> 💾 Save to Cloudflare D1
                 </button>
               </div>
             </div>
@@ -1093,7 +1093,7 @@ export function ProductQrStudio() {
               <Printer size={16} /> 🖨️ 1-Click Print Labels Now
             </button>
             <button className="btn-emerald" onClick={handleSaveToCatalog} style={{ flex: 1, justifyContent: 'center' }}>
-              <Save size={16} /> 💾 Save to Google Sheets
+              <Save size={16} /> 💾 Save to Cloudflare D1
             </button>
           </div>
         </div>

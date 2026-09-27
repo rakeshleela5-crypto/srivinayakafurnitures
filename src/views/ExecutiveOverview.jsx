@@ -213,7 +213,7 @@ export function ExecutiveOverview() {
 
     playSuccessChime();
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(briefing)}`, '_blank');
-    showToast("📲 Executive AI Briefing sent to Director WhatsApp & logged to Google Sheets!", true);
+    showToast("📲 Executive AI Briefing sent to Director WhatsApp & logged to Cloudflare D1!", true);
   };
 
   // Fast Inline Order Status Switcher
@@ -370,7 +370,7 @@ export function ExecutiveOverview() {
               <Sparkles size={15} /> ASK MY SHOWROOM
             </div>
             <span style={{ fontSize: '11px', color: '#94A3B8' }}>
-              Directors Naresh & Naren's Natural Language AI Copilot (Grounded in 40 Live Google Sheets)
+              Directors Naresh & Naren's Natural Language AI Copilot (Grounded in 52 Cloudflare D1 Edge Tables)
             </span>
           </div>
 
@@ -551,7 +551,7 @@ export function ExecutiveOverview() {
             </div>
             {isAiAnswering ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#A5B4FC', padding: '10px 0' }}>
-                <RefreshCw size={16} className="spin-anim" /> Consulting live Google Sheets & Grounded Godrej Catalogs...
+                <RefreshCw size={16} className="spin-anim" /> Querying Sovereign Cloudflare D1 Edge Database & Master Catalog...
               </div>
             ) : (
               <>

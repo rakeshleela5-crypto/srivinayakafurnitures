@@ -540,7 +540,7 @@ export function ShowroomProfitRadarModal({ isOpen, onClose }) {
         {/* ⚡ Action Ribbon Footer */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginTop: '16px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '12px' }}>
           <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-            📡 Telemetry synchronized with Google Sheets Tables: <code>03_Inventory_Stock</code>, <code>11_Daily_Sales_Summary</code>, and <code>05_Orders_SafeLock</code>
+            📡 Telemetry synchronized with Cloudflare D1 Tables: <code>catalog</code>, <code>stock_ledger</code>, <code>orders</code>, and <code>payments</code>
           </div>
 
           <div style={{ display: 'flex', gap: '8px' }}>

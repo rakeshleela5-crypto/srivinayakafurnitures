@@ -360,7 +360,7 @@ export function DocumentStudio() {
         warranty_serial: docData.warrantySerial,
         signatory: docData.signatoryName
       });
-      showToast(`☁️ Document ${docData.docNumber} logged to Google Sheets!`, true);
+      showToast(`☁️ Document ${docData.docNumber} logged to Cloudflare D1!`, true);
     } catch (e) {
       console.error(e);
       showToast(`💾 Saved locally (${docData.docNumber})`, true);
@@ -1784,7 +1784,7 @@ export function DocumentStudio() {
                     1. EXECUTIVE ARCHITECTURE OVERVIEW
                   </h2>
                   <p style={{ fontSize: '12px', lineHeight: '1.6', color: '#334155' }}>
-                    OmniBuild OS™ is a multi-tier autonomous retail operating system unifying 16 core business modules, 20 automated cloud bots, and a 21-table Master Google Sheets backend. It eliminates double-selling, missing knockdown carton shortages, and after-hours customer drop-offs through 24/7 AI automation.
+                    OmniBuild OS™ is a multi-tier autonomous retail operating system unifying 18 core business modules, 24 automated cloud bots, and a 52-table Sovereign Cloudflare D1 Edge Database. It eliminates double-selling, missing knockdown carton shortages, and after-hours customer drop-offs through 24/7 AI automation.
                   </p>
                 </div>
               </div>

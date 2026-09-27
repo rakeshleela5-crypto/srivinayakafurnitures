@@ -96,11 +96,11 @@ export function TierPricingModal({ isOpen, onClose, sku = 'BED-MOD-001' }) {
       architect_net_rate: Number(architectRate),
       floor_price: Number(floorPrice),
       factory_cost: Number(factoryCost),
-      updated_by: "Director Rakesh (Verified)",
+      updated_by: "Store Directors Naresh & Naren (Verified)",
       timestamp: new Date().toISOString()
     });
 
-    showToast(`🏷️ 3-Tier Pricing & Profit Margin Matrix saved for ${item.SKU}! Synced to Google Sheets & WhatsApp Bots.`, true);
+    showToast(`🏷️ 3-Tier Pricing & Profit Margin Matrix saved for ${item.SKU}! Synced to Cloudflare D1 & WhatsApp Bots.`, true);
     onClose();
   };
 
@@ -190,7 +190,7 @@ export function TierPricingModal({ isOpen, onClose, sku = 'BED-MOD-001' }) {
         </div>
 
         <button className="btn-luxury-gold" onClick={handleSave} style={{ width: '100%', justifyContent: 'center', padding: '12px', marginTop: '14px' }}>
-          <Save size={16} /> Save 3-Tier Price Matrix & Push to Google Sheets
+          <Save size={16} /> Save 3-Tier Price Matrix & Push to Cloudflare D1
         </button>
 
       </div>

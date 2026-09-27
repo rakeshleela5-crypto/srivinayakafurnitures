@@ -1092,7 +1092,7 @@ export function BankStatementLedgerView() {
               <Layers size={18} color="var(--accent-gold)" /> Live B2B Bank Transactions &amp; Statement Ledger
             </h3>
             <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: '3px 0 0 0' }}>
-              Connected with Google Sheets table <b style={{ color: 'var(--accent-emerald)' }}>Bank_Transactions_Log</b>
+              Connected with Cloudflare D1 table <b style={{ color: 'var(--accent-emerald)' }}>bank_statements</b>
             </p>
           </div>
 

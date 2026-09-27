@@ -1000,7 +1000,7 @@ export function EodReconciliationModal({ isOpen, onClose }) {
       timestamp: new Date().toISOString()
     });
 
-    showToast(`🔒 9 PM Register Closed & Locked! Gross Revenue: ₹${totalGrossDayRevenue.toLocaleString()} synced to Google Sheets.`, true);
+    showToast(`🔒 9 PM Register Closed & Locked! Gross Revenue: ₹${totalGrossDayRevenue.toLocaleString()} synced to Cloudflare D1.`, true);
   };
 
   const handleSendWhatsAppSlip = () => {
@@ -1945,7 +1945,7 @@ export function ExecutiveRevenueLedgerModal({ isOpen, onClose }) {
       timestamp: new Date().toISOString()
     });
 
-    showToast(`💰 Recorded ₹${amt.toLocaleString()} (${entryMode}) & logged to Google Sheets!`, true);
+    showToast(`💰 Recorded ₹${amt.toLocaleString()} (${entryMode}) & logged to Cloudflare D1!`, true);
     setEntryCustomer('');
     setEntryAmount('');
     setEntryReason('Counter Token Advance');

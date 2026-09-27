@@ -1226,7 +1226,7 @@ export function StaffInwardScannerView() {
                         boxShadow: '0 0 10px rgba(220,38,38,0.4)'
                       }}
                     >
-                      <AlertTriangle size={13} /> 🚨 Auto-File Transit Damage Claim to Google Sheets
+                      <AlertTriangle size={13} /> 🚨 Auto-File Transit Damage Claim to Cloudflare D1
                     </button>
                   </div>
                 )}

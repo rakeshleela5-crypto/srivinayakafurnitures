@@ -65,7 +65,7 @@ export function EditInquiryModal({ isOpen, onClose, inquiry = {} }) {
     });
 
     playSuccessChime();
-    showToast(`✅ Lead #${inquiry.Inquiry_ID} (${name}) updated & synced to Google Sheets!`, true);
+    showToast(`✅ Lead #${inquiry.Inquiry_ID} (${name}) updated & synced to Cloudflare D1!`, true);
     onClose();
   };
 
@@ -141,7 +141,7 @@ export function EditInquiryModal({ isOpen, onClose, inquiry = {} }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(212,175,55,0.2)', paddingTop: '12px' }}>
           <button className="btn-ghost-edit" onClick={onClose}>Cancel</button>
           <button className="btn-luxury-gold" onClick={handleSave} style={{ padding: '8px 22px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Check size={16} /> Save Changes & Sync to Google Sheets
+            <Check size={16} /> Save Changes & Sync to Cloudflare D1
           </button>
         </div>
       </div>
@@ -256,7 +256,7 @@ export function ManageOrderModal({ isOpen, onClose, order = {} }) {
     });
 
     playSuccessChime();
-    showToast(`Order #${order.Order_ID} updated in Orders_SafeLock & synced to Google Sheets!`, true);
+    showToast(`Order #${order.Order_ID} updated in orders & synced to Cloudflare D1!`, true);
     onClose();
   };
 

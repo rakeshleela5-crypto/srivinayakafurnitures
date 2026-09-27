@@ -199,7 +199,7 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
         return `📊 *SHOWROOM MONTHLY SALES PACER*\nTarget: ₹${(monthlyTargetINR / 100000).toFixed(1)} Lakhs | Achieved: ₹38.45 Lakhs (85.4% on track) | Sales Spot Incentive: ${staffIncentivePct}%.`;
 
       case 'BOT-20':
-        return `⚡ *MASTER GOOGLE APPS SCRIPT 2-WAY SYNC*\nStatus: HTTP 200 OK | Sub-100ms Push-Pull Synchronization active across all 22 Google Sheets tables.`;
+        return `⚡ *MASTER SOVEREIGN CLOUDFLARE D1 2-WAY SYNC*\nStatus: HTTP 200 OK | Sub-10ms Push-Pull Synchronization active across all 52 Cloudflare D1 tables.`;
 
       default:
         return `🤖 *${bot.name || 'Godrej Interio Autonomous Bot'}*\nTrigger: ${trigger} | Channel: ${targetChannel} | Threshold: ${threshold}`;
@@ -814,7 +814,7 @@ export function EditBotConfigModal({ isOpen, onClose, bot = {} }) {
                 <input value="Hourly Cron (Continuous Background Check)" disabled />
               </div>
               <div className="form-field" style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '18px' }}>
-                <span className="badge badge-emerald">21 Google Sheets Tables Deduplicated ✓</span>
+                <span className="badge badge-emerald">52 Cloudflare D1 Tables Deduplicated ✓</span>
               </div>
             </div>
           )}

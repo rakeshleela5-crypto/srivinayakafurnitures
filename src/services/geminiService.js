@@ -53,7 +53,7 @@ async function callGeminiApi(apiKey, bodyObj) {
 
 /**
  * 🔍 SUPERPOWER 1: ASK MY SHOWROOM
- * Ingests live store context and answers executive queries with exact data grounding across all 43 tables
+ * Ingests live store context and answers executive queries with exact data grounding across all 52 Cloudflare D1 tables
  */
 export const askShowroomAssistant = async (question, contextData = {}) => {
   const apiKey = getGeminiApiKey();
@@ -158,7 +158,7 @@ ${lowStockSummary || '• All primary SKUs above safety buffer.'}
 `;
 
   const systemInstruction = `You are the Lead Executive AI Copilot for Godrej Interio Rayagada (Sri Vinayaka Furnitures), managed by Store Directors Naresh & Naren.
-You have real-time access to the store's Google Sheets database across all 43 master tables (Bank Transactions, Inquiries, Orders, Catalog, SmartKit, P&L).
+You have direct, real-time access to the store's Sovereign Cloudflare D1 Edge Database (srivinayaka-db) across all 52 replicated tables (orders, order_items, catalog, stock_ledger, payments, bank_statements, tally_vouchers, transit_lr_tracking, supplier_invoices_ledger, carpenter_work_orders, warranty_registry, inquiries, store_alerts, etc.).
 Answer concisely, with exact rupee figures, customer names, SKUs, and polite business tone.
 If the user asks in Odia or Telugu, answer in that language with English numbers.
 Always include actionable recommendations (e.g. prompt to call/WhatsApp pending balance customers, reconcile UTRs, or apply flash discounts on aging floor stock).`;
@@ -329,7 +329,7 @@ function simulateLocalShowroomAnswer(q, ctx, pendingOrders, totalPending) {
 Recent Verified Transactions:
 ${recentLines || '• All bank ledger transactions matched with Inquiries & SafeLock Orders.'}
 
-💡 *Direct UTR Reconciliation is synchronized with Google Sheets Table 13 & 23.*`;
+💡 *Direct UTR Reconciliation is synchronized with Cloudflare D1 bank_statements & tally_vouchers.*`;
   }
 
   // 2. 👥 INQUIRIES, WALK-IN LEADS & 5-MINUTE CONCIERGE HOT LEADS
@@ -448,7 +448,7 @@ Our showroom is operating at **peak performance**:
 • **Pending Customer Balance:** ₹${totalPending.toLocaleString('en-IN')} across ${pendingOrders.length} orders
 • **HDFC Bank Balance:** ₹${hdfcBalDef.toLocaleString('en-IN')}
 • **Showroom Net Margin:** 24.1%
-• **Database Status:** 43 Tables Synchronized with Google Sheets
+• **Database Status:** 52 Tables Synchronized with Cloudflare D1 Edge (srivinayaka-db)
 
 *Tip: Ask me about "HDFC bank balance", "Today's hot leads", "Price of King Bed", or "Who owes balance payment?" for instant live data answers!*`;
 }

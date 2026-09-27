@@ -176,7 +176,7 @@ export function StoreProvider({ children }) {
     });
   };
 
-  // Master Universal Google Sheets Tables State with Persistence
+  // Master Universal Cloudflare D1 Tables State with Persistence
   const [cloudTables, setCloudTables] = useState(() => getStored('OMNIBUILD_CLOUD_TABLES', {}));
 
   // Core Persistent 21-Table Data Stores
@@ -908,7 +908,7 @@ export function StoreProvider({ children }) {
     triggerGoldenConfetti();
     showToast(`✨ Successfully registered new SKU: ${sku} & seeded ${openingStock} units in SafeLock!`, true);
 
-    // Dispatch Webhook to Google Sheets
+    // Dispatch Webhook to Cloudflare D1 Edge
     dispatchWebhookAction('UPDATE_CATALOG_ITEM', {
       sku: sku,
       product_name: productName,

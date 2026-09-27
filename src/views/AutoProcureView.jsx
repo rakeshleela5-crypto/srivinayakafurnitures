@@ -391,7 +391,7 @@ export function AutoProcureView() {
 
     setPoHistory([newPoRecord, ...poHistory]);
 
-    // Dispatch to Master Webhook (Google Sheets: Purchase_Orders_Log)
+    // Dispatch to D1 Edge Supply Chain & Pipeline (purchase_orders_log)
     dispatchWebhookAction("GENERATE_FACTORY_PO", {
       po_id: newPoId,
       supplier,
@@ -414,7 +414,7 @@ export function AutoProcureView() {
 
     playSuccessChime();
     triggerGoldenConfetti();
-    showToast(`🏭 Factory PO #${newPoId} (₹${grandTotalValue.toLocaleString()}) created & synced to Google Sheets!`, true);
+    showToast(`🏭 Official Factory PO #${newPoId} (₹${grandTotalValue.toLocaleString()}) generated & logged to Cloudflare D1 Supply Chain!`, true);
   };
 
   // ✏️ Open PO Edit Modal
@@ -440,7 +440,7 @@ export function AutoProcureView() {
 
     setPoHistory(poHistory.map(p => p.po_id === targetPo.po_id ? { ...p, status: "INWARD_RECEIVED" } : p));
 
-    // Webhook dispatch to Google Sheets Purchase_Orders_Log
+    // Dispatch inward QC log to Cloudflare D1 (purchase_orders_log)
     dispatchWebhookAction("RECEIVE_INWARD_PO_QC", {
       po_id: targetPo.po_id,
       factory_plant: targetPo.supplier,
@@ -1408,11 +1408,13 @@ export function AutoProcureView() {
           </div>
 
           <button 
+            type="button"
+            aria-label="Generate Official Factory Purchase Order"
             className="btn-luxury-gold" 
             onClick={handleGenerateFactoryPO}
             style={{ padding: '12px 28px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 20px rgba(212,175,55,0.3)' }}
           >
-            <FileText size={16} /> 🚀 Generate Official Factory PO & Sync to Google Sheets
+            <FileText size={16} /> 🚀 Generate Official Factory PO
           </button>
 
         </div>

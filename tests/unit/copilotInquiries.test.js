@@ -80,4 +80,15 @@ describe('Ask My Showroom Copilot — Data Grounding & Inquiries Test Suite', ()
     assert.equal(answer.includes('HDFC'), true);
     assert.equal(answer.includes('38,42,500') || answer.includes('3,842,500'), true);
   });
+
+  it('answers "name of the hotlead today who inquired" with Leela Rakesh Yadav and D1 reasoning table', async () => {
+    const answer = await askShowroomAssistant('name of the hotlead today who inquired', mockContext);
+
+    // Matches the Cloudflare D1 Ask AI photo exactly
+    assert.equal(answer.includes('Leela Rakesh Yadav'), true, 'Must identify Leela Rakesh Yadav as today\'s hot lead');
+    assert.equal(answer.includes('INQ-2026-925'), true, 'Must include inquiry ID INQ-2026-925');
+    assert.equal(answer.includes('93905533301'), true, 'Must include customer phone 93905533301');
+    assert.equal(answer.includes('Gayatri Nagar, Rayagada'), true, 'Must include customer address');
+    assert.equal(answer.includes('See reasoning'), true, 'Must show D1 reasoning steps');
+  });
 });

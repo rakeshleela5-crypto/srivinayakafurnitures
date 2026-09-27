@@ -244,9 +244,9 @@ async function callCustomProxyProvider(endpoint, apiKey, prompt, systemInstructi
 }
 
 /**
- * Call Cloudflare Workers AI (Provider 0: Sovereign Zero-Cost Edge)
+ * Call Cloudflare Workers AI & Sovereign D1 SQL Engine (Provider 0: Sovereign Zero-Cost Edge)
  */
-async function callCloudflareWorkersAiProvider(prompt, systemInstruction, maxTokens = 800) {
+async function callCloudflareWorkersAiProvider(prompt, systemInstruction, maxTokens = 800, question = '') {
   const startTime = Date.now();
   try {
     const controller = new AbortController();
@@ -255,7 +255,7 @@ async function callCloudflareWorkersAiProvider(prompt, systemInstruction, maxTok
     const res = await fetch('/api/d1/ai/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, systemInstruction, maxTokens }),
+      body: JSON.stringify({ prompt, systemInstruction, maxTokens, question }),
       signal: controller.signal
     });
     clearTimeout(timeoutId);
@@ -268,9 +268,9 @@ async function callCloudflareWorkersAiProvider(prompt, systemInstruction, maxTok
         !data.text.includes('Kalista King Hydraulic Bed') && 
         !data.text.includes('Kalista Hydraulic King Bed')
       ) {
-        routerStatus.currentProvider = 'Cloudflare Workers AI (LLaMA 3.3 70B)';
+        routerStatus.currentProvider = data.provider || 'Cloudflare Sovereign D1 SQL Engine (srivinayaka-db)';
         routerStatus.lastLatencyMs = Date.now() - startTime;
-        return { success: true, text: data.text, provider: 'cloudflare_workers_ai' };
+        return { success: true, text: data.text, provider: 'cloudflare_d1_sql' };
       }
     }
   } catch (e) {
@@ -303,18 +303,19 @@ export const transcribeVoiceAudio = async (audioBlob) => {
 
 /**
  * ⚡ UNIFIED MULTI-PROVIDER DISPATCHER
- * Sequentially executes: Cloudflare Workers AI ➡️ Gemini ➡️ Groq ➡️ Custom Proxy ➡️ Local Fallback
+ * Sequentially executes: Cloudflare D1 SQL / Workers AI ➡️ Gemini ➡️ Groq ➡️ Custom Proxy ➡️ Local Fallback
  */
 export const dispatchMultiProviderAi = async ({
   prompt,
   systemInstruction = '',
   maxTokens = 800,
+  question = '',
   fallbackFn = null
 }) => {
   const { geminiKey, groqKey, customEndpoint, customKey } = getAiProviderKeys();
 
-  // Step 0: Try Cloudflare Sovereign Edge AI (Free, 0ms, Zero API keys)
-  const cfRes = await callCloudflareWorkersAiProvider(prompt, systemInstruction, maxTokens);
+  // Step 0: Try Cloudflare Sovereign Edge AI & D1 SQL Engine (Free, 0ms, Grounded in 52 D1 Tables)
+  const cfRes = await callCloudflareWorkersAiProvider(prompt, systemInstruction, maxTokens, question);
   if (cfRes.success) return cfRes.text;
 
   // Step 1: Try Primary (Google Gemini)

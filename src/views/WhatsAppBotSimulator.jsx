@@ -77,7 +77,7 @@ export function WhatsAppBotSimulator() {
         ).join('\n');
         return {
           title: "👑 Executive Bank Ledger Radar (Director Access)",
-          text: `Namaskar Director Rakesh! 🏦 Live Dual-Ledger Status:\n• HDFC Operating A/c: ₹${hdfc.toLocaleString()}\n• SBI Commercial A/c: ₹${sbi.toLocaleString()}\n• Total Liquid Cash: ₹${(hdfc + sbi).toLocaleString()}\n\nRecent Transactions:\n${recentTxns || '• All accounts reconciled.'}`
+          text: `Namaskar Directors Naresh & Naren! 🏦 Live Dual-Ledger Status:\n• HDFC Operating A/c: ₹${hdfc.toLocaleString()}\n• SBI Commercial A/c: ₹${sbi.toLocaleString()}\n• Total Liquid Cash: ₹${(hdfc + sbi).toLocaleString()}\n\nRecent Transactions:\n${recentTxns || '• All accounts reconciled.'}`
         };
       }
 
@@ -99,7 +99,7 @@ export function WhatsAppBotSimulator() {
         const totalUpi = totalSales - totalCash;
         return {
           title: "👑 Executive BI Copilot (Director Access)",
-          text: `Namaskar Director Rakesh! 📊 Today's Total Showroom Billing is ₹${totalSales.toLocaleString()} across ${orders.length || 3} orders.\n• 💵 Cash in Register: ₹${totalCash.toLocaleString()}\n• 💳 HDFC UPI / Card: ₹${totalUpi.toLocaleString()}\n• 📈 Estimated Gross Margin: ₹${Math.round(totalSales * 0.308).toLocaleString()} (30.8%)\n• 🔒 SafeLock Reserved Units: 6 Pieces.`
+          text: `Namaskar Directors Naresh & Naren! 📊 Today's Total Showroom Billing is ₹${totalSales.toLocaleString()} across ${orders.length || 3} orders.\n• 💵 Cash in Register: ₹${totalCash.toLocaleString()}\n• 💳 HDFC UPI / Card: ₹${totalUpi.toLocaleString()}\n• 📈 Estimated Gross Margin: ₹${Math.round(totalSales * 0.308).toLocaleString()} (30.8%)\n• 🔒 SafeLock Reserved Units: 6 Pieces.`
         };
       }
 
@@ -140,7 +140,7 @@ export function WhatsAppBotSimulator() {
 
       return {
         title: "👑 Executive Director Copilot",
-        text: `Namaskar Director Rakesh! 🔓 VIP Executive Mode Active. Full 52-Table Enterprise D1 & Google Sheets telemetry online. You can ask me for today's bank balance, UTR status, hot concierge leads, sales collections, factory purchase costs, profit margins, low stock alerts, or customer balances.`
+        text: `Namaskar Directors Naresh & Naren! 🔓 VIP Executive Mode Active. Full 52-Table Enterprise D1 & Google Sheets telemetry online. You can ask me for today's bank balance, UTR status, hot concierge leads, sales collections, factory purchase costs, profit margins, low stock alerts, or customer balances.`
       };
     }
 
@@ -165,7 +165,7 @@ export function WhatsAppBotSimulator() {
     if (q.includes('40%') || q.includes('50%') || q.includes('cheap') || q.includes('bargain') || q.includes('lowest price') || q.includes('half price')) {
       return {
         title: "🏷️ Showroom Festive Policy",
-        text: `Our maximum authorized showroom festive discount for 100% Solid CP Teak luxury suites is up to 8% with complimentary delivery & hydraulic installation in Rayagada. For customized corporate or whole-villa architectural projects, our Showroom Director Mr. Rakesh (+91 93905 53301) can arrange a personalized VIP appointment.`
+        text: `Our maximum authorized showroom festive discount for 100% Solid CP Teak luxury suites is up to 8% with complimentary delivery & hydraulic installation in Rayagada. For customized corporate or whole-villa architectural projects, our Showroom Directors Naresh & Naren (+91 93905 53301) can arrange a personalized VIP appointment.`
       };
     }
 

@@ -9,7 +9,7 @@ test.describe('Responsive Views & Mobile Worker Terminals (#18)', () => {
     // If locked, authenticate
     const lockCard = page.locator('text=OmniBuild OS™');
     if (await lockCard.isVisible()) {
-      await page.locator('button:has-text("Rakesh (Store Director & Owner)"), button:has-text("Santosh")').first().click();
+      await page.locator('button:has-text("Naresh & Naren"), button:has-text("Store Director & Owner"), button:has-text("Rakesh"), button:has-text("Santosh")').first().click();
     }
 
     // Verify Mobile Worker App Header appears
@@ -31,7 +31,7 @@ test.describe('Responsive Views & Mobile Worker Terminals (#18)', () => {
 
     const lockCard = page.locator('text=OmniBuild OS™');
     if (await lockCard.isVisible()) {
-      await page.locator('button:has-text("Tophan Gouda"), button:has-text("Rakesh")').first().click();
+      await page.locator('button:has-text("Tophan Gouda"), button:has-text("Naresh & Naren"), button:has-text("Rakesh")').first().click();
     }
 
     await expect(page.locator('.mobile-worker-app-header')).toBeVisible({ timeout: 10000 });

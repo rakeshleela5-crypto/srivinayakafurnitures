@@ -51,8 +51,8 @@ export const USER_ROLES = {
   OWNER: {
     id: 'rakesh',
     pinHash: '9800a8677d99e5f6968d7357e44006388b09d3b6a8676d0f930fbaa63d02330d', // SHA-256 for 8899
-    name: 'Rakesh (Store Director & Owner)',
-    roleName: 'Store Owner / Director',
+    name: 'Naresh & Naren (Store Directors & Owners)',
+    roleName: 'Store Owners / Directors',
     avatar: '👑',
     badgeClass: 'badge-gold'
   },

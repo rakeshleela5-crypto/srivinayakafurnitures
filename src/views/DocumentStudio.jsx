@@ -142,7 +142,7 @@ export function DocumentStudio() {
 
     // Signatory
     showDigitalStamp: true,
-    signatoryName: 'Rakesh (Store Director)',
+    signatoryName: 'Naresh & Naren (Store Directors)',
     signatoryRole: 'Authorized Signatory — Shree Ganesh Enterprises',
     authDate: formatDateIndian()
   });
@@ -1087,8 +1087,9 @@ export function DocumentStudio() {
                 <label style={{ fontSize: '10.5px', color: '#94A3B8' }}>Authorized Signatory Name:</label>
                 <div style={{ display: 'flex', gap: '4px', margin: '4px 0 6px 0', flexWrap: 'wrap' }}>
                   {[
+                    'Naresh & Naren (Store Directors)',
                     'Naresh Kumar (Managing Director)',
-                    'Rakesh (Store Director & Ops)',
+                    'Naren Kumar (Store Director & Ops)',
                     'Authorized Signatory'
                   ].map(name => (
                     <button
@@ -1767,7 +1768,7 @@ export function DocumentStudio() {
                       Godrej Interio Rayagada Flagship Showroom
                     </h1>
                     <div style={{ fontSize: '12px', color: '#475569' }}>
-                      Client: Shree Ganesh Enterprises | Director: Mr. Rakesh (+91 93905 53301)
+                      Client: Sri Vinayaka Furnitures / Shree Ganesh Enterprises | Directors: Naresh & Naren (+91 93905 53301)
                     </div>
                   </div>
                   <div style={{ textAlign: 'right' }}>

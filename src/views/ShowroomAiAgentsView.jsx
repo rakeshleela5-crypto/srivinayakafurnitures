@@ -236,7 +236,7 @@ export default function ShowroomAiAgentsView() {
     } else if (recoveryLang === 'TELUGU') {
       msg = `నమస్కారం ${selectedLead.name} గారు! 🙏 మీరు నిన్న శ్రీ వినాయక ఫర్నిచర్స్ (గోద్రెజ్ ఇంటీరియో రాయగడ) లో ${selectedLead.item} చూసారు. మీ కోసం ప్రత్యేక 48-గంటల ఫెస్టివల్ ప్రివిలేజ్ డిస్కౌంట్ సిద్ధంగా ఉంది. మీకు అనుకూలమైన సమయం చెప్పండి!`;
     } else {
-      msg = `Namaskar ${selectedLead.name}! 🙏 Thank you for visiting Sri Vinayaka Furnitures (Godrej Interio Rayagada) and viewing our ${selectedLead.item}. Director Rakesh Nayak has approved a limited 48-hour festive showroom privilege with complimentary laser site measurement.`;
+      msg = `Namaskar ${selectedLead.name}! 🙏 Thank you for visiting Sri Vinayaka Furnitures (Godrej Interio Rayagada) and viewing our ${selectedLead.item}. Directors Naresh & Naren have approved a limited 48-hour festive showroom privilege with complimentary laser site measurement.`;
     }
     setDraftedMessage(msg);
   };

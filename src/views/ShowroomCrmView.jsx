@@ -100,7 +100,7 @@ export function ShowroomCrmView() {
       `• Free Monsoon 5-Box Weather-Proof Delivery to your site in Rayagada\n\n` +
       `📖 *Explore Our 2026 Interactive 3D Catalog:* https://shreeganesh-godrej.web.app\n\n` +
       `Let us know if you would like us to reserve your preferred model before stock allocation.\n` +
-      `*Showroom Director:* Rakesh (+91 93905 53301)\n*Godrej Interio — Main Road, Rayagada*`;
+      `*Showroom Directors:* Naresh & Naren (+91 93905 53301)\n*Godrej Interio — Main Road, Rayagada*`;
 
     dispatchWebhookAction("DISPATCH_WHATSAPP_PO_DISPATCH", {
       inquiry_id: inq.Inquiry_ID,
@@ -367,7 +367,7 @@ export function ShowroomCrmView() {
                       </span>
                     </div>
                     <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                      {(inq.Status === 'ENGAGED_ON_MOBILE_AI' && !inq.Assigned_Staff) ? '🤖 24/7 AI Concierge' : `👤 ${inq.Assigned_Staff || 'Rakesh'}`}
+                      {(inq.Status === 'ENGAGED_ON_MOBILE_AI' && !inq.Assigned_Staff) ? '🤖 24/7 AI Concierge' : `👤 ${inq.Assigned_Staff || 'Naresh & Naren'}`}
                     </div>
                   </td>
 

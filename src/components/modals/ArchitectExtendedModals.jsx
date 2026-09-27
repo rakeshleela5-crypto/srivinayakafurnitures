@@ -293,7 +293,7 @@ export function ArchitectCertificateModal({ isOpen, onClose, architect = {} }) {
                 <div style={{ fontSize: '6px' }}>INTERIO</div>
                 <div style={{ fontSize: '6px', fontWeight: '900' }}>RAYAGADA</div>
               </div>
-              <div style={{ fontSize: '11px', fontWeight: '900' }}>Rakesh (Store Director)</div>
+              <div style={{ fontSize: '11px', fontWeight: '900' }}>Naresh & Naren (Store Directors)</div>
             </div>
           </div>
         </div>

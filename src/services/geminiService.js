@@ -120,7 +120,7 @@ export const askShowroomAssistant = async (question, contextData = {}) => {
 CURRENT SHOWROOM REAL-TIME STATE (Godrej Interio Rayagada - Shree Ganesh Enterprises):
 🏪 STORE PROFILE:
 - Store Name: ${storeMeta.storeName || 'Godrej Interio Rayagada Flagship Showroom (Shree Ganesh Enterprises)'}
-- Store Director: N. Leela Rakesh (+91 93905 53301, Near Railway Station / Convent School Road, Rayagada)
+- Store Directors: Naresh & Naren (+91 93905 53301, Near Railway Station / Convent School Road, Rayagada)
 - Primary UPI VPA: ${storeMeta.upiId || '9390553301@ybl'} | Bank Account: HDFC Current A/c 50200088192481
 
 🏦 BANK & FINANCIAL RADAR:
@@ -157,7 +157,7 @@ ${lowStockSummary || '• All primary SKUs above safety buffer.'}
 - Active Turnkey Villa Projects: ${vipProjects.length} (Sample: Dr. Subhashish Jena Farmhouse Villa Rs. 1.56L, Er. Pradeep Patnaik JK Paper Villa Rs. 4.20L)
 `;
 
-  const systemInstruction = `You are the Lead Executive AI Copilot for Godrej Interio Rayagada (Shree Ganesh Enterprises), managed by Store Director Rakesh Nayak.
+  const systemInstruction = `You are the Lead Executive AI Copilot for Godrej Interio Rayagada (Sri Vinayaka Furnitures), managed by Store Directors Naresh & Naren.
 You have real-time access to the store's Google Sheets database across all 43 master tables (Bank Transactions, Inquiries, Orders, Catalog, SmartKit, P&L).
 Answer concisely, with exact rupee figures, customer names, SKUs, and polite business tone.
 If the user asks in Odia or Telugu, answer in that language with English numbers.
@@ -265,8 +265,8 @@ export const generateConciergeFollowup = async ({
 - Category/Model: ${category}
 - Budget/Quote: Rs. ${Number(budget).toLocaleString('en-IN')} (Quote #${quoteId})
 - Preferred Language: ${langUpper}
-- Store: Godrej Interio Rayagada (Shree Ganesh Enterprises)
-- Store Director: Rakesh Nayak (+91 93905 53301)
+- Store: Godrej Interio Rayagada (Sri Vinayaka Furnitures)
+- Store Directors: Naresh & Naren (+91 93905 53301)
 
 Tone Rules:
 - If ODIA: Use natural, respectful Odia script (e.g. ନମସ୍କାର, ବାବୁ/ମାଡାମ, ଶୁଭକାମନା). Mention festive bonus, 2x Ortho Pillows, and Narayana Mistri's complimentary laser measurement.
@@ -391,7 +391,7 @@ ${topItems}
   // 5. 💰 PENDING ORDERS & CUSTOMER RECEIVABLES
   if (query.includes('balance') || query.includes('owe') || query.includes('due') || query.includes('payment') || query.includes('pending') || query.includes('receivable')) {
     if (pendingOrders.length === 0) {
-      return `🎉 Outstanding news, Director Rakesh! All active showroom orders are 100% settled. Zero pending customer balance today.`;
+      return `🎉 Outstanding news, Directors Naresh & Naren! All active showroom orders are 100% settled. Zero pending customer balance today.`;
     }
     const top3 = pendingOrders.slice(0, 4).map(o => `• **${o.Customer_Name || 'Customer'}**: Due ₹${Number(o.Balance_Due_INR || o.Balance_Due || 50000).toLocaleString('en-IN')} (📞 ${o.Customer_Phone || o.Phone || '9390553301'}, 📍 ${o.Project_Address || o.Address || 'Rayagada'})`).join('\n');
     return `💰 **Pending Showroom Balance Report**:
@@ -442,7 +442,7 @@ Found **${agingList.length || 3} pieces** on showroom display exceeding 45 days.
 
   // DEFAULT EXECUTIVE SUMMARY
   const hdfcBalDef = ctx.bankAccounts?.find(b => (b.id || '').includes('HDFC'))?.currentBalance || 3842500;
-  return `Namaskar Director Rakesh Nayak! 🙏
+  return `Namaskar Directors Naresh & Naren! 🙏
 Our showroom is operating at **peak performance**:
 • **Active Orders:** ${ctx.orders?.length || 18} orders in pipeline
 • **Pending Customer Balance:** ₹${totalPending.toLocaleString('en-IN')} across ${pendingOrders.length} orders
@@ -483,5 +483,5 @@ function simulateConciergeMessage(name, occasion, lang, category, budget, quoteI
   if (lang === 'TELUGU' || lang.includes('TELUGU')) {
     return `నమస్కారం ${name} గారు! 🙏 మీ ${occasion} కోసం రాయగడ గోద్రెజ్ ఇంటీరియో లో ${category} రిజర్వ్ చేయబడింది. ఈ వారం బుక్ చేస్తే 2x ఉచిత ఆర్థో పిల్లోస్ & 10 సంవత్సరాల వారంటీ లభిస్తుంది. పూర్తి వివరాలకు సంప్రదించండి — రాకేష్ నాయక్ (+91 93905 53301)`;
   }
-  return `Namaskar ${name} Ji! 🙏 Warm wishes for your ${occasion} from Godrej Interio Rayagada. Your chosen ${category} (Quote #${quoteId}) has been reserved with 2x Complimentary Ortho Pillows + Free Narayana Mistri Assembly. Call Store Director Rakesh Nayak at +91 93905 53301 to confirm delivery!`;
+  return `Namaskar ${name} Ji! 🙏 Warm wishes for your ${occasion} from Godrej Interio Rayagada. Your chosen ${category} (Quote #${quoteId}) has been reserved with 2x Complimentary Ortho Pillows + Free Narayana Mistri Assembly. Call Store Directors Naresh & Naren at +91 93905 53301 to confirm delivery!`;
 }

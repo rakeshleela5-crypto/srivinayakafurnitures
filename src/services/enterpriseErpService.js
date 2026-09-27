@@ -397,7 +397,7 @@ export function generateKhataPaymentReminderText({
     `💳 *Instant 0% Fee UPI Payment Link:*\n${upiLink}\n\n` +
     `Bank NEFT Details: Canara Bank Rayagada\nA/C: 120001889912 | IFSC: CNRB0001234\n` +
     `━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-    `For any billing reconciliation, call Store Director Rakesh: +91 93905 53301.\n` +
+    `For any billing reconciliation, call Store Directors Naresh & Naren: +91 93905 53301.\n` +
     `_Thank you for choosing Godrej Interio quality!_`
   );
 }

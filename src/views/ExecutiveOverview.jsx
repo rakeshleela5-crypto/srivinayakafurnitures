@@ -370,7 +370,7 @@ export function ExecutiveOverview() {
               <Sparkles size={15} /> ASK MY SHOWROOM
             </div>
             <span style={{ fontSize: '11px', color: '#94A3B8' }}>
-              Director Rakesh's Natural Language AI Copilot (Grounded in 40 Live Google Sheets)
+              Directors Naresh & Naren's Natural Language AI Copilot (Grounded in 40 Live Google Sheets)
             </span>
           </div>
 
@@ -948,7 +948,7 @@ export function ExecutiveOverview() {
               Copy Text
             </button>
             <button className="btn-luxury-gold" onClick={handleSendWhatsAppBriefing}>
-              <Send size={14} /> 📲 Send WhatsApp to Director Rakesh
+              <Send size={14} /> 📲 Send WhatsApp to Directors Naresh & Naren
             </button>
           </div>
         </div>

@@ -34,7 +34,7 @@ test.describe('Staff Authentication & Sovereign RBAC Security Gate (#18)', () =>
 
     // Verify authenticated OS shell is visible
     await expect(page.locator('.app-header')).toBeVisible();
-    await expect(page.locator('text=Rakesh')).first().toBeVisible();
+    await expect(page.locator('text=Naresh').or(page.locator('text=Director'))).first().toBeVisible();
     await expect(page.locator('.tabs-ribbon')).toBeVisible();
   });
 

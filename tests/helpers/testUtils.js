@@ -19,7 +19,7 @@ export async function loginAsDirector(page) {
   await expect(lockCard).toBeVisible({ timeout: 10000 });
 
   // Director quick-access role button or PIN entry
-  const directorButton = page.locator('button:has-text("Rakesh (Store Director & Owner)")');
+  const directorButton = page.locator('button:has-text("Naresh & Naren"), button:has-text("Store Director & Owner"), button:has-text("Rakesh")');
   if (await directorButton.isVisible()) {
     await directorButton.click();
   } else {

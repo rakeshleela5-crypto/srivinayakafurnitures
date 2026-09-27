@@ -558,7 +558,7 @@ export function StaffInwardScannerView() {
 🧩 Verified Boxes: ${verifiedBoxes.join(', ')} / ${customBoxes.length} (${verifiedBoxes.length === customBoxes.length ? '100% COMPLETE ✓' : 'PARTIAL'})
 ━━━━━━━━━━━━━━━━━━━━
 ✅ QC Status: PASSED & ADDED TO MASTER INVENTORY
-👤 Dock Supervisor: Rakesh (9390553301)`;
+👤 Dock Supervisor & Director: Naresh & Naren (9390553301)`;
     window.open(`https://wa.me/919390553301?text=${encodeURIComponent(text)}`, '_blank');
   };
 

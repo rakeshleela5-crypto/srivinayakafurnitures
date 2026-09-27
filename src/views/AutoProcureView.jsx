@@ -545,7 +545,7 @@ export function AutoProcureView() {
       `🌧️ *Monsoon Shrink-Wrap Packaging:* ${po.monsoon_wrap ? 'MANDATORY (5-Box Sealed)' : 'Standard'}\n` +
       `📍 *Unloading Point:* Central Warehouse Dock 1, Main Road, Rayagada (OD 765001)\n\n` +
       `🌟 *View Live PO Digital Dashboard:* https://shreeganesh-godrej.web.app\n` +
-      `*Authorized Showroom Signatory:* Rakesh (Store Director — +91 93905 53301)`;
+      `*Authorized Showroom Signatories:* Naresh & Naren (Store Directors — +91 93905 53301)`;
 
     // Log WhatsApp Outbound
     dispatchWebhookAction("DISPATCH_WHATSAPP_PO_DISPATCH", {

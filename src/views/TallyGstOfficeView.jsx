@@ -860,7 +860,7 @@ export function TallyGstOfficeView() {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12.5px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 10px', background: 'rgba(255,255,255,0.02)', borderRadius: '6px' }}>
-                    <span>Capital Account (Owner Equity Rakesh)</span>
+                    <span>Capital Account (Owner Equity Naresh &amp; Naren)</span>
                     <b style={{ color: '#FFF' }}>1,25,00,000.00</b>
                   </div>
                   <div 

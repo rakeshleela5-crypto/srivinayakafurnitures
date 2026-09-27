@@ -31,7 +31,7 @@ export function FactoryPaymentVoucherModal({ isOpen, onClose, po = null }) {
   const [amount, setAmount] = useState(po ? Math.round((po.total_value || 100000) * 0.3) : 50000);
   const [utrRef, setUtrRef] = useState(`UTR-SBI-${Math.floor(100000000 + Math.random() * 900000000)}`);
   const [bankAccount, setBankAccount] = useState('HDFC Bank — Current A/c 50200012345678 (IFSC: HDFC0001234)');
-  const [authorizedBy, setAuthorizedBy] = useState('Rakesh (Store Director)');
+  const [authorizedBy, setAuthorizedBy] = useState('Naresh & Naren (Store Directors)');
   const [remarks, setRemarks] = useState('30% Advance Token against Official PO');
 
   if (!isOpen || !po) return null;

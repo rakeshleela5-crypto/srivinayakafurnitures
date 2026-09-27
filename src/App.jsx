@@ -105,7 +105,7 @@ function AccessDeniedView({ activeTab, userRole }) {
         Your current profile (<span style={{ color: 'var(--accent-gold-light)', fontWeight: '700' }}>{userRole?.name || 'Guest'}</span>) does not have clearance to access the <span style={{ color: '#F43F5E', fontWeight: '700' }}>{activeTab}</span> terminal.
       </p>
       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-        Contact Store Director Rakesh or authenticate with an authorized role PIN.
+        Contact Store Directors Naresh & Naren or authenticate with an authorized role PIN.
       </div>
     </div>
   );

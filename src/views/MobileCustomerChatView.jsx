@@ -212,7 +212,7 @@ export function MobileCustomerChatView() {
           AI_Intent_Score: isUltraVipLead ? '99% (👑 ULTRA-VIP DIRECTOR CALL)' : '95% (🔥 5-MIN HOT LEAD)',
           Follow_Up_Date: 'Today (Within 5 Mins)',
           Status: 'ENGAGED_ON_MOBILE_AI',
-          Assigned_Staff: 'N. Leela Rakesh (Store Director)'
+          Assigned_Staff: 'Naresh & Naren (Store Directors)'
         };
         setInquiries(prev => [autoHotLead, ...(prev || [])]);
       }
@@ -350,11 +350,11 @@ export function MobileCustomerChatView() {
 
     let waText = '';
     if (portalLang === 'OR') {
-      waText = `ନମସ୍କାର ରାକେଶ ସାର୍! 🙏 ମୁଁ ${custName}। ମୁଁ ଗୋଦରେଜ୍ ଇଣ୍ଟିରିଓ ରାୟଗଡାର 24/7 AI Concierge ରେ ${activeProduct.Product_Name} (₹${sp.toLocaleString()}) ଦେଖୁଥିଲି [${getOccasionLabel()}]। ଦୟାକରି ଏହାର ରିଅଲ୍ ଶୋରୁମ୍ ଭିଡିଓ ଏବଂ ଫେଷ୍ଟିଭ୍ ଅଫର୍ ପଠାନ୍ତୁ।`;
+      waText = `ନମସ୍କାର ନରେଶ ସାର୍ ଏବଂ ନରେନ ସାର୍! 🙏 ମୁଁ ${custName}। ମୁଁ ଗୋଦରେଜ୍ ଇଣ୍ଟିରିଓ ରାୟଗଡାର 24/7 AI Concierge ରେ ${activeProduct.Product_Name} (₹${sp.toLocaleString()}) ଦେଖୁଥିଲି [${getOccasionLabel()}]। ଦୟାକରି ଏହାର ରିଅଲ୍ ଶୋରୁମ୍ ଭିଡିଓ ଏବଂ ଫେଷ୍ଟିଭ୍ ଅଫର୍ ପଠାନ୍ତୁ।`;
     } else if (portalLang === 'TE') {
-      waText = `నమస్కారం రాకేష్ సర్! 🙏 నేను ${custName}. రాయగడ గోద్రెజ్ ఇంటీరియో 24/7 పోర్టల్‌లో ${activeProduct.Product_Name} (₹${sp.toLocaleString()}) చూశాను [${getOccasionLabel()}]. దయచేసి షోరూమ్ వీడియో మరియు పండుగ ఆఫర్ వివరాలు పంపండి.`;
+      waText = `నమస్కారం నరేష్ సర్ & నరేన్ సర్! 🙏 నేను ${custName}. రాయగడ గోద్రెజ్ ఇంటీరియో 24/7 పోర్టల్‌లో ${activeProduct.Product_Name} (₹${sp.toLocaleString()}) చూశాను [${getOccasionLabel()}]. దయచేసి షోరూమ్ వీడియో మరియు పండుగ ఆఫర్ వివరాలు పంపండి.`;
     } else {
-      waText = `Namaskar Rakesh Sir! 🙏 I am ${custName}. I was exploring the ${activeProduct.Product_Name} (₹${sp.toLocaleString()}) on your Godrej Interio Rayagada 24/7 Concierge for my ${getOccasionLabel()}. Please send showroom floor video & festive offer details.`;
+      waText = `Namaskar Directors Naresh & Naren Sir! 🙏 I am ${custName}. I was exploring the ${activeProduct.Product_Name} (₹${sp.toLocaleString()}) on your Godrej Interio Rayagada 24/7 Concierge for my ${getOccasionLabel()}. Please send showroom floor video & festive offer details.`;
     }
 
     // Telemetry dispatch
@@ -409,7 +409,7 @@ export function MobileCustomerChatView() {
         id: Date.now(),
         sender: "bot",
         title: "🔒 SafeLock Reservation Confirmed!",
-        text: `🎉 **Congratulations ${customerProfile.name} Ji!**\n\nYour **${activeProduct.Product_Name}** has been **SAFELOCKED (RESERVED)** under Order Ref: **#${created.Order_ID}**!\n\n• 📦 **Stock Reserved:** 1 Unit locked at Warehouse Dock 1\n• 💰 **Token Advance:** ₹${advancePaid.toLocaleString()} Settled via UPI QR\n• 🚚 **Delivery Scheduled:** Today, 04:30 PM (Driver: Tophan Gouda)\n• 🪚 **Installation:** Narayana Mistri assigned\n\nDirector Rakesh has received your order notification. Thank you for choosing Godrej Interio!`,
+        text: `🎉 **Congratulations ${customerProfile.name} Ji!**\n\nYour **${activeProduct.Product_Name}** has been **SAFELOCKED (RESERVED)** under Order Ref: **#${created.Order_ID}**!\n\n• 📦 **Stock Reserved:** 1 Unit locked at Warehouse Dock 1\n• 💰 **Token Advance:** ₹${advancePaid.toLocaleString()} Settled via UPI QR\n• 🚚 **Delivery Scheduled:** Today, 04:30 PM (Driver: Tophan Gouda)\n• 🪚 **Installation:** Narayana Mistri assigned\n\nDirectors Naresh & Naren have received your order notification. Thank you for choosing Godrej Interio!`,
         time: "Just Now",
         matchedProducts: []
       }
@@ -489,7 +489,7 @@ export function MobileCustomerChatView() {
     if (q.includes('40%') || q.includes('50% discount') || q.includes('cheap') || q.includes('lowest price')) {
       return {
         title: "🏷️ Festive Pricing Policy",
-        text: `Our maximum authorized showroom festive discount for this luxury solid wood suite is up to 8% with complimentary delivery & hydraulic installation in Rayagada. For customized corporate or whole-villa architectural projects, our Showroom Director Mr. Rakesh (+91 93905 53301) can arrange a personalized consultation.`,
+        text: `Our maximum authorized showroom festive discount for this luxury solid wood suite is up to 8% with complimentary delivery & hydraulic installation in Rayagada. For customized corporate or whole-villa architectural projects, our Showroom Directors Naresh & Naren (+91 93905 53301) can arrange a personalized consultation.`,
         matchedProducts: []
       };
     }
@@ -1663,7 +1663,7 @@ export function MobileCustomerChatView() {
 
             <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', padding: '12px', marginBottom: '14px' }}>
               <div style={{ fontSize: '11.5px', color: '#E2E8F0', lineHeight: '1.5' }}>
-                Namaskar <strong>{customerProfile.name || leadName || 'Respected Customer'}</strong>! Because you have taken time exploring our flagship collection today, Store Director <strong>N. Leela Rakesh (+91 9390553301)</strong> has authorized:
+                Namaskar <strong>{customerProfile.name || leadName || 'Respected Customer'}</strong>! Because you have taken time exploring our flagship collection today, Store Directors <strong>Naresh & Naren (+91 9390553301)</strong> have authorized:
               </div>
               <div style={{ marginTop: '8px', fontSize: '11px', color: '#A7F3D0', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <div>✓ <strong>Direct Showroom Margin Discount</strong> on {activeProduct.Product_Name}</div>
@@ -1674,7 +1674,7 @@ export function MobileCustomerChatView() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <a
-                href={`https://wa.me/919390553301?text=${encodeURIComponent(`Namaskar Director Rakesh Sir! 🙏 I am ${customerProfile.name || leadName || 'a VIP Customer'} exploring ${activeProduct.Product_Name} (₹${sp.toLocaleString()}) on your 24/7 AI Concierge [${getOccasionLabel()}]. I would like to speak directly about the festive showroom privilege.`)}`}
+                href={`https://wa.me/919390553301?text=${encodeURIComponent(`Namaskar Directors Naresh & Naren Sir! 🙏 I am ${customerProfile.name || leadName || 'a VIP Customer'} exploring ${activeProduct.Product_Name} (₹${sp.toLocaleString()}) on your 24/7 AI Concierge [${getOccasionLabel()}]. I would like to speak directly about the festive showroom privilege.`)}`}
                 target="_blank"
                 rel="noreferrer"
                 style={{
@@ -1692,7 +1692,7 @@ export function MobileCustomerChatView() {
                   boxShadow: '0 4px 15px rgba(37,211,102,0.4)'
                 }}
               >
-                <MessageSquare size={16} /> <span>WhatsApp Director Rakesh (+91 9390553301)</span>
+                <MessageSquare size={16} /> <span>WhatsApp Directors Naresh & Naren (+91 9390553301)</span>
               </a>
 
               <a

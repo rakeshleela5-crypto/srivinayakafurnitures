@@ -3,13 +3,13 @@
 
 export const STORE_METADATA = {
   storeName: "Godrej Interio Rayagada Flagship Showroom",
-  dealerName: "Shree Ganesh Enterprises / Leela Rakesh",
+  dealerName: "Sri Vinayaka Furnitures / Naresh & Naren",
   address: "Main Road, Near New Bus Stand, Rayagada, Odisha 765001",
   gstin: "21AAAAA0000A1Z5",
   cinPan: "AAECG1234F",
   phone: "+91 93905 53301",
   whatsapp: "+91 93905 53301",
-  manager: "Rakesh (Store Director & Operations Head)",
+  manager: "Naresh & Naren (Store Directors & Operations Heads)",
   upiVpa: "9390553301@ybl",
   merchantName: "Godrej Interio Rayagada",
   bankName: "HDFC Bank Ltd, Rayagada Main Branch",
@@ -2222,16 +2222,16 @@ export const INITIAL_SMARTKIT_BOXES = [
   { Box_ID: "BOX-BED-001-B", Component_Name: "Box 2/5: Solid Teak Side Rails & Footboard", Weight_KG: "29.0 kg", Barcode: "SK-BED-01-B", Status: "VERIFIED_STAGED", Staged_By: "Staff Rakesh" },
   { Box_ID: "BOX-BED-001-C", Component_Name: "Box 3/5: Heavy-Duty Metal Slats & Frame Grid", Weight_KG: "24.5 kg", Barcode: "SK-BED-01-C", Status: "VERIFIED_STAGED", Staged_By: "Staff Rakesh" },
   { Box_ID: "BOX-BED-001-D", Component_Name: "Box 4/5: Gas-Lift Shock Absorbers & Hardware Kit", Weight_KG: "8.2 kg", Barcode: "SK-BED-01-D", Status: "VERIFIED_STAGED", Staged_By: "Staff Rakesh" },
-  { Box_ID: "BOX-BED-001-E", Component_Name: "Box 5/5: Water-Resistant Engineered Mattress Base", Weight_KG: "19.0 kg", Barcode: "SK-BED-01-E", Status: "VERIFIED_STAGED", Staged_By: "Staff Rakesh" }
+  { Box_ID: "BOX-BED-001-E", Component_Name: "Box 5/5: Water-Resistant Engineered Mattress Base", Weight_KG: "19.0 kg", Barcode: "SK-BED-01-E", Status: "VERIFIED_STAGED", Staged_By: "Dock Team" }
 ];
 
 // Initial Inquiries CRM Leads
 export const INITIAL_INQUIRIES = [
-  { Inquiry_ID: "INQ-AI-905", Inquiry_Date: "05-Sep-2026 01:10 AM", Customer_Name: "K. Venkat Rao (Gunupur)", Customer_Phone: "9390553301", Address: "Main Road Gunupur", Category_Models: "Grand Royal Teakwood King Bed Suite [💍 Wedding Suite]", Budget_INR: 245000, AI_Intent_Score: "99% (👑 ULTRA-VIP DIRECTOR CALL > 1.5L)", Intent_Badge: "👑 ULTRA-VIP", Follow_Up_Date: "Immediate (5 Mins)", Status: "ENGAGED_ON_MOBILE_AI", Urgency: "DIRECTOR_URGENT", Assigned_Staff: "Rakesh (Store Director)" },
+  { Inquiry_ID: "INQ-AI-905", Inquiry_Date: "05-Sep-2026 01:10 AM", Customer_Name: "K. Venkat Rao (Gunupur)", Customer_Phone: "9390553301", Address: "Main Road Gunupur", Category_Models: "Grand Royal Teakwood King Bed Suite [💍 Wedding Suite]", Budget_INR: 245000, AI_Intent_Score: "99% (👑 ULTRA-VIP DIRECTOR CALL > 1.5L)", Intent_Badge: "👑 ULTRA-VIP", Follow_Up_Date: "Immediate (5 Mins)", Status: "ENGAGED_ON_MOBILE_AI", Urgency: "DIRECTOR_URGENT", Assigned_Staff: "Naresh & Naren (Store Directors)" },
   { Inquiry_ID: "INQ-AI-904", Inquiry_Date: "04-Sep-2026 09:40 PM", Customer_Name: "Smt. Manjula Sahu", Customer_Phone: "9390553301", Address: "Gayatri Nagar, Rayagada", Category_Models: "Sereno Velvet 3-Seater Recliner Sofa [🏠 Griha Pravesh]", Budget_INR: 89000, AI_Intent_Score: "92% (HOT CONCIERGE LEAD)", Intent_Badge: "🔥 HOT CONCIERGE", Follow_Up_Date: "Tomorrow 11:00 AM", Status: "ENGAGED_ON_MOBILE_AI", Urgency: "HIGH_HOT_LEAD", Assigned_Staff: "24/7 AI Concierge" },
-  { Inquiry_ID: "INQ-2026-901", Inquiry_Date: "28-Aug-2026 10:30 AM", Customer_Name: "Prof. Ananya Mishra", Customer_Phone: "9390553301", Address: "Raniguda Farmhouse, Rayagada", Category_Models: "Luxury Solid Teak Bedroom Suite", Budget_INR: 180000, AI_Intent_Score: 92, Intent_Badge: "HOT_LEAD 🔥", Follow_Up_Date: "29-Aug-2026", Status: "HOT_LEAD", Assigned_Staff: "Rakesh (Store Manager)" },
+  { Inquiry_ID: "INQ-2026-901", Inquiry_Date: "28-Aug-2026 10:30 AM", Customer_Name: "Prof. Ananya Mishra", Customer_Phone: "9390553301", Address: "Raniguda Farmhouse, Rayagada", Category_Models: "Luxury Solid Teak Bedroom Suite", Budget_INR: 180000, AI_Intent_Score: 92, Intent_Badge: "HOT_LEAD 🔥", Follow_Up_Date: "29-Aug-2026", Status: "HOT_LEAD", Assigned_Staff: "Naresh & Naren (Store Directors)" },
   { Inquiry_ID: "INQ-2026-902", Inquiry_Date: "28-Aug-2026 11:15 AM", Customer_Name: "Sri Tarun Patnaik (Advocate)", Customer_Phone: "9390553301", Address: "Sai Priya Nagar, Rayagada", Category_Models: "7-Seater Recliner Leatherette Sofa", Budget_INR: 110000, AI_Intent_Score: 84, Intent_Badge: "HOT_LEAD 🔥", Follow_Up_Date: "30-Aug-2026", Status: "HOT_LEAD", Assigned_Staff: "Sunil (Sales Rep)" },
-  { Inquiry_ID: "INQ-2026-903", Inquiry_Date: "27-Aug-2026 04:45 PM", Customer_Name: "Dr. B. K. Padhy (Clinic)", Customer_Phone: "9390553301", Address: "JK Pur Road, Rayagada", Category_Models: "Executive Ergonomic Office Chairs & Desk", Budget_INR: 65000, AI_Intent_Score: 68, Intent_Badge: "WARM_LEAD ⚡", Follow_Up_Date: "01-Sep-2026", Status: "FOLLOW_UP", Assigned_Staff: "Rakesh (Store Manager)" }
+  { Inquiry_ID: "INQ-2026-903", Inquiry_Date: "27-Aug-2026 04:45 PM", Customer_Name: "Dr. B. K. Padhy (Clinic)", Customer_Phone: "9390553301", Address: "JK Pur Road, Rayagada", Category_Models: "Executive Ergonomic Office Chairs & Desk", Budget_INR: 65000, AI_Intent_Score: 68, Intent_Badge: "WARM_LEAD ⚡", Follow_Up_Date: "01-Sep-2026", Status: "FOLLOW_UP", Assigned_Staff: "Naresh & Naren (Store Directors)" }
 ];
 
 // VIP Architect Partners

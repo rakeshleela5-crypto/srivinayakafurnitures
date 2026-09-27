@@ -453,7 +453,7 @@ export default function B2bInstitutionalProjectsView() {
                   className="btn-emerald"
                   style={{ flex: 1, padding: '8px 12px', fontSize: '11.5px' }}
                   onClick={() => {
-                    const text = encodeURIComponent(`Namaskar ${proj.contactPerson}! 🙏 This is Naresh / Director Rakesh from Sri Vinayaka Furnitures (Godrej Interio Rayagada). Regarding our commercial contract for ${proj.clientName} (${proj.roomsCount} Rooms): Next Step: ${proj.nextAction}. Current Balance: ₹${proj.balanceDue.toLocaleString('en-IN')}. Please confirm your availability today.`);
+                    const text = encodeURIComponent(`Namaskar ${proj.contactPerson}! 🙏 This is Directors Naresh & Naren from Sri Vinayaka Furnitures (Godrej Interio Rayagada). Regarding our commercial contract for ${proj.clientName} (${proj.roomsCount} Rooms): Next Step: ${proj.nextAction}. Current Balance: ₹${proj.balanceDue.toLocaleString('en-IN')}. Please confirm your availability today.`);
                     window.open(`https://wa.me/91${proj.phone.replace(/[^0-9]/g, '')}?text=${text}`, '_blank');
                   }}
                 >

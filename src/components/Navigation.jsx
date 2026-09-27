@@ -240,7 +240,7 @@ export function TabsRibbon() {
     { id: 'bank_ledger', label: '🏛️ 14. Bank Statements & RTGS', icon: Landmark },
     { id: 'tally_gst_desk', label: '⚡ 15. Tally & GST Hub', icon: FileSpreadsheet },
     { id: 'staff_qr', label: '📱 16. Staff Mobile QR Hub', icon: Smartphone },
-    { id: 'live_database', label: '🗄️ 17. Live 43-Table D1 Edge', icon: Database },
+    { id: 'live_database', label: '🗄️ 17. Live 52 D1 Database', icon: Database },
 
     // PHASE 5: Autonomous Edge Robotics & Cron Fleet
     { id: 'autonomous_fleet', label: '🤖 18. 20-Bot Autonomous Fleet', icon: Bot }
@@ -286,7 +286,7 @@ export function BottomDock() {
     { id: 'bank_ledger', label: '🏛️ Bank Ledger' },
     { id: 'tally_gst_desk', label: '⚡ Tally & GST' },
     { id: 'staff_qr', label: '📱 QR Hub' },
-    { id: 'live_database', label: '🗄️ 43 Tables D1' },
+    { id: 'live_database', label: '🗄️ 52 Tables D1' },
     { id: 'autonomous_fleet', label: '🤖 20-Bot Fleet' }
   ];
 

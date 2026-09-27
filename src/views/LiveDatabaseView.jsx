@@ -49,9 +49,9 @@ export function LiveDatabaseView() {
   const [showTableModal, setShowTableModal] = useState(false);
   const [tableSearchFilter, setTableSearchFilter] = useState('');
 
-  // Master Categories for the 43+ Enterprise D1 Tables
+  // Master Categories for the 52 Enterprise D1 Tables
   const CATEGORY_TABS = [
-    { id: 'ALL', label: 'All Tables (43+)', icon: '🏛️' },
+    { id: 'ALL', label: `All Tables (${tablesList.length || 52})`, icon: '🏛️' },
     { id: 'SALES', label: 'Sales & POS', icon: '🛒' },
     { id: 'STOCK', label: 'Inventory & Godown', icon: '📦' },
     { id: 'ACCOUNTS', label: 'Accounts & Cashier', icon: '💰' },
@@ -79,28 +79,66 @@ export function LiveDatabaseView() {
       }
     } catch (err) {
       console.warn('Could not fetch tables list from edge, using fallback list', err);
-      // Hardened fallback tables list with core operational tables first
+      // Hardened fallback tables list with all 52 enterprise tables
       setTablesList([
-        { tableName: 'catalog', category: '📦 Inventory & Godown' },
+        // Sales & POS
+        { tableName: 'catalog', category: '🛒 Sales & Counter POS' },
         { tableName: 'orders', category: '🛒 Sales & Counter POS' },
         { tableName: 'inquiries', category: '🛒 Sales & Counter POS' },
-        { tableName: 'payments', category: '💰 Accounts & Reconciliation' },
+        { tableName: 'payments', category: '🛒 Sales & Counter POS' },
         { tableName: 'architects', category: '🛒 Sales & Counter POS' },
-        { tableName: 'smartkit_boxes', category: '📦 Inventory & Godown' },
-        { tableName: 'inventory_stock', category: '📦 Inventory & Godown' },
-        { tableName: 'floor_aging_sentinel', category: '📦 Inventory & Godown' },
+        { tableName: 'smartkit_boxes', category: '🛒 Sales & Counter POS' },
         { tableName: 'transactions_log', category: '🛒 Sales & Counter POS' },
-        { tableName: 'bank_transactions_log', category: '💰 Accounts & Reconciliation' },
-        { tableName: 'eod_reconciliation_log', category: '💰 Accounts & Reconciliation' },
+        { tableName: 'quote_log', category: '🛒 Sales & Counter POS' },
+        { tableName: 'commercial_quotations_log', category: '🛒 Sales & Counter POS' },
         { tableName: 'discounts_override_log', category: '🛒 Sales & Counter POS' },
+        { tableName: 'daily_sales_summary', category: '🛒 Sales & Counter POS' },
+        { tableName: 'wedding_suites_log', category: '🛒 Sales & Counter POS' },
+        { tableName: 'exchange_buyback_log', category: '🛒 Sales & Counter POS' },
+        { tableName: 'customer_anniversary_log', category: '🛒 Sales & Counter POS' },
+        // Inventory & Godown
+        { tableName: 'inventory_stock', category: '📦 Inventory & Godown' },
+        { tableName: 'stock_ledger', category: '📦 Inventory & Godown' },
+        { tableName: 'floor_aging_sentinel', category: '📦 Inventory & Godown' },
+        { tableName: 'purchase_orders_log', category: '📦 Inventory & Godown' },
+        { tableName: 'vendor_sourcing_matrix', category: '📦 Inventory & Godown' },
+        { tableName: 'transit_lr_tracking', category: '📦 Inventory & Godown' },
+        { tableName: 'supplier_invoices_ledger', category: '📦 Inventory & Godown' },
+        // Accounts & Reconciliation
+        { tableName: 'bank_transactions_log', category: '💰 Accounts & Reconciliation' },
+        { tableName: 'tally_vouchers', category: '💰 Accounts & Reconciliation' },
+        { tableName: 'tally_voucher_items', category: '💰 Accounts & Reconciliation' },
+        { tableName: 'gst_returns_filings_log', category: '💰 Accounts & Reconciliation' },
+        { tableName: 'document_generation_log', category: '💰 Accounts & Reconciliation' },
+        { tableName: 'eod_reconciliation_log', category: '💰 Accounts & Reconciliation' },
+        { tableName: 'commission_log', category: '💰 Accounts & Reconciliation' },
+        { tableName: 'store_sales_targets', category: '💰 Accounts & Reconciliation' },
+        { tableName: 'profit_radar_audit_log', category: '💰 Accounts & Reconciliation' },
+        // Logistics & Fleet Drivers
         { tableName: 'fleet_drivers', category: '🚚 Logistics & Fleet Drivers' },
         { tableName: 'delivery_route_stops', category: '🚚 Logistics & Fleet Drivers' },
+        { tableName: 'delivery_log', category: '🚚 Logistics & Fleet Drivers' },
+        { tableName: 'delivery_reschedule_log', category: '🚚 Logistics & Fleet Drivers' },
+        { tableName: 'otp_log', category: '🚚 Logistics & Fleet Drivers' },
+        // Workshop & Fitment QC
         { tableName: 'carpenter_work_orders', category: '🛠️ Workshop & Fitment QC' },
+        { tableName: 'carpenter_installation_slas', category: '🛠️ Workshop & Fitment QC' },
         { tableName: 'room_fitment_qc_log', category: '🛠️ Workshop & Fitment QC' },
         { tableName: 'warranty_registry', category: '🛠️ Workshop & Fitment QC' },
-        { tableName: 'purchase_orders_log', category: '📦 Inventory & Godown' },
-        { tableName: 'quote_log', category: '🛒 Sales & Counter POS' },
-        { tableName: 'daily_sales_summary', category: '🛒 Sales & Counter POS' }
+        { tableName: 'amc_subscriptions_log', category: '🛠️ Workshop & Fitment QC' },
+        { tableName: 'vip_villa_projects', category: '🛠️ Workshop & Fitment QC' },
+        { tableName: 'b2b_commercial_tenders_log', category: '🛠️ Workshop & Fitment QC' },
+        // AI Fleet & Telemetry
+        { tableName: 'bot_configurations', category: '🤖 AI Fleet & Telemetry' },
+        { tableName: 'bot_configurations_log', category: '🤖 AI Fleet & Telemetry' },
+        { tableName: 'bot_test_log', category: '🤖 AI Fleet & Telemetry' },
+        { tableName: 'whatsapp_dispatches_log', category: '🤖 AI Fleet & Telemetry' },
+        { tableName: 'followup_queue_log', category: '🤖 AI Fleet & Telemetry' },
+        { tableName: 'appsheet_bots_telemetry', category: '🤖 AI Fleet & Telemetry' },
+        { tableName: 'marketing_campaigns_log', category: '🤖 AI Fleet & Telemetry' },
+        { tableName: 'customer_reviews_log', category: '🤖 AI Fleet & Telemetry' },
+        { tableName: 'company_profile', category: '🤖 AI Fleet & Telemetry' },
+        { tableName: 'store_alerts_log', category: '🤖 AI Fleet & Telemetry' }
       ]);
     } finally {
       setIsLoading(false);
@@ -371,7 +409,7 @@ export function LiveDatabaseView() {
               className="btn-ghost-edit"
               style={{ fontSize: '11px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '5px' }}
             >
-              <Layers size={13} /> Quick Browser (43)
+              <Layers size={13} /> Quick Browser ({tablesList.length || 52})
             </button>
 
             <span className="badge badge-purple" style={{ fontSize: '10px' }}>

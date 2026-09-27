@@ -6,7 +6,7 @@
  * ==============================================================================
  */
 
-// Enterprise Showroom Table Categories
+// Enterprise Showroom Table Categories (52 Enterprise Tables)
 const TABLE_CATEGORIES = {
   SALES_POS: {
     category: '🛒 Sales & Counter POS',
@@ -23,18 +23,20 @@ const TABLE_CATEGORIES = {
       'discounts_override_log',
       'daily_sales_summary',
       'wedding_suites_log',
-      'exchange_buyback_log'
+      'exchange_buyback_log',
+      'customer_anniversary_log'
     ]
   },
   STOCK_GODOWN: {
     category: '📦 Inventory & Godown',
     tables: [
-      'catalog',
       'inventory_stock',
       'stock_ledger',
       'floor_aging_sentinel',
       'purchase_orders_log',
-      'vendor_sourcing_matrix'
+      'vendor_sourcing_matrix',
+      'transit_lr_tracking',
+      'supplier_invoices_ledger'
     ]
   },
   ACCOUNTS_BANKING: {
@@ -65,6 +67,7 @@ const TABLE_CATEGORIES = {
     category: '🛠️ Workshop & Fitment QC',
     tables: [
       'carpenter_work_orders',
+      'carpenter_installation_slas',
       'room_fitment_qc_log',
       'warranty_registry',
       'amc_subscriptions_log',
@@ -75,11 +78,12 @@ const TABLE_CATEGORIES = {
   AI_TELEMETRY: {
     category: '🤖 AI Fleet & Telemetry',
     tables: [
+      'bot_configurations',
+      'bot_configurations_log',
+      'bot_test_log',
       'whatsapp_dispatches_log',
       'followup_queue_log',
       'appsheet_bots_telemetry',
-      'bot_configurations_log',
-      'bot_test_log',
       'marketing_campaigns_log',
       'customer_reviews_log',
       'company_profile',

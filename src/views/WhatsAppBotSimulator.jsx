@@ -140,7 +140,7 @@ export function WhatsAppBotSimulator() {
 
       return {
         title: "👑 Executive Director Copilot",
-        text: `Namaskar Director Rakesh! 🔓 VIP Executive Mode Active. Full 43-Table Google Sheets telemetry online. You can ask me for today's bank balance, UTR status, hot concierge leads, sales collections, factory purchase costs, profit margins, low stock alerts, or customer balances.`
+        text: `Namaskar Director Rakesh! 🔓 VIP Executive Mode Active. Full 52-Table Enterprise D1 & Google Sheets telemetry online. You can ask me for today's bank balance, UTR status, hot concierge leads, sales collections, factory purchase costs, profit margins, low stock alerts, or customer balances.`
       };
     }
 

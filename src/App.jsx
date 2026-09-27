@@ -29,6 +29,7 @@ const StaffInwardScannerView = React.lazy(() => import('./views/StaffInwardScann
 const StaffOutwardScannerView = React.lazy(() => import('./views/StaffOutwardScannerView').then(m => ({ default: m.StaffOutwardScannerView })));
 const MobileCustomerChatView = React.lazy(() => import('./views/MobileCustomerChatView').then(m => ({ default: m.MobileCustomerChatView })));
 const BankStatementLedgerView = React.lazy(() => import('./views/BankStatementLedgerView').then(m => ({ default: m.BankStatementLedgerView })));
+const TallyGstOfficeView = React.lazy(() => import('./views/TallyGstOfficeView').then(m => ({ default: m.TallyGstOfficeView })));
 const ShowroomAiAgentsView = React.lazy(() => import('./views/ShowroomAiAgentsView'));
 const B2bInstitutionalProjectsView = React.lazy(() => import('./views/B2bInstitutionalProjectsView'));
 const AutonomousFleetView = React.lazy(() => import('./views/AutonomousFleetView').then(m => ({ default: m.AutonomousFleetView })));
@@ -190,6 +191,8 @@ function AppContent() {
       case 'bank_ledger':
       case 'bank_statement':
         return <BankStatementLedgerView />;
+      case 'tally_gst_desk':
+        return <TallyGstOfficeView />;
       case 'logistics_epod':
         return <LogisticsEpodView />;
       case 'architects':

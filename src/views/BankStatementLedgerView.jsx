@@ -764,14 +764,14 @@ export function BankStatementLedgerView() {
             <Download size={14} /> GSTR-1 Portal JSON
           </button>
 
-          {/* ⚡ OPEN TALLY POWER MODE MODAL */}
+          {/* ⚡ SWITCH TO TALLY & GST HUB TAB */}
           <button
-            onClick={() => openModal('tally_power_mode')}
+            onClick={() => setActiveTab('tally_gst_desk')}
             className="btn-luxury-gold"
             style={{ fontSize: '11.5px', padding: '6px 14px', display: 'flex', alignItems: 'center', gap: '6px', background: 'linear-gradient(135deg, #064E3B, #022C22)', border: '1px solid #10B981', color: '#6EE7B7' }}
-            title="Open Gateway of Tally™ Double-Entry Ledger Drill-Down (Alt+T)"
+            title="Open Tally & GST Statutory Hub (Tab 15)"
           >
-            <span>⚡ Tally Drill-Down [Alt+T]</span>
+            <span>⚡ Tally & GST Hub [Tab 15]</span>
           </button>
 
           {/* 📥 1-CLICK TALLY PRIME EXPORT */}

@@ -88,12 +88,12 @@ export function AppHeader() {
     const handleGlobalShortcuts = (e) => {
       if (e.altKey && (e.key === 't' || e.key === 'T')) {
         e.preventDefault();
-        openModal('tally_power_mode');
+        setActiveTab('tally_gst_desk');
       }
     };
     window.addEventListener('keydown', handleGlobalShortcuts);
     return () => window.removeEventListener('keydown', handleGlobalShortcuts);
-  }, [openModal]);
+  }, [setActiveTab]);
 
   return (
     <header className="app-header">
@@ -106,25 +106,6 @@ export function AppHeader() {
       </div>
 
       <div className="header-actions">
-        {/* ⚡ Gateway of Tally Power Mode Trigger */}
-        <button 
-          className="btn-luxury-gold" 
-          onClick={() => openModal('tally_power_mode')} 
-          style={{ 
-            fontSize: '11px', 
-            padding: '6px 14px', 
-            background: 'linear-gradient(135deg, #064E3B, #022C22)', 
-            border: '1px solid #10B981', 
-            color: '#6EE7B7', 
-            fontWeight: '900',
-            letterSpacing: '0.5px',
-            boxShadow: '0 0 14px rgba(16,185,129,0.2)'
-          }} 
-          title="Switch to Gateway of Tally™ Keyboard Fast-Billing & Double-Entry Ledgers (Alt+T)"
-        >
-          <span>⚡ TALLY POWER MODE [Alt+T]</span>
-        </button>
-
         {currentUser && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span className={`badge ${currentUser.badgeClass}`} style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -256,11 +237,12 @@ export function TabsRibbon() {
 
     // PHASE 4: Finance, Staff Hub & Sovereign Cloudflare D1 Database
     { id: 'bank_ledger', label: '🏛️ 14. Bank Statements & RTGS', icon: Landmark },
-    { id: 'staff_qr', label: '📱 15. Staff Mobile QR Hub', icon: Smartphone },
-    { id: 'live_database', label: '🗄️ 16. Live 43-Table D1 Edge', icon: Database },
+    { id: 'tally_gst_desk', label: '⚡ 15. Tally & GST Hub', icon: FileSpreadsheet },
+    { id: 'staff_qr', label: '📱 16. Staff Mobile QR Hub', icon: Smartphone },
+    { id: 'live_database', label: '🗄️ 17. Live 43-Table D1 Edge', icon: Database },
 
     // PHASE 5: Autonomous Edge Robotics & Cron Fleet
-    { id: 'autonomous_fleet', label: '🤖 17. 20-Bot Autonomous Fleet', icon: Bot }
+    { id: 'autonomous_fleet', label: '🤖 18. 20-Bot Autonomous Fleet', icon: Bot }
   ];
 
   // Filter tabs allowed for current role
@@ -301,6 +283,7 @@ export function BottomDock() {
     { id: 'logistics_epod', label: '📱 Fleet ePOD' },
     { id: 'documents', label: '🧾 Documents' },
     { id: 'bank_ledger', label: '🏛️ Bank Ledger' },
+    { id: 'tally_gst_desk', label: '⚡ Tally & GST' },
     { id: 'staff_qr', label: '📱 QR Hub' },
     { id: 'live_database', label: '🗄️ 43 Tables D1' },
     { id: 'autonomous_fleet', label: '🤖 20-Bot Fleet' }

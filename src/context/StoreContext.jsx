@@ -31,10 +31,10 @@ export const ROLE_PERMISSIONS = Object.freeze({
     'executive', 'b2b_projects', 'crm', 'voice_pos', 'architects',
     'autoprocure', 'inward_scanner', 'safelock', 'barcode_studio', 'qr_studio',
     'outward_scanner', 'logistics_epod', 'documents',
-    'bank_ledger', 'staff_qr', 'live_database', 'autonomous_fleet'
+    'bank_ledger', 'tally_gst_desk', 'staff_qr', 'live_database', 'autonomous_fleet'
   ]),
   sunil_sales: Object.freeze([
-    'voice_pos', 'b2b_projects', 'crm', 'safelock', 'documents', 'barcode_studio', 'qr_studio'
+    'voice_pos', 'b2b_projects', 'crm', 'safelock', 'documents', 'barcode_studio', 'qr_studio', 'tally_gst_desk'
   ]),
   dock_supervisor: Object.freeze([
     'inward_scanner', 'outward_scanner', 'safelock', 'barcode_studio', 'qr_studio', 'staff_qr'

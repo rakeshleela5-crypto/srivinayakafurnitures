@@ -46,6 +46,8 @@ export function LiveDatabaseView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [lastSyncTime, setLastSyncTime] = useState(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+  const [showTableModal, setShowTableModal] = useState(false);
+  const [tableSearchFilter, setTableSearchFilter] = useState('');
 
   // Master Categories for the 43+ Enterprise D1 Tables
   const CATEGORY_TABS = [
@@ -202,6 +204,17 @@ export function LiveDatabaseView() {
     });
   }, [tablesList, activeCategory]);
 
+  // Group tables by category for clean organized display
+  const tablesByCategory = useMemo(() => {
+    const groups = {};
+    filteredTablesList.forEach(t => {
+      const cat = t.category || 'General';
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(t);
+    });
+    return groups;
+  }, [filteredTablesList]);
+
   return (
     <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
       
@@ -305,7 +318,7 @@ export function LiveDatabaseView() {
           gap: '10px'
         }}>
           {/* Table Picker Dropdown */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-gold-light)', display: 'flex', alignItems: 'center', gap: '5px' }}>
               <Table size={14} /> Active SQL Table:
             </span>
@@ -314,16 +327,51 @@ export function LiveDatabaseView() {
               onChange={e => {
                 setSelectedTableName(e.target.value);
                 setCurrentPage(1);
+                playScanBeep();
               }}
               className="luxury-input"
-              style={{ fontSize: '12px', fontWeight: '800', fontFamily: 'JetBrains Mono', padding: '6px 12px', minWidth: '240px', color: '#FFFFFF' }}
+              style={{
+                fontSize: '12.5px',
+                fontWeight: '800',
+                fontFamily: "'JetBrains Mono', monospace",
+                padding: '7px 14px',
+                minWidth: '270px',
+                backgroundColor: '#0B1120',
+                color: '#F8FAFC',
+                colorScheme: 'dark',
+                border: '1.5px solid rgba(212, 175, 55, 0.45)',
+                borderRadius: '10px',
+                cursor: 'pointer'
+              }}
             >
-              {filteredTablesList.map(t => (
-                <option key={t.tableName} value={t.tableName}>
-                  {t.tableName} ({t.category?.replace(/[^\w\s]/gi, '').trim() || 'General'})
-                </option>
+              {Object.entries(tablesByCategory).map(([categoryName, tables]) => (
+                <optgroup 
+                  key={categoryName} 
+                  label={categoryName}
+                  style={{ backgroundColor: '#070B14', color: '#D4AF37', fontWeight: '800' }}
+                >
+                  {tables.map(t => (
+                    <option 
+                      key={t.tableName} 
+                      value={t.tableName}
+                      style={{ backgroundColor: '#0B1120', color: '#F8FAFC', padding: '6px 10px' }}
+                    >
+                      {t.tableName}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
+
+            <button
+              type="button"
+              onClick={() => { setShowTableModal(true); playScanBeep(); }}
+              className="btn-ghost-edit"
+              style={{ fontSize: '11px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '5px' }}
+            >
+              <Layers size={13} /> Quick Browser (43)
+            </button>
+
             <span className="badge badge-purple" style={{ fontSize: '10px' }}>
               {tableData.totalCount} Rows in D1
             </span>
@@ -511,6 +559,133 @@ export function LiveDatabaseView() {
           </button>
         </div>
       </div>
+
+      {/* ========================================================================= */}
+      {/* 🏛️ TABLE NAVIGATOR MODAL                                                 */}
+      {/* ========================================================================= */}
+      {showTableModal && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(12px)',
+          zIndex: 1000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <div style={{
+            background: '#0B1120',
+            border: '1.5px solid rgba(212, 175, 55, 0.45)',
+            borderRadius: '18px',
+            width: '100%',
+            maxWidth: '750px',
+            maxHeight: '85vh',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            boxShadow: '0 25px 60px rgba(0,0,0,0.95), 0 0 30px rgba(212,175,55,0.18)',
+            animation: 'modalCenteredSpring 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards'
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid rgba(255,255,255,0.08)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: 'rgba(15, 23, 42, 0.7)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Table size={18} color="var(--accent-gold)" />
+                <span style={{ fontSize: '15px', fontWeight: '800', color: '#FFFFFF' }}>
+                  Enterprise SQL Table Navigator ({tablesList.length} Tables)
+                </span>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setShowTableModal(false)}
+                className="btn-ghost-edit"
+                style={{ padding: '4px 10px', fontSize: '13px' }}
+              >
+                ✕ Close
+              </button>
+            </div>
+
+            {/* Quick Filter Search */}
+            <div style={{ padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ position: 'relative' }}>
+                <Search size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94A3B8' }} />
+                <input
+                  type="text"
+                  placeholder="Filter tables by name or department (e.g. orders, quote, catalog)..."
+                  value={tableSearchFilter}
+                  onChange={e => setTableSearchFilter(e.target.value)}
+                  className="luxury-input"
+                  style={{ width: '100%', paddingLeft: '34px', fontSize: '13px' }}
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            {/* Tables Grid */}
+            <div style={{ padding: '16px 20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {Object.entries(tablesByCategory).map(([catName, tables]) => {
+                const matched = tables.filter(t => 
+                  !tableSearchFilter.trim() || 
+                  t.tableName.toLowerCase().includes(tableSearchFilter.toLowerCase()) ||
+                  catName.toLowerCase().includes(tableSearchFilter.toLowerCase())
+                );
+                if (matched.length === 0) return null;
+                return (
+                  <div key={catName}>
+                    <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-gold)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>{catName}</span>
+                      <span style={{ fontSize: '10px', opacity: 0.7, color: '#94A3B8' }}>({matched.length})</span>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px' }}>
+                      {matched.map(t => (
+                        <button
+                          key={t.tableName}
+                          type="button"
+                          onClick={() => {
+                            setSelectedTableName(t.tableName);
+                            setCurrentPage(1);
+                            setShowTableModal(false);
+                            playSuccessChime();
+                          }}
+                          style={{
+                            padding: '10px 12px',
+                            borderRadius: '10px',
+                            background: selectedTableName === t.tableName ? 'rgba(212,175,55,0.2)' : 'rgba(255,255,255,0.03)',
+                            border: selectedTableName === t.tableName ? '1.5px solid var(--accent-gold)' : '1px solid rgba(255,255,255,0.08)',
+                            color: selectedTableName === t.tableName ? 'var(--accent-gold-light)' : '#E2E8F0',
+                            fontSize: '12px',
+                            fontWeight: '700',
+                            fontFamily: "'JetBrains Mono', monospace",
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            transition: 'all 120ms ease'
+                          }}
+                        >
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {t.tableName}
+                          </span>
+                          {selectedTableName === t.tableName && <span style={{ fontSize: '10px', color: 'var(--accent-gold)' }}>✓</span>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -6,6 +6,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap');
 
 :root {
+  color-scheme: dark;
   --bg-primary: #070B14;
   --bg-secondary: #0D1322;
   --bg-card: rgba(17, 24, 39, 0.82);
@@ -677,19 +678,47 @@ table.luxury-table tr:hover td {
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
-.form-field input, .form-field select, .form-field textarea {
-  background: #030712;
-  border: 1.5px solid rgba(255, 255, 255, 0.12);
+.form-field input, .form-field select, .form-field textarea,
+input, select, textarea, .luxury-input {
+  background: #0B1120;
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
   border-radius: var(--radius-input);
-  padding: 9px 12px;
-  font-size: 13px;
-  color: #FFFFFF;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  color: #F8FAFC;
   outline: none;
+  color-scheme: dark !important;
   transition: border-color var(--duration-snap) ease, box-shadow var(--duration-snap) ease, background-color var(--duration-snap) ease;
 }
-.form-field input:focus, .form-field select:focus, .form-field textarea:focus {
+
+.form-field input:focus, .form-field select:focus, .form-field textarea:focus,
+input:focus, select:focus, textarea:focus, .luxury-input:focus {
   border-color: var(--accent-gold);
-  box-shadow: 0 0 14px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 0 14px rgba(212, 175, 55, 0.35);
+  background-color: #0F172A;
+}
+
+/* Force dark theme and high-contrast text on all native option elements for Windows Chrome / Edge */
+option, optgroup {
+  background-color: #0B1120 !important;
+  color: #F8FAFC !important;
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+optgroup {
+  font-weight: 800 !important;
+  color: var(--accent-gold) !important;
+  background-color: #070B14 !important;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.25);
+  margin-top: 6px;
+  padding: 6px 10px !important;
+}
+
+option:checked, option:hover, option:focus {
+  background-color: #1E293B !important;
+  color: var(--accent-gold-light) !important;
 }
 
 /* Animations */

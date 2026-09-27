@@ -18,7 +18,8 @@ import {
   Building2,
   Bot,
   Printer,
-  Download
+  Download,
+  FileSpreadsheet
 } from 'lucide-react';
 
 export function TopTicker() {

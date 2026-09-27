@@ -232,6 +232,15 @@ export function StoreProvider({ children }) {
   const [bankAccounts, setBankAccounts] = useState(() => getStored('OMNIBUILD_BANK_ACCOUNTS', BANK_ACCOUNTS));
   const [bankTransactions, setBankTransactions] = useState(() => getStored('OMNIBUILD_BANK_TRANSACTIONS', INITIAL_BANK_TRANSACTIONS));
 
+  // ⚡ Tally Double-Entry Vouchers & Stock Movement Ledger
+  const [tallyVouchers, setTallyVouchers] = useState(() => getStored('OMNIBUILD_TALLY_VOUCHERS', [
+    { voucher_id: 'VCH-INIT-01', voucher_no: 'VN-1001', voucher_type: 'SALES', voucher_date: new Date().toISOString().slice(0, 10), party_ledger: 'Dr. Subhashish Jena', amount_inr: 62000, narration: 'Sales of Teak King Bed (Reverse 18% GST)', status: 'POSTED' },
+    { voucher_id: 'VCH-INIT-02', voucher_no: 'VN-1002', voucher_type: 'RECEIPT', voucher_date: new Date().toISOString().slice(0, 10), party_ledger: 'HDFC Bank Ltd', amount_inr: 31000, narration: 'Advance 50% Token received via Dynamic UPI QR', status: 'POSTED' }
+  ]));
+  const [stockLedger, setStockLedger] = useState(() => getStored('OMNIBUILD_STOCK_LEDGER', [
+    { ledger_id: 1, sku: 'BED-MOD-001', warehouse_id: 'WH-GODOWN-1', change_qty: 5, balance_qty: 5, reference_doc_type: 'PO', reference_doc_id: 'PO-GDJ-4401', created_at: new Date().toISOString() }
+  ]));
+
   // Automatic LocalStorage Sync Hooks for All Core Datastores
   useEffect(() => { localStorage.setItem('OMNIBUILD_CATALOG', JSON.stringify(catalog)); }, [catalog]);
   useEffect(() => { localStorage.setItem('OMNIBUILD_ORDERS', JSON.stringify(orders)); }, [orders]);
@@ -248,6 +257,8 @@ export function StoreProvider({ children }) {
   useEffect(() => { localStorage.setItem('OMNIBUILD_FLOOR_AGING', JSON.stringify(floorAgingStock)); }, [floorAgingStock]);
   useEffect(() => { localStorage.setItem('OMNIBUILD_BANK_ACCOUNTS', JSON.stringify(bankAccounts)); }, [bankAccounts]);
   useEffect(() => { localStorage.setItem('OMNIBUILD_BANK_TRANSACTIONS', JSON.stringify(bankTransactions)); }, [bankTransactions]);
+  useEffect(() => { localStorage.setItem('OMNIBUILD_TALLY_VOUCHERS', JSON.stringify(tallyVouchers)); }, [tallyVouchers]);
+  useEffect(() => { localStorage.setItem('OMNIBUILD_STOCK_LEDGER', JSON.stringify(stockLedger)); }, [stockLedger]);
 
   // UI States & Modals
   const [activeModal, setActiveModal] = useState(null);
@@ -411,6 +422,53 @@ export function StoreProvider({ children }) {
     return updatedCatalog;
   };
 
+  // ⚡ Double-Entry Tally Rapid Voucher Posting Engine
+  const postTallyVoucher = (voucher) => {
+    const vId = voucher.voucher_id || `VCH-${Date.now().toString().slice(-6)}`;
+    const vNo = voucher.voucher_no || `VN-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newVoucher = {
+      voucher_id: vId,
+      voucher_no: vNo,
+      voucher_type: voucher.voucher_type || 'SALES',
+      voucher_date: voucher.voucher_date || new Date().toISOString().slice(0, 10),
+      party_ledger: voucher.party_ledger || 'Cash',
+      amount_inr: Number(voucher.amount_inr || voucher.amount || 0),
+      narration: voucher.narration || '',
+      gst_rate_pct: Number(voucher.gst_rate_pct || 18),
+      status: 'POSTED',
+      created_at: new Date().toISOString()
+    };
+    setTallyVouchers(prev => [newVoucher, ...(prev || [])]);
+    playSuccessChime();
+    showToast(`⚡ Tally ${newVoucher.voucher_type} Voucher #${vNo} posted to ledger!`, true);
+    dispatchWebhookAction('POST_TALLY_VOUCHER', newVoucher);
+    return newVoucher;
+  };
+
+  // 📦 Double-Entry Stock Movement Record
+  const recordStockMovement = (sku, changeQty, docType = 'STOCK_ADJUSTMENT', docId = '') => {
+    const targetSku = sku || 'BED-MOD-001';
+    const refDocId = docId || `DOC-${Date.now().toString().slice(-4)}`;
+    const newEntry = {
+      ledger_id: Date.now(),
+      sku: targetSku,
+      warehouse_id: 'WH-GODOWN-1',
+      change_qty: changeQty,
+      balance_qty: 5,
+      reference_doc_type: docType,
+      reference_doc_id: refDocId,
+      created_at: new Date().toISOString()
+    };
+    setStockLedger(prev => [newEntry, ...(prev || [])]);
+    dispatchWebhookAction('RECORD_STOCK_MOVEMENT', {
+      sku: targetSku,
+      change_qty: changeQty,
+      reference_doc_type: docType,
+      reference_doc_id: refDocId
+    });
+    return newEntry;
+  };
+
   // 1. SafeLock Action: Atomic Reservation
   const triggerSafeLockOrder = (orderData) => {
     const newOrder = {
@@ -480,6 +538,37 @@ export function StoreProvider({ children }) {
       }, ...prev]);
     }
 
+    // ⚡ Interconnected Event Bridge: Auto-Post F8 Sales Voucher to Tally Hub
+    const vNo = `VN-${Math.floor(1000 + Math.random() * 9000)}`;
+    const autoSalesVoucher = {
+      voucher_id: `VCH-${newOrder.Order_ID}`,
+      voucher_no: vNo,
+      voucher_type: 'SALES',
+      voucher_date: new Date().toISOString().slice(0, 10),
+      party_ledger: newOrder.Customer_Name,
+      amount_inr: newOrder.Total_Amount_INR,
+      narration: `POS Sales Order #${newOrder.Order_ID} for ${newOrder.Ordered_SKU}`,
+      gst_rate_pct: 18,
+      status: 'POSTED'
+    };
+    setTallyVouchers(prev => [autoSalesVoucher, ...(prev || [])]);
+    dispatchWebhookAction('POST_TALLY_VOUCHER', autoSalesVoucher);
+
+    // 📦 Interconnected Event Bridge: Deduct from Stock Movement Ledger
+    recordStockMovement(newOrder.Ordered_SKU, -1, 'SALES_ORDER', newOrder.Order_ID);
+
+    // 🧾 Interconnected Event Bridge: Auto-Log Invoice Document in Document Studio
+    setDocumentsLog(prev => [{
+      Doc_ID: `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+      Doc_Type: 'INVOICE',
+      Entity_Ref_ID: newOrder.Order_ID,
+      Customer_Vendor_Name: newOrder.Customer_Name,
+      Total_Amount_INR: newOrder.Total_Amount_INR,
+      GST_Amount_INR: Math.round((newOrder.Total_Amount_INR * 18) / 118),
+      Generated_Date_Time: formatDateTimeIndian(),
+      Status: 'GENERATED_LEGAL_COMPLIANT'
+    }, ...(prev || [])]);
+
     playSafeLockSound();
     triggerGoldenConfetti();
     showToast(`🔒 SafeLock Order #${newOrder.Order_ID} confirmed with stock reservation!`, true);
@@ -534,7 +623,7 @@ export function StoreProvider({ children }) {
     return createdOrder;
   };
 
-  // 3. Stock Dial / Stepper Override
+  // 3. Stock Dial / Stepper Override (Interconnected with Catalog, Stock Ledger & Tally Purchase)
   const adjustStock = (sku, changeWh, changeRes = 0, reason = "Manual Executive Adjustment") => {
     setInventory(prev => prev.map(item => {
       if (item.SKU === sku) {
@@ -548,6 +637,38 @@ export function StoreProvider({ children }) {
       }
       return item;
     }));
+
+    // Update Catalog warehouse count
+    setCatalog(prev => prev.map(cat => {
+      if (cat.SKU === sku) {
+        return {
+          ...cat,
+          warehouse_qty: Math.max(0, (Number(cat.warehouse_qty) || 0) + changeWh)
+        };
+      }
+      return cat;
+    }));
+
+    // Record to Stock Movement Ledger
+    recordStockMovement(sku, changeWh, changeWh > 0 ? 'INWARD_RECEIVING' : 'STOCK_ADJUSTMENT', `STK-${Date.now().toString().slice(-4)}`);
+
+    // If stock arrived inward (e.g. from factory truck), auto-generate F9 Purchase Voucher in Tally
+    if (changeWh > 0) {
+      const vNo = `VN-${Math.floor(1000 + Math.random() * 9000)}`;
+      const purchaseVoucher = {
+        voucher_id: `VCH-INW-${Date.now().toString().slice(-6)}`,
+        voucher_no: vNo,
+        voucher_type: 'PURCHASE',
+        voucher_date: new Date().toISOString().slice(0, 10),
+        party_ledger: 'Godrej Interio Corporate',
+        amount_inr: Math.round(changeWh * 35000),
+        narration: `Factory Truck Inward Receiving: +${changeWh} sets of ${sku} (${reason})`,
+        gst_rate_pct: 18,
+        status: 'POSTED'
+      };
+      setTallyVouchers(prev => [purchaseVoucher, ...(prev || [])]);
+      dispatchWebhookAction('POST_TALLY_VOUCHER', purchaseVoucher);
+    }
 
     playScanBeep();
     showToast(`📦 Stock updated for ${sku}: ΔWarehouse ${changeWh > 0 ? '+' : ''}${changeWh}`);
@@ -1073,6 +1194,12 @@ export function StoreProvider({ children }) {
       setPaymentsLog,
       documentsLog,
       setDocumentsLog,
+      tallyVouchers,
+      setTallyVouchers,
+      postTallyVoucher,
+      stockLedger,
+      setStockLedger,
+      recordStockMovement,
       eodSummary,
       setEodSummary,
       voiceCart,

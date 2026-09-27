@@ -31,6 +31,7 @@ const TABLE_CATEGORIES = {
     tables: [
       'catalog',
       'inventory_stock',
+      'stock_ledger',
       'floor_aging_sentinel',
       'purchase_orders_log',
       'vendor_sourcing_matrix'
@@ -40,6 +41,10 @@ const TABLE_CATEGORIES = {
     category: '💰 Accounts & Reconciliation',
     tables: [
       'bank_transactions_log',
+      'tally_vouchers',
+      'tally_voucher_items',
+      'gst_returns_filings_log',
+      'document_generation_log',
       'eod_reconciliation_log',
       'commission_log',
       'store_sales_targets',
@@ -172,6 +177,53 @@ const FALLBACK_SCHEMAS = {
     { cid: 5, name: 'fitment_status', type: 'TEXT', notnull: 0, pk: 0 },
     { cid: 6, name: 'customer_rating', type: 'INTEGER', notnull: 0, pk: 0 },
     { cid: 7, name: 'payout_inr', type: 'REAL', notnull: 0, pk: 0 }
+  ],
+  stock_ledger: [
+    { cid: 0, name: 'ledger_id', type: 'INTEGER', notnull: 1, pk: 1 },
+    { cid: 1, name: 'sku', type: 'TEXT', notnull: 1, pk: 0 },
+    { cid: 2, name: 'warehouse_id', type: 'TEXT', notnull: 1, pk: 0 },
+    { cid: 3, name: 'change_qty', type: 'INTEGER', notnull: 1, pk: 0 },
+    { cid: 4, name: 'balance_qty', type: 'INTEGER', notnull: 1, pk: 0 },
+    { cid: 5, name: 'reference_doc_type', type: 'TEXT', notnull: 1, pk: 0 },
+    { cid: 6, name: 'reference_doc_id', type: 'TEXT', notnull: 1, pk: 0 },
+    { cid: 7, name: 'created_at', type: 'DATETIME', notnull: 0, pk: 0 }
+  ],
+  tally_vouchers: [
+    { cid: 0, name: 'voucher_id', type: 'TEXT', notnull: 1, pk: 1 },
+    { cid: 1, name: 'voucher_no', type: 'TEXT', notnull: 1, pk: 0 },
+    { cid: 2, name: 'voucher_type', type: 'TEXT', notnull: 1, pk: 0 },
+    { cid: 3, name: 'voucher_date', type: 'DATE', notnull: 1, pk: 0 },
+    { cid: 4, name: 'party_ledger', type: 'TEXT', notnull: 1, pk: 0 },
+    { cid: 5, name: 'amount_inr', type: 'REAL', notnull: 1, pk: 0 },
+    { cid: 6, name: 'narration', type: 'TEXT', notnull: 0, pk: 0 },
+    { cid: 7, name: 'status', type: 'TEXT', notnull: 0, pk: 0 }
+  ],
+  tally_voucher_items: [
+    { cid: 0, name: 'entry_id', type: 'INTEGER', notnull: 1, pk: 1 },
+    { cid: 1, name: 'voucher_id', type: 'TEXT', notnull: 1, pk: 0 },
+    { cid: 2, name: 'account_name', type: 'TEXT', notnull: 1, pk: 0 },
+    { cid: 3, name: 'entry_type', type: 'TEXT', notnull: 1, pk: 0 },
+    { cid: 4, name: 'amount_inr', type: 'REAL', notnull: 1, pk: 0 },
+    { cid: 5, name: 'hsn_code', type: 'TEXT', notnull: 0, pk: 0 }
+  ],
+  gst_returns_filings_log: [
+    { cid: 0, name: 'filing_id', type: 'TEXT', notnull: 1, pk: 1 },
+    { cid: 1, name: 'return_type', type: 'TEXT', notnull: 1, pk: 0 },
+    { cid: 2, name: 'tax_period', type: 'TEXT', notnull: 1, pk: 0 },
+    { cid: 3, name: 'total_taxable_inr', type: 'REAL', notnull: 1, pk: 0 },
+    { cid: 4, name: 'igst_inr', type: 'REAL', notnull: 0, pk: 0 },
+    { cid: 5, name: 'cgst_inr', type: 'REAL', notnull: 0, pk: 0 },
+    { cid: 6, name: 'sgst_inr', type: 'REAL', notnull: 0, pk: 0 },
+    { cid: 7, name: 'reconciled_status', type: 'TEXT', notnull: 0, pk: 0 }
+  ],
+  document_generation_log: [
+    { cid: 0, name: 'doc_id', type: 'TEXT', notnull: 1, pk: 1 },
+    { cid: 1, name: 'doc_type', type: 'TEXT', notnull: 1, pk: 0 },
+    { cid: 2, name: 'entity_ref_id', type: 'TEXT', notnull: 0, pk: 0 },
+    { cid: 3, name: 'customer_vendor_name', type: 'TEXT', notnull: 1, pk: 0 },
+    { cid: 4, name: 'total_amount_inr', type: 'REAL', notnull: 1, pk: 0 },
+    { cid: 5, name: 'copy_type', type: 'TEXT', notnull: 0, pk: 0 },
+    { cid: 6, name: 'timestamp', type: 'DATETIME', notnull: 0, pk: 0 }
   ]
 };
 

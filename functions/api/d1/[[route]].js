@@ -426,6 +426,36 @@ function normalizeBotConfig(b) {
   };
 }
 
+function normalizeTallyVoucher(v) {
+  if (!v) return v;
+  return {
+    ...v,
+    voucher_id: v.voucher_id || v.Voucher_ID || '',
+    voucher_no: v.voucher_no || v.Voucher_No || '',
+    voucher_type: v.voucher_type || v.Voucher_Type || 'SALES',
+    voucher_date: v.voucher_date || v.Voucher_Date || '',
+    party_ledger: v.party_ledger || v.Party_Ledger || '',
+    amount_inr: Number(v.amount_inr ?? v.Amount_INR ?? 0),
+    narration: v.narration || v.Narration || '',
+    status: v.status || v.Status || 'POSTED'
+  };
+}
+
+function normalizeStockLedger(s) {
+  if (!s) return s;
+  return {
+    ...s,
+    ledger_id: s.ledger_id || s.Ledger_ID,
+    sku: s.sku || s.SKU || '',
+    warehouse_id: s.warehouse_id || s.Warehouse_ID || 'WH-GODOWN-1',
+    change_qty: Number(s.change_qty ?? s.Change_Qty ?? 0),
+    balance_qty: Number(s.balance_qty ?? s.Balance_Qty ?? 0),
+    reference_doc_type: s.reference_doc_type || s.Reference_Doc_Type || 'PO',
+    reference_doc_id: s.reference_doc_id || s.Reference_Doc_ID || '',
+    created_at: s.created_at || s.Created_At || ''
+  };
+}
+
 export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
@@ -1334,7 +1364,8 @@ export async function onRequest(context) {
       const [
         ordersRes, catalogRes, inquiriesRes, architectsRes, paymentsRes,
         vipRes, floorRes, smartKitRes, bankRes, docRes,
-        driversRes, stopsRes, targetsRes, eodRes, botsRes
+        driversRes, stopsRes, targetsRes, eodRes, botsRes,
+        tallyRes, stockLedgerRes, b2bRes, gstFilingsRes
       ] = await Promise.all([
         env.DB.prepare('SELECT * FROM orders ORDER BY created_at DESC;').all().catch(() => ({ results: [] })),
         env.DB.prepare('SELECT * FROM catalog ORDER BY category, product_name;').all().catch(() => ({ results: [] })),
@@ -1350,7 +1381,11 @@ export async function onRequest(context) {
         env.DB.prepare('SELECT * FROM delivery_route_stops ORDER BY stop_order ASC;').all().catch(() => ({ results: [] })),
         env.DB.prepare('SELECT * FROM store_sales_targets ORDER BY target_id DESC LIMIT 1;').all().catch(() => ({ results: [] })),
         env.DB.prepare('SELECT * FROM eod_reconciliation_log ORDER BY signoff_timestamp DESC LIMIT 1;').all().catch(() => ({ results: [] })),
-        env.DB.prepare('SELECT * FROM bot_configurations ORDER BY bot_id ASC;').all().catch(() => ({ results: [] }))
+        env.DB.prepare('SELECT * FROM bot_configurations ORDER BY bot_id ASC;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM tally_vouchers ORDER BY voucher_date DESC, created_at DESC LIMIT 100;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM stock_ledger ORDER BY created_at DESC LIMIT 100;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM b2b_commercial_tenders_log ORDER BY created_at DESC LIMIT 50;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM gst_returns_filings_log ORDER BY created_at DESC LIMIT 50;').all().catch(() => ({ results: [] }))
       ]);
 
       return new Response(JSON.stringify({
@@ -1371,7 +1406,11 @@ export async function onRequest(context) {
           routeStops: (stopsRes.results || []).map(normalizeRouteStop),
           targets: normalizeTargets(targetsRes.results?.[0]),
           eodSummary: normalizeEod(eodRes.results?.[0]),
-          botConfigurations: (botsRes.results || []).map(normalizeBotConfig)
+          botConfigurations: (botsRes.results || []).map(normalizeBotConfig),
+          tallyVouchers: (tallyRes.results || []).map(normalizeTallyVoucher),
+          stockLedger: (stockLedgerRes.results || []).map(normalizeStockLedger),
+          b2bTenders: b2bRes.results || [],
+          gstFilings: gstFilingsRes.results || []
         }
       }), { headers: corsHeaders });
     }
@@ -2090,6 +2129,93 @@ export async function onRequest(context) {
             success: true,
             tokenHoldHours: hours,
             message: `Token hold policy of ${hours}h saved to Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 19. Tally Rapid Voucher Punching & Statutory Double-Entry Posting (Tab 15)
+        case 'POST_TALLY_VOUCHER': {
+          const vId = p.voucher_id || `VCH-${Date.now().toString().slice(-6)}`;
+          const vNo = p.voucher_no || `VN-${Date.now().toString().slice(-5)}`;
+          const vType = p.voucher_type || 'SALES';
+          const vDate = p.voucher_date || new Date().toISOString().slice(0, 10);
+          const party = p.party_ledger || 'Cash';
+          const amt = Number(p.amount_inr || p.amount || 0);
+          const narr = p.narration || '';
+          const rate = Number(p.gst_rate_pct || 18);
+          const isInterstate = Boolean(p.is_interstate);
+
+          const taxAmt = Math.round((amt * rate) / (100 + rate));
+          const cgst = isInterstate ? 0 : Math.round(taxAmt / 2);
+          const sgst = isInterstate ? 0 : Math.round(taxAmt / 2);
+          const igst = isInterstate ? taxAmt : 0;
+
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO tally_vouchers 
+            (voucher_id, voucher_no, voucher_type, voucher_date, party_ledger, amount_inr, narration, gst_rate_pct, cgst_inr, sgst_inr, igst_inr, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'POSTED');
+          `).bind(vId, vNo, vType, vDate, party, amt, narr, rate, cgst, sgst, igst).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            voucherId: vId,
+            voucherNo: vNo,
+            message: `Tally ${vType} Voucher #${vNo} posted to Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 20. Double-Entry Stock Movement Ledger (Tab 7, 8, 11)
+        case 'RECORD_STOCK_MOVEMENT': {
+          const sku = p.sku;
+          const whId = p.warehouse_id || 'WH-GODOWN-1';
+          const changeQty = Number(p.change_qty || p.qty || 0);
+          const docType = p.reference_doc_type || 'STOCK_ADJUSTMENT';
+          const docId = p.reference_doc_id || `DOC-${Date.now().toString().slice(-4)}`;
+
+          if (sku && changeQty !== 0) {
+            await env.DB.prepare(`
+              UPDATE catalog 
+              SET warehouse_qty = MAX(0, warehouse_qty + ?), updated_at = CURRENT_TIMESTAMP 
+              WHERE sku = ?;
+            `).bind(changeQty, sku).run();
+
+            await env.DB.prepare(`
+              INSERT INTO stock_ledger (sku, warehouse_id, change_qty, balance_qty, reference_doc_type, reference_doc_id, created_by)
+              VALUES (?, ?, ?, (SELECT warehouse_qty FROM catalog WHERE sku = ?), ?, ?, ?);
+            `).bind(sku, whId, changeQty, sku, docType, docId, p.created_by || 'SYSTEM').run();
+          }
+
+          return new Response(JSON.stringify({
+            success: true,
+            sku,
+            changeQty,
+            message: `Stock movement for SKU ${sku} (${changeQty > 0 ? '+' : ''}${changeQty}) recorded in Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 21. Statutory GST Returns Snapshot Log (Tab 15 & 13)
+        case 'RECORD_GST_FILING': {
+          const filingId = p.filing_id || `GST-${Date.now().toString().slice(-6)}`;
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO gst_returns_filings_log 
+            (filing_id, return_type, tax_period, total_taxable_inr, igst_inr, cgst_inr, sgst_inr, eligible_itc_inr, invoices_count, portal_json, reconciled_status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'VERIFIED_LEGAL_COMPLIANT');
+          `).bind(
+            filingId,
+            p.return_type || 'GSTR_1',
+            p.tax_period || new Date().toISOString().slice(0, 7).replace('-', ''),
+            Number(p.total_taxable_inr || 0),
+            Number(p.igst_inr || 0),
+            Number(p.cgst_inr || 0),
+            Number(p.sgst_inr || 0),
+            Number(p.eligible_itc_inr || 0),
+            Number(p.invoices_count || 1),
+            typeof p.portal_json === 'string' ? p.portal_json : JSON.stringify(p.portal_json || {})
+          ).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            filingId,
+            message: `Statutory GST filing ${filingId} recorded in Cloudflare D1!`
           }), { headers: corsHeaders });
         }
 

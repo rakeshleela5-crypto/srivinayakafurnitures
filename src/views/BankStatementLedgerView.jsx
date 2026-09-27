@@ -61,6 +61,7 @@ export function BankStatementLedgerView() {
     setBankAccounts,
     bankTransactions: transactions,
     setBankTransactions: setTransactions,
+    postTallyVoucher,
     openModal,
     storeMeta
   } = useStore();
@@ -347,6 +348,17 @@ export function BankStatementLedgerView() {
       logged_by: newTxn.loggedBy
     });
 
+    // ⚡ Interconnected Event Bridge: Auto-Post F6 Receipt Voucher to Tally Hub
+    if (postTallyVoucher) {
+      postTallyVoucher({
+        voucher_type: 'RECEIPT',
+        voucher_date: new Date().toISOString().slice(0, 10),
+        party_ledger: newTxn.partyName || newTxn.bankAccountName,
+        amount_inr: newTxn.amount,
+        narration: `Bank Inward Credit via ${newTxn.paymentMode} (UTR: ${newTxn.utrNumber}) into ${newTxn.bankAccountName}. Linked: ${newTxn.linkedId || 'General'}`
+      });
+    }
+
     setShowInwardModal(false);
     if (dispatchRes && dispatchRes.success) {
       showToast(`✅ Inward Bank Credit ₹${(Number(newTxn?.amount) || 0).toLocaleString()} (UTR: ${newTxn.utrNumber}) logged to Cloudflare D1!`, true);
@@ -398,6 +410,17 @@ export function BankStatementLedgerView() {
       notes: newTxn.notes,
       logged_by: newTxn.loggedBy
     });
+
+    // ⚡ Interconnected Event Bridge: Auto-Post F5 Payment Voucher to Tally Hub
+    if (postTallyVoucher) {
+      postTallyVoucher({
+        voucher_type: 'PAYMENT',
+        voucher_date: new Date().toISOString().slice(0, 10),
+        party_ledger: newTxn.partyName,
+        amount_inr: newTxn.amount,
+        narration: `Bank Outward Payment via ${newTxn.paymentMode} (UTR: ${newTxn.utrNumber}) from ${newTxn.bankAccountName}. Ref: ${newTxn.linkedId || 'Vendor'}`
+      });
+    }
 
     setShowOutwardModal(false);
     if (dispatchRes && dispatchRes.success) {

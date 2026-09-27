@@ -61,6 +61,7 @@ import {
   downloadFile 
 } from '../services/tallyExportService';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
+import { dispatchWebhookAction } from '../services/webhookService';
 
 export function TallyGstOfficeView() {
   const { 
@@ -68,6 +69,8 @@ export function TallyGstOfficeView() {
     bankTransactions: transactions = [], 
     catalog = [], 
     storeMeta = {}, 
+    tallyVouchers = [],
+    postTallyVoucher,
     showToast,
     triggerSafeLockOrder,
     openModal
@@ -316,6 +319,19 @@ export function TallyGstOfficeView() {
     playSuccessChime();
     triggerGoldenConfetti();
 
+    const voucherRecord = {
+      voucher_type: vchType,
+      voucher_date: vchDate,
+      party_ledger: vchParty,
+      amount_inr: amt,
+      narration: vchNarration || `${vchType} Voucher for ${vchParticulars}`,
+      gst_rate_pct: 18
+    };
+
+    if (postTallyVoucher) {
+      postTallyVoucher(voucherRecord);
+    }
+
     if (vchType === 'SALES') {
       const newOrder = {
         Order_ID: `INV-TL-${Date.now().toString().slice(-4)}`,
@@ -346,6 +362,13 @@ export function TallyGstOfficeView() {
     });
     downloadFile(JSON.stringify(gstr1, null, 2), `GSTR1_Offline_Return_092026_${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
     showToast('🏛️ Exported official GSTR-1 JSON for GST Offline Portal Tool!', true);
+    dispatchWebhookAction('RECORD_GST_FILING', {
+      return_type: 'GSTR_1',
+      tax_period: '092026',
+      total_taxable_inr: orders.reduce((sum, o) => sum + (Number(o.Total_Amount_INR || 0) * 0.82), 0),
+      invoices_count: orders.length,
+      portal_json: gstr1
+    });
   };
 
   const handleExportGstr3b = () => {
@@ -357,6 +380,13 @@ export function TallyGstOfficeView() {
     });
     downloadFile(JSON.stringify(summary, null, 2), `GSTR3B_Summary_092026_${new Date().toISOString().slice(0, 10)}.json`, 'application/json');
     showToast('📊 Exported official GSTR-3B Summary Report!', true);
+    dispatchWebhookAction('RECORD_GST_FILING', {
+      return_type: 'GSTR_3B',
+      tax_period: '092026',
+      total_taxable_inr: summary?.taxableValue || 0,
+      eligible_itc_inr: summary?.eligibleItcTotal || 0,
+      portal_json: summary
+    });
   };
 
   const handleExportTallyXml = () => {

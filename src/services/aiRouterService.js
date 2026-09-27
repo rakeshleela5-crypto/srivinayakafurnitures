@@ -262,7 +262,12 @@ async function callCloudflareWorkersAiProvider(prompt, systemInstruction, maxTok
 
     if (res.ok) {
       const data = await res.json();
-      if (data?.success && data?.text) {
+      if (
+        data?.success && 
+        data?.text && 
+        !data.text.includes('Kalista King Hydraulic Bed') && 
+        !data.text.includes('Kalista Hydraulic King Bed')
+      ) {
         routerStatus.currentProvider = 'Cloudflare Workers AI (LLaMA 3.3 70B)';
         routerStatus.lastLatencyMs = Date.now() - startTime;
         return { success: true, text: data.text, provider: 'cloudflare_workers_ai' };
@@ -286,12 +291,14 @@ export const transcribeVoiceAudio = async (audioBlob) => {
     });
     if (res.ok) {
       const data = await res.json();
-      return data?.text || '';
+      if (data?.success && data?.text && !data.text.includes('Kalista Hydraulic King Bed')) {
+        return data.text;
+      }
     }
   } catch (err) {
     console.warn('[AI Router] Voice transcription fallback:', err);
   }
-  return 'Book Kalista Hydraulic King Bed with 50% token advance for Dr. Subhashish Jena';
+  return '';
 };
 
 /**

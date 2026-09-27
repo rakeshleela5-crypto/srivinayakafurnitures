@@ -1087,7 +1087,10 @@ export async function onRequest(context) {
       }
 
       if (!replyText) {
-        replyText = `Godrej Interio Rayagada Showroom Assistant: Recommended model based on your inquiry is Kalista King Hydraulic Bed (Teak Finish) with 10-Year Comprehensive Warranty and zero-cost EMI support. Visit us near New Bus Stand, Rayagada.`;
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Cloudflare Workers AI binding unavailable or model failed'
+        }), { status: 503, headers: corsHeaders });
       }
 
       return new Response(JSON.stringify({
@@ -1112,7 +1115,10 @@ export async function onRequest(context) {
       }
 
       if (!transcribedText) {
-        transcribedText = "Book Kalista Hydraulic King Bed with 50% token advance for Dr. Subhashish Jena";
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Cloudflare Whisper AI binding unavailable or unparseable'
+        }), { status: 503, headers: corsHeaders });
       }
 
       return new Response(JSON.stringify({
@@ -3131,20 +3137,16 @@ async function handleFallbackSimulation(path, method, request, corsHeaders) {
 
   if (path.endsWith('/ai/chat') && method === 'POST') {
     return new Response(JSON.stringify({
-      success: true,
-      simulated: true,
-      provider: 'Cloudflare Workers AI (Edge Simulator)',
-      text: `Godrej Interio Rayagada Sovereign AI: Kalista Hydraulic King Bed with 10-Year Warranty. Festive Floor Price ₹78,000 with ₹10,000 Advance Token.`
-    }), { headers: corsHeaders });
+      success: false,
+      error: 'Workers AI unavailable in simulation mode. Client will fallback to grounded local engine.'
+    }), { status: 503, headers: corsHeaders });
   }
 
   if (path.endsWith('/ai/transcribe') && method === 'POST') {
     return new Response(JSON.stringify({
-      success: true,
-      simulated: true,
-      provider: 'Cloudflare Workers AI (Edge Whisper Simulator)',
-      text: "Book Kalista Hydraulic King Bed with 50% token advance for Dr. Subhashish Jena"
-    }), { headers: corsHeaders });
+      success: false,
+      error: 'Whisper unavailable in simulation mode'
+    }), { status: 503, headers: corsHeaders });
   }
 
   if (path.endsWith('/storage/upload') && method === 'POST') {

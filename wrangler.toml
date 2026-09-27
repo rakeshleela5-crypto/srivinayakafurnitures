@@ -7,3 +7,6 @@ compatibility_flags = ["nodejs_compat"]
 binding = "DB"
 database_name = "srivinayaka-db"
 database_id = "dec7abfc-0131-434b-9d31-fa19770a6203"
+
+[ai]
+binding = "AI"

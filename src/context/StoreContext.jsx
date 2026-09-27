@@ -241,6 +241,14 @@ export function StoreProvider({ children }) {
     { ledger_id: 1, sku: 'BED-MOD-001', warehouse_id: 'WH-GODOWN-1', change_qty: 5, balance_qty: 5, reference_doc_type: 'PO', reference_doc_id: 'PO-GDJ-4401', created_at: new Date().toISOString() }
   ]));
 
+  // 🚚 Transporter Consignments, Supplier Factory Invoices & Service Registries
+  const [transitLr, setTransitLr] = useState(() => getStored('OMNIBUILD_TRANSIT_LR', []));
+  const [supplierInvoices, setSupplierInvoices] = useState(() => getStored('OMNIBUILD_SUPPLIER_INVOICES', []));
+  const [carpenterWorkOrders, setCarpenterWorkOrders] = useState(() => getStored('OMNIBUILD_CARPENTER_WO', []));
+  const [warranties, setWarranties] = useState(() => getStored('OMNIBUILD_WARRANTIES', []));
+  const [weddingSuites, setWeddingSuites] = useState(() => getStored('OMNIBUILD_WEDDING_SUITES', []));
+  const [exchangeBuybacks, setExchangeBuybacks] = useState(() => getStored('OMNIBUILD_EXCHANGE_BUYBACKS', []));
+
   // Automatic LocalStorage Sync Hooks for All Core Datastores
   useEffect(() => { localStorage.setItem('OMNIBUILD_CATALOG', JSON.stringify(catalog)); }, [catalog]);
   useEffect(() => { localStorage.setItem('OMNIBUILD_ORDERS', JSON.stringify(orders)); }, [orders]);
@@ -259,6 +267,12 @@ export function StoreProvider({ children }) {
   useEffect(() => { localStorage.setItem('OMNIBUILD_BANK_TRANSACTIONS', JSON.stringify(bankTransactions)); }, [bankTransactions]);
   useEffect(() => { localStorage.setItem('OMNIBUILD_TALLY_VOUCHERS', JSON.stringify(tallyVouchers)); }, [tallyVouchers]);
   useEffect(() => { localStorage.setItem('OMNIBUILD_STOCK_LEDGER', JSON.stringify(stockLedger)); }, [stockLedger]);
+  useEffect(() => { localStorage.setItem('OMNIBUILD_TRANSIT_LR', JSON.stringify(transitLr)); }, [transitLr]);
+  useEffect(() => { localStorage.setItem('OMNIBUILD_SUPPLIER_INVOICES', JSON.stringify(supplierInvoices)); }, [supplierInvoices]);
+  useEffect(() => { localStorage.setItem('OMNIBUILD_CARPENTER_WO', JSON.stringify(carpenterWorkOrders)); }, [carpenterWorkOrders]);
+  useEffect(() => { localStorage.setItem('OMNIBUILD_WARRANTIES', JSON.stringify(warranties)); }, [warranties]);
+  useEffect(() => { localStorage.setItem('OMNIBUILD_WEDDING_SUITES', JSON.stringify(weddingSuites)); }, [weddingSuites]);
+  useEffect(() => { localStorage.setItem('OMNIBUILD_EXCHANGE_BUYBACKS', JSON.stringify(exchangeBuybacks)); }, [exchangeBuybacks]);
 
   // UI States & Modals
   const [activeModal, setActiveModal] = useState(null);
@@ -1070,6 +1084,32 @@ export function StoreProvider({ children }) {
     dispatchWebhookAction('RESET_FLOOR_AGE', { sku });
   };
 
+  // 🚚 Extended Enterprise Table Dispatches
+  const logTransitLr = (lrData) => {
+    setTransitLr(prev => [lrData, ...prev]);
+    dispatchWebhookAction('LOG_TRANSIT_LR', lrData);
+  };
+  const recordSupplierInvoice = (invData) => {
+    setSupplierInvoices(prev => [invData, ...prev]);
+    dispatchWebhookAction('RECORD_SUPPLIER_INVOICE', invData);
+  };
+  const logCarpenterWorkOrder = (woData) => {
+    setCarpenterWorkOrders(prev => [woData, ...prev]);
+    dispatchWebhookAction('ASSIGN_CARPENTER_WORK_ORDER', woData);
+  };
+  const logWeddingSuite = (suiteData) => {
+    setWeddingSuites(prev => [suiteData, ...prev]);
+    dispatchWebhookAction('LOG_WEDDING_SUITE', suiteData);
+  };
+  const logExchangeBuyback = (exchData) => {
+    setExchangeBuybacks(prev => [exchData, ...prev]);
+    dispatchWebhookAction('LOG_EXCHANGE_BUYBACK', exchData);
+  };
+  const registerWarranty = (warData) => {
+    setWarranties(prev => [warData, ...prev]);
+    dispatchWebhookAction('REGISTER_WARRANTY', warData);
+  };
+
   // 8. Direct Sovereign Cloudflare D1 Edge Sync (Sub-10ms)
   const syncWithGoogleSheets = async (silent = false, targetTab = null) => {
     setIsSyncing(true);
@@ -1105,6 +1145,14 @@ export function StoreProvider({ children }) {
               return match ? { ...b, ...match } : b;
             }));
           }
+          if (Array.isArray(d.tallyVouchers) && d.tallyVouchers.length > 0) setTallyVouchers(d.tallyVouchers);
+          if (Array.isArray(d.stockLedger) && d.stockLedger.length > 0) setStockLedger(d.stockLedger);
+          if (Array.isArray(d.transitLr) && d.transitLr.length > 0) setTransitLr(d.transitLr);
+          if (Array.isArray(d.supplierInvoices) && d.supplierInvoices.length > 0) setSupplierInvoices(d.supplierInvoices);
+          if (Array.isArray(d.carpenterWorkOrders) && d.carpenterWorkOrders.length > 0) setCarpenterWorkOrders(d.carpenterWorkOrders);
+          if (Array.isArray(d.warranties) && d.warranties.length > 0) setWarranties(d.warranties);
+          if (Array.isArray(d.weddingSuites) && d.weddingSuites.length > 0) setWeddingSuites(d.weddingSuites);
+          if (Array.isArray(d.exchangeBuybacks) && d.exchangeBuybacks.length > 0) setExchangeBuybacks(d.exchangeBuybacks);
         }
       }
       if (!silent) {
@@ -1222,7 +1270,25 @@ export function StoreProvider({ children }) {
       registerNewSku,
       mergeDuplicateProduct,
       triggerAppSheetBot,
-      verifyDirectorPin
+      verifyDirectorPin,
+      transitLr,
+      setTransitLr,
+      logTransitLr,
+      supplierInvoices,
+      setSupplierInvoices,
+      recordSupplierInvoice,
+      carpenterWorkOrders,
+      setCarpenterWorkOrders,
+      logCarpenterWorkOrder,
+      warranties,
+      setWarranties,
+      registerWarranty,
+      weddingSuites,
+      setWeddingSuites,
+      logWeddingSuite,
+      exchangeBuybacks,
+      setExchangeBuybacks,
+      logExchangeBuyback
     }}>
       {children}
       {toastMessage && (

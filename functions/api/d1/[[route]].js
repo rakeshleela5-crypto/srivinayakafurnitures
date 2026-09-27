@@ -1365,7 +1365,9 @@ export async function onRequest(context) {
         ordersRes, catalogRes, inquiriesRes, architectsRes, paymentsRes,
         vipRes, floorRes, smartKitRes, bankRes, docRes,
         driversRes, stopsRes, targetsRes, eodRes, botsRes,
-        tallyRes, stockLedgerRes, b2bRes, gstFilingsRes
+        tallyRes, stockLedgerRes, b2bRes, gstFilingsRes,
+        transitRes, invoicesRes, annivRes, slasRes, carpRes,
+        warRes, amcRes, wedRes, exchRes, waRes, revRes, campRes, alertRes
       ] = await Promise.all([
         env.DB.prepare('SELECT * FROM orders ORDER BY created_at DESC;').all().catch(() => ({ results: [] })),
         env.DB.prepare('SELECT * FROM catalog ORDER BY category, product_name;').all().catch(() => ({ results: [] })),
@@ -1385,7 +1387,20 @@ export async function onRequest(context) {
         env.DB.prepare('SELECT * FROM tally_vouchers ORDER BY voucher_date DESC, created_at DESC LIMIT 100;').all().catch(() => ({ results: [] })),
         env.DB.prepare('SELECT * FROM stock_ledger ORDER BY created_at DESC LIMIT 100;').all().catch(() => ({ results: [] })),
         env.DB.prepare('SELECT * FROM b2b_commercial_tenders_log ORDER BY created_at DESC LIMIT 50;').all().catch(() => ({ results: [] })),
-        env.DB.prepare('SELECT * FROM gst_returns_filings_log ORDER BY created_at DESC LIMIT 50;').all().catch(() => ({ results: [] }))
+        env.DB.prepare('SELECT * FROM gst_returns_filings_log ORDER BY created_at DESC LIMIT 50;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM transit_lr_tracking ORDER BY dispatch_date DESC LIMIT 50;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM supplier_invoices_ledger ORDER BY due_date ASC LIMIT 50;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM customer_anniversary_log ORDER BY sent_at DESC LIMIT 50;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM carpenter_installation_slas ORDER BY deadline_at ASC LIMIT 50;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM carpenter_work_orders ORDER BY scheduled_date DESC LIMIT 50;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM warranty_registry ORDER BY registered_at DESC LIMIT 50;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM amc_subscriptions_log ORDER BY created_at DESC LIMIT 50;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM wedding_suites_log ORDER BY wedding_date ASC LIMIT 50;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM exchange_buyback_log ORDER BY created_at DESC LIMIT 50;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM whatsapp_dispatches_log ORDER BY dispatched_at DESC LIMIT 50;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM customer_reviews_log ORDER BY submitted_at DESC LIMIT 50;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM marketing_campaigns_log ORDER BY launched_at DESC LIMIT 50;').all().catch(() => ({ results: [] })),
+        env.DB.prepare('SELECT * FROM store_alerts_log ORDER BY created_at DESC LIMIT 50;').all().catch(() => ({ results: [] }))
       ]);
 
       return new Response(JSON.stringify({
@@ -1410,7 +1425,20 @@ export async function onRequest(context) {
           tallyVouchers: (tallyRes.results || []).map(normalizeTallyVoucher),
           stockLedger: (stockLedgerRes.results || []).map(normalizeStockLedger),
           b2bTenders: b2bRes.results || [],
-          gstFilings: gstFilingsRes.results || []
+          gstFilings: gstFilingsRes.results || [],
+          transitLr: transitRes.results || [],
+          supplierInvoices: invoicesRes.results || [],
+          customerAnniversaries: annivRes.results || [],
+          carpenterSlas: slasRes.results || [],
+          carpenterWorkOrders: carpRes.results || [],
+          warranties: warRes.results || [],
+          amcSubscriptions: amcRes.results || [],
+          weddingSuites: wedRes.results || [],
+          exchangeBuybacks: exchRes.results || [],
+          whatsappDispatches: waRes.results || [],
+          customerReviews: revRes.results || [],
+          marketingCampaigns: campRes.results || [],
+          storeAlerts: alertRes.results || []
         }
       }), { headers: corsHeaders });
     }
@@ -1503,7 +1531,13 @@ export async function onRequest(context) {
           const balance = totalAmt - advance;
           const otp = p.otp_code || p.OTP_Code || String(Math.floor(1000 + Math.random() * 9000));
 
-          // Atomic D1 Transaction: insert order + decrement stock
+          const txnId = `TXN-${Date.now().toString().slice(-6)}`;
+          const voucherId = `VCH-SALES-${orderId}`;
+          const voucherNo = `SALES-${Date.now().toString().slice(-5)}`;
+          const slaId = `SLA-${orderId}`;
+          const annivId = `ANNIV-${orderId}`;
+
+          // Atomic D1 Transaction: insert order + decrement stock + update financial and logistics ledgers
           const batchOps = [
             env.DB.prepare(`
               INSERT OR REPLACE INTO orders 
@@ -1516,6 +1550,13 @@ export async function onRequest(context) {
             batchOps.push(
               env.DB.prepare('UPDATE catalog SET warehouse_qty = MAX(0, warehouse_qty - 1) WHERE sku = ?;').bind(sku)
             );
+            // Double-entry stock ledger outward movement
+            batchOps.push(
+              env.DB.prepare(`
+                INSERT INTO stock_ledger (sku, warehouse_id, change_qty, balance_qty, reference_doc_type, reference_doc_id, created_by)
+                VALUES (?, 'WH-GODOWN-1', -1, (SELECT warehouse_qty FROM catalog WHERE sku = ?), 'SAFELOCK_ORDER', ?, 'Sunil (Sales Consultant)');
+              `).bind(sku, sku, orderId)
+            );
           }
 
           if (advance > 0) {
@@ -1523,9 +1564,50 @@ export async function onRequest(context) {
               env.DB.prepare(`
                 INSERT OR REPLACE INTO payments (txn_id, order_id, customer_name, amount_inr, payment_mode, reconciliation_status)
                 VALUES (?, ?, ?, ?, 'DYNAMIC_UPI_QR', 'SETTLED');
-              `).bind(`TXN-${Date.now().toString().slice(-6)}`, orderId, customerName, advance)
+              `).bind(txnId, orderId, customerName, advance)
+            );
+            batchOps.push(
+              env.DB.prepare(`
+                INSERT OR REPLACE INTO transactions_log (txn_id, order_id, customer_name, amount_inr, payment_mode, cashier_name)
+                VALUES (?, ?, ?, ?, 'DYNAMIC_UPI_QR', 'Sunil (Sales Consultant)');
+              `).bind(txnId, orderId, customerName, advance)
             );
           }
+
+          // OTP Log for logistics dispatch security
+          batchOps.push(
+            env.DB.prepare(`
+              INSERT OR REPLACE INTO otp_log (otp_id, order_id, customer_phone, otp_code, status)
+              VALUES (?, ?, ?, ?, 'OTP_PENDING');
+            `).bind(`OTP-${orderId}`, orderId, customerPhone, otp)
+          );
+
+          // Double-Entry Tally Sales Voucher
+          const taxAmt = Math.round((totalAmt * 18) / 118);
+          const cgst = Math.round(taxAmt / 2);
+          const sgst = cgst;
+          batchOps.push(
+            env.DB.prepare(`
+              INSERT OR REPLACE INTO tally_vouchers (voucher_id, voucher_no, voucher_type, voucher_date, party_ledger, amount_inr, narration, gst_rate_pct, cgst_inr, sgst_inr, igst_inr, status)
+              VALUES (?, ?, 'SALES', CURRENT_DATE, ?, ?, ?, 18.0, ?, ?, 0, 'POSTED');
+            `).bind(voucherId, voucherNo, customerName, totalAmt, `SafeLock Order #${orderId} - ${sku}`, cgst, sgst)
+          );
+
+          // Carpenter Assembly SLA (24h turnaround)
+          batchOps.push(
+            env.DB.prepare(`
+              INSERT OR REPLACE INTO carpenter_installation_slas (sla_id, order_id, customer_name, carpenter_name, delivered_at, deadline_at, status, customer_rating)
+              VALUES (?, ?, ?, 'Narayana Mistri', datetime('now'), datetime('now', '+24 hours'), 'ASSEMBLY_PENDING', 5);
+            `).bind(slaId, orderId, customerName)
+          );
+
+          // Customer 1-Year Maintenance Nudge Scheduler
+          batchOps.push(
+            env.DB.prepare(`
+              INSERT OR REPLACE INTO customer_anniversary_log (log_id, order_id, customer_name, customer_phone, product_name, purchased_date, nudge_type, status)
+              VALUES (?, ?, ?, ?, ?, datetime('now'), '1_YEAR_HYDRAULIC_LUBRICATION', 'SCHEDULED');
+            `).bind(annivId, orderId, customerName, customerPhone, p.item_names || sku)
+          );
 
           await env.DB.batch(batchOps);
 
@@ -1533,7 +1615,7 @@ export async function onRequest(context) {
             success: true,
             orderId,
             otp,
-            message: `Order #${orderId} SafeLocked and inventory decremented in Cloudflare D1!`
+            message: `Order #${orderId} SafeLocked and synced across 9 D1 enterprise tables!`
           }), { headers: corsHeaders });
         }
 
@@ -2216,6 +2298,409 @@ export async function onRequest(context) {
             success: true,
             filingId,
             message: `Statutory GST filing ${filingId} recorded in Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 22. Transporter LR Consignment Tracking (Tab 6, 11)
+        case 'LOG_TRANSIT_LR':
+        case 'UPDATE_TRANSIT_LR': {
+          const lrNo = p.lr_number || `LR-${Date.now().toString().slice(-6)}`;
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO transit_lr_tracking 
+            (lr_number, transporter_name, dispatch_date, expected_delivery, days_in_transit, boxes_count, status, insurance_claim_filed)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+          `).bind(
+            lrNo,
+            p.transporter_name || 'VRL Logistics / Safechem',
+            p.dispatch_date || new Date().toISOString().slice(0, 10),
+            p.expected_delivery || new Date(Date.now() + 86400000 * 3).toISOString().slice(0, 10),
+            Number(p.days_in_transit || 1),
+            Number(p.boxes_count || 1),
+            p.status || 'IN_TRANSIT',
+            p.insurance_claim_filed ? 1 : 0
+          ).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            lrNumber: lrNo,
+            message: `Transporter LR #${lrNo} recorded in Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 23. Godrej Factory Invoices & Early Cash Discount Sentinel (Tab 6, 14)
+        case 'RECORD_SUPPLIER_INVOICE':
+        case 'LOG_FACTORY_INVOICE': {
+          const invId = p.invoice_id || `INV-GODREJ-${Date.now().toString().slice(-5)}`;
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO supplier_invoices_ledger 
+            (invoice_id, supplier_name, invoice_date, due_date, invoice_amount_inr, discount_eligible_inr, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?);
+          `).bind(
+            invId,
+            p.supplier_name || 'Godrej Interio Corporate',
+            p.invoice_date || new Date().toISOString().slice(0, 10),
+            p.due_date || new Date(Date.now() + 86400000 * 15).toISOString().slice(0, 10),
+            Number(p.invoice_amount_inr || p.amount || 0),
+            Number(p.discount_eligible_inr || 0),
+            p.status || 'DISCOUNT_ALERTED'
+          ).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            invoiceId: invId,
+            message: `Supplier invoice #${invId} recorded in Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 24. Customer Anniversary & Annual Maintenance Nudges (Tab 10, 18)
+        case 'LOG_CUSTOMER_ANNIVERSARY_NUDGE':
+        case 'DISPATCH_ANNIVERSARY_OFFER': {
+          const logId = p.log_id || `ANNIV-${Date.now().toString().slice(-6)}`;
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO customer_anniversary_log 
+            (log_id, order_id, customer_name, customer_phone, product_name, purchased_date, nudge_type, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+          `).bind(
+            logId,
+            p.order_id || 'GENERAL',
+            p.customer_name || 'Customer',
+            p.customer_phone || '9437188291',
+            p.product_name || 'Godrej Interio Furniture',
+            p.purchased_date || new Date().toISOString().slice(0, 10),
+            p.nudge_type || '1_YEAR_HYDRAULIC_LUBRICATION',
+            p.status || 'MESSAGE_DISPATCHED'
+          ).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            logId,
+            message: `Customer anniversary nudge #${logId} logged to Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 25. Carpenter Fitment SLAs & Work Orders (Tab 12)
+        case 'LOG_CARPENTER_SLA':
+        case 'ASSIGN_CARPENTER_WORK_ORDER':
+        case 'UPDATE_CARPENTER_WORK_ORDER': {
+          const woId = p.wo_id || `WO-${Date.now().toString().slice(-5)}`;
+          const slaId = p.sla_id || `SLA-${Date.now().toString().slice(-5)}`;
+          const orderId = p.order_id || 'ORD-GENERAL';
+          const custName = p.customer_name || 'Showroom Customer';
+          const carpName = p.carpenter_name || 'Narayana Mistri';
+
+          await env.DB.batch([
+            env.DB.prepare(`
+              INSERT OR REPLACE INTO carpenter_work_orders 
+              (wo_id, order_id, customer_name, carpenter_name, scheduled_date, fitment_status, customer_rating, payout_inr)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+            `).bind(
+              woId,
+              orderId,
+              custName,
+              carpName,
+              p.scheduled_date || new Date().toISOString().slice(0, 10),
+              p.fitment_status || 'SCHEDULED_DISPATCH',
+              Number(p.customer_rating || 5),
+              Number(p.payout_inr || 1500)
+            ),
+            env.DB.prepare(`
+              INSERT OR REPLACE INTO carpenter_installation_slas 
+              (sla_id, order_id, customer_name, carpenter_name, delivered_at, deadline_at, status, customer_rating)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+            `).bind(
+              slaId,
+              orderId,
+              custName,
+              carpName,
+              p.delivered_at || new Date().toISOString(),
+              p.deadline_at || new Date(Date.now() + 86400000).toISOString(),
+              p.status || 'ASSEMBLY_PENDING',
+              Number(p.customer_rating || 5)
+            )
+          ]);
+
+          return new Response(JSON.stringify({
+            success: true,
+            woId,
+            slaId,
+            message: `Carpenter work order #${woId} & SLA logged to Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 26. Room Fitment QC Audit (Tab 12, 16)
+        case 'LOG_ROOM_FITMENT_QC':
+        case 'SUBMIT_FITMENT_QC': {
+          const qcId = p.qc_id || `QC-${Date.now().toString().slice(-5)}`;
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO room_fitment_qc_log 
+            (qc_id, order_id, hydraulic_tested, alignment_level_passed, anti_scratch_buffed, customer_signoff, inspected_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?);
+          `).bind(
+            qcId,
+            p.order_id || 'ORD-GENERAL',
+            p.hydraulic_tested ? 1 : 0,
+            p.alignment_level_passed ? 1 : 0,
+            p.anti_scratch_buffed ? 1 : 0,
+            p.customer_signoff || 'SATISFIED',
+            p.inspected_by || 'Narayana Mistri'
+          ).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            qcId,
+            message: `Room fitment QC #${qcId} recorded in Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 27. Warranty Registration (Tab 10, 13)
+        case 'REGISTER_WARRANTY':
+        case 'ACTIVATE_PRODUCT_WARRANTY': {
+          const certNo = p.certificate_no || `WAR-${Date.now().toString().slice(-6)}`;
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO warranty_registry 
+            (certificate_no, order_id, customer_name, customer_phone, sku, warranty_period_years, valid_until)
+            VALUES (?, ?, ?, ?, ?, ?, ?);
+          `).bind(
+            certNo,
+            p.order_id || 'ORD-GENERAL',
+            p.customer_name || 'Customer',
+            p.customer_phone || '9437188291',
+            p.sku || 'GENERAL-SKU',
+            Number(p.warranty_period_years || 5),
+            p.valid_until || new Date(Date.now() + 86400000 * 365 * 5).toISOString().slice(0, 10)
+          ).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            certificateNo: certNo,
+            message: `Warranty Certificate #${certNo} registered in Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 28. AMC Maintenance Subscriptions (Tab 2, 10)
+        case 'LOG_AMC_SUBSCRIPTION':
+        case 'RENEW_AMC_SUBSCRIPTION': {
+          const amcId = p.amc_id || `AMC-${Date.now().toString().slice(-5)}`;
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO amc_subscriptions_log 
+            (amc_id, customer_name, customer_phone, plan_tier, annual_fee_inr, service_visits_completed, total_visits, valid_until)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+          `).bind(
+            amcId,
+            p.customer_name || 'Client',
+            p.customer_phone || '9437188291',
+            p.plan_tier || 'PLATINUM_WOOD_CARE',
+            Number(p.annual_fee_inr || 12000),
+            Number(p.service_visits_completed || 0),
+            Number(p.total_visits || 3),
+            p.valid_until || new Date(Date.now() + 86400000 * 365).toISOString().slice(0, 10)
+          ).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            amcId,
+            message: `AMC Subscription #${amcId} recorded in Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 29. Wedding Suites Package Reservations (Tab 1, 3)
+        case 'LOG_WEDDING_SUITE':
+        case 'CREATE_WEDDING_PACKAGE': {
+          const suiteId = p.suite_id || `WED-${Date.now().toString().slice(-5)}`;
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO wedding_suites_log 
+            (suite_id, customer_name, customer_phone, wedding_date, package_name, total_budget_inr, advance_paid_inr, customization_notes, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+          `).bind(
+            suiteId,
+            p.customer_name || 'Customer',
+            p.customer_phone || '9437188291',
+            p.wedding_date || new Date().toISOString().slice(0, 10),
+            p.package_name || 'Royal Imperial Teak Suite',
+            Number(p.total_budget_inr || 250000),
+            Number(p.advance_paid_inr || 50000),
+            p.customization_notes || '',
+            p.status || 'RESERVED'
+          ).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            suiteId,
+            message: `Wedding Suite Package #${suiteId} booked in Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 30. Old Furniture Exchange & Buyback Evaluations (Tab 3)
+        case 'LOG_EXCHANGE_BUYBACK':
+        case 'RECORD_BUYBACK_APPRAISAL': {
+          const exId = p.exchange_id || `EXCH-${Date.now().toString().slice(-5)}`;
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO exchange_buyback_log 
+            (exchange_id, customer_name, customer_phone, item_type, condition, evaluated_value_inr, new_order_id, appraised_by, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+          `).bind(
+            exId,
+            p.customer_name || 'Customer',
+            p.customer_phone || '9437188291',
+            p.item_type || 'Old Wooden Double Bed',
+            p.condition || 'GOOD',
+            Number(p.evaluated_value_inr || 6000),
+            p.new_order_id || null,
+            p.appraised_by || 'Sunil (Sales Consultant)',
+            p.status || 'VOUCHER_ISSUED'
+          ).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            exchangeId: exId,
+            message: `Exchange & Buyback #${exId} logged in Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 31. WhatsApp Message Dispatches (Tab 10, 18)
+        case 'LOG_WHATSAPP_DISPATCH':
+        case 'DISPATCH_WHATSAPP_NOTIFICATION': {
+          const msgId = p.msg_id || `MSG-${Date.now().toString().slice(-6)}`;
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO whatsapp_dispatches_log 
+            (msg_id, recipient_phone, recipient_name, template_type, payload_summary, delivery_status)
+            VALUES (?, ?, ?, ?, ?, ?);
+          `).bind(
+            msgId,
+            p.recipient_phone || '9437188291',
+            p.recipient_name || 'Customer',
+            p.template_type || 'ORDER_CONFIRMATION',
+            p.payload_summary || '',
+            p.delivery_status || 'DELIVERED'
+          ).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            msgId,
+            message: `WhatsApp dispatch #${msgId} logged in Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 32. Customer Reviews & Google Ratings (Tab 1, 10)
+        case 'LOG_CUSTOMER_REVIEW':
+        case 'RECORD_GOOGLE_REVIEW': {
+          const revId = p.review_id || `REV-${Date.now().toString().slice(-5)}`;
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO customer_reviews_log 
+            (review_id, customer_name, rating, comments, is_verified_buyer)
+            VALUES (?, ?, ?, ?, ?);
+          `).bind(
+            revId,
+            p.customer_name || 'Customer',
+            Number(p.rating || 5),
+            p.comments || 'Great furniture and polite delivery staff!',
+            p.is_verified_buyer ? 1 : 0
+          ).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            reviewId: revId,
+            message: `Customer review #${revId} recorded in Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 33. Marketing Campaigns (Tab 10, 18)
+        case 'LOG_MARKETING_CAMPAIGN':
+        case 'LAUNCH_MARKETING_CAMPAIGN': {
+          const cmpId = p.campaign_id || `CMP-${Date.now().toString().slice(-5)}`;
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO marketing_campaigns_log 
+            (campaign_id, campaign_name, channel, recipients_count, conversion_count, status)
+            VALUES (?, ?, ?, ?, ?, ?);
+          `).bind(
+            cmpId,
+            p.campaign_name || 'Festive Rayagada Sofa Promotion',
+            p.channel || 'WHATSAPP_BROADCAST',
+            Number(p.recipients_count || 120),
+            Number(p.conversion_count || 14),
+            p.status || 'COMPLETED'
+          ).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            campaignId: cmpId,
+            message: `Marketing campaign #${cmpId} logged in Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 34. Store Alerts & Security Sentinels (Tab 1, 18)
+        case 'LOG_STORE_ALERT':
+        case 'TRIGGER_SECURITY_ALERT': {
+          const alId = p.alert_id || `ALT-${Date.now().toString().slice(-5)}`;
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO store_alerts_log 
+            (alert_id, alert_level, title, description, category, resolved)
+            VALUES (?, ?, ?, ?, ?, ?);
+          `).bind(
+            alId,
+            p.alert_level || 'WARNING',
+            p.title || 'Low Stock Threshold Reached',
+            p.description || '',
+            p.category || 'INVENTORY',
+            p.resolved ? 1 : 0
+          ).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            alertId: alId,
+            message: `Store alert #${alId} logged in Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 35. Architect & Staff Commission Ledgers (Tab 5, 14)
+        case 'LOG_COMMISSION_RECORD': {
+          const payId = p.payout_id || `PAY-${Date.now().toString().slice(-5)}`;
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO commission_log 
+            (payout_id, architect_id, architect_name, project_count, weekly_volume_inr, commission_rate_pct, gross_commission_inr, tds_10pct_inr, net_payable_inr, payout_status, utr_ref)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+          `).bind(
+            payId,
+            p.architect_id || 'ARC-001',
+            p.architect_name || 'Architect Partner',
+            Number(p.project_count || 1),
+            Number(p.weekly_volume_inr || 100000),
+            Number(p.commission_rate_pct || 10.0),
+            Number(p.gross_commission_inr || 10000),
+            Number(p.tds_10pct_inr || 1000),
+            Number(p.net_payable_inr || 9000),
+            p.payout_status || 'SETTLED_UPI',
+            p.utr_ref || 'UTR-COMM-9988'
+          ).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            payoutId: payId,
+            message: `Commission record #${payId} logged in Cloudflare D1!`
+          }), { headers: corsHeaders });
+        }
+
+        // 36. Profit Radar Floor Margin Audits (Tab 1, 3)
+        case 'LOG_PROFIT_RADAR_AUDIT': {
+          const audId = p.audit_id || `RADAR-${Date.now().toString().slice(-5)}`;
+          await env.DB.prepare(`
+            INSERT OR REPLACE INTO profit_radar_audit_log 
+            (audit_id, order_id, total_gross_inr, cost_of_goods_inr, gross_profit_inr, margin_pct, breached_floor_guard)
+            VALUES (?, ?, ?, ?, ?, ?, ?);
+          `).bind(
+            audId,
+            p.order_id || 'ORD-GENERAL',
+            Number(p.total_gross_inr || 62000),
+            Number(p.cost_of_goods_inr || 44000),
+            Number(p.gross_profit_inr || 18000),
+            Number(p.margin_pct || 29.0),
+            p.breached_floor_guard ? 1 : 0
+          ).run();
+
+          return new Response(JSON.stringify({
+            success: true,
+            auditId: audId,
+            message: `Profit Radar audit #${audId} logged in Cloudflare D1!`
           }), { headers: corsHeaders });
         }
 

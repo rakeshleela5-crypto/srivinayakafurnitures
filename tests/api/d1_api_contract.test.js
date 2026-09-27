@@ -262,5 +262,123 @@ describe('Sovereign Edge REST API Contract Testing (#21)', () => {
       assert.equal(data.orderId, 'ORD-TEST-9988');
       assert.ok(data.otp);
     });
+
+    it('POST /api/d1/dispatch with LOG_TRANSIT_LR logs transporter consignment', async () => {
+      const ctx = createMockContext({
+        url: 'https://srivinayakafurnitures.pages.dev/api/d1/dispatch',
+        method: 'POST',
+        body: {
+          action: 'LOG_TRANSIT_LR',
+          payload: {
+            lr_number: 'LR-VRL-9921',
+            transporter_name: 'VRL Logistics Safechem',
+            boxes_count: 5,
+            status: 'IN_TRANSIT'
+          }
+        },
+        env: { DB: mockDB }
+      });
+
+      const response = await onRequest(ctx);
+      assert.equal(response.status, 200);
+      const data = await response.json();
+      assert.equal(data.success, true);
+      assert.equal(data.lrNumber, 'LR-VRL-9921');
+    });
+
+    it('POST /api/d1/dispatch with RECORD_SUPPLIER_INVOICE records factory bill', async () => {
+      const ctx = createMockContext({
+        url: 'https://srivinayakafurnitures.pages.dev/api/d1/dispatch',
+        method: 'POST',
+        body: {
+          action: 'RECORD_SUPPLIER_INVOICE',
+          payload: {
+            invoice_id: 'INV-GODREJ-771',
+            supplier_name: 'Godrej Interio Corporate',
+            invoice_amount_inr: 450000,
+            discount_eligible_inr: 13500
+          }
+        },
+        env: { DB: mockDB }
+      });
+
+      const response = await onRequest(ctx);
+      assert.equal(response.status, 200);
+      const data = await response.json();
+      assert.equal(data.success, true);
+      assert.equal(data.invoiceId, 'INV-GODREJ-771');
+    });
+
+    it('POST /api/d1/dispatch with ASSIGN_CARPENTER_WORK_ORDER logs work order & SLA', async () => {
+      const ctx = createMockContext({
+        url: 'https://srivinayakafurnitures.pages.dev/api/d1/dispatch',
+        method: 'POST',
+        body: {
+          action: 'ASSIGN_CARPENTER_WORK_ORDER',
+          payload: {
+            wo_id: 'WO-8801',
+            sla_id: 'SLA-8801',
+            order_id: 'ORD-TEST-9988',
+            customer_name: 'Dr. Subhashish Jena',
+            carpenter_name: 'Narayana Mistri'
+          }
+        },
+        env: { DB: mockDB }
+      });
+
+      const response = await onRequest(ctx);
+      assert.equal(response.status, 200);
+      const data = await response.json();
+      assert.equal(data.success, true);
+      assert.equal(data.woId, 'WO-8801');
+    });
+
+    it('POST /api/d1/dispatch with REGISTER_WARRANTY registers warranty certificate', async () => {
+      const ctx = createMockContext({
+        url: 'https://srivinayakafurnitures.pages.dev/api/d1/dispatch',
+        method: 'POST',
+        body: {
+          action: 'REGISTER_WARRANTY',
+          payload: {
+            certificate_no: 'WAR-77881',
+            order_id: 'ORD-TEST-9988',
+            customer_name: 'Dr. Subhashish Jena',
+            sku: 'BED-MOD-001',
+            warranty_period_years: 10
+          }
+        },
+        env: { DB: mockDB }
+      });
+
+      const response = await onRequest(ctx);
+      assert.equal(response.status, 200);
+      const data = await response.json();
+      assert.equal(data.success, true);
+      assert.equal(data.certificateNo, 'WAR-77881');
+    });
+
+    it('POST /api/d1/dispatch with LOG_CUSTOMER_ANNIVERSARY_NUDGE schedules service', async () => {
+      const ctx = createMockContext({
+        url: 'https://srivinayakafurnitures.pages.dev/api/d1/dispatch',
+        method: 'POST',
+        body: {
+          action: 'LOG_CUSTOMER_ANNIVERSARY_NUDGE',
+          payload: {
+            log_id: 'ANNIV-9988',
+            order_id: 'ORD-TEST-9988',
+            customer_name: 'Dr. Subhashish Jena',
+            customer_phone: '9437188291',
+            product_name: 'Solid Teak King Bed'
+          }
+        },
+        env: { DB: mockDB }
+      });
+
+      const response = await onRequest(ctx);
+      assert.equal(response.status, 200);
+      const data = await response.json();
+      assert.equal(data.success, true);
+      assert.equal(data.logId, 'ANNIV-9988');
+    });
   });
 });

@@ -723,6 +723,19 @@ table.sheets-grid td:hover {
   outline-offset: -1px;
 }
 
+/* In-line Cell Edit Trigger Button (Google Sheets style) */
+td .cell-edit-trigger {
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+td:hover .cell-edit-trigger {
+  opacity: 0.85;
+}
+td .cell-edit-trigger:hover {
+  opacity: 1 !important;
+  transform: scale(1.15);
+}
+
 /* Modal Overlay & Card — Emil Kowalski Centered Physical Spring */
 @keyframes modalBackdropIn {
   from {

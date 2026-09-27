@@ -24,7 +24,11 @@ import {
   ChevronRight,
   Filter,
   Sparkles,
-  Printer
+  Printer,
+  Edit2,
+  Check,
+  X,
+  Lock
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
 
@@ -48,6 +52,11 @@ export function LiveDatabaseView() {
   const [lastSyncTime, setLastSyncTime] = useState(new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
   const [showTableModal, setShowTableModal] = useState(false);
   const [tableSearchFilter, setTableSearchFilter] = useState('');
+
+  // 📝 INLINE CELL EDITING STATE (Like Google Sheets & Cloudflare D1 Dashboard)
+  const [editingCell, setEditingCell] = useState(null); // { rowIdx, colName, colType, value, originalValue, pkCol, pkVal }
+  const [savingCellKey, setSavingCellKey] = useState(null); // `${rowIdx}-${colName}`
+  const [savedCellKey, setSavedCellKey] = useState(null); // `${rowIdx}-${colName}` (brief green flash)
 
   // Master Categories for the 52 Enterprise D1 Tables
   const CATEGORY_TABS = [
@@ -182,7 +191,107 @@ export function LiveDatabaseView() {
     showToast(`🔄 Synchronized live schema & data for ${selectedTableName}!`, true);
   };
 
-  // 3. Instant Search Filter
+  // 3. Primary Key Detection & In-Line Cell Editing Handlers
+  const primaryKeyCol = useMemo(() => {
+    return tableData.columns.find(c => c.pk === 1) || tableData.columns[0] || { name: 'id' };
+  }, [tableData.columns]);
+
+  const handleStartEdit = (rowIdx, col, row) => {
+    if (col.pk === 1) {
+      showToast(`🔒 ${col.name} is the PRIMARY KEY. Primary keys are protected to prevent foreign key corruption.`, false);
+      return;
+    }
+
+    const currentVal = row[col.name];
+    setEditingCell({
+      rowIdx,
+      colName: col.name,
+      colType: col.type || 'TEXT',
+      value: currentVal !== null && currentVal !== undefined ? String(currentVal) : '',
+      originalValue: currentVal,
+      pkCol: primaryKeyCol.name,
+      pkVal: row[primaryKeyCol.name]
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCell(null);
+  };
+
+  const handleSaveCell = async () => {
+    if (!editingCell) return;
+    const { rowIdx, colName, colType, value, originalValue, pkCol, pkVal } = editingCell;
+
+    // If unchanged, simply dismiss
+    if (String(value) === String(originalValue ?? '')) {
+      setEditingCell(null);
+      return;
+    }
+
+    const cellKey = `${rowIdx}-${colName}`;
+    setSavingCellKey(cellKey);
+
+    // Coerce data types based on SQLite schema
+    let coercedVal = value;
+    const upperType = String(colType).toUpperCase();
+    if (upperType === 'INTEGER') {
+      coercedVal = value === '' ? null : parseInt(value, 10);
+    } else if (upperType === 'REAL' || upperType === 'FLOAT' || upperType === 'NUMERIC') {
+      coercedVal = value === '' ? null : parseFloat(value);
+    }
+
+    // Optimistic UI update (Instant responsiveness)
+    const previousRows = [...tableData.rows];
+    setTableData(prev => {
+      const nextRows = [...prev.rows];
+      if (nextRows[rowIdx]) {
+        nextRows[rowIdx] = {
+          ...nextRows[rowIdx],
+          [colName]: coercedVal
+        };
+      }
+      return { ...prev, rows: nextRows };
+    });
+
+    setEditingCell(null);
+
+    try {
+      const res = await fetch('/api/d1-tables', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_cell',
+          tableName: selectedTableName,
+          primaryKeyColumn: pkCol,
+          primaryKeyValue: pkVal,
+          columnName: colName,
+          newValue: coercedVal,
+          columnType: colType
+        })
+      });
+
+      const json = await res.json();
+      if (json.success) {
+        playSuccessChime();
+        setSavedCellKey(cellKey);
+        setTimeout(() => setSavedCellKey(null), 2500);
+        showToast(`✅ Saved ${selectedTableName}.${colName} to Cloudflare D1 SQLite!`, true);
+      } else {
+        // Rollback on failure
+        setTableData(prev => ({ ...prev, rows: previousRows }));
+        showToast(`❌ D1 Update Failed: ${json.error || 'Server error'}`, false);
+      }
+    } catch (err) {
+      console.error('Cell update failed', err);
+      // Rollback on network failure
+      setTableData(prev => ({ ...prev, rows: previousRows }));
+      showToast(`❌ Could not reach Cloudflare D1 edge. Reverted.`, false);
+    } finally {
+      setSavingCellKey(null);
+    }
+  };
+
+  // 4. Instant Search Filter
   const filteredRows = useMemo(() => {
     if (!searchQuery.trim()) return tableData.rows;
     const q = searchQuery.toLowerCase().trim();
@@ -449,12 +558,15 @@ export function LiveDatabaseView() {
         
         {/* Schema Info Bar */}
         <div style={{ background: '#070D1E', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '11px', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               SQL Table Schema: <strong style={{ color: '#FFFFFF', fontFamily: 'JetBrains Mono' }}>{selectedTableName}</strong>
             </span>
             <span style={{ fontSize: '10px', color: 'var(--accent-cyan)', background: 'rgba(14,165,233,0.1)', padding: '2px 6px', borderRadius: '4px' }}>
               {tableData.columns.length} Defined Columns
+            </span>
+            <span style={{ fontSize: '10px', color: 'var(--accent-gold-light)', background: 'rgba(212,175,55,0.12)', border: '1px solid rgba(212,175,55,0.3)', padding: '2px 8px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+              ✏️ In-Line Cell Editing Active (Double-click or click ✏️ to edit)
             </span>
           </div>
 
@@ -496,26 +608,131 @@ export function LiveDatabaseView() {
                       const isNumeric = col.type === 'INTEGER' || col.type === 'REAL' || col.name.includes('amount') || col.name.includes('qty') || col.name.includes('price');
                       const isStatus = col.name.includes('status');
                       const isPk = col.pk === 1;
+                      const isEditing = editingCell?.rowIdx === rowIdx && editingCell?.colName === col.name;
+                      const cellKey = `${rowIdx}-${col.name}`;
+                      const isSaving = savingCellKey === cellKey;
+                      const isSaved = savedCellKey === cellKey;
 
                       return (
                         <td 
                           key={col.name} 
+                          onDoubleClick={() => !isPk && handleStartEdit(rowIdx, col, row)}
                           style={{ 
                             textAlign: isNumeric ? 'right' : 'left',
                             fontFamily: (isNumeric || isPk) ? 'JetBrains Mono, monospace' : 'inherit',
                             color: isPk ? 'var(--accent-gold-light)' : '#E2E8F0',
                             fontWeight: isPk ? '800' : '400',
-                            whiteSpace: 'nowrap'
+                            whiteSpace: 'nowrap',
+                            position: 'relative',
+                            cursor: isPk ? 'default' : 'pointer',
+                            background: isSaved 
+                              ? 'rgba(16, 185, 129, 0.25) !important' 
+                              : isEditing 
+                                ? '#0F172A !important' 
+                                : undefined,
+                            outline: isSaved 
+                              ? '1.5px solid #10B981' 
+                              : isEditing 
+                                ? '1.5px solid var(--accent-gold)' 
+                                : undefined,
+                            transition: 'background-color 0.2s ease, outline 0.2s ease'
                           }}
+                          title={isPk ? "Primary Key (Protected)" : "Double-click or click ✏️ to edit (saves to Cloudflare D1 SQLite)"}
                         >
-                          {isStatus ? (
-                            <span className={`badge ${String(val).includes('SUFFICIENT') || String(val).includes('RECONCILED') || String(val).includes('PAID') ? 'badge-emerald' : String(val).includes('LOW') || String(val).includes('ALERT') ? 'badge-rose' : 'badge-gold'}`} style={{ fontSize: '9px' }}>
-                              {String(val ?? 'N/A')}
-                            </span>
-                          ) : isNumeric && (col.name.includes('amount') || col.name.includes('price') || col.name.includes('total')) && typeof val === 'number' ? (
-                            `₹${val.toLocaleString()}`
+                          {isEditing ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <input
+                                autoFocus
+                                type={isNumeric ? 'number' : 'text'}
+                                value={editingCell.value}
+                                onChange={(e) => setEditingCell(prev => ({ ...prev, value: e.target.value }))}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleSaveCell();
+                                  } else if (e.key === 'Escape') {
+                                    handleCancelEdit();
+                                  }
+                                }}
+                                style={{
+                                  width: '100%',
+                                  minWidth: '100px',
+                                  background: '#030712',
+                                  border: '1px solid var(--accent-gold)',
+                                  borderRadius: '4px',
+                                  padding: '3px 6px',
+                                  color: '#FFFFFF',
+                                  fontSize: '11px',
+                                  fontFamily: isNumeric ? 'JetBrains Mono' : 'inherit',
+                                  outline: 'none'
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={handleSaveCell}
+                                className="btn-ghost-edit"
+                                style={{ padding: '2px 5px', color: '#10B981', background: 'rgba(16, 185, 129, 0.2)' }}
+                                title="Save to D1 (Enter)"
+                              >
+                                <Check size={12} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={handleCancelEdit}
+                                className="btn-ghost-edit"
+                                style={{ padding: '2px 5px', color: '#F43F5E', background: 'rgba(244, 63, 94, 0.2)' }}
+                                title="Cancel (Esc)"
+                              >
+                                <X size={12} />
+                              </button>
+                            </div>
+                          ) : isSaving ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-gold)' }}>
+                              <RefreshCw size={11} className="animate-spin" />
+                              <span style={{ fontSize: '10px' }}>Saving to D1...</span>
+                            </div>
+                          ) : isSaved ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#34D399' }}>
+                              <CheckCircle2 size={11} />
+                              <span>{isNumeric && (col.name.includes('amount') || col.name.includes('price')) && typeof val === 'number' ? `₹${val.toLocaleString()}` : String(val ?? '—')}</span>
+                            </div>
                           ) : (
-                            String(val ?? '—')
+                            <div 
+                              style={{ display: 'flex', alignItems: 'center', justifyContent: isNumeric ? 'flex-end' : 'space-between', gap: '6px' }}
+                            >
+                              <span>
+                                {isStatus ? (
+                                  <span className={`badge ${String(val).includes('SUFFICIENT') || String(val).includes('RECONCILED') || String(val).includes('PAID') ? 'badge-emerald' : String(val).includes('LOW') || String(val).includes('ALERT') ? 'badge-rose' : 'badge-gold'}`} style={{ fontSize: '9px' }}>
+                                    {String(val ?? 'N/A')}
+                                  </span>
+                                ) : isNumeric && (col.name.includes('amount') || col.name.includes('price') || col.name.includes('total')) && typeof val === 'number' ? (
+                                  `₹${val.toLocaleString()}`
+                                ) : (
+                                  String(val ?? '—')
+                                )}
+                              </span>
+
+                              {!isPk && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleStartEdit(rowIdx, col, row);
+                                  }}
+                                  className="cell-edit-trigger"
+                                  style={{
+                                    padding: '2px',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'var(--accent-gold)',
+                                    cursor: 'pointer'
+                                  }}
+                                  title="Click to edit cell"
+                                >
+                                  <Edit2 size={10} />
+                                </button>
+                              )}
+                            </div>
                           )}
                         </td>
                       );

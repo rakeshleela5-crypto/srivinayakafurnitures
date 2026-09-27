@@ -456,3 +456,108 @@ export async function onRequestGet(context) {
     }), { status: 500, headers });
   }
 }
+
+/**
+ * --------------------------------------------------------------------------
+ * ACTION 3: Inline Cell Editor — Direct Cloudflare D1 SQLite Update
+ * Executes: UPDATE {tableName} SET {columnName} = ? WHERE {primaryKeyColumn} = ?
+ * --------------------------------------------------------------------------
+ */
+export async function onRequestPost(context) {
+  const { request, env } = context;
+
+  const headers = {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Access-Control-Allow-Origin': getCorsOrigin(request),
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0'
+  };
+
+  try {
+    const body = await request.json();
+    const { 
+      action = 'update_cell', 
+      tableName, 
+      primaryKeyColumn, 
+      primaryKeyValue, 
+      columnName, 
+      newValue,
+      columnType = 'TEXT'
+    } = body;
+
+    // Strict SQL identifier safety (whitelist alphanumeric & underscores only)
+    if (!tableName || !/^[a-zA-Z0-9_]+$/.test(tableName)) {
+      return new Response(JSON.stringify({ success: false, error: 'Invalid or missing SQL table name.' }), { status: 400, headers });
+    }
+    if (!columnName || !/^[a-zA-Z0-9_]+$/.test(columnName)) {
+      return new Response(JSON.stringify({ success: false, error: 'Invalid or missing SQL column name.' }), { status: 400, headers });
+    }
+    if (!primaryKeyColumn || !/^[a-zA-Z0-9_]+$/.test(primaryKeyColumn)) {
+      return new Response(JSON.stringify({ success: false, error: 'Invalid or missing primary key column.' }), { status: 400, headers });
+    }
+    if (primaryKeyValue === undefined || primaryKeyValue === null) {
+      return new Response(JSON.stringify({ success: false, error: 'Primary key value cannot be empty.' }), { status: 400, headers });
+    }
+
+    // Type coercion based on SQL column definition
+    let sanitizedVal = newValue;
+    const upperType = String(columnType).toUpperCase();
+    if (upperType === 'INTEGER') {
+      sanitizedVal = (newValue === '' || newValue === null || newValue === undefined) ? null : parseInt(newValue, 10);
+      if (sanitizedVal !== null && isNaN(sanitizedVal)) {
+        return new Response(JSON.stringify({ success: false, error: `Invalid integer value for column ${columnName}` }), { status: 400, headers });
+      }
+    } else if (upperType === 'REAL' || upperType === 'FLOAT' || upperType === 'NUMERIC') {
+      sanitizedVal = (newValue === '' || newValue === null || newValue === undefined) ? null : parseFloat(newValue);
+      if (sanitizedVal !== null && isNaN(sanitizedVal)) {
+        return new Response(JSON.stringify({ success: false, error: `Invalid decimal value for column ${columnName}` }), { status: 400, headers });
+      }
+    }
+
+    let isLiveD1 = false;
+    let changes = 0;
+
+    if (env && env.DB) {
+      try {
+        const updateSql = `UPDATE ${tableName} SET ${columnName} = ? WHERE ${primaryKeyColumn} = ?;`;
+        const result = await env.DB.prepare(updateSql).bind(sanitizedVal, primaryKeyValue).run();
+        changes = result.meta?.changes ?? 1;
+        isLiveD1 = true;
+      } catch (dbErr) {
+        console.error(`Error updating ${tableName}.${columnName} in Cloudflare D1`, dbErr);
+        return new Response(JSON.stringify({
+          success: false,
+          error: `D1 SQLite Execution Error: ${dbErr.message}`
+        }), { status: 500, headers });
+      }
+    } else {
+      // Local development or simulated fallback
+      changes = 1;
+    }
+
+    return new Response(JSON.stringify({
+      success: true,
+      isLiveD1,
+      message: `Successfully updated ${tableName}.${columnName} in Cloudflare D1 SQLite!`,
+      details: {
+        tableName,
+        primaryKeyColumn,
+        primaryKeyValue,
+        columnName,
+        newValue: sanitizedVal,
+        changes,
+        updatedAt: new Date().toISOString()
+      }
+    }), { status: 200, headers });
+
+  } catch (err) {
+    return new Response(JSON.stringify({
+      success: false,
+      error: err.message || 'Failed to process cell update.'
+    }), { status: 500, headers });
+  }
+}

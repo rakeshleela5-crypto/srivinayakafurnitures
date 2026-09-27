@@ -465,10 +465,10 @@ export function LiveDatabaseView() {
 
         {/* Data Table */}
         <div className="data-table-wrapper" style={{ maxHeight: '560px', overflowY: 'auto' }}>
-          <table className="luxury-table" style={{ width: '100%', fontSize: '11.5px' }}>
+          <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
             <thead>
-              <tr style={{ background: '#030712' }}>
-                <th style={{ width: '40px', textAlign: 'center', color: '#94A3B8' }}>#</th>
+              <tr style={{ background: '#0B132B' }}>
+                <th style={{ width: '45px', textAlign: 'center', color: '#94A3B8' }}>#</th>
                 {tableData.columns.map(col => (
                   <th key={col.name} style={{ whiteSpace: 'nowrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
@@ -476,7 +476,7 @@ export function LiveDatabaseView() {
                       <span style={{ color: col.pk === 1 ? 'var(--accent-gold-light)' : '#FFFFFF', fontWeight: '800', fontFamily: 'JetBrains Mono' }}>
                         {col.name}
                       </span>
-                      <span style={{ fontSize: '8.5px', color: '#94A3B8', background: 'rgba(255,255,255,0.06)', padding: '1px 4px', borderRadius: '3px', fontWeight: '400' }}>
+                      <span style={{ fontSize: '8.5px', color: '#94A3B8', background: 'rgba(255,255,255,0.06)', padding: '1px 4px', borderRadius: '3px', fontWeight: '400', border: '1px solid rgba(255,255,255,0.1)' }}>
                         {col.type || 'TEXT'}
                       </span>
                     </div>
@@ -487,8 +487,8 @@ export function LiveDatabaseView() {
             <tbody>
               {filteredRows.length > 0 ? (
                 filteredRows.map((row, rowIdx) => (
-                  <tr key={rowIdx} style={{ background: rowIdx % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent' }}>
-                    <td style={{ textAlign: 'center', color: '#64748B', fontFamily: 'JetBrains Mono', fontSize: '10px' }}>
+                  <tr key={rowIdx}>
+                    <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
                       {rowIdx + 1}
                     </td>
                     {tableData.columns.map(col => {

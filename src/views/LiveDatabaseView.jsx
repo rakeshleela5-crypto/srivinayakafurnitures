@@ -266,6 +266,7 @@ export function LiveDatabaseView() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
             type="button"
+            aria-label="Synchronize live SQL schema and rows from Cloudflare D1"
             className="btn-ghost-edit"
             onClick={handleManualSync}
             style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '5px' }}
@@ -275,6 +276,7 @@ export function LiveDatabaseView() {
 
           <button
             type="button"
+            aria-label="Export active table to Excel CSV for Tally accounting"
             className="btn-luxury-gold"
             onClick={handleExportCsv}
             style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px', fontWeight: '800' }}

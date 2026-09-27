@@ -352,6 +352,7 @@ export function VoicePosView() {
           
           {/* 📥 Import Lead from Tab 8 Showroom CRM */}
           <select 
+            aria-label="Import customer lead from Showroom CRM"
             onChange={e => handleImportLead(e.target.value)}
             defaultValue=""
             style={{ fontSize: '11.5px', padding: '5px 10px', borderRadius: '8px', background: '#0B132B', border: '1px solid rgba(56,189,248,0.4)', color: '#38BDF8', fontWeight: '700', cursor: 'pointer' }}
@@ -364,19 +365,43 @@ export function VoicePosView() {
             ))}
           </select>
 
-          <button className="btn-luxury-gold" onClick={() => setShowManagerModal(true)} style={{ fontSize: '11px', padding: '5px 12px' }}>
+          <button 
+            type="button"
+            aria-label="Open Director Override Discount Modal"
+            className="btn-luxury-gold" 
+            onClick={() => setShowManagerModal(true)} 
+            style={{ fontSize: '11px', padding: '5px 12px' }}
+          >
             🏷️ Director Override
           </button>
 
-          <button className="btn-ghost-edit" onClick={() => setShowSplitPaymentModal(true)} style={{ fontSize: '11px', padding: '5px 12px' }}>
+          <button 
+            type="button"
+            aria-label="Open Multi-Tender Split Payment Modal"
+            className="btn-ghost-edit" 
+            onClick={() => setShowSplitPaymentModal(true)} 
+            style={{ fontSize: '11px', padding: '5px 12px' }}
+          >
             💳 Multi-Tender Split Pay
           </button>
 
-          <button className="btn-ghost-edit" onClick={() => openModal('furniture_exchange', { onApplyDiscount: (val) => setExchangeCredit(val) })} style={{ fontSize: '11px', padding: '5px 12px' }}>
+          <button 
+            type="button"
+            aria-label="Open Old Furniture Exchange Calculator"
+            className="btn-ghost-edit" 
+            onClick={() => openModal('furniture_exchange', { onApplyDiscount: (val) => setExchangeCredit(val) })} 
+            style={{ fontSize: '11px', padding: '5px 12px' }}
+          >
             🔄 Old Furniture Exchange
           </button>
 
-          <button className="btn-ghost-edit" onClick={() => openModal('ui_prototyping_lab')} style={{ fontSize: '11px', padding: '5px 12px', borderColor: 'var(--accent-gold)' }}>
+          <button 
+            type="button"
+            aria-label="Open Craft Prototypes Studio"
+            className="btn-ghost-edit" 
+            onClick={() => openModal('ui_prototyping_lab')} 
+            style={{ fontSize: '11px', padding: '5px 12px', borderColor: 'var(--accent-gold)' }}
+          >
             🎨 Craft Prototypes (#27)
           </button>
         </div>

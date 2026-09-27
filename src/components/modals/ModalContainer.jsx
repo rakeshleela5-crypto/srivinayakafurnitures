@@ -63,6 +63,18 @@ import { QuotationCardPrototypes } from '../prototypes/QuotationCardPrototypes';
 export function ModalContainer() {
   const { activeModal, modalProps, closeModal } = useStore();
 
+  // WCAG 2.2 Level AA Keyboard Navigation: Close modal on Escape key (#32)
+  React.useEffect(() => {
+    if (!activeModal) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeModal, closeModal]);
+
   if (!activeModal) return null;
 
   return (

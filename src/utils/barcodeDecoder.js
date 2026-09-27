@@ -1,28 +1,36 @@
-// OmniBuild OS™ — Universal Dual-Engine Barcode & QR Decoder
-// Powered by ZXing Library (MultiFormatReader) + Native Hardware BarcodeDetector
+// OmniBuild OS™ — Universal Dual-Engine Barcode & QR Decoder (#30 Minimalist Code)
+// Prioritizes Native Hardware BarcodeDetector (0 kB overhead, hardware GPU)
+// Lazily loads @zxing/library on-demand ONLY when needed
 
-import { 
-  BrowserMultiFormatReader, 
-  BarcodeFormat, 
-  DecodeHintType 
-} from '@zxing/library';
+let zxingReaderPromise = null;
 
-// Configure ZXing Hints for high-speed warehouse decoding (Code-128, Code-39, QR, EAN-13, etc.)
-const hints = new Map();
-const formats = [
-  BarcodeFormat.CODE_128,
-  BarcodeFormat.CODE_39,
-  BarcodeFormat.QR_CODE,
-  BarcodeFormat.EAN_13,
-  BarcodeFormat.EAN_8,
-  BarcodeFormat.UPC_A,
-  BarcodeFormat.DATA_MATRIX,
-  BarcodeFormat.ITF
-];
-hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
-hints.set(DecodeHintType.TRY_HARDER, true);
-
-const zxingReader = new BrowserMultiFormatReader(hints);
+async function getZxingReader() {
+  if (!zxingReaderPromise) {
+    zxingReaderPromise = (async () => {
+      try {
+        const { BrowserMultiFormatReader, BarcodeFormat, DecodeHintType } = await import('@zxing/library');
+        const hints = new Map();
+        const formats = [
+          BarcodeFormat.CODE_128,
+          BarcodeFormat.CODE_39,
+          BarcodeFormat.QR_CODE,
+          BarcodeFormat.EAN_13,
+          BarcodeFormat.EAN_8,
+          BarcodeFormat.UPC_A,
+          BarcodeFormat.DATA_MATRIX,
+          BarcodeFormat.ITF
+        ];
+        hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
+        hints.set(DecodeHintType.TRY_HARDER, true);
+        return new BrowserMultiFormatReader(hints);
+      } catch (err) {
+        console.warn("Failed to dynamically load ZXing library:", err);
+        return null;
+      }
+    })();
+  }
+  return zxingReaderPromise;
+}
 
 /**
  * Clean & normalize barcode strings (strips asterisks, whitespace, non-printable characters)
@@ -58,11 +66,14 @@ export async function decodeBarcodeFromSource(mediaElement) {
     }
   }
 
-  // 2. Try ZXing Multi-Format Reader
+  // 2. Try ZXing Multi-Format Reader (Lazy loaded on demand)
   try {
-    const zxResult = await zxingReader.decode(mediaElement);
-    if (zxResult && zxResult.getText()) {
-      return sanitizeBarcode(zxResult.getText());
+    const reader = await getZxingReader();
+    if (reader) {
+      const zxResult = await reader.decode(mediaElement);
+      if (zxResult && zxResult.getText()) {
+        return sanitizeBarcode(zxResult.getText());
+      }
     }
   } catch (e) {
     // ZXing standard frame miss

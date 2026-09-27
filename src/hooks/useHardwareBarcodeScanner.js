@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { getAudioContext } from '../utils/audioUtils';
 
 /**
  * Universal Zero-Focus Bluetooth & Wireless Barcode Scanner Hook
@@ -27,21 +28,6 @@ export function useHardwareBarcodeScanner({
   const bufferRef = useRef('');
   const lastKeyTimeRef = useRef(0);
   const startTimeRef = useRef(0);
-  const audioCtxRef = useRef(null);
-
-  // Lazy initialize Web Audio Context
-  const getAudioContext = useCallback(() => {
-    if (!audioCtxRef.current) {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (AudioCtx) {
-        audioCtxRef.current = new AudioCtx();
-      }
-    }
-    if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
-      audioCtxRef.current.resume().catch(() => {});
-    }
-    return audioCtxRef.current;
-  }, []);
 
   // 🔊 Synthesized Laser Beep (Success: 880Hz -> 1760Hz crisp chirp)
   const playSuccessSound = useCallback(() => {
@@ -69,7 +55,7 @@ export function useHardwareBarcodeScanner({
     } catch (e) {
       console.warn('Audio synthesis notice:', e);
     }
-  }, [enableAudio, getAudioContext]);
+  }, [enableAudio]);
 
   // 🚨 Synthesized Warning Buzz (Error/Duplicate: 220Hz low buzz)
   const playErrorSound = useCallback(() => {
@@ -97,7 +83,7 @@ export function useHardwareBarcodeScanner({
     } catch (e) {
       console.warn('Audio synthesis notice:', e);
     }
-  }, [enableAudio, getAudioContext]);
+  }, [enableAudio]);
 
   // 🗣️ Synthesized Voice Announcer for Loud Warehouse Docks
   const speakVoice = useCallback((text) => {

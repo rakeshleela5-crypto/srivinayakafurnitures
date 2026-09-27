@@ -33,6 +33,23 @@
   --shadow-gold: 0 0 25px rgba(212, 175, 55, 0.25);
   --shadow-cyan: 0 0 25px rgba(56, 189, 248, 0.25);
   --shadow-emerald: 0 0 25px rgba(16, 185, 129, 0.25);
+
+  /* Emil Kowalski Design Craft & Spring Physics Constants (#23 & #24) */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring-snappy: cubic-bezier(0.2, 0.9, 0.3, 1.15);
+  --ease-spring-damped: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-quad: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --duration-press: 50ms;
+  --duration-snap: 160ms;
+  --duration-spring: 220ms;
+  --duration-modal: 240ms;
+
+  /* Optical Concentric Geometry */
+  --radius-outer: 20px;
+  --radius-card: 16px;
+  --radius-inner: 12px;
+  --radius-input: 10px;
+  --radius-pill: 9999px;
 }
 
 * {
@@ -198,18 +215,19 @@ header.app-header {
   gap: 7px;
   cursor: pointer;
   box-shadow: 0 0 12px rgba(16, 185, 129, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--duration-snap) var(--ease-spring), background-color var(--duration-snap) ease, box-shadow var(--duration-snap) ease;
   animation: shimmer-sweep 9s linear infinite;
   overflow: hidden;
 }
 .btn-header-sync:hover {
   background-color: rgba(16, 185, 129, 0.3);
   box-shadow: 0 0 20px rgba(16, 185, 129, 0.45);
-  transform: translateY(-1.5px);
+  transform: translate3d(0, -1px, 0);
   color: #FFFFFF;
 }
 .btn-header-sync:active {
-  transform: translateY(1px) scale(0.98);
+  transform: scale3d(0.96, 0.96, 1) translate3d(0, 1px, 0);
+  transition-duration: var(--duration-press);
 }
 .pulse-dot-emerald {
   width: 8px;
@@ -242,11 +260,11 @@ header.app-header {
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: var(--text-secondary);
   padding: 8px 16px;
-  border-radius: 10px;
+  border-radius: var(--radius-inner);
   font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color var(--duration-snap) ease, background-color var(--duration-snap) ease, border-color var(--duration-snap) ease, box-shadow var(--duration-snap) var(--ease-spring), transform var(--duration-press) ease;
   white-space: nowrap;
   display: flex;
   align-items: center;
@@ -256,6 +274,10 @@ header.app-header {
   color: var(--text-primary);
   background: rgba(212, 175, 55, 0.08);
   border-color: rgba(212, 175, 55, 0.3);
+}
+.tab-btn:active {
+  transform: scale3d(0.97, 0.97, 1);
+  transition-duration: var(--duration-press);
 }
 .tab-btn.active {
   color: var(--accent-gold-light);
@@ -301,7 +323,7 @@ header.app-header {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  transition: all 0.25s ease;
+  transition: transform var(--duration-snap) var(--ease-spring), border-color var(--duration-snap) ease, background-color var(--duration-snap) ease, box-shadow var(--duration-snap) ease;
   position: relative;
   overflow: hidden;
 }
@@ -314,7 +336,7 @@ header.app-header {
   height: 2.5px;
   background: linear-gradient(90deg, var(--accent-gold), var(--accent-cyan));
   opacity: 0;
-  transition: opacity 0.25s ease;
+  transition: opacity var(--duration-snap) ease;
 }
 .kpi-card:hover {
   transform: translateY(-2px);
@@ -370,16 +392,17 @@ header.app-header {
   align-items: center;
   gap: 6px;
   box-shadow: 0 4px 12px rgba(202, 138, 4, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--duration-snap) var(--ease-spring), box-shadow var(--duration-snap) var(--ease-spring);
   animation: shimmer-sweep 8s linear infinite;
   overflow: hidden;
 }
 .btn-luxury-gold:hover {
-  transform: translateY(-1.5px);
+  transform: translate3d(0, -1.5px, 0);
   box-shadow: 0 6px 18px rgba(202, 138, 4, 0.45);
 }
 .btn-luxury-gold:active {
-  transform: translateY(1px) scale(0.98);
+  transform: scale3d(0.96, 0.96, 1) translate3d(0, 1px, 0);
+  transition-duration: var(--duration-press);
 }
 
 .btn-cyan {
@@ -389,7 +412,7 @@ header.app-header {
   color: #FFFFFF !important;
   font-weight: 800;
   padding: 9px 16px;
-  border-radius: 9px;
+  border-radius: var(--radius-inner);
   font-size: 12px;
   border: 1px solid rgba(56, 189, 248, 0.35);
   cursor: pointer;
@@ -397,16 +420,17 @@ header.app-header {
   align-items: center;
   gap: 6px;
   box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--duration-snap) var(--ease-spring), box-shadow var(--duration-snap) var(--ease-spring);
   animation: shimmer-sweep 8s linear infinite;
   overflow: hidden;
 }
 .btn-cyan:hover {
-  transform: translateY(-1.5px);
+  transform: translate3d(0, -1.5px, 0);
   box-shadow: 0 6px 18px rgba(56, 189, 248, 0.45);
 }
 .btn-cyan:active {
-  transform: translateY(1px) scale(0.98);
+  transform: scale3d(0.96, 0.96, 1) translate3d(0, 1px, 0);
+  transition-duration: var(--duration-press);
 }
 
 .btn-emerald {
@@ -416,7 +440,7 @@ header.app-header {
   color: #FFFFFF !important;
   font-weight: 800;
   padding: 9px 16px;
-  border-radius: 9px;
+  border-radius: var(--radius-inner);
   font-size: 12px;
   border: 1px solid rgba(16, 185, 129, 0.35);
   cursor: pointer;
@@ -424,16 +448,17 @@ header.app-header {
   align-items: center;
   gap: 6px;
   box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--duration-snap) var(--ease-spring), box-shadow var(--duration-snap) var(--ease-spring);
   animation: shimmer-sweep 8s linear infinite;
   overflow: hidden;
 }
 .btn-emerald:hover {
-  transform: translateY(-1.5px);
+  transform: translate3d(0, -1.5px, 0);
   box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45);
 }
 .btn-emerald:active {
-  transform: translateY(1px) scale(0.98);
+  transform: scale3d(0.96, 0.96, 1) translate3d(0, 1px, 0);
+  transition-duration: var(--duration-press);
 }
 
 .btn-purple {
@@ -443,7 +468,7 @@ header.app-header {
   color: #FFFFFF !important;
   font-weight: 800;
   padding: 9px 16px;
-  border-radius: 9px;
+  border-radius: var(--radius-inner);
   font-size: 12px;
   border: 1px solid rgba(168, 85, 247, 0.35);
   cursor: pointer;
@@ -451,16 +476,17 @@ header.app-header {
   align-items: center;
   gap: 6px;
   box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--duration-snap) var(--ease-spring), box-shadow var(--duration-snap) var(--ease-spring);
   animation: shimmer-sweep 8s linear infinite;
   overflow: hidden;
 }
 .btn-purple:hover {
-  transform: translateY(-1.5px);
+  transform: translate3d(0, -1.5px, 0);
   box-shadow: 0 6px 18px rgba(168, 85, 247, 0.45);
 }
 .btn-purple:active {
-  transform: translateY(1px) scale(0.98);
+  transform: scale3d(0.96, 0.96, 1) translate3d(0, 1px, 0);
+  transition-duration: var(--duration-press);
 }
 
 .btn-ghost-edit {
@@ -469,23 +495,24 @@ header.app-header {
   color: var(--text-primary);
   font-weight: 700;
   padding: 7px 13px;
-  border-radius: 8px;
+  border-radius: var(--radius-input);
   font-size: 11.5px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 5px;
   backdrop-filter: blur(8px);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform var(--duration-snap) var(--ease-spring), background-color var(--duration-snap) ease, border-color var(--duration-snap) ease, box-shadow var(--duration-snap) ease;
 }
 .btn-ghost-edit:hover {
   background: rgba(255, 255, 255, 0.12);
   border-color: var(--accent-gold);
-  transform: translateY(-1.5px);
+  transform: translate3d(0, -1.5px, 0);
   box-shadow: 0 4px 14px rgba(0,0,0,0.4);
 }
 .btn-ghost-edit:active {
-  transform: translateY(1px) scale(0.97);
+  transform: scale3d(0.96, 0.96, 1) translate3d(0, 1px, 0);
+  transition-duration: var(--duration-press);
 }
 
 /* Badges */
@@ -537,7 +564,29 @@ table.luxury-table tr:hover td {
   color: var(--text-primary);
 }
 
-/* Modal Overlay & Card */
+/* Modal Overlay & Card — Emil Kowalski Centered Physical Spring */
+@keyframes modalBackdropIn {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(16px);
+  }
+}
+
+@keyframes modalCenteredSpring {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translate3d(0, 8px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -548,13 +597,13 @@ table.luxury-table tr:hover td {
   justify-content: center;
   z-index: 10000;
   padding: 18px;
-  animation: fadeIn 0.25s ease-out;
+  animation: modalBackdropIn var(--duration-snap) ease-out forwards;
 }
 .modal-card {
   background: radial-gradient(circle at top, #111D3D 0%, #081124 100%);
   border: 1.5px solid rgba(212, 175, 55, 0.4);
   box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 35px rgba(212, 175, 55, 0.2);
-  border-radius: 20px;
+  border-radius: var(--radius-outer);
   width: 100%;
   max-width: 620px;
   max-height: 90vh;
@@ -563,7 +612,8 @@ table.luxury-table tr:hover td {
   flex-direction: column;
   gap: 16px;
   padding: 24px;
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: modalCenteredSpring var(--duration-modal) var(--ease-spring) forwards;
+  will-change: transform, opacity;
 }
 .modal-card.modal-lg {
   max-width: 860px;
@@ -596,12 +646,17 @@ table.luxury-table tr:hover td {
   justify-content: center;
   cursor: pointer;
   font-weight: 700;
-  transition: all 0.2s ease;
+  transition: transform var(--duration-snap) var(--ease-spring), background-color var(--duration-snap) ease, color var(--duration-snap) ease, border-color var(--duration-snap) ease;
 }
 .btn-close-modal:hover {
   background: rgba(244, 63, 94, 0.2);
   color: var(--accent-rose);
   border-color: var(--accent-rose);
+  transform: translate3d(0, -1px, 0);
+}
+.btn-close-modal:active {
+  transform: scale3d(0.92, 0.92, 1);
+  transition-duration: var(--duration-press);
 }
 
 /* Modal Form Inputs */
@@ -625,12 +680,12 @@ table.luxury-table tr:hover td {
 .form-field input, .form-field select, .form-field textarea {
   background: #030712;
   border: 1.5px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
+  border-radius: var(--radius-input);
   padding: 9px 12px;
   font-size: 13px;
   color: #FFFFFF;
   outline: none;
-  transition: all 0.2s ease;
+  transition: border-color var(--duration-snap) ease, box-shadow var(--duration-snap) ease, background-color var(--duration-snap) ease;
 }
 .form-field input:focus, .form-field select:focus, .form-field textarea:focus {
   border-color: var(--accent-gold);
@@ -679,11 +734,15 @@ table.luxury-table tr:hover td {
   align-items: center;
   gap: 6px;
   white-space: nowrap;
-  transition: all 0.2s ease;
+  transition: color var(--duration-snap) ease, background-color var(--duration-snap) ease, box-shadow var(--duration-snap) ease, transform var(--duration-press) ease;
 }
 .dock-btn:hover {
   color: #FFFFFF;
   background: rgba(255, 255, 255, 0.08);
+}
+.dock-btn:active {
+  transform: scale3d(0.95, 0.95, 1);
+  transition-duration: var(--duration-press);
 }
 .dock-btn.active {
   background: linear-gradient(135deg, var(--accent-gold), #B45309);
@@ -1171,12 +1230,18 @@ table.luxury-table tr:hover td {
 }
 
 .dock-item {
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: transform var(--duration-spring) var(--ease-spring-snappy), color var(--duration-snap) ease !important;
+  will-change: transform;
 }
 
 .dock-item:hover {
-  transform: translateY(-2px) scale(1.04) !important;
+  transform: translate3d(0, -3px, 0) scale3d(1.05, 1.05, 1) !important;
   color: var(--accent-gold-light) !important;
+}
+
+.dock-item:active {
+  transform: scale3d(0.94, 0.94, 1) !important;
+  transition-duration: var(--duration-press) !important;
 }
 
 /* 4. Aurora Glowing Line Under App Header */
@@ -1201,7 +1266,7 @@ table.luxury-table tr:hover td {
   align-items: center;
   gap: 5px;
   padding: 4px 10px;
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
   font-size: 10.5px;
   font-weight: 800;
   color: #FFF8DC;
@@ -1216,7 +1281,7 @@ table.luxury-table tr:hover td {
   align-items: center;
   gap: 5px;
   padding: 4px 10px;
-  border-radius: 20px;
+  border-radius: var(--radius-pill);
   font-size: 10.5px;
   font-weight: 800;
   color: #A7F3D0;
@@ -1224,5 +1289,24 @@ table.luxury-table tr:hover td {
   border: 1px solid rgba(16, 185, 129, 0.45);
   box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);
 }
+
+/* ============================================================================
+ * STANDARD 8: ACCESSIBILITY & COHESION (PREFERS-REDUCED-MOTION)
+ * ============================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .ambient-glow-1,
+  .ambient-glow-2 {
+    animation: none !important;
+  }
+}
+
 
 

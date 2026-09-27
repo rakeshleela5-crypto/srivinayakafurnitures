@@ -142,3 +142,58 @@ export function speakVoiceFeedback(text) {
     console.warn("TTS unavailable:", e);
   }
 }
+
+// 7. Physical Tactile Click & Mechanical Pop (#28 Apple HIG Physical Interface)
+export function playTactileClick() {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(480, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(120, ctx.currentTime + 0.025);
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.025);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.025);
+    triggerDeviceHaptic(8);
+  } catch (e) {
+    console.warn("Tactile audio error:", e);
+  }
+}
+
+export function playMechanicalPop() {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(800, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(320, ctx.currentTime + 0.035);
+    gain.gain.setValueAtTime(0.14, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.035);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.035);
+    triggerDeviceHaptic(12);
+  } catch (e) {
+    console.warn("Pop audio error:", e);
+  }
+}
+
+export function triggerDeviceHaptic(pattern = 10) {
+  try {
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      navigator.vibrate(pattern);
+    }
+  } catch (e) {
+    // Graceful fallback on devices without vibration motor
+  }
+}
+
+

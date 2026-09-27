@@ -375,6 +375,10 @@ export function VoicePosView() {
           <button className="btn-ghost-edit" onClick={() => openModal('furniture_exchange', { onApplyDiscount: (val) => setExchangeCredit(val) })} style={{ fontSize: '11px', padding: '5px 12px' }}>
             🔄 Old Furniture Exchange
           </button>
+
+          <button className="btn-ghost-edit" onClick={() => openModal('ui_prototyping_lab')} style={{ fontSize: '11px', padding: '5px 12px', borderColor: 'var(--accent-gold)' }}>
+            🎨 Craft Prototypes (#27)
+          </button>
         </div>
       </div>
 

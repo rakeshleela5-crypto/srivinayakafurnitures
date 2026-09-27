@@ -223,7 +223,7 @@ export function MobileCustomerChatView() {
       setShowDirectorAlertModal(true);
       showToast("👑 VIP Privilege Unlocked: Store Director Direct Call Authorized!", true);
     }
-  }, [dwellSeconds, highestBudget, customerProfile, leadName, leadPhone, currentSku, catalog, shoppingOccasion, portalLang, setInquiries, showToast]);
+  }, [dwellSeconds, highestBudget, customerProfile, leadName, leadPhone, leadAddress, currentSku, catalog, shoppingOccasion, portalLang, setInquiries, showToast]);
 
   // Silent Background Cloud Sync with Google Sheets on QR scan
   useEffect(() => {

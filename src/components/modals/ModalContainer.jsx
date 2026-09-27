@@ -58,6 +58,7 @@ import { CustomerKhataLedgerModal } from './CustomerKhataLedgerModal';
 import { EwayBillGeneratorModal } from './EwayBillGeneratorModal';
 import { EnterprisePipelineModal } from './EnterprisePipelineModal';
 import FeatureFlagConsoleModal from './FeatureFlagConsoleModal';
+import { QuotationCardPrototypes } from '../prototypes/QuotationCardPrototypes';
 
 export function ModalContainer() {
   const { activeModal, modalProps, closeModal } = useStore();
@@ -189,6 +190,19 @@ export function ModalContainer() {
 
       {/* 🎛️ ENTERPRISE FEATURE FLAG & CANARY ROLLOUT CONSOLE (ARCHITECTURE PILLAR #12) */}
       <FeatureFlagConsoleModal isOpen={activeModal === 'feature_flags_console'} onClose={closeModal} />
+
+      {/* 🎨 DIVERGENT UI PROTOTYPING LAB (#27) */}
+      {activeModal === 'ui_prototyping_lab' && (
+        <div className="modal-overlay" onClick={closeModal}>
+          <div className="modal-card modal-lg" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>🎨 Divergent UI Prototyping Lab (#27)</h3>
+              <button className="btn-close-modal" onClick={closeModal}>✕</button>
+            </div>
+            <QuotationCardPrototypes onClose={closeModal} />
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -37,3 +37,8 @@ dist-ssr
 wrangler.state
 *.sqlite3
 *.db
+
+# Test artifacts
+playwright-report/
+test-results/
+

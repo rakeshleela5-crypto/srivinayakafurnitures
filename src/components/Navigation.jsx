@@ -19,7 +19,8 @@ import {
   Bot,
   Printer,
   Download,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Calendar
 } from 'lucide-react';
 
 export function TopTicker() {
@@ -143,6 +144,16 @@ export function AppHeader() {
             <Building2 size={13} /> <span>🏨 B2B Hub (Naresh Sir)</span>
           </button>
         )}
+        {currentUser?.allowedTabs?.includes('pms_tape_chart') && (
+          <button 
+            className="btn-ghost-edit" 
+            onClick={() => setActiveTab('pms_tape_chart')} 
+            style={{ fontSize: '11px', padding: '6px 12px', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.4)', background: 'rgba(245,158,11,0.08)' }} 
+            title="Open PMS Audit Window & Hotel Room Tape Chart"
+          >
+            <Calendar size={13} /> <span>🏢 PMS Tape Chart</span>
+          </button>
+        )}
         {currentUser?.allowedTabs?.includes('bank_ledger') && (
           <button 
             className="btn-ghost-edit" 
@@ -243,7 +254,10 @@ export function TabsRibbon() {
     { id: 'live_database', label: '🗄️ 17. Live 52 D1 Database', icon: Database },
 
     // PHASE 5: Autonomous Edge Robotics & Cron Fleet
-    { id: 'autonomous_fleet', label: '🤖 18. 20-Bot Autonomous Fleet', icon: Bot }
+    { id: 'autonomous_fleet', label: '🤖 18. 20-Bot Autonomous Fleet', icon: Bot },
+
+    // PHASE 6: Hospitality & Institutional Property Management (PMS)
+    { id: 'pms_tape_chart', label: '🏨 19. PMS Tape Chart & Audit', icon: Calendar }
   ];
 
   // Filter tabs allowed for current role
@@ -287,7 +301,8 @@ export function BottomDock() {
     { id: 'tally_gst_desk', label: '⚡ Tally & GST' },
     { id: 'staff_qr', label: '📱 QR Hub' },
     { id: 'live_database', label: '🗄️ 52 Tables D1' },
-    { id: 'autonomous_fleet', label: '🤖 20-Bot Fleet' }
+    { id: 'autonomous_fleet', label: '🤖 20-Bot Fleet' },
+    { id: 'pms_tape_chart', label: '🏨 PMS Tape' }
   ];
 
   const visibleDockItems = currentUser?.allowedTabs

@@ -686,6 +686,18 @@ table.sheets-grid td:last-child {
 }
 
 /* Google Sheets Left Gutter / Row Index Column (#) */
+table.luxury-table th.row-num,
+table.luxury-table th:first-child,
+table.sheets-grid th.row-num,
+table.sheets-grid th:first-child {
+  background: #080E1E;
+  color: #94A3B8;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  text-align: center;
+  border-right: 1px solid rgba(148, 163, 184, 0.35);
+}
+
 table.luxury-table td.row-num, 
 table.luxury-table td:first-child:not([colspan]),
 table.sheets-grid td.row-num,

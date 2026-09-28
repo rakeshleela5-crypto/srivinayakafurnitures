@@ -271,10 +271,11 @@ export function LogisticsEpodView() {
         </div>
 
         <div className="data-table-wrapper">
-          <table className="luxury-table">
+          <table className="luxury-table sheets-grid">
             <thead>
               <tr>
-                <th>Stop #</th>
+                <th style={{ width: '45px', textAlign: 'center' }}>#</th>
+                <th>Stop</th>
                 <th>Order Ref</th>
                 <th>Customer & Address</th>
                 <th>Delivery Time Slot</th>
@@ -285,8 +286,11 @@ export function LogisticsEpodView() {
               </tr>
             </thead>
             <tbody>
-              {filteredStops.map(stop => (
+              {filteredStops.map((stop, idx) => (
                 <tr key={stop.Order_ID || stop.Stop_No}>
+                  <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                    {idx + 1}
+                  </td>
                   <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '900', color: 'var(--accent-gold)' }}>#{stop.Stop_No}</td>
                   <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-cyan)' }}>{stop.Order_ID}</td>
                   <td>

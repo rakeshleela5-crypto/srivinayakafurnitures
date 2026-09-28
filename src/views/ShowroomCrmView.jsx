@@ -275,26 +275,31 @@ export function ShowroomCrmView() {
           <span className="badge badge-purple">{filteredInquiries.length} Leads in Queue</span>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
+        <div className="data-table-wrapper" style={{ overflowX: 'auto' }}>
+          <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
             <thead>
-              <tr style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-secondary)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                <th style={{ padding: '10px' }}>Lead ID</th>
-                <th style={{ padding: '10px' }}>Customer & Contact</th>
-                <th style={{ padding: '10px' }}>Requirement & Models</th>
-                <th style={{ padding: '10px' }}>Budget (₹)</th>
-                <th style={{ padding: '10px' }}>AI Buying Intent</th>
-                <th style={{ padding: '10px' }}>Follow-Up Schedule</th>
-                <th style={{ padding: '10px' }}>Status / Staff</th>
-                <th style={{ padding: '10px', textAlign: 'right' }}>Actions</th>
+              <tr>
+                <th style={{ width: '45px', textAlign: 'center' }}>#</th>
+                <th>Lead ID</th>
+                <th>Customer & Contact</th>
+                <th>Requirement & Models</th>
+                <th>Budget (₹)</th>
+                <th>AI Buying Intent</th>
+                <th>Follow-Up Schedule</th>
+                <th>Status / Staff</th>
+                <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredInquiries.map((inq) => (
-                <tr key={inq.Inquiry_ID} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', transition: 'background 0.2s' }}>
+              {filteredInquiries.map((inq, idx) => (
+                <tr key={inq.Inquiry_ID}>
+                  {/* Google Sheets Row Number Gutter */}
+                  <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                    {idx + 1}
+                  </td>
                   
                   {/* Lead ID */}
-                  <td style={{ padding: '12px 10px', fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-cyan)' }}>
+                  <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-cyan)' }}>
                     {inq.Inquiry_ID}
                   </td>
 

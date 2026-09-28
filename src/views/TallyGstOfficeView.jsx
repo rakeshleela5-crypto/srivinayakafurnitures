@@ -773,30 +773,34 @@ export function TallyGstOfficeView() {
               </div>
 
               {/* Transactions Table */}
-              <div style={{ maxHeight: '420px', overflowY: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+              <div className="data-table-wrapper" style={{ maxHeight: '420px', overflowY: 'auto' }}>
+                <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
                   <thead>
-                    <tr style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-secondary)', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                      <th style={{ padding: '8px 10px' }}>Date</th>
-                      <th style={{ padding: '8px 10px' }}>Voucher Type</th>
-                      <th style={{ padding: '8px 10px' }}>Voucher No</th>
-                      <th style={{ padding: '8px 10px' }}>Party / Particulars</th>
-                      <th style={{ padding: '8px 10px', textAlign: 'right' }}>Amount (₹)</th>
+                    <tr>
+                      <th style={{ width: '45px', textAlign: 'center' }}>#</th>
+                      <th>Date</th>
+                      <th>Voucher Type</th>
+                      <th>Voucher No</th>
+                      <th>Party / Particulars</th>
+                      <th style={{ textAlign: 'right' }}>Amount (₹)</th>
                     </tr>
                   </thead>
                   <tbody>
                     {orders.slice(0, 10).map((ord, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', color: '#E2E8F0' }}>
-                        <td style={{ padding: '9px 10px', color: '#94A3B8' }}>{ord.Created_Timestamp ? ord.Created_Timestamp.slice(0, 10) : '2026-09-15'}</td>
-                        <td style={{ padding: '9px 10px' }}>
+                      <tr key={idx}>
+                        <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                          {idx + 1}
+                        </td>
+                        <td style={{ color: '#94A3B8' }}>{ord.Created_Timestamp ? ord.Created_Timestamp.slice(0, 10) : '2026-09-15'}</td>
+                        <td>
                           <span className="badge badge-emerald" style={{ fontSize: '10px' }}>Sales</span>
                         </td>
-                        <td style={{ padding: '9px 10px', fontWeight: '700', color: 'var(--accent-gold-light)' }}>{ord.Order_ID || `INV-${1000 + idx}`}</td>
-                        <td style={{ padding: '9px 10px' }}>
+                        <td style={{ fontWeight: '700', color: 'var(--accent-gold-light)' }}>{ord.Order_ID || `INV-${1000 + idx}`}</td>
+                        <td>
                           <div style={{ fontWeight: '600' }}>{ord.Customer_Name || 'Walk-in Retail Customer'}</div>
                           <div style={{ fontSize: '10.5px', color: '#94A3B8' }}>{ord.Ordered_SKU || 'Godrej Living Furniture'}</div>
                         </td>
-                        <td style={{ padding: '9px 10px', textAlign: 'right', fontWeight: '800', color: '#FFFFFF' }}>
+                        <td style={{ textAlign: 'right', fontWeight: '800', color: '#FFFFFF' }}>
                           ₹{Number(ord.Total_Amount_INR || ord.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                         </td>
                       </tr>
@@ -947,42 +951,48 @@ export function TallyGstOfficeView() {
                 </div>
               </div>
 
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                <thead>
-                  <tr style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-secondary)', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                    <th style={{ padding: '10px 12px' }}>Party Ledger Name</th>
-                    <th style={{ padding: '10px 12px' }}>GSTIN</th>
-                    <th style={{ padding: '10px 12px', textAlign: 'right' }}>Total Debit (₹)</th>
-                    <th style={{ padding: '10px 12px', textAlign: 'right' }}>Total Credit (₹)</th>
-                    <th style={{ padding: '10px 12px', textAlign: 'right' }}>Closing Balance (₹)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.values(currentDrill.group === 'Sundry Creditors' ? chartOfAccounts.creditorLedgers : chartOfAccounts.debtorLedgers)
-                    .filter(l => l.name.toLowerCase().includes(ledgerSearchQuery.toLowerCase()) || (l.gstin || '').toLowerCase().includes(ledgerSearchQuery.toLowerCase()))
-                    .map((l, i) => (
-                      <tr 
-                        key={i} 
-                        onClick={() => {
-                          setSelectedLedger(l);
-                          pushDrill('LEDGER', `Ledger Account: ${l.name}`, { ledger: l });
-                        }}
-                        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', color: '#E2E8F0', cursor: 'pointer' }}
-                        className="tally-table-row"
-                      >
-                        <td style={{ padding: '11px 12px', fontWeight: '700', color: 'var(--accent-gold-light)' }}>
-                          ▶ {l.name}
-                        </td>
-                        <td style={{ padding: '11px 12px', color: '#94A3B8' }}>{l.gstin || 'URP'}</td>
-                        <td style={{ padding: '11px 12px', textAlign: 'right' }}>{l.debit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                        <td style={{ padding: '11px 12px', textAlign: 'right' }}>{l.credit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                        <td style={{ padding: '11px 12px', textAlign: 'right', fontWeight: '800', color: (l.debit - l.credit) >= 0 ? '#10B981' : '#F43F5E' }}>
-                          ₹{Math.abs(l.debit - l.credit).toLocaleString('en-IN', { minimumFractionDigits: 2 })} {(l.debit - l.credit) >= 0 ? 'Dr' : 'Cr'}
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
+              <div className="data-table-wrapper" style={{ overflowX: 'auto' }}>
+                <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ width: '45px', textAlign: 'center' }}>#</th>
+                      <th>Party Ledger Name</th>
+                      <th>GSTIN</th>
+                      <th style={{ textAlign: 'right' }}>Total Debit (₹)</th>
+                      <th style={{ textAlign: 'right' }}>Total Credit (₹)</th>
+                      <th style={{ textAlign: 'right' }}>Closing Balance (₹)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.values(currentDrill.group === 'Sundry Creditors' ? chartOfAccounts.creditorLedgers : chartOfAccounts.debtorLedgers)
+                      .filter(l => l.name.toLowerCase().includes(ledgerSearchQuery.toLowerCase()) || (l.gstin || '').toLowerCase().includes(ledgerSearchQuery.toLowerCase()))
+                      .map((l, i) => (
+                        <tr 
+                          key={i} 
+                          onClick={() => {
+                            setSelectedLedger(l);
+                            pushDrill('LEDGER', `Ledger Account: ${l.name}`, { ledger: l });
+                          }}
+                          style={{ cursor: 'pointer' }}
+                          className="tally-table-row"
+                        >
+                          <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                            {i + 1}
+                          </td>
+                          <td style={{ fontWeight: '700', color: 'var(--accent-gold-light)' }}>
+                            ▶ {l.name}
+                          </td>
+                          <td style={{ color: '#94A3B8' }}>{l.gstin || 'URP'}</td>
+                          <td style={{ textAlign: 'right' }}>{l.debit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                          <td style={{ textAlign: 'right' }}>{l.credit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                          <td style={{ textAlign: 'right', fontWeight: '800', color: (l.debit - l.credit) >= 0 ? '#10B981' : '#F43F5E' }}>
+                            ₹{Math.abs(l.debit - l.credit).toLocaleString('en-IN', { minimumFractionDigits: 2 })} {(l.debit - l.credit) >= 0 ? 'Dr' : 'Cr'}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
 
             </div>
           )}
@@ -1008,42 +1018,48 @@ export function TallyGstOfficeView() {
                 </div>
               </div>
 
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                <thead>
-                  <tr style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-secondary)', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                    <th style={{ padding: '10px 12px' }}>Date</th>
-                    <th style={{ padding: '10px 12px' }}>Voucher Type</th>
-                    <th style={{ padding: '10px 12px' }}>Voucher No</th>
-                    <th style={{ padding: '10px 12px' }}>Particulars / Ledger Head</th>
-                    <th style={{ padding: '10px 12px', textAlign: 'right' }}>Debit (₹)</th>
-                    <th style={{ padding: '10px 12px', textAlign: 'right' }}>Credit (₹)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentDrill.ledger.vouchers.map((v, i) => (
-                    <tr 
-                      key={i} 
-                      onClick={() => {
-                        setSelectedVoucher(v);
-                        pushDrill('VOUCHER', `Voucher Entry: ${v.vchNo}`, { voucher: v });
-                      }}
-                      style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', color: '#E2E8F0', cursor: 'pointer' }}
-                      className="tally-table-row"
-                    >
-                      <td style={{ padding: '11px 12px', color: '#94A3B8' }}>{v.date}</td>
-                      <td style={{ padding: '11px 12px' }}>
-                        <span className={`badge ${v.type === 'Sales' ? 'badge-emerald' : 'badge-cyan'}`} style={{ fontSize: '10px' }}>
-                          {v.type}
-                        </span>
-                      </td>
-                      <td style={{ padding: '11px 12px', fontWeight: '700', color: 'var(--accent-gold-light)' }}>{v.vchNo}</td>
-                      <td style={{ padding: '11px 12px' }}>{v.particulars}</td>
-                      <td style={{ padding: '11px 12px', textAlign: 'right', fontWeight: '700' }}>{v.debit ? `₹${v.debit.toLocaleString('en-IN')}` : '-'}</td>
-                      <td style={{ padding: '11px 12px', textAlign: 'right', fontWeight: '700' }}>{v.credit ? `₹${v.credit.toLocaleString('en-IN')}` : '-'}</td>
+              <div className="data-table-wrapper" style={{ overflowX: 'auto' }}>
+                <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ width: '45px', textAlign: 'center' }}>#</th>
+                      <th>Date</th>
+                      <th>Voucher Type</th>
+                      <th>Voucher No</th>
+                      <th>Particulars / Ledger Head</th>
+                      <th style={{ textAlign: 'right' }}>Debit (₹)</th>
+                      <th style={{ textAlign: 'right' }}>Credit (₹)</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {currentDrill.ledger.vouchers.map((v, i) => (
+                      <tr 
+                        key={i} 
+                        onClick={() => {
+                          setSelectedVoucher(v);
+                          pushDrill('VOUCHER', `Voucher Entry: ${v.vchNo}`, { voucher: v });
+                        }}
+                        style={{ cursor: 'pointer' }}
+                        className="tally-table-row"
+                      >
+                        <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                          {i + 1}
+                        </td>
+                        <td style={{ color: '#94A3B8' }}>{v.date}</td>
+                        <td>
+                          <span className={`badge ${v.type === 'Sales' ? 'badge-emerald' : 'badge-cyan'}`} style={{ fontSize: '10px' }}>
+                            {v.type}
+                          </span>
+                        </td>
+                        <td style={{ fontWeight: '700', color: 'var(--accent-gold-light)' }}>{v.vchNo}</td>
+                        <td>{v.particulars}</td>
+                        <td style={{ textAlign: 'right', fontWeight: '700' }}>{v.debit ? `₹${v.debit.toLocaleString('en-IN')}` : '-'}</td>
+                        <td style={{ textAlign: 'right', fontWeight: '700' }}>{v.credit ? `₹${v.credit.toLocaleString('en-IN')}` : '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
             </div>
           )}

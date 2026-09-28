@@ -1690,19 +1690,21 @@ export function DocumentStudio() {
                   <p style={{ color: '#334155' }}>{docData.b2bScopeOfWork}</p>
 
                   <h3 style={{ fontSize: '13px', fontWeight: '900', borderBottom: '1px solid #E2E8F0', paddingBottom: '4px', marginTop: '14px' }}>2. ITEM BREAKDOWN & ESTIMATE</h3>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', margin: '8px 0' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', margin: '8px 0', border: '1px solid #CBD5E1' }}>
                     <thead>
                       <tr style={{ background: '#F1F5F9' }}>
-                        <th style={{ padding: '6px 8px', textAlign: 'left' }}>Item Spec</th>
-                        <th style={{ padding: '6px 8px', textAlign: 'center' }}>Qty</th>
-                        <th style={{ padding: '6px 8px', textAlign: 'right' }}>Amount (₹)</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'center', width: '35px', borderRight: '1px solid #CBD5E1', borderBottom: '1px solid #CBD5E1' }}>#</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'left', borderRight: '1px solid #CBD5E1', borderBottom: '1px solid #CBD5E1' }}>Item Spec</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'center', width: '60px', borderRight: '1px solid #CBD5E1', borderBottom: '1px solid #CBD5E1' }}>Qty</th>
+                        <th style={{ padding: '6px 8px', textAlign: 'right', width: '120px', borderBottom: '1px solid #CBD5E1' }}>Amount (₹)</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {docData.items.map(item => (
+                      {docData.items.map((item, idx) => (
                         <tr key={item.id} style={{ borderBottom: '1px solid #E2E8F0' }}>
-                          <td style={{ padding: '8px 8px' }}><b>{item.name}</b> ({item.specs})</td>
-                          <td style={{ padding: '8px 8px', textAlign: 'center' }}>{item.qty}</td>
+                          <td style={{ padding: '8px 8px', textAlign: 'center', color: '#64748B', borderRight: '1px solid #E2E8F0' }}>{idx + 1}</td>
+                          <td style={{ padding: '8px 8px', borderRight: '1px solid #E2E8F0' }}><b>{item.name}</b> ({item.specs})</td>
+                          <td style={{ padding: '8px 8px', textAlign: 'center', borderRight: '1px solid #E2E8F0' }}>{item.qty}</td>
                           <td style={{ padding: '8px 8px', textAlign: 'right', fontWeight: '700' }}>₹{Number(item.taxableValue).toLocaleString()}</td>
                         </tr>
                       ))}

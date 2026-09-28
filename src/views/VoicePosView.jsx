@@ -735,9 +735,10 @@ export function VoicePosView() {
 
           {/* Cart Items Table */}
           <div className="data-table-wrapper">
-            <table className="luxury-table">
+            <table className="luxury-table sheets-grid">
               <thead>
                 <tr>
+                  <th style={{ width: '40px', textAlign: 'center' }}>#</th>
                   <th>Model / Specs</th>
                   <th style={{ textAlign: 'center' }}>Qty</th>
                   <th style={{ textAlign: 'right' }}>Rate (₹)</th>
@@ -746,8 +747,11 @@ export function VoicePosView() {
                 </tr>
               </thead>
               <tbody>
-                {cartItems.map(item => (
+                {cartItems.map((item, idx) => (
                   <tr key={item.SKU}>
+                    <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                      {idx + 1}
+                    </td>
                     <td>
                       <div style={{ fontWeight: '800', color: '#FFFFFF' }}>{item.Product_Name}</div>
                       <div style={{ fontSize: '10.5px', color: 'var(--accent-cyan)' }}>{item.SKU} • {item.Material_Spec}</div>

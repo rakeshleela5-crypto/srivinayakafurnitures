@@ -1109,35 +1109,41 @@ export function BankStatementLedgerView() {
           </div>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
+        <div className="data-table-wrapper" style={{ overflowX: 'auto' }}>
+          <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
             <thead>
-              <tr style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-secondary)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                <th style={{ padding: '10px' }}>Txn ID &amp; Date</th>
-                <th style={{ padding: '10px' }}>Flow / Mode</th>
-                <th style={{ padding: '10px' }}>Party / Entity</th>
-                <th style={{ padding: '10px' }}>Bank UTR Ref Number</th>
-                <th style={{ padding: '10px' }}>Linked Reference</th>
-                <th style={{ padding: '10px', textAlign: 'right' }}>Amount (INR)</th>
-                <th style={{ padding: '10px', textAlign: 'center' }}>Actions &amp; Edit</th>
+              <tr>
+                <th style={{ width: '45px', textAlign: 'center' }}>#</th>
+                <th>Txn ID &amp; Date</th>
+                <th>Flow / Mode</th>
+                <th>Party / Entity</th>
+                <th>Bank UTR Ref Number</th>
+                <th>Linked Reference</th>
+                <th style={{ textAlign: 'right' }}>Amount (INR)</th>
+                <th style={{ textAlign: 'center' }}>Actions &amp; Edit</th>
               </tr>
             </thead>
             <tbody>
               {filteredTransactions.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '30px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  <td colSpan={8} style={{ padding: '30px', textAlign: 'center', color: 'var(--text-secondary)' }}>
                     <AlertCircle size={28} style={{ margin: '0 auto 8px auto', opacity: 0.5 }} />
                     <div>No bank transactions match your search criteria.</div>
                   </td>
                 </tr>
               ) : (
-                filteredTransactions.map((tx) => {
+                filteredTransactions.map((tx, idx) => {
                   const isInward = tx.flowType === 'INWARD_CREDIT';
                   const isVerified = tx.reconciliationStatus === 'VERIFIED_AND_MATCHED';
                   const isVoided = tx.reconciliationStatus === 'VOIDED';
 
                   return (
-                    <tr key={tx.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', opacity: isVoided ? 0.4 : 1 }}>
+                    <tr key={tx.id} style={{ opacity: isVoided ? 0.4 : 1 }}>
+                      {/* Google Sheets Row Number Gutter */}
+                      <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                        {idx + 1}
+                      </td>
+
                       {/* 1. Txn ID & Date */}
                       <td style={{ padding: '10px' }}>
                         <div style={{ fontFamily: 'monospace', fontWeight: 'bold', color: '#FFFFFF' }}>{tx.id}</div>

@@ -1073,9 +1073,10 @@ export function ExecutiveOverview() {
         </div>
 
         <div className="data-table-wrapper">
-          <table className="luxury-table">
+          <table className="luxury-table sheets-grid">
             <thead>
               <tr>
+                <th style={{ width: '45px', textAlign: 'center' }}>#</th>
                 <th>Order ID</th>
                 <th>Customer & Address</th>
                 <th>Ordered Furniture Model</th>
@@ -1088,10 +1089,13 @@ export function ExecutiveOverview() {
               </tr>
             </thead>
             <tbody>
-              {(selectedCustomerFilter === 'ALL' ? orders : orders.filter(o => o.Order_ID === selectedCustomerFilter)).map(order => {
+              {(selectedCustomerFilter === 'ALL' ? orders : orders.filter(o => o.Order_ID === selectedCustomerFilter)).map((order, idx) => {
                 const isStaged = (order.SafeLock_Status || '').includes('STAGED') || (order.SafeLock_Status || '').includes('TRANSIT') || (order.SafeLock_Status || '').includes('DELIVERED');
                 return (
                   <tr key={order.Order_ID}>
+                    <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                      {idx + 1}
+                    </td>
                     <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-cyan)' }}>{order.Order_ID}</td>
                     <td>
                       <div style={{ fontWeight: '800', color: '#FFFFFF' }}>{order.Customer_Name}</div>

@@ -276,9 +276,10 @@ export function InventorySafeLockView() {
 
         {/* Inventory Table with Live Dial Steppers */}
         <div className="data-table-wrapper">
-          <table className="luxury-table">
+          <table className="luxury-table sheets-grid">
             <thead>
               <tr>
+                <th style={{ width: '45px', textAlign: 'center' }}>#</th>
                 <th>SKU Code</th>
                 <th>Furniture Model</th>
                 <th>Category / Bay</th>
@@ -290,8 +291,11 @@ export function InventorySafeLockView() {
               </tr>
             </thead>
             <tbody>
-              {filteredInventory.map(item => (
+              {filteredInventory.map((item, idx) => (
                 <tr key={item.SKU}>
+                  <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                    {idx + 1}
+                  </td>
                   <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-cyan)' }}>{item.SKU}</td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

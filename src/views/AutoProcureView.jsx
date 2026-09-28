@@ -1256,17 +1256,18 @@ export function AutoProcureView() {
             </button>
           </div>
 
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
+          <div className="data-table-wrapper" style={{ overflowX: 'auto' }}>
+            <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
               <thead>
-                <tr style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-secondary)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                  <th style={{ padding: '10px 8px', width: '50px', textAlign: 'center' }}>Photo</th>
-                  <th style={{ padding: '10px 8px' }}>Target Furniture SKU & Product</th>
-                  <th style={{ padding: '10px 8px', width: '130px', textAlign: 'center' }}>Qty (Sets)</th>
-                  <th style={{ padding: '10px 8px', width: '150px' }}>Factory Rate (₹)</th>
-                  <th style={{ padding: '10px 8px', width: '100px' }}>GST Slab</th>
-                  <th style={{ padding: '10px 8px', width: '140px', textAlign: 'right' }}>Total (₹)</th>
-                  <th style={{ padding: '10px 8px', width: '40px', textAlign: 'center' }}></th>
+                <tr>
+                  <th style={{ width: '40px', textAlign: 'center' }}>#</th>
+                  <th style={{ width: '50px', textAlign: 'center' }}>Photo</th>
+                  <th>Target Furniture SKU & Product</th>
+                  <th style={{ width: '130px', textAlign: 'center' }}>Qty (Sets)</th>
+                  <th style={{ width: '150px' }}>Factory Rate (₹)</th>
+                  <th style={{ width: '100px' }}>GST Slab</th>
+                  <th style={{ width: '140px', textAlign: 'right' }}>Total (₹)</th>
+                  <th style={{ width: '40px', textAlign: 'center' }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -1274,7 +1275,10 @@ export function AutoProcureView() {
                   const lineTotal = (Number(item.qty) || 0) * (Number(item.unit_cost) || 0);
                   const catMatch = catalog.find(c => c.SKU === item.sku);
                   return (
-                    <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <tr key={idx}>
+                      <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                        {idx + 1}
+                      </td>
                       <td style={{ padding: '8px', textAlign: 'center' }}>
                         <img 
                           src={catMatch?.Image_URL || item.image || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=300'} 
@@ -1531,25 +1535,29 @@ export function AutoProcureView() {
           </div>
         </div>
 
-        <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
+        <div className="data-table-wrapper" style={{ overflowX: 'auto' }}>
+          <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
             <thead>
-              <tr style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-secondary)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                <th style={{ padding: '10px' }}>PO Number</th>
-                <th style={{ padding: '10px' }}>Manufacturer Plant</th>
-                <th style={{ padding: '10px' }}>SKUs & Sets</th>
-                <th style={{ padding: '10px' }}>PO Value (₹)</th>
-                <th style={{ padding: '10px' }}>Transporter & LR Bilty</th>
-                <th style={{ padding: '10px' }}>Expected Delivery</th>
-                <th style={{ padding: '10px' }}>Status</th>
-                <th style={{ padding: '10px', textAlign: 'right' }}>Actions</th>
+              <tr>
+                <th style={{ width: '45px', textAlign: 'center' }}>#</th>
+                <th>PO Number</th>
+                <th>Manufacturer Plant</th>
+                <th>SKUs & Sets</th>
+                <th>PO Value (₹)</th>
+                <th>Transporter & LR Bilty</th>
+                <th>Expected Delivery</th>
+                <th>Status</th>
+                <th style={{ textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {filteredPoHistory.map((po, idx) => (
-                <tr key={po.po_id || idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', transition: 'background 0.2s' }}>
+                <tr key={po.po_id || idx}>
+                  <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                    {idx + 1}
+                  </td>
                   
-                  <td style={{ padding: '12px 10px', fontWeight: 'bold', color: 'var(--accent-gold-light)', fontFamily: 'JetBrains Mono' }}>
+                  <td style={{ fontWeight: 'bold', color: 'var(--accent-gold-light)', fontFamily: 'JetBrains Mono' }}>
                     {po.po_id}
                   </td>
 
@@ -1802,23 +1810,27 @@ export function AutoProcureView() {
               <h4 style={{ fontSize: '13px', fontWeight: '800', color: '#E2E8F0', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 📋 Breakdown by Active Factory Purchase Orders ({pipelineTotals.count})
               </h4>
-              <div style={{ maxHeight: '220px', overflowY: 'auto', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
+              <div className="data-table-wrapper" style={{ maxHeight: '220px', overflowY: 'auto' }}>
+                <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
                   <thead>
-                    <tr style={{ background: 'rgba(255,255,255,0.04)', color: '#94A3B8', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                      <th style={{ padding: '8px 10px' }}>PO Number</th>
-                      <th style={{ padding: '8px 10px' }}>Manufacturer Plant</th>
-                      <th style={{ padding: '8px 10px' }}>Sets</th>
-                      <th style={{ padding: '8px 10px' }}>Net PO Value</th>
-                      <th style={{ padding: '8px 10px' }}>Advance Paid</th>
-                      <th style={{ padding: '8px 10px' }}>Balance Due</th>
-                      <th style={{ padding: '8px 10px' }}>Status</th>
+                    <tr>
+                      <th style={{ width: '45px', textAlign: 'center' }}>#</th>
+                      <th>PO Number</th>
+                      <th>Manufacturer Plant</th>
+                      <th>Sets</th>
+                      <th>Net PO Value</th>
+                      <th>Advance Paid</th>
+                      <th>Balance Due</th>
+                      <th>Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {poHistory.filter(p => p.status !== 'CANCELLED').map((p, idx) => (
-                      <tr key={p.po_id || idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                        <td style={{ padding: '8px 10px', fontWeight: '700', color: 'var(--accent-gold-light)' }}>{p.po_id}</td>
+                      <tr key={p.po_id || idx}>
+                        <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                          {idx + 1}
+                        </td>
+                        <td style={{ fontWeight: '700', color: 'var(--accent-gold-light)' }}>{p.po_id}</td>
                         <td style={{ padding: '8px 10px', color: '#E2E8F0' }}>{p.supplier}</td>
                         <td style={{ padding: '8px 10px', fontWeight: '700', color: '#FFFFFF' }}>{p.qty}</td>
                         <td style={{ padding: '8px 10px', fontWeight: '800', color: '#FFFFFF', fontFamily: 'JetBrains Mono' }}>₹{Number(p.total_value).toLocaleString()}</td>

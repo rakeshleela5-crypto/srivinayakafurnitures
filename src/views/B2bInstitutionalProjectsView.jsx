@@ -114,6 +114,7 @@ export default function B2bInstitutionalProjectsView() {
   const [projects, setProjects] = useState(INITIAL_B2B_PROJECTS);
   const [selectedFilter, setSelectedFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState('sheets'); // 'sheets' (Google Sheets table) | 'cards'
   
   // Modals state
   const [showAddModal, setShowAddModal] = useState(false);
@@ -341,31 +342,159 @@ export default function B2bInstitutionalProjectsView() {
           ))}
         </div>
 
-        <div style={{ position: 'relative', width: '280px' }}>
-          <Search size={14} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
-          <input
-            type="text"
-            placeholder="Search hotel or client..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '8px 12px 8px 34px',
-              background: '#0B132B',
-              border: '1px solid rgba(255,255,255,0.15)',
-              borderRadius: '8px',
-              color: '#FFFFFF',
-              fontSize: '12px'
-            }}
-          />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', background: 'rgba(15,23,42,0.8)', padding: '3px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
+            <button
+              onClick={() => setViewMode('sheets')}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '6px',
+                border: 'none',
+                background: viewMode === 'sheets' ? 'var(--accent-gold)' : 'transparent',
+                color: viewMode === 'sheets' ? '#000000' : 'var(--text-secondary)',
+                fontWeight: viewMode === 'sheets' ? '800' : '600',
+                fontSize: '11.5px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
+            >
+              📊 Sheets Grid
+            </button>
+            <button
+              onClick={() => setViewMode('cards')}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '6px',
+                border: 'none',
+                background: viewMode === 'cards' ? 'var(--accent-gold)' : 'transparent',
+                color: viewMode === 'cards' ? '#000000' : 'var(--text-secondary)',
+                fontWeight: viewMode === 'cards' ? '800' : '600',
+                fontSize: '11.5px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
+            >
+              🗂️ Cards View
+            </button>
+          </div>
+
+          <div style={{ position: 'relative', width: '250px' }}>
+            <Search size={14} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
+            <input
+              type="text"
+              placeholder="Search hotel or client..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 12px 8px 34px',
+                background: '#0B132B',
+                border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: '8px',
+                color: '#FFFFFF',
+                fontSize: '12px'
+              }}
+            />
+          </div>
         </div>
       </div>
 
-      {/* 📋 Project Cards Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '20px' }}>
-        {filteredProjects.map(proj => (
-          <SpotlightCard key={proj.id}>
-            <div style={{ padding: '24px' }}>
+      {/* 📊 Tabular Google Sheets Grid View */}
+      {viewMode === 'sheets' ? (
+        <div className="data-table-wrapper" style={{ overflowX: 'auto', marginBottom: '24px' }}>
+          <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
+            <thead>
+              <tr>
+                <th style={{ width: '45px', textAlign: 'center' }}>#</th>
+                <th>Contract ID</th>
+                <th>Client / Hotel Facility</th>
+                <th>Category</th>
+                <th>Rooms</th>
+                <th>Contact & Phone</th>
+                <th style={{ textAlign: 'right' }}>Contract Value (₹)</th>
+                <th style={{ textAlign: 'right' }}>Advance Paid (₹)</th>
+                <th style={{ textAlign: 'right' }}>Balance Due (₹)</th>
+                <th>Milestone Stage</th>
+                <th>Next Action</th>
+                <th style={{ textAlign: 'center' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredProjects.map((proj, idx) => (
+                <tr key={proj.id}>
+                  <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                    {idx + 1}
+                  </td>
+                  <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-gold-light)' }}>
+                    {proj.id}
+                  </td>
+                  <td>
+                    <div style={{ fontWeight: '800', color: '#FFFFFF' }}>{proj.clientName}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>📍 {proj.location}</div>
+                  </td>
+                  <td>
+                    <span className="badge badge-gold" style={{ fontSize: '9px' }}>{proj.category}</span>
+                  </td>
+                  <td style={{ textAlign: 'center', fontWeight: '700', fontFamily: 'JetBrains Mono' }}>
+                    {proj.roomsCount}
+                  </td>
+                  <td>
+                    <div style={{ color: '#FFFFFF', fontWeight: '600' }}>{proj.contactPerson}</div>
+                    <div style={{ fontSize: '10.5px', color: 'var(--accent-cyan)' }}>📞 {proj.phone}</div>
+                  </td>
+                  <td style={{ textAlign: 'right', fontWeight: '800', fontFamily: 'JetBrains Mono', color: 'var(--accent-gold)' }}>
+                    ₹{proj.contractValue.toLocaleString('en-IN')}
+                  </td>
+                  <td style={{ textAlign: 'right', fontWeight: '700', fontFamily: 'JetBrains Mono', color: '#10B981' }}>
+                    ₹{proj.advancePaid.toLocaleString('en-IN')}
+                  </td>
+                  <td style={{ textAlign: 'right', fontWeight: '800', fontFamily: 'JetBrains Mono', color: proj.balanceDue > 0 ? '#EF4444' : '#10B981' }}>
+                    ₹{proj.balanceDue.toLocaleString('en-IN')}
+                  </td>
+                  <td>
+                    <span className="badge badge-emerald" style={{ fontSize: '9.5px' }}>
+                      {proj.stageLabel}
+                    </span>
+                  </td>
+                  <td>
+                    <div style={{ fontSize: '11px', color: 'var(--text-primary)', maxWidth: '220px' }}>{proj.nextAction}</div>
+                    <div style={{ fontSize: '10px', color: 'var(--accent-cyan)', marginTop: '2px' }}>📅 {proj.nextDate}</div>
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    <div style={{ display: 'inline-flex', gap: '4px' }}>
+                      <button
+                        className="btn-ghost-edit"
+                        style={{ fontSize: '10px', padding: '4px 6px' }}
+                        onClick={() => setEditingProject(proj)}
+                        title="Edit contract details & log payments"
+                      >
+                        <Edit3 size={11} />
+                      </button>
+                      <button
+                        className="btn-ghost-edit"
+                        style={{ fontSize: '10px', padding: '4px 6px', color: '#10B981' }}
+                        onClick={() => handleSendWhatsAppBrief(proj)}
+                        title="Dispatch WhatsApp update"
+                      >
+                        <Send size={11} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        /* 📋 Project Cards Grid */
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '20px' }}>
+          {filteredProjects.map(proj => (
+            <SpotlightCard key={proj.id}>
+              <div style={{ padding: '24px' }}>
               
               {/* Card Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
@@ -474,6 +603,7 @@ export default function B2bInstitutionalProjectsView() {
           </SpotlightCard>
         ))}
       </div>
+      )}
 
       {/* ✏️ Modal: Edit Commercial Contract & Log Payment */}
       {editingProject && (

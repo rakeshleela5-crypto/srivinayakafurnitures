@@ -195,9 +195,10 @@ export function ArchitectPortalView() {
         </div>
 
         <div className="data-table-wrapper">
-          <table className="luxury-table">
+          <table className="luxury-table sheets-grid">
             <thead>
               <tr>
+                <th style={{ width: '45px', textAlign: 'center' }}>#</th>
                 <th>Architect / Firm</th>
                 <th>Contact & VPA</th>
                 <th>Commission Tier</th>
@@ -208,12 +209,15 @@ export function ArchitectPortalView() {
               </tr>
             </thead>
             <tbody>
-              {filteredArchitects.map(arch => {
+              {filteredArchitects.map((arch, idx) => {
                 const isExpanded = expandedArchitectId === arch.Architect_ID;
 
                 return (
                   <React.Fragment key={arch.Architect_ID}>
                     <tr>
+                      <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                        {idx + 1}
+                      </td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <button 
@@ -307,7 +311,7 @@ export function ArchitectPortalView() {
                     {/* Expandable Project Attribution Drawer */}
                     {isExpanded && (
                       <tr>
-                        <td colSpan={7} style={{ background: '#030712', padding: '14px 20px', borderLeft: '3px solid var(--accent-gold)' }}>
+                        <td colSpan={8} style={{ background: '#030712', padding: '14px 20px', borderLeft: '3px solid var(--accent-gold)' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                             <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-gold-light)' }}>
                               🏢 Referred Client Projects & Attribution Ledger ({arch.Full_Name})

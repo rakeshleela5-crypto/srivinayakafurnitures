@@ -380,5 +380,81 @@ describe('Sovereign Edge REST API Contract Testing (#21)', () => {
       assert.equal(data.success, true);
       assert.equal(data.logId, 'ANNIV-9988');
     });
+
+    it('POST /api/d1/dispatch with GET_ALL_STATUS returns master operational telemetry counts', async () => {
+      const ctx = createMockContext({
+        url: 'https://srivinayakafurnitures.pages.dev/api/d1/dispatch',
+        method: 'POST',
+        body: {
+          action: 'GET_ALL_STATUS'
+        },
+        env: { DB: mockDB }
+      });
+
+      const response = await onRequest(ctx);
+      assert.equal(response.status, 200);
+      const data = await response.json();
+      assert.equal(data.success, true);
+      assert.equal(data.status, 'ONLINE');
+      assert.ok(data.counts !== undefined);
+    });
+
+    it('POST /api/d1/dispatch with log_split_tender_settlement alias records multi-tender payment', async () => {
+      const ctx = createMockContext({
+        url: 'https://srivinayakafurnitures.pages.dev/api/d1/dispatch',
+        method: 'POST',
+        body: {
+          action: 'log_split_tender_settlement',
+          payload: {
+            order_id: 'ORD-8921',
+            customer_name: 'Dr. Subhashish Jena',
+            amount: 31000,
+            payment_mode: 'SPLIT_CASH_UPI'
+          }
+        },
+        env: { DB: mockDB }
+      });
+
+      const response = await onRequest(ctx);
+      assert.equal(response.status, 200);
+      const data = await response.json();
+      assert.equal(data.success, true);
+    });
+
+    it('POST /api/d1/dispatch with EXTEND_SAFELOCK extends hold window', async () => {
+      const ctx = createMockContext({
+        url: 'https://srivinayakafurnitures.pages.dev/api/d1/dispatch',
+        method: 'POST',
+        body: {
+          action: 'EXTEND_SAFELOCK',
+          payload: {
+            order_id: 'ORD-8921',
+            additional_days: 5,
+            reason: 'Villa renovation delay'
+          }
+        },
+        env: { DB: mockDB }
+      });
+
+      const response = await onRequest(ctx);
+      assert.equal(response.status, 200);
+      const data = await response.json();
+      assert.equal(data.success, true);
+      assert.equal(data.additionalDays, 5);
+    });
+
+    it('GET /api/d1/purchase-orders returns list of factory purchase orders', async () => {
+      const ctx = createMockContext({
+        url: 'https://srivinayakafurnitures.pages.dev/api/d1/purchase-orders',
+        method: 'GET',
+        env: { DB: mockDB }
+      });
+
+      const response = await onRequest(ctx);
+      assert.equal(response.status, 200);
+      const data = await response.json();
+      assert.equal(data.success, true);
+      assert.ok(Array.isArray(data.purchaseOrders));
+    });
   });
 });

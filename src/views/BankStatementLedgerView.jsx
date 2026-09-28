@@ -63,7 +63,9 @@ export function BankStatementLedgerView() {
     setBankTransactions: setTransactions,
     postTallyVoucher,
     openModal,
-    storeMeta
+    storeMeta,
+    isDateInAuditWindow,
+    auditDateWindow
   } = useStore();
 
   // Persist transactions to localStorage
@@ -758,9 +760,15 @@ export function BankStatementLedgerView() {
       if (activeFilter === 'CANARA') return tx.bankAccountId === 'CANARA_CURRENT';
       if (activeFilter === 'HDFC') return tx.bankAccountId === 'HDFC_CURRENT';
       if (activeFilter === 'SBI') return tx.bankAccountId === 'SBI_CURRENT';
+
+      // 📅 Global Date Range Audit Window (From Date -> To Date)
+      if (isDateInAuditWindow && !isDateInAuditWindow(tx.dateTime || tx.transaction_date)) {
+        return false;
+      }
+
       return true;
     });
-  }, [transactions, searchQuery, activeFilter]);
+  }, [transactions, searchQuery, activeFilter, isDateInAuditWindow, auditDateWindow]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

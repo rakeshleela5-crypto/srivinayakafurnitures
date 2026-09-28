@@ -65,7 +65,9 @@ export function ExecutiveOverview() {
     storeMeta,
     vipProjects,
     floorAgingStock,
-    resetFloorAge
+    resetFloorAge,
+    isDateInAuditWindow,
+    auditDateWindow
   } = useStore();
 
   // 📅 Period Horizon State
@@ -129,18 +131,28 @@ export function ExecutiveOverview() {
     }
   };
 
-  // Financial Computations based on Period Horizon
-  const periodMultiplier = periodHorizon === 'TODAY' ? 0.15 : periodHorizon === 'WEEK' ? 0.45 : periodHorizon === 'FESTIVE' ? 1.35 : 1.0;
+  // 📅 Financial Computations based on Universal Audit Date Window
+  const auditedOrders = useMemo(() => {
+    if (!isDateInAuditWindow) return orders;
+    const filtered = orders.filter(o => isDateInAuditWindow(o.Created_Date || o.Delivery_Date || o.created_at));
+    return filtered.length > 0 ? filtered : orders;
+  }, [orders, isDateInAuditWindow, auditDateWindow]);
 
-  const totalRevenue = Math.round(orders.reduce((sum, o) => sum + (Number(o.Total_Amount_INR) || 0), 0) * periodMultiplier);
-  const totalAdvances = Math.round(orders.reduce((sum, o) => sum + (Number(o.Advance_Paid_INR) || 0), 0) * periodMultiplier);
-  const activeSafeLocks = orders.filter(o => (o.SafeLock_Status || '').includes('SAFELOCKED')).length;
-  const pendingDeliveries = orders.filter(o => !(o.SafeLock_Status || '').includes('DELIVERED')).length;
-  const hotLeadsCount = inquiries.filter(i => (Number(i.AI_Intent_Score) || 0) >= 80).length;
+  const auditedInquiries = useMemo(() => {
+    if (!isDateInAuditWindow) return inquiries;
+    const filtered = inquiries.filter(i => isDateInAuditWindow(i.Inquiry_Date || i.Created_Date || i.Follow_Up_Date));
+    return filtered.length > 0 ? filtered : inquiries;
+  }, [inquiries, isDateInAuditWindow, auditDateWindow]);
+
+  const totalRevenue = Math.round(auditedOrders.reduce((sum, o) => sum + (Number(o.Total_Amount_INR) || 0), 0));
+  const totalAdvances = Math.round(auditedOrders.reduce((sum, o) => sum + (Number(o.Advance_Paid_INR) || 0), 0));
+  const activeSafeLocks = auditedOrders.filter(o => (o.SafeLock_Status || '').includes('SAFELOCKED')).length;
+  const pendingDeliveries = auditedOrders.filter(o => !(o.SafeLock_Status || '').includes('DELIVERED')).length;
+  const hotLeadsCount = auditedInquiries.filter(i => (Number(i.AI_Intent_Score) || 0) >= 80).length;
   const architectBalance = architects.reduce((sum, a) => sum + (Number(a.Balance_Due_INR) || 0), 0);
   
   const estimatedGrossMarginINR = Math.round(totalRevenue * 0.324);
-  const carpenterLiabilityINR = orders.length * 500;
+  const carpenterLiabilityINR = auditedOrders.length * 500;
   const netShowroomContributionINR = Math.max(0, estimatedGrossMarginINR - architectBalance - carpenterLiabilityINR);
 
   const targetProgress = Math.min(100, Math.round((targets.currentAchievedINR / editableTarget) * 100));

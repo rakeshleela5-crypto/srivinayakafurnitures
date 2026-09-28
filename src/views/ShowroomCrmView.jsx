@@ -28,7 +28,7 @@ import { playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
 
 export function ShowroomCrmView() {
-  const { inquiries, setInquiries, openModal, setActiveTab, showToast } = useStore();
+  const { inquiries, setInquiries, openModal, setActiveTab, showToast, isDateInAuditWindow, auditDateWindow } = useStore();
 
   // Filters State
   const [filterStatus, setFilterStatus] = useState('ALL');
@@ -86,9 +86,14 @@ export function ShowroomCrmView() {
         (inq.Category_Models || '').toLowerCase().includes(q) ||
         (inq.Address || inq.Locality_Address || '').toLowerCase().includes(q);
 
+      // 📅 Global Date Range Audit Window (From Date -> To Date)
+      if (isDateInAuditWindow && !isDateInAuditWindow(inq.Inquiry_Date || inq.Created_Date || inq.Follow_Up_Date)) {
+        return false;
+      }
+
       return matchesStatus && matchesCategory && matchesSearch;
     });
-  }, [inquiries, filterStatus, filterCategory, searchQuery]);
+  }, [inquiries, filterStatus, filterCategory, searchQuery, isDateInAuditWindow, auditDateWindow]);
 
   // 📲 1-Click WhatsApp Festive Catalog Drip
   const handleSendWhatsAppCatalog = (inq) => {

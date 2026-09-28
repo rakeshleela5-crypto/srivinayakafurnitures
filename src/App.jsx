@@ -34,7 +34,6 @@ const TallyGstOfficeView = React.lazy(() => import('./views/TallyGstOfficeView')
 const ShowroomAiAgentsView = React.lazy(() => import('./views/ShowroomAiAgentsView'));
 const B2bInstitutionalProjectsView = React.lazy(() => import('./views/B2bInstitutionalProjectsView'));
 const AutonomousFleetView = React.lazy(() => import('./views/AutonomousFleetView').then(m => ({ default: m.AutonomousFleetView })));
-const PmsTapeChartView = React.lazy(() => import('./views/PmsTapeChartView').then(m => ({ default: m.PmsTapeChartView })));
 
 // Premium loading spinner shown while lazy chunks download
 function LazyLoadingFallback() {
@@ -221,8 +220,6 @@ function AppContent() {
         return <StaffQrHubView />;
       case 'autonomous_fleet':
         return <AutonomousFleetView />;
-      case 'pms_tape_chart':
-        return <PmsTapeChartView />;
       default:
         return <ExecutiveOverview />;
     }
@@ -265,8 +262,8 @@ function AppContent() {
       )}
 
       <main className="main-layout">
-        {!workerMode && activeTab !== 'pms_tape_chart' && (
-          <UniversalAuditWindowBar compact={true} />
+        {!workerMode && (
+          <UniversalAuditWindowBar />
         )}
         <Suspense fallback={<LazyLoadingFallback />}>
           {renderActiveView()}

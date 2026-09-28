@@ -180,12 +180,35 @@ export function StoreProvider({ children }) {
     });
   };
 
+  const parseToIsoDate = (val) => {
+    if (!val) return null;
+    if (typeof val === 'string') {
+      if (/^\d{4}-\d{2}-\d{2}/.test(val)) {
+        return val.slice(0, 10);
+      }
+      const months = { jan:'01', feb:'02', mar:'03', apr:'04', may:'05', jun:'06', jul:'07', aug:'08', sep:'09', oct:'10', nov:'11', dec:'12' };
+      const match = val.match(/(\d{1,2})[-/ ]([a-zA-Z]{3}|\d{1,2})[-/ ](\d{4})/);
+      if (match) {
+        const day = match[1].padStart(2, '0');
+        const monStr = match[2].toLowerCase();
+        const month = months[monStr] || monStr.padStart(2, '0');
+        const year = match[3];
+        return `${year}-${month}-${day}`;
+      }
+    }
+    const d = new Date(val);
+    if (!isNaN(d.getTime())) {
+      return d.toISOString().slice(0, 10);
+    }
+    return null;
+  };
+
   const isDateInAuditWindow = (targetDate) => {
     if (!targetDate) return true;
     try {
-      const datePart = typeof targetDate === 'string' ? targetDate.slice(0, 10) : '';
-      if (!datePart) return true;
-      return datePart >= auditDateWindow.appliedFrom && datePart <= auditDateWindow.appliedTo;
+      const iso = parseToIsoDate(targetDate);
+      if (!iso) return true;
+      return iso >= auditDateWindow.appliedFrom && iso <= auditDateWindow.appliedTo;
     } catch (e) {
       return true;
     }

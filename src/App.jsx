@@ -3,6 +3,7 @@ import { StoreProvider, useStore, ROLE_PERMISSIONS } from './context/StoreContex
 import { TopTicker, AppHeader, TabsRibbon, BottomDock } from './components/Navigation';
 import { ModalContainer } from './components/modals/ModalContainer';
 import { AuthLockScreen } from './components/AuthLockScreen';
+import { UniversalAuditWindowBar } from './components/common/UniversalAuditWindowBar';
 
 // ============================================================================
 // FIX 1: React.lazy() Code-Splitting — Heavy views load ON-DEMAND when tab is clicked
@@ -264,6 +265,9 @@ function AppContent() {
       )}
 
       <main className="main-layout">
+        {!workerMode && activeTab !== 'pms_tape_chart' && (
+          <UniversalAuditWindowBar compact={true} />
+        )}
         <Suspense fallback={<LazyLoadingFallback />}>
           {renderActiveView()}
         </Suspense>

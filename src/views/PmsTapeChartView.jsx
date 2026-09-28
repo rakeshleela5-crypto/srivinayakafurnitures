@@ -268,15 +268,27 @@ function getDateRangeArray(startDateStr, endDateStr, maxDays = 31) {
 }
 
 export function PmsTapeChartView() {
-  const { showToast, currentUser } = useStore();
+  const { 
+    showToast, 
+    currentUser, 
+    auditDateWindow, 
+    updateAuditWindow 
+  } = useStore();
 
-  // 📅 Audit Window Date Range State (Default: 2026-09-28 as per current local system time)
+  // 📅 Audit Window Date Range State (Synchronized with Global Store)
   const todayIso = '2026-09-28';
-  const [fromDate, setFromDate] = useState('2026-09-28');
-  const [toDate, setToDate] = useState('2026-09-28');
-  const [appliedFrom, setAppliedFrom] = useState('2026-09-28');
-  const [appliedTo, setAppliedTo] = useState('2026-09-28');
-  const [activePreset, setActivePreset] = useState('Today');
+  const appliedFrom = auditDateWindow?.appliedFrom || '2026-09-28';
+  const appliedTo = auditDateWindow?.appliedTo || '2026-09-28';
+  const activePreset = auditDateWindow?.activePreset || 'Today';
+
+  const [fromDate, setFromDate] = useState(auditDateWindow?.fromDate || '2026-09-28');
+  const [toDate, setToDate] = useState(auditDateWindow?.toDate || '2026-09-28');
+
+  // Keep local inputs in sync if global auditDateWindow changes externally
+  React.useEffect(() => {
+    if (auditDateWindow?.fromDate) setFromDate(auditDateWindow.fromDate);
+    if (auditDateWindow?.toDate) setToDate(auditDateWindow.toDate);
+  }, [auditDateWindow?.fromDate, auditDateWindow?.toDate]);
 
   // Filter & Search
   const [selectedPropertyId, setSelectedPropertyId] = useState('ALL');
@@ -304,59 +316,56 @@ export function PmsTapeChartView() {
 
   // Apply Quick Date Presets
   const applyPreset = (presetName) => {
-    setActivePreset(presetName);
     playScanBeep();
 
     const baseToday = new Date('2026-09-28T00:00:00');
+    let s = '2026-09-28';
+    let e = '2026-09-28';
 
     if (presetName === 'Today') {
-      const d = formatDate(baseToday);
-      setFromDate(d);
-      setToDate(d);
-      setAppliedFrom(d);
-      setAppliedTo(d);
+      s = formatDate(baseToday);
+      e = formatDate(baseToday);
     } else if (presetName === 'Yesterday') {
       const yesterday = new Date(baseToday);
       yesterday.setDate(yesterday.getDate() - 1);
-      const d = formatDate(yesterday);
-      setFromDate(d);
-      setToDate(d);
-      setAppliedFrom(d);
-      setAppliedTo(d);
+      s = formatDate(yesterday);
+      e = formatDate(yesterday);
     } else if (presetName === 'Last 7 Days') {
       const past7 = new Date(baseToday);
       past7.setDate(past7.getDate() - 6);
-      const s = formatDate(past7);
-      const e = formatDate(baseToday);
-      setFromDate(s);
-      setToDate(e);
-      setAppliedFrom(s);
-      setAppliedTo(e);
+      s = formatDate(past7);
+      e = formatDate(baseToday);
     } else if (presetName === 'This Month') {
-      const s = '2026-09-01';
-      const e = '2026-09-30';
-      setFromDate(s);
-      setToDate(e);
-      setAppliedFrom(s);
-      setAppliedTo(e);
+      s = '2026-09-01';
+      e = '2026-09-30';
     } else if (presetName === 'FY Year') {
-      // Indian Financial Year 2026-27
-      const s = '2026-04-01';
-      const e = '2027-03-31';
-      setFromDate(s);
-      setToDate(e);
-      // For tape rendering comfort, window the current active month of FY
-      setAppliedFrom('2026-09-01');
-      setAppliedTo('2026-09-30');
+      s = '2026-04-01';
+      e = '2027-03-31';
       showToast('📅 Financial Year 2026-27 active. Displaying September 2026 operational grid.');
     }
+
+    setFromDate(s);
+    setToDate(e);
+
+    updateAuditWindow({
+      fromDate: s,
+      toDate: e,
+      appliedFrom: s,
+      appliedTo: e,
+      activePreset: presetName
+    });
   };
 
   // Handle Display Button Click (as shown in the green screenshot button)
   const handleDisplayClick = () => {
     playScanBeep();
-    setAppliedFrom(fromDate);
-    setAppliedTo(toDate);
+    updateAuditWindow({
+      fromDate: fromDate,
+      toDate: toDate,
+      appliedFrom: fromDate,
+      appliedTo: toDate,
+      activePreset: 'Custom Range'
+    });
     showToast(`🔄 PMS Audit Window Refreshed: ${formatDisplayDate(fromDate)} to ${formatDisplayDate(toDate)}`);
   };
 

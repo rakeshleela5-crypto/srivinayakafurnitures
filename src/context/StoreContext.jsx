@@ -158,6 +158,39 @@ export function StoreProvider({ children }) {
 
   // Navigation & Showcase Mode
   const [activeTab, setActiveTab] = useState('executive');
+
+  // 📅 Global Universal Audit Date Window (From: Date / To: Date / Today / 7D / Month / FY)
+  const [auditDateWindow, setAuditDateWindow] = useState(() => getStored('OMNIBUILD_AUDIT_WINDOW', {
+    fromDate: '2026-09-28',
+    toDate: '2026-09-28',
+    appliedFrom: '2026-09-28',
+    appliedTo: '2026-09-28',
+    activePreset: 'Today'
+  }));
+
+  const updateAuditWindow = (newValues) => {
+    setAuditDateWindow(prev => {
+      const next = { ...prev, ...newValues };
+      try {
+        localStorage.setItem('OMNIBUILD_AUDIT_WINDOW', JSON.stringify(next));
+      } catch (e) {
+        console.warn('[localStorage] Audit window save error:', e);
+      }
+      return next;
+    });
+  };
+
+  const isDateInAuditWindow = (targetDate) => {
+    if (!targetDate) return true;
+    try {
+      const datePart = typeof targetDate === 'string' ? targetDate.slice(0, 10) : '';
+      if (!datePart) return true;
+      return datePart >= auditDateWindow.appliedFrom && datePart <= auditDateWindow.appliedTo;
+    } catch (e) {
+      return true;
+    }
+  };
+
   const [appMode, setAppMode] = useState(() => {
     return localStorage.getItem('OMNIBUILD_APP_MODE') || 'DEMO';
   });
@@ -1289,7 +1322,11 @@ export function StoreProvider({ children }) {
       logWeddingSuite,
       exchangeBuybacks,
       setExchangeBuybacks,
-      logExchangeBuyback
+      logExchangeBuyback,
+      auditDateWindow,
+      setAuditDateWindow,
+      updateAuditWindow,
+      isDateInAuditWindow
     }}>
       {children}
       {toastMessage && (

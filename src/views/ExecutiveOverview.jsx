@@ -70,14 +70,6 @@ export function ExecutiveOverview() {
     auditDateWindow
   } = useStore();
 
-  // 📅 Period Horizon State
-  const [periodHorizon, setPeriodHorizon] = useState('MTD'); // TODAY | WEEK | MTD | FESTIVE | CUSTOM
-  const [customDateRange, setCustomDateRange] = useState({
-    start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
-    end: new Date().toISOString().slice(0, 10),
-    targetINR: targets.monthlyTargetINR || 1500000
-  });
-
   // Local Executive States
   const [selectedCustomerFilter, setSelectedCustomerFilter] = useState('ALL');
   const [isCalibratorOpen, setIsCalibratorOpen] = useState(false);
@@ -156,18 +148,6 @@ export function ExecutiveOverview() {
   const netShowroomContributionINR = Math.max(0, estimatedGrossMarginINR - architectBalance - carpenterLiabilityINR);
 
   const targetProgress = Math.min(100, Math.round((targets.currentAchievedINR / editableTarget) * 100));
-
-  // Open Custom Date Range Picker
-  const handleOpenCustomDateModal = () => {
-    openModal('custom_date_range', {
-      customRange: customDateRange,
-      onApplyCustomRange: (newRange) => {
-        setCustomDateRange(newRange);
-        setPeriodHorizon('CUSTOM');
-        if (newRange.targetINR) setEditableTarget(newRange.targetINR);
-      }
-    });
-  };
 
   // 1-Click Save Target Calibration
   const handleSaveCalibration = async () => {
@@ -271,52 +251,19 @@ export function ExecutiveOverview() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <span className="badge badge-gold">👑 DIRECTOR EXECUTIVE COMMAND TOWER</span>
           
-          {/* Period Horizon Switcher */}
-          <div style={{ display: 'flex', gap: '4px', background: '#0B132B', padding: '3px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
-            {[
-              { id: 'TODAY', label: '📅 Today' },
-              { id: 'WEEK', label: '🗓️ This Week' },
-              { id: 'MTD', label: '📊 Month-to-Date' },
-              { id: 'FESTIVE', label: '🪔 Festive 2026' }
-            ].map(p => (
-              <button
-                key={p.id}
-                onClick={() => setPeriodHorizon(p.id)}
-                style={{
-                  background: periodHorizon === p.id ? 'var(--accent-gold)' : 'transparent',
-                  color: periodHorizon === p.id ? '#000000' : '#CBD5E1',
-                  border: 'none',
-                  borderRadius: '5px',
-                  padding: '4px 10px',
-                  fontSize: '11px',
-                  fontWeight: '800',
-                  cursor: 'pointer'
-                }}
-              >
-                {p.label}
-              </button>
-            ))}
-
-            {/* Custom Date Range Trigger */}
-            <button
-              onClick={handleOpenCustomDateModal}
-              style={{
-                background: periodHorizon === 'CUSTOM' ? 'var(--accent-gold)' : 'rgba(255,255,255,0.06)',
-                color: periodHorizon === 'CUSTOM' ? '#000000' : '#CBD5E1',
-                border: periodHorizon === 'CUSTOM' ? '1px solid #FFFFFF' : '1px dashed rgba(255,255,255,0.2)',
-                borderRadius: '5px',
-                padding: '4px 10px',
-                fontSize: '11px',
-                fontWeight: '800',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-              title="Pick Custom Start & End Dates"
-            >
-              <Calendar size={12} /> {periodHorizon === 'CUSTOM' ? `📅 ${customDateRange.start.slice(5)} to ${customDateRange.end.slice(5)}` : '📅 Custom Range...'}
-            </button>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: 'rgba(212, 175, 55, 0.08)',
+            border: '1px solid rgba(212, 175, 55, 0.3)',
+            borderRadius: '8px',
+            padding: '4px 10px',
+            fontSize: '11px',
+            color: 'var(--accent-gold-light)'
+          }}>
+            <Calendar size={12} color="var(--accent-gold)" />
+            <span>Audit Horizon: <strong style={{ color: '#FFFFFF' }}>{auditDateWindow?.activePreset || 'Today'}</strong> ({auditDateWindow?.appliedFrom} ➔ {auditDateWindow?.appliedTo})</span>
           </div>
 
           <button className="btn-luxury-gold" onClick={() => openModal('eod_reconciliation')} style={{ fontSize: '11px', padding: '5px 12px' }}>

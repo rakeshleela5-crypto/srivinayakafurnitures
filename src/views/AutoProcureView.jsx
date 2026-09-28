@@ -37,7 +37,18 @@ import { playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
 
 export function AutoProcureView() {
-  const { catalog, inventory, adjustStock, showToast, openModal, setActiveTab, auditDateWindow, isDateInAuditWindow } = useStore();
+  const { 
+    catalog, 
+    inventory, 
+    adjustStock, 
+    showToast, 
+    openModal, 
+    setActiveTab, 
+    auditDateWindow, 
+    isDateInAuditWindow,
+    purchaseOrders: poHistory = [],
+    setPurchaseOrders: setPoHistory
+  } = useStore();
 
   // 🤖 BOT-08 Autonomous PO Auto-Pilot State
   const [bot08Autopilot, setBot08Autopilot] = useState(true);
@@ -86,89 +97,10 @@ export function AutoProcureView() {
   const [showPipelineModal, setShowPipelineModal] = useState(false);
   const [selectedPrintPo, setSelectedPrintPo] = useState(null);
 
-  // 🚚 Live Purchase Orders History
-  const [poHistory, setPoHistory] = useState([
-    {
-      po_id: "PO-2026-881",
-      supplier: "Godrej Khalapur Main Plant (MH)",
-      supplier_gstin: "27AAACG0534B1Z9",
-      sku: "BED-MOD-001, WDR-MOD-001",
-      items: [
-        { sku: "BED-MOD-001", product_name: "Solid Teak King Bed", qty: 5, unit_cost: 62000, gst_pct: 18 },
-        { sku: "WDR-MOD-001", product_name: "Godrej Sliding 3-Door Wardrobe", qty: 3, unit_cost: 48000, gst_pct: 18 }
-      ],
-      qty: 8,
-      gross_subtotal: 454000,
-      trade_discount: 68100,
-      freight_charges: 4500,
-      subtotal: 390400,
-      gst_amount: 70272,
-      total_value: 460672,
-      advance_paid: 138202,
-      balance_due: 322470,
-      transporter: "VRL Logistics Express",
-      lr_number: "LR-992182",
-      payment_terms: "30_ADVANCE_70_LR",
-      lead_days: 14,
-      expected_delivery: "15-Sep-2026",
-      status: "PO_ACTIVE",
-      monsoon_wrap: true,
-      created_at: "02-Sep-2026 10:30 AM"
-    },
-    {
-      po_id: "PO-2026-879",
-      supplier: "Godrej Chennai Upholstery Plant (TN)",
-      supplier_gstin: "33AAACG0534B1Z5",
-      sku: "SOF-MOD-001",
-      items: [
-        { sku: "SOF-MOD-001", product_name: "3+2 Velvet Luxury Sofa Set", qty: 4, unit_cost: 38000, gst_pct: 18 }
-      ],
-      qty: 4,
-      gross_subtotal: 152000,
-      trade_discount: 22800,
-      freight_charges: 3000,
-      subtotal: 132200,
-      gst_amount: 23796,
-      total_value: 155996,
-      advance_paid: 155996,
-      balance_due: 0,
-      transporter: "SafeXpress Supply Chain",
-      lr_number: "LR-771890",
-      payment_terms: "100_ADVANCE_RTGS",
-      lead_days: 10,
-      expected_delivery: "08-Sep-2026",
-      status: "TRUCK_IN_TRANSIT",
-      monsoon_wrap: true,
-      created_at: "30-Aug-2026 04:15 PM"
-    },
-    {
-      po_id: "PO-2026-865",
-      supplier: "CenturyPly ProModular, Cuttack (OD)",
-      supplier_gstin: "21CCCC2222C3Z3",
-      sku: "OFC-CH-002, TBL-MOD-001",
-      items: [
-        { sku: "OFC-CH-002", product_name: "Godrej High-Back Ergonomic Chair", qty: 10, unit_cost: 8500, gst_pct: 18 },
-        { sku: "TBL-MOD-001", product_name: "Solid Teak 6-Seater Dining Table", qty: 2, unit_cost: 32000, gst_pct: 18 }
-      ],
-      qty: 12,
-      gross_subtotal: 149000,
-      trade_discount: 14900,
-      freight_charges: 2500,
-      subtotal: 136600,
-      gst_amount: 24588,
-      total_value: 161188,
-      advance_paid: 0,
-      balance_due: 161188,
-      transporter: "ARC Roadways Heavy Freight",
-      lr_number: "LR-662301",
-      payment_terms: "30_DAYS_MSME_CREDIT",
-      lead_days: 5,
-      expected_delivery: "28-Aug-2026",
-      status: "INWARD_RECEIVED",
-      monsoon_wrap: true,
-      created_at: "24-Aug-2026 11:00 AM"
-    }
-  ]);
+  // 🚚 Live Purchase Orders from StoreContext (Reactively filtered by audit window)
+  const auditPoHistory = useMemo(() => {
+    return (poHistory || []).filter(p => isDateInAuditWindow(p.created_at || p.expected_delivery));
+  }, [poHistory, isDateInAuditWindow]);
 
   // 🚨 Critical Low Stock Inventory Detection
   const lowStockItems = useMemo(() => {

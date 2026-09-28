@@ -131,6 +131,122 @@ const getStored = (key, fallback) => {
 
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30-Minute Inactivity Auto-Lock
 
+export const parseToIsoDate = (val) => {
+  if (!val) return null;
+  if (typeof val === 'string') {
+    const lower = val.toLowerCase().trim();
+    if (lower.startsWith('today')) return '2026-09-28';
+    if (lower.startsWith('yesterday')) return '2026-09-27';
+
+    if (/^\d{4}-\d{2}-\d{2}/.test(val)) {
+      return val.slice(0, 10);
+    }
+    const months = { jan:'01', feb:'02', mar:'03', apr:'04', may:'05', jun:'06', jul:'07', aug:'08', sep:'09', oct:'10', nov:'11', dec:'12' };
+    const matchMon = val.match(/(\d{1,2})[-/ ]([a-zA-Z]{3})[-/ ](\d{4})/);
+    if (matchMon) {
+      const day = matchMon[1].padStart(2, '0');
+      const monStr = matchMon[2].toLowerCase();
+      const month = months[monStr] || '01';
+      const year = matchMon[3];
+      return `${year}-${month}-${day}`;
+    }
+    const matchNum = val.match(/(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+    if (matchNum) {
+      const day = matchNum[1].padStart(2, '0');
+      const month = matchNum[2].padStart(2, '0');
+      const year = matchNum[3];
+      return `${year}-${month}-${day}`;
+    }
+  }
+  const d = new Date(val);
+  if (!isNaN(d.getTime())) {
+    return d.toISOString().slice(0, 10);
+  }
+  return null;
+};
+
+export const INITIAL_PURCHASE_ORDERS = [
+  {
+    po_id: "PO-2026-881",
+    supplier: "Godrej Khalapur Main Plant (MH)",
+    supplier_gstin: "27AAACG0534B1Z9",
+    sku: "BED-MOD-001, WDR-MOD-001",
+    items: [
+      { sku: "BED-MOD-001", product_name: "Solid Teak King Bed", qty: 5, unit_cost: 62000, gst_pct: 18 },
+      { sku: "WDR-MOD-001", product_name: "Godrej Sliding 3-Door Wardrobe", qty: 3, unit_cost: 48000, gst_pct: 18 }
+    ],
+    qty: 8,
+    gross_subtotal: 454000,
+    trade_discount: 68100,
+    freight_charges: 4500,
+    subtotal: 390400,
+    gst_amount: 70272,
+    total_value: 460672,
+    advance_paid: 138202,
+    balance_due: 322470,
+    transporter: "VRL Logistics Express",
+    lr_number: "LR-992182",
+    payment_terms: "30_ADVANCE_70_LR",
+    lead_days: 14,
+    expected_delivery: "2026-09-15",
+    status: "PO_ACTIVE",
+    monsoon_wrap: true,
+    created_at: "2026-09-02"
+  },
+  {
+    po_id: "PO-2026-879",
+    supplier: "Godrej Chennai Upholstery Plant (TN)",
+    supplier_gstin: "33AAACG0534B1Z5",
+    sku: "SOF-MOD-001",
+    items: [
+      { sku: "SOF-MOD-001", product_name: "3+2 Velvet Luxury Sofa Set", qty: 4, unit_cost: 38000, gst_pct: 18 }
+    ],
+    qty: 4,
+    gross_subtotal: 152000,
+    trade_discount: 22800,
+    freight_charges: 3000,
+    subtotal: 132200,
+    gst_amount: 23796,
+    total_value: 155996,
+    advance_paid: 155996,
+    balance_due: 0,
+    transporter: "SafeXpress Supply Chain",
+    lr_number: "LR-771890",
+    payment_terms: "100_ADVANCE_RTGS",
+    lead_days: 10,
+    expected_delivery: "2026-09-08",
+    status: "TRUCK_IN_TRANSIT",
+    monsoon_wrap: true,
+    created_at: "2026-08-29"
+  },
+  {
+    po_id: "PO-2026-885",
+    supplier: "Godrej Mohali Appliances & Chairs (PB)",
+    supplier_gstin: "03AAACG0534B1Z2",
+    sku: "CHR-MOD-004",
+    items: [
+      { sku: "CHR-MOD-004", product_name: "High-Back Ergonomic Mesh Chair", qty: 15, unit_cost: 8500, gst_pct: 18 }
+    ],
+    qty: 15,
+    gross_subtotal: 127500,
+    trade_discount: 19125,
+    freight_charges: 2500,
+    subtotal: 110875,
+    gst_amount: 19958,
+    total_value: 130833,
+    advance_paid: 39250,
+    balance_due: 91583,
+    transporter: "ARC Transport Corp",
+    lr_number: "LR-449102",
+    payment_terms: "30_ADVANCE_70_LR",
+    lead_days: 7,
+    expected_delivery: "2026-09-28",
+    status: "PO_ACTIVE",
+    monsoon_wrap: false,
+    created_at: "2026-09-21"
+  }
+];
+
 export function StoreProvider({ children }) {
   // Authentication & Current User Session (Zero-Trust: null on clean session)
   const [currentUser, setCurrentUser] = useState(() => {
@@ -178,29 +294,6 @@ export function StoreProvider({ children }) {
       }
       return next;
     });
-  };
-
-  const parseToIsoDate = (val) => {
-    if (!val) return null;
-    if (typeof val === 'string') {
-      if (/^\d{4}-\d{2}-\d{2}/.test(val)) {
-        return val.slice(0, 10);
-      }
-      const months = { jan:'01', feb:'02', mar:'03', apr:'04', may:'05', jun:'06', jul:'07', aug:'08', sep:'09', oct:'10', nov:'11', dec:'12' };
-      const match = val.match(/(\d{1,2})[-/ ]([a-zA-Z]{3}|\d{1,2})[-/ ](\d{4})/);
-      if (match) {
-        const day = match[1].padStart(2, '0');
-        const monStr = match[2].toLowerCase();
-        const month = months[monStr] || monStr.padStart(2, '0');
-        const year = match[3];
-        return `${year}-${month}-${day}`;
-      }
-    }
-    const d = new Date(val);
-    if (!isNaN(d.getTime())) {
-      return d.toISOString().slice(0, 10);
-    }
-    return null;
   };
 
   const isDateInAuditWindow = (targetDate) => {
@@ -305,8 +398,10 @@ export function StoreProvider({ children }) {
   const [warranties, setWarranties] = useState(() => getStored('OMNIBUILD_WARRANTIES', []));
   const [weddingSuites, setWeddingSuites] = useState(() => getStored('OMNIBUILD_WEDDING_SUITES', []));
   const [exchangeBuybacks, setExchangeBuybacks] = useState(() => getStored('OMNIBUILD_EXCHANGE_BUYBACKS', []));
+  const [purchaseOrders, setPurchaseOrders] = useState(() => getStored('OMNIBUILD_PURCHASE_ORDERS', INITIAL_PURCHASE_ORDERS));
 
   // Automatic LocalStorage Sync Hooks for All Core Datastores
+  useEffect(() => { localStorage.setItem('OMNIBUILD_PURCHASE_ORDERS', JSON.stringify(purchaseOrders)); }, [purchaseOrders]);
   useEffect(() => { localStorage.setItem('OMNIBUILD_CATALOG', JSON.stringify(catalog)); }, [catalog]);
   useEffect(() => { localStorage.setItem('OMNIBUILD_ORDERS', JSON.stringify(orders)); }, [orders]);
   useEffect(() => { localStorage.setItem('OMNIBUILD_INVENTORY', JSON.stringify(inventory)); }, [inventory]);
@@ -1346,6 +1441,9 @@ export function StoreProvider({ children }) {
       exchangeBuybacks,
       setExchangeBuybacks,
       logExchangeBuyback,
+      purchaseOrders,
+      setPurchaseOrders,
+      parseToIsoDate,
       auditDateWindow,
       setAuditDateWindow,
       updateAuditWindow,

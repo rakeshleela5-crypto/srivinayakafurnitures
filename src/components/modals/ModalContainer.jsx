@@ -62,7 +62,7 @@ import { UniversalDateAuditModal } from './UniversalDateAuditModal';
 import { QuotationCardPrototypes } from '../prototypes/QuotationCardPrototypes';
 
 export function ModalContainer() {
-  const { activeModal, modalProps, closeModal } = useStore();
+  const { activeModal, modalProps, closeModal, activeTab } = useStore();
 
   // WCAG 2.2 Level AA Keyboard Navigation: Close modal on Escape key (#32)
   React.useEffect(() => {
@@ -206,6 +206,7 @@ export function ModalContainer() {
 
       {/* 📅 UNIVERSAL DATE FILTER AUDIT & DAYBOOK POP-UP MODAL */}
       <UniversalDateAuditModal 
+        key={`audit-modal-${activeModal}-${modalProps?.context || activeTab}`}
         isOpen={activeModal === 'universal_date_audit'} 
         onClose={closeModal} 
         data={modalProps} 

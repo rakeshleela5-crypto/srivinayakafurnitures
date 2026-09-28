@@ -118,10 +118,27 @@ export function UniversalAuditWindowBar({ customTitle, showBanner = true, compac
     if (customTitle) return customTitle;
 
     switch (activeTab) {
+      case 'autoprocure':
+        return `AUTOPROCURE™ FACTORY PO & SOURCING AUDIT FROM ${formatDisplayDate(auditDateWindow.appliedFrom)} TO ${formatDisplayDate(auditDateWindow.appliedTo)}`;
+      case 'crm':
+        return `SHOWROOM CRM LEADS & PIPELINE AUDIT FROM ${formatDisplayDate(auditDateWindow.appliedFrom)} TO ${formatDisplayDate(auditDateWindow.appliedTo)}`;
+      case 'architects':
+        return `VIP ARCHITECT PARTNER COMMISSION & REFERRAL AUDIT FROM ${formatDisplayDate(auditDateWindow.appliedFrom)} TO ${formatDisplayDate(auditDateWindow.appliedTo)}`;
+      case 'documents':
+        return `CENTRAL DOCUMENT STUDIO STATUTORY PRINT AUDIT FROM ${formatDisplayDate(auditDateWindow.appliedFrom)} TO ${formatDisplayDate(auditDateWindow.appliedTo)}`;
+      case 'inward_scanner':
+        return `DOCK 1 INWARD TRUCK UNLOADING & QC AUDIT FROM ${formatDisplayDate(auditDateWindow.appliedFrom)} TO ${formatDisplayDate(auditDateWindow.appliedTo)}`;
+      case 'outward_scanner':
+        return `DOCK 2 OUTWARD TRUCK DISPATCH & GATEPASS AUDIT FROM ${formatDisplayDate(auditDateWindow.appliedFrom)} TO ${formatDisplayDate(auditDateWindow.appliedTo)}`;
+      case 'barcode_studio':
+      case 'qr_studio':
+        return `BARCODE & 2D QR STUDIO PRINT AUDIT FROM ${formatDisplayDate(auditDateWindow.appliedFrom)} TO ${formatDisplayDate(auditDateWindow.appliedTo)}`;
       case 'pms_tape_chart':
         return `PMS AUDIT WINDOW (TAPE CHART) FROM ${formatDisplayDate(auditDateWindow.appliedFrom)} TO ${formatDisplayDate(auditDateWindow.appliedTo)}`;
       case 'executive':
         return `EXECUTIVE REVENUE AUDIT WINDOW FROM ${formatDisplayDate(auditDateWindow.appliedFrom)} TO ${formatDisplayDate(auditDateWindow.appliedTo)}`;
+      case 'voice_pos':
+        return `VOICE POS & SHOWROOM BILLING AUDIT FROM ${formatDisplayDate(auditDateWindow.appliedFrom)} TO ${formatDisplayDate(auditDateWindow.appliedTo)}`;
       case 'bank_ledger':
       case 'bank_statement':
         return `BANK & RTGS SETTLEMENT AUDIT WINDOW FROM ${formatDisplayDate(auditDateWindow.appliedFrom)} TO ${formatDisplayDate(auditDateWindow.appliedTo)}`;
@@ -132,6 +149,7 @@ export function UniversalAuditWindowBar({ customTitle, showBanner = true, compac
       case 'safelock':
         return `SAFELOCK WAREHOUSE AGING & STAGING WINDOW FROM ${formatDisplayDate(auditDateWindow.appliedFrom)} TO ${formatDisplayDate(auditDateWindow.appliedTo)}`;
       case 'logistics_epod':
+      case 'autonomous_fleet':
         return `LOGISTICS FLEET & ePOD DISPATCH AUDIT FROM ${formatDisplayDate(auditDateWindow.appliedFrom)} TO ${formatDisplayDate(auditDateWindow.appliedTo)}`;
       case 'live_database':
         return `CLOUDFLARE D1 DATABASE 52-TABLE AUDIT FROM ${formatDisplayDate(auditDateWindow.appliedFrom)} TO ${formatDisplayDate(auditDateWindow.appliedTo)}`;

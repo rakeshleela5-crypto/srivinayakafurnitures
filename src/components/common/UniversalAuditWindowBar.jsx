@@ -36,7 +36,8 @@ export function UniversalAuditWindowBar({ customTitle, showBanner = true, compac
     auditDateWindow, 
     updateAuditWindow, 
     activeTab, 
-    showToast 
+    showToast,
+    openModal
   } = useStore();
 
   const [localFrom, setLocalFrom] = useState(auditDateWindow?.fromDate || '2026-09-28');
@@ -93,7 +94,7 @@ export function UniversalAuditWindowBar({ customTitle, showBanner = true, compac
     showToast(`📅 Audit Window Synced: ${presetName} (${formatDisplayDate(s)} to ${formatDisplayDate(e)})`);
   };
 
-  // Handle Green Display Button Click
+  // Handle Green Display Button Click -> Opens Universal Date Audit Pop-Up Modal
   const handleDisplayClick = () => {
     playScanBeep();
     updateAuditWindow({
@@ -103,7 +104,13 @@ export function UniversalAuditWindowBar({ customTitle, showBanner = true, compac
       appliedTo: localTo,
       activePreset: 'Custom Range'
     });
-    showToast(`⚡ Displaying Synced Audit Window: ${formatDisplayDate(localFrom)} to ${formatDisplayDate(localTo)}`);
+    // Open Universal Pop-up View for that Date Range
+    openModal('universal_date_audit', {
+      fromDate: localFrom,
+      toDate: localTo,
+      context: activeTab
+    });
+    showToast(`⚡ Displaying Synced Audit Pop-Up: ${formatDisplayDate(localFrom)} to ${formatDisplayDate(localTo)}`);
   };
 
   // Dynamic context title based on active tab if customTitle is not passed
@@ -157,8 +164,29 @@ export function UniversalAuditWindowBar({ customTitle, showBanner = true, compac
           <strong style={{ color: '#FFFFFF' }}>{formatDisplayDate(auditDateWindow.appliedTo)}</strong>
           <span className="badge badge-gold" style={{ fontSize: '9.5px', padding: '1px 6px' }}>{auditDateWindow.activePreset}</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--accent-gold-light)' }}>
-          <span>Adjust Dates</span> <ChevronDown size={13} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDisplayClick();
+            }}
+            style={{
+              background: 'linear-gradient(180deg, #22C55E 0%, #16A34A 100%)',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: '4px',
+              padding: '2px 8px',
+              fontSize: '10px',
+              fontWeight: '900',
+              cursor: 'pointer',
+              boxShadow: '0 0 8px rgba(34, 197, 94, 0.4)'
+            }}
+          >
+            ⚡ Pop-Up
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--accent-gold-light)' }}>
+            <span>Adjust Dates</span> <ChevronDown size={13} />
+          </div>
         </div>
       </div>
     );
@@ -353,8 +381,31 @@ export function UniversalAuditWindowBar({ customTitle, showBanner = true, compac
             <span>🏛️</span> {getBannerTitle()}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '10.5px', color: '#94A3B8' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '10.5px', color: '#94A3B8' }}>
             <span>Active Range: <strong style={{ color: '#F1F5F9' }}>{formatDisplayDate(auditDateWindow.appliedFrom)} ➔ {formatDisplayDate(auditDateWindow.appliedTo)}</strong></span>
+            <span>•</span>
+            <button
+              onClick={handleDisplayClick}
+              style={{
+                background: 'rgba(212, 175, 55, 0.15)',
+                border: '1px solid rgba(212, 175, 55, 0.4)',
+                borderRadius: '5px',
+                padding: '3px 10px',
+                color: 'var(--accent-gold)',
+                fontSize: '10.5px',
+                fontWeight: '800',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(212, 175, 55, 0.3)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(212, 175, 55, 0.15)'}
+              title="Click to view full Daybook & Audit Pop-up"
+            >
+              <span>🔍 View Pop-Up Daybook</span>
+            </button>
             <span>•</span>
             <span>Status: <strong style={{ color: '#34D399' }}>Live Cloud Active</strong></span>
           </div>

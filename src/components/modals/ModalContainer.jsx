@@ -58,6 +58,7 @@ import { CustomerKhataLedgerModal } from './CustomerKhataLedgerModal';
 import { EwayBillGeneratorModal } from './EwayBillGeneratorModal';
 import { EnterprisePipelineModal } from './EnterprisePipelineModal';
 import FeatureFlagConsoleModal from './FeatureFlagConsoleModal';
+import { UniversalDateAuditModal } from './UniversalDateAuditModal';
 import { QuotationCardPrototypes } from '../prototypes/QuotationCardPrototypes';
 
 export function ModalContainer() {
@@ -202,6 +203,13 @@ export function ModalContainer() {
 
       {/* 🎛️ ENTERPRISE FEATURE FLAG & CANARY ROLLOUT CONSOLE (ARCHITECTURE PILLAR #12) */}
       <FeatureFlagConsoleModal isOpen={activeModal === 'feature_flags_console'} onClose={closeModal} />
+
+      {/* 📅 UNIVERSAL DATE FILTER AUDIT & DAYBOOK POP-UP MODAL */}
+      <UniversalDateAuditModal 
+        isOpen={activeModal === 'universal_date_audit'} 
+        onClose={closeModal} 
+        data={modalProps} 
+      />
 
       {/* 🎨 DIVERGENT UI PROTOTYPING LAB (#27) */}
       {activeModal === 'ui_prototyping_lab' && (

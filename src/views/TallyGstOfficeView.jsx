@@ -73,7 +73,9 @@ export function TallyGstOfficeView() {
     postTallyVoucher,
     showToast,
     triggerSafeLockOrder,
-    openModal
+    openModal,
+    auditDateWindow,
+    isDateInAuditWindow
   } = useStore();
 
   // Active Desk Sub-Tab: 'gateway' | 'drilldown' | 'vouchers' | 'gst_portal'
@@ -190,13 +192,16 @@ export function TallyGstOfficeView() {
   // Computes real-time balances from orders & bank transactions
   // =========================================================================
   const chartOfAccounts = useMemo(() => {
-    // 1. Sundry Debtors (Customers from Orders)
+    // 1. Sundry Debtors (Filtered by Universal Audit Date Window)
     const debtorLedgers = {};
     let totalSales = 0;
     let totalCgstOutput = 0;
     let totalSgstOutput = 0;
 
-    orders.forEach(ord => {
+    const filteredOrders = orders.filter(ord => isDateInAuditWindow(ord.Created_Timestamp || ord.Created_At || ord.Order_Date));
+    const filteredTxns = transactions.filter(txn => isDateInAuditWindow(txn.dateTime || txn.Date));
+
+    filteredOrders.forEach(ord => {
       const party = ord.Customer_Name || 'Cash Customer Rayagada';
       const amt = Number(ord.Total_Amount_INR || ord.amount || 0);
       const isPaid = ord.Status === 'DELIVERED' || ord.Payment_Status === 'PAID';
@@ -246,13 +251,13 @@ export function TallyGstOfficeView() {
       }
     });
 
-    // 2. Bank Accounts & Sundry Creditors (from Bank Transactions)
+    // 2. Bank Accounts & Sundry Creditors (from Filtered Bank Transactions)
     let canaraBankDebit = 3450000; // Verified opening balance
     let canaraBankCredit = 0;
     const creditorLedgers = {};
     let suspenseAmount = 0;
 
-    transactions.forEach(txn => {
+    filteredTxns.forEach(txn => {
       const amt = Number(txn.amount || 0);
       const isOutward = txn.flowType === 'OUTWARD_DEBIT';
       const party = txn.partyName || (isOutward ? 'Vendor Account' : 'Customer Account');
@@ -305,7 +310,7 @@ export function TallyGstOfficeView() {
         salesAccount: { name: 'Sales Account @ 18%', balance: totalSales, type: 'INCOME' }
       }
     };
-  }, [orders, transactions, catalog]);
+  }, [orders, transactions, catalog, isDateInAuditWindow, auditDateWindow]);
 
   // Handle Voucher Submission
   const handlePostVoucher = (e) => {
@@ -483,6 +488,34 @@ export function TallyGstOfficeView() {
             title="Export Tally-Structured Excel / CSV"
           >
             <FileSpreadsheet size={13} /> Tally Excel
+          </button>
+
+          <button
+            onClick={() => {
+              playScanBeep();
+              openModal('universal_date_audit', { 
+                context: 'tally_gst_desk',
+                fromDate: auditDateWindow?.fromDate,
+                toDate: auditDateWindow?.toDate 
+              });
+            }}
+            style={{
+              background: 'linear-gradient(180deg, #22C55E 0%, #16A34A 100%)',
+              color: '#FFFFFF',
+              border: '1px solid #4ADE80',
+              borderRadius: '7px',
+              padding: '6px 14px',
+              fontSize: '11.5px',
+              fontWeight: '900',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 0 10px rgba(34, 197, 94, 0.4)'
+            }}
+            title="Open Universal Date Filter Pop-Up Daybook"
+          >
+            <span>⚡ Pop-Up Daybook</span>
           </button>
         </div>
 

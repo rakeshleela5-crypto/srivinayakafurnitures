@@ -35,7 +35,9 @@ export function LogisticsEpodView() {
     setActiveTab, 
     syncWithGoogleSheets, 
     isSyncing,
-    currentUser
+    currentUser,
+    auditDateWindow,
+    isDateInAuditWindow
   } = useStore();
 
   const isExecutive = currentUser && (currentUser.id === 'rakesh' || currentUser.id === 'sunil_sales');
@@ -54,8 +56,9 @@ export function LogisticsEpodView() {
   const [selectedDriverFilter, setSelectedDriverFilter] = useState('ALL');
   const [selectedCustomerFilter, setSelectedCustomerFilter] = useState('ALL');
 
-  // Dynamically compute live route stops from active SafeLock orders
-  const activeManifestStops = orders.map((order, idx) => {
+  // Dynamically compute live route stops from active SafeLock orders filtered by Audit Window
+  const auditOrders = orders.filter(o => isDateInAuditWindow(o.Created_At || o.Delivery_Schedule));
+  const activeManifestStops = auditOrders.map((order, idx) => {
     const isDelivered = (order.SafeLock_Status || '').includes('DELIVERED');
     const isTransit = (order.SafeLock_Status || '').includes('TRANSIT');
     const isStaged = (order.SafeLock_Status || '').includes('STAGED');
@@ -135,6 +138,33 @@ export function LogisticsEpodView() {
             style={{ fontSize: '11px', padding: '5px 10px' }}
           >
             <Send size={12} /> 📲 Send WhatsApp Trip Sheet
+          </button>
+          <button 
+            onClick={() => {
+              playScanBeep();
+              openModal('universal_date_audit', { 
+                context: 'logistics_epod',
+                fromDate: auditDateWindow?.fromDate,
+                toDate: auditDateWindow?.toDate 
+              });
+            }}
+            style={{ 
+              fontSize: '11px', 
+              padding: '5px 12px', 
+              background: 'linear-gradient(180deg, #22C55E 0%, #16A34A 100%)', 
+              color: '#FFFFFF',
+              border: '1px solid #4ADE80',
+              borderRadius: '6px',
+              fontWeight: '900',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              boxShadow: '0 0 10px rgba(34, 197, 94, 0.4)'
+            }}
+            title="Open Universal Date Filter Pop-Up Logistics Audit"
+          >
+            <span>⚡ Pop-Up Audit</span>
           </button>
         </div>
 

@@ -262,9 +262,7 @@ function AppContent() {
       )}
 
       <main className="main-layout">
-        {!workerMode && (
-          <UniversalAuditWindowBar />
-        )}
+        <UniversalAuditWindowBar compact={workerMode} />
         <Suspense fallback={<LazyLoadingFallback />}>
           {renderActiveView()}
         </Suspense>

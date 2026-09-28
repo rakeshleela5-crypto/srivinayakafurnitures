@@ -48,7 +48,9 @@ export function DocumentStudio() {
     syncWithGoogleSheets,
     isSyncing,
     documentsLog,
-    setDocumentsLog
+    setDocumentsLog,
+    auditDateWindow,
+    isDateInAuditWindow
   } = useStore();
 
   const fullCatalog = (catalog && catalog.length > 0) ? catalog : FURNITURE_CATALOG;
@@ -389,6 +391,34 @@ export function DocumentStudio() {
 
           <button className="btn-ghost-edit" onClick={() => window.print()} style={{ fontSize: '11.5px', padding: '6px 12px', background: 'rgba(212,175,55,0.15)', borderColor: 'var(--accent-gold)' }}>
             <Printer size={13} color="var(--accent-gold)" /> <span style={{ color: 'var(--accent-gold-light)', fontWeight: '800' }}>Print A4 Page</span>
+          </button>
+
+          <button 
+            onClick={() => {
+              playScanBeep();
+              openModal('universal_date_audit', { 
+                context: 'documents',
+                fromDate: auditDateWindow?.fromDate,
+                toDate: auditDateWindow?.toDate 
+              });
+            }}
+            style={{ 
+              fontSize: '11.5px', 
+              padding: '6px 14px', 
+              background: 'linear-gradient(180deg, #22C55E 0%, #16A34A 100%)', 
+              color: '#FFFFFF',
+              border: '1px solid #4ADE80',
+              borderRadius: '7px',
+              fontWeight: '900',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 0 10px rgba(34, 197, 94, 0.4)'
+            }}
+            title="Open Universal Date Filter Pop-Up Audit"
+          >
+            <span>⚡ Pop-Up Audit</span>
           </button>
         </div>
 

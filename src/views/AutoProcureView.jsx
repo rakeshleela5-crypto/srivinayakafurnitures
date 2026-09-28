@@ -37,7 +37,7 @@ import { playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
 
 export function AutoProcureView() {
-  const { catalog, inventory, adjustStock, showToast, openModal, setActiveTab } = useStore();
+  const { catalog, inventory, adjustStock, showToast, openModal, setActiveTab, auditDateWindow, isDateInAuditWindow } = useStore();
 
   // 🤖 BOT-08 Autonomous PO Auto-Pilot State
   const [bot08Autopilot, setBot08Autopilot] = useState(true);
@@ -641,6 +641,34 @@ export function AutoProcureView() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button 
+            onClick={() => {
+              playSuccessChime();
+              openModal('universal_date_audit', { 
+                context: 'autoprocure',
+                fromDate: auditDateWindow?.fromDate,
+                toDate: auditDateWindow?.toDate 
+              });
+            }}
+            style={{ 
+              fontSize: '11.5px', 
+              padding: '6px 14px', 
+              background: 'linear-gradient(180deg, #22C55E 0%, #16A34A 100%)', 
+              color: '#FFFFFF',
+              border: '1px solid #4ADE80',
+              borderRadius: '7px',
+              fontWeight: '900',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              boxShadow: '0 0 10px rgba(34, 197, 94, 0.4)'
+            }}
+            title="Open Universal Date Filter Pop-Up Procurement Audit"
+          >
+            <span>⚡ Pop-Up Audit</span>
+          </button>
+
           <button 
             className="btn-ghost-edit" 
             onClick={() => setActiveTab('inward_scanner')}

@@ -757,10 +757,16 @@ export function VoicePosView() {
                     <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
                       {idx + 1}
                     </td>
-                    <td>
+                    <EditableCell
+                      value={item.Product_Name}
+                      field="Product_Name"
+                      rowIdx={idx}
+                      pkVal={item.SKU}
+                      {...cellEdit}
+                    >
                       <div style={{ fontWeight: '800', color: '#FFFFFF' }}>{item.Product_Name}</div>
                       <div style={{ fontSize: '10.5px', color: 'var(--accent-cyan)' }}>{item.SKU} • {item.Material_Spec}</div>
-                    </td>
+                    </EditableCell>
                     <td style={{ textAlign: 'center' }}>
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                         <button className="btn-ghost-edit" style={{ padding: '2px 7px', fontSize: '12px' }} onClick={() => updateQty(item.SKU, -1)}>-</button>
@@ -768,7 +774,20 @@ export function VoicePosView() {
                         <button className="btn-ghost-edit" style={{ padding: '2px 7px', fontSize: '12px' }} onClick={() => updateQty(item.SKU, 1)}>+</button>
                       </div>
                     </td>
-                    <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono' }}>₹{(item.Selling_Price_INR || 50000).toLocaleString()}</td>
+                    <EditableCell
+                      value={item.Selling_Price_INR}
+                      field="Selling_Price_INR"
+                      rowIdx={idx}
+                      pkVal={item.SKU}
+                      numeric
+                      style={{ textAlign: 'right', fontFamily: 'JetBrains Mono' }}
+                      onSaved={(rIdx, fld, val) => {
+                        setCart(prev => prev.map(ci => ci.SKU === item.SKU ? { ...ci, Selling_Price_INR: Number(val) } : ci));
+                      }}
+                      {...cellEdit}
+                    >
+                      ₹{(item.Selling_Price_INR || 50000).toLocaleString()}
+                    </EditableCell>
                     <td style={{ textAlign: 'right', fontWeight: '800', color: 'var(--accent-gold-light)', fontFamily: 'JetBrains Mono' }}>
                       ₹{((item.Selling_Price_INR || 50000) * item.qty).toLocaleString()}
                     </td>

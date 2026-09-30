@@ -68,6 +68,7 @@ import { EditableCell } from '../components/common/InlineCellRenderer';
 export function TallyGstOfficeView() {
   const { 
     orders = [], 
+    setOrders,
     bankTransactions: transactions = [], 
     catalog = [], 
     storeMeta = {}, 
@@ -80,8 +81,8 @@ export function TallyGstOfficeView() {
     isDateInAuditWindow
   } = useStore();
 
-  // 📝 Inline cell edit — tally_vouchers
-  const cellEdit = useInlineCellEdit({ table: 'tally_vouchers', pkField: 'voucher_id', readOnly: ['voucher_id'], setRows: () => {}, showToast });
+  // 📝 Inline cell edit — orders
+  const cellEdit = useInlineCellEdit({ table: 'orders', pkField: 'Order_ID', readOnly: ['Order_ID'], setRows: setOrders, showToast });
 
   // Active Desk Sub-Tab: 'gateway' | 'drilldown' | 'vouchers' | 'gst_portal'
   const [activeSubTab, setActiveSubTab] = useState('gateway');
@@ -834,13 +835,27 @@ export function TallyGstOfficeView() {
                           <span className="badge badge-emerald" style={{ fontSize: '10px' }}>Sales</span>
                         </td>
                         <td style={{ fontWeight: '700', color: 'var(--accent-gold-light)' }}>{ord.Order_ID || `INV-${1000 + idx}`}</td>
-                        <td>
+                        <EditableCell
+                          value={ord.Customer_Name}
+                          field="Customer_Name"
+                          rowIdx={idx}
+                          pkVal={ord.Order_ID}
+                          {...cellEdit}
+                        >
                           <div style={{ fontWeight: '600' }}>{ord.Customer_Name || 'Walk-in Retail Customer'}</div>
                           <div style={{ fontSize: '10.5px', color: '#94A3B8' }}>{ord.Ordered_SKU || 'Godrej Living Furniture'}</div>
-                        </td>
-                        <td style={{ textAlign: 'right', fontWeight: '800', color: '#FFFFFF' }}>
+                        </EditableCell>
+                        <EditableCell
+                          value={ord.Total_Amount_INR}
+                          field="Total_Amount_INR"
+                          rowIdx={idx}
+                          pkVal={ord.Order_ID}
+                          numeric
+                          style={{ textAlign: 'right', fontWeight: '800', color: '#FFFFFF' }}
+                          {...cellEdit}
+                        >
                           ₹{Number(ord.Total_Amount_INR || ord.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </td>
+                        </EditableCell>
                       </tr>
                     ))}
                   </tbody>

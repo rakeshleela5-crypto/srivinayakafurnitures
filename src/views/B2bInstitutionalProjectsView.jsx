@@ -25,6 +25,7 @@ import {
   Archive
 } from 'lucide-react';
 import { SpotlightCard, ShimmerButton, BorderBeamBadge } from '../components/common/LuxuryComponents';
+import { useStore } from '../context/StoreContext';
 import { useInlineCellEdit } from '../hooks/useInlineCellEdit';
 import { EditableCell } from '../components/common/InlineCellRenderer';
 
@@ -113,10 +114,20 @@ const INITIAL_B2B_PROJECTS = [
 ];
 
 export default function B2bInstitutionalProjectsView() {
+  const { showToast } = useStore();
   const [projects, setProjects] = useState(INITIAL_B2B_PROJECTS);
   const [selectedFilter, setSelectedFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('sheets'); // 'sheets' (Google Sheets table) | 'cards'
+
+  // 📝 Inline cell edit — b2b_commercial_tenders_log
+  const cellEdit = useInlineCellEdit({
+    table: 'b2b_commercial_tenders_log',
+    pkField: 'id',
+    readOnly: ['id', 'stage', 'stageLabel'],
+    setRows: setProjects,
+    showToast
+  });
   
   // Modals state
   const [showAddModal, setShowAddModal] = useState(false);
@@ -434,26 +445,62 @@ export default function B2bInstitutionalProjectsView() {
                   <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-gold-light)' }}>
                     {proj.id}
                   </td>
-                  <td>
+                  <EditableCell
+                    value={proj.clientName}
+                    field="clientName"
+                    rowIdx={idx}
+                    pkVal={proj.id}
+                    {...cellEdit}
+                  >
                     <div style={{ fontWeight: '800', color: '#FFFFFF' }}>{proj.clientName}</div>
                     <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>📍 {proj.location}</div>
-                  </td>
+                  </EditableCell>
                   <td>
                     <span className="badge badge-gold" style={{ fontSize: '9px' }}>{proj.category}</span>
                   </td>
-                  <td style={{ textAlign: 'center', fontWeight: '700', fontFamily: 'JetBrains Mono' }}>
+                  <EditableCell
+                    value={proj.roomsCount}
+                    field="roomsCount"
+                    rowIdx={idx}
+                    pkVal={proj.id}
+                    numeric
+                    style={{ textAlign: 'center', fontWeight: '700', fontFamily: 'JetBrains Mono' }}
+                    {...cellEdit}
+                  >
                     {proj.roomsCount}
-                  </td>
-                  <td>
+                  </EditableCell>
+                  <EditableCell
+                    value={proj.contactPerson}
+                    field="contactPerson"
+                    rowIdx={idx}
+                    pkVal={proj.id}
+                    {...cellEdit}
+                  >
                     <div style={{ color: '#FFFFFF', fontWeight: '600' }}>{proj.contactPerson}</div>
                     <div style={{ fontSize: '10.5px', color: 'var(--accent-cyan)' }}>📞 {proj.phone}</div>
-                  </td>
-                  <td style={{ textAlign: 'right', fontWeight: '800', fontFamily: 'JetBrains Mono', color: 'var(--accent-gold)' }}>
+                  </EditableCell>
+                  <EditableCell
+                    value={proj.contractValue}
+                    field="contractValue"
+                    rowIdx={idx}
+                    pkVal={proj.id}
+                    numeric
+                    style={{ textAlign: 'right', fontWeight: '800', fontFamily: 'JetBrains Mono', color: 'var(--accent-gold)' }}
+                    {...cellEdit}
+                  >
                     ₹{proj.contractValue.toLocaleString('en-IN')}
-                  </td>
-                  <td style={{ textAlign: 'right', fontWeight: '700', fontFamily: 'JetBrains Mono', color: '#10B981' }}>
+                  </EditableCell>
+                  <EditableCell
+                    value={proj.advancePaid}
+                    field="advancePaid"
+                    rowIdx={idx}
+                    pkVal={proj.id}
+                    numeric
+                    style={{ textAlign: 'right', fontWeight: '700', fontFamily: 'JetBrains Mono', color: '#10B981' }}
+                    {...cellEdit}
+                  >
                     ₹{proj.advancePaid.toLocaleString('en-IN')}
-                  </td>
+                  </EditableCell>
                   <td style={{ textAlign: 'right', fontWeight: '800', fontFamily: 'JetBrains Mono', color: proj.balanceDue > 0 ? '#EF4444' : '#10B981' }}>
                     ₹{proj.balanceDue.toLocaleString('en-IN')}
                   </td>

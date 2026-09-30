@@ -40,8 +40,6 @@ import { decodeBarcodeFromSource, decodeBarcodeFromImageFile, sanitizeBarcode } 
 import { generateBoxesForProduct } from '../utils/knockdownBoxGenerator';
 import { useHardwareBarcodeScanner } from '../hooks/useHardwareBarcodeScanner';
 import { inspectFurnitureDamageVision } from '../services/geminiService';
-import { useInlineCellEdit } from '../hooks/useInlineCellEdit';
-import { EditableCell } from '../components/common/InlineCellRenderer';
 
 export function StaffInwardScannerView() {
   const { 
@@ -53,9 +51,6 @@ export function StaffInwardScannerView() {
     syncWithGoogleSheets,
     isSyncing
   } = useStore();
-
-  // 📝 Inline cell edit — inward_scan_log
-  const cellEdit = useInlineCellEdit({ table: 'inward_scan_log', pkField: 'scan_id', readOnly: ['scan_id'], setRows: () => {}, showToast });
 
   const [sunnyMode, setSunnyMode] = useState(false);
   const [inwardStep, setInwardStep] = useState(1);

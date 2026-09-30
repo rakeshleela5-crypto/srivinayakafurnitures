@@ -1526,32 +1526,61 @@ export function AutoProcureView() {
                     {po.po_id}
                   </td>
 
-                  <td style={{ padding: '12px 10px' }}>
-                    <div style={{ fontWeight: '700', color: '#FFFFFF' }}>{po.supplier.split(',')[0]}</div>
+                  <EditableCell
+                    value={po.supplier}
+                    field="supplier"
+                    rowIdx={idx}
+                    pkVal={po.po_id}
+                    style={{ padding: '12px 10px' }}
+                    {...cellEdit}
+                  >
+                    <div style={{ fontWeight: '700', color: '#FFFFFF' }}>{po.supplier?.split(',')[0]}</div>
                     <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>{po.payment_terms === '30_ADVANCE_70_LR' ? '30/70 LR Terms' : 'RTGS Advance'}</div>
-                  </td>
+                  </EditableCell>
 
                   <td style={{ padding: '12px 10px' }}>
                     <span className="badge badge-purple" style={{ fontSize: '10.5px' }}>
-                      {po.sku.length > 25 ? po.sku.substring(0, 25) + '...' : po.sku}
+                      {po.sku?.length > 25 ? po.sku.substring(0, 25) + '...' : po.sku}
                     </span>
                     <div style={{ fontSize: '10.5px', color: '#CBD5E1', marginTop: '2px' }}>
                       {po.qty} Total Sets
                     </div>
                   </td>
 
-                  <td style={{ padding: '12px 10px', fontWeight: '800', color: 'var(--accent-green)', fontFamily: 'JetBrains Mono' }}>
+                  <EditableCell
+                    value={po.total_value}
+                    field="total_value"
+                    rowIdx={idx}
+                    pkVal={po.po_id}
+                    numeric
+                    style={{ padding: '12px 10px', fontWeight: '800', color: 'var(--accent-green)', fontFamily: 'JetBrains Mono' }}
+                    {...cellEdit}
+                  >
                     ₹{Number(po.total_value).toLocaleString()}
-                  </td>
+                  </EditableCell>
 
-                  <td style={{ padding: '12px 10px' }}>
+                  <EditableCell
+                    value={po.transporter}
+                    field="transporter"
+                    rowIdx={idx}
+                    pkVal={po.po_id}
+                    style={{ padding: '12px 10px' }}
+                    {...cellEdit}
+                  >
                     <div style={{ color: 'var(--accent-cyan)', fontWeight: '600' }}>{po.transporter}</div>
                     <div style={{ fontSize: '10.5px', color: '#CBD5E1', fontFamily: 'JetBrains Mono' }}>{po.lr_number || 'Pending LR'}</div>
-                  </td>
+                  </EditableCell>
 
-                  <td style={{ padding: '12px 10px', color: '#E2E8F0' }}>
+                  <EditableCell
+                    value={po.expected_delivery}
+                    field="expected_delivery"
+                    rowIdx={idx}
+                    pkVal={po.po_id}
+                    style={{ padding: '12px 10px', color: '#E2E8F0' }}
+                    {...cellEdit}
+                  >
                     {po.expected_delivery}
-                  </td>
+                  </EditableCell>
 
                   <td style={{ padding: '12px 10px' }}>
                     {po.status === "PO_ACTIVE" && <span className="badge badge-gold">🟡 PO ACTIVE</span>}

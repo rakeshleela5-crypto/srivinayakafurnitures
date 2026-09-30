@@ -70,8 +70,8 @@ export function BankStatementLedgerView() {
     auditDateWindow
   } = useStore();
 
-  // 📝 Inline cell edit — bank_transactions
-  const cellEdit = useInlineCellEdit({ table: 'bank_transactions', pkField: 'txn_id', readOnly: ['txn_id'], setRows: setBankTransactions, showToast });
+  // 📝 Inline cell edit — bank_transactions_log
+  const cellEdit = useInlineCellEdit({ table: 'bank_transactions_log', pkField: 'bank_txn_id', readOnly: ['bank_txn_id', 'id'], setRows: setTransactions, showToast });
 
   // Persist transactions to localStorage
   const saveTransactions = (updated) => {
@@ -1174,22 +1174,36 @@ export function BankStatementLedgerView() {
                       </td>
 
                       {/* 3. Party Entity */}
-                      <td style={{ padding: '10px', maxWidth: '220px' }}>
+                      <EditableCell
+                        value={tx.partyName}
+                        field="partyName"
+                        rowIdx={idx}
+                        pkVal={tx.bank_txn_id || tx.id}
+                        style={{ padding: '10px', maxWidth: '220px' }}
+                        {...cellEdit}
+                      >
                         <div style={{ fontWeight: 'bold', color: '#FFFFFF' }}>{tx.partyName}</div>
                         <div style={{ fontSize: '10.5px', color: 'var(--accent-cyan)' }}>{tx.partyCategory}</div>
                         <div style={{ fontSize: '10px', color: 'var(--text-secondary)', fontStyle: 'italic', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {tx.notes}
                         </div>
-                      </td>
+                      </EditableCell>
 
                       {/* 4. Bank UTR */}
-                      <td style={{ padding: '10px' }}>
+                      <EditableCell
+                        value={tx.utrNumber}
+                        field="utrNumber"
+                        rowIdx={idx}
+                        pkVal={tx.bank_txn_id || tx.id}
+                        style={{ padding: '10px' }}
+                        {...cellEdit}
+                      >
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <span style={{ fontFamily: 'monospace', fontWeight: 'bold', color: 'var(--accent-gold-light)', background: 'rgba(212,175,55,0.1)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(212,175,55,0.2)' }}>
                             {tx.utrNumber}
                           </span>
                           <button
-                            onClick={() => handleCopy(tx.utrNumber, tx.id)}
+                            onClick={(e) => { e.stopPropagation(); handleCopy(tx.utrNumber, tx.id); }}
                             className="btn-ghost-edit"
                             style={{ padding: '2px 4px', fontSize: '10px' }}
                             title="Copy UTR"
@@ -1197,7 +1211,7 @@ export function BankStatementLedgerView() {
                             {copiedField === tx.id ? <Check size={11} color="var(--accent-emerald)" /> : <Copy size={11} />}
                           </button>
                         </div>
-                      </td>
+                      </EditableCell>
 
                       {/* 5. Linked Reference */}
                       <td style={{ padding: '10px' }}>
@@ -1210,11 +1224,19 @@ export function BankStatementLedgerView() {
                       </td>
 
                       {/* 6. Amount */}
-                      <td style={{ padding: '10px', textAlign: 'right' }}>
+                      <EditableCell
+                        value={tx.amount}
+                        field="amount"
+                        rowIdx={idx}
+                        pkVal={tx.bank_txn_id || tx.id}
+                        numeric
+                        style={{ padding: '10px', textAlign: 'right' }}
+                        {...cellEdit}
+                      >
                         <div style={{ fontSize: '13px', fontWeight: '900', fontFamily: 'monospace', color: isInward ? 'var(--accent-emerald)' : 'var(--accent-rose)' }}>
                           {isInward ? '+' : '-'} ₹{Number(tx.amount).toLocaleString('en-IN')}
                         </div>
-                      </td>
+                      </EditableCell>
 
                       {/* 7. Actions & Rich Edit Suite */}
                       <td style={{ padding: '10px', textAlign: 'center' }}>

@@ -1,6 +1,6 @@
 // OmniBuild OS™ — Progressive Web App (PWA) Service Worker
-// Version: 1.0.0 — Godrej Interio Rayagada Flagship Showroom
-const CACHE_NAME = 'omnibuild-os-v1';
+// Version: 3.0.0 — Inline Cell Edit Release (2026-09-30)
+const CACHE_NAME = 'omnibuild-os-v3';
 
 const STATIC_ASSETS = [
   '/',

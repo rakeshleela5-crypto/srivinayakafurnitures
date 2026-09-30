@@ -93,7 +93,7 @@ describe('Sovereign Edge REST API Contract Testing (#21)', () => {
       assert.equal(data.status, 'READY_TO_BIND');
     });
 
-    it('OPTIONS request returns 200 with CORS headers', async () => {
+    it('OPTIONS request returns 204 with CORS headers', async () => {
       const ctx = createMockContext({
         url: 'https://srivinayakafurnitures.pages.dev/api/d1/catalog',
         method: 'OPTIONS',
@@ -102,7 +102,7 @@ describe('Sovereign Edge REST API Contract Testing (#21)', () => {
       });
 
       const response = await onRequest(ctx);
-      assert.equal(response.status, 200);
+      assert.equal(response.status, 204);
       assert.ok(response.headers.get('Access-Control-Allow-Origin'));
       assert.ok(response.headers.get('Access-Control-Allow-Methods'));
     });

@@ -54,7 +54,16 @@ app.onError((err, c) => {
 // Pages Functions expects { onRequest } — we wrap Hono's fetch handler
 // ==============================================================================
 export async function onRequest(context) {
-  return app.fetch(context.request, context.env, context);
+  // Cloudflare Pages strips the `/api/d1` prefix before calling this function.
+  // In the local test harness the full URL is passed, so we normalise it here
+  // so both environments see a consistent path (e.g. `/health`, `/sync-all`).
+  let { request } = context;
+  const url = new URL(request.url);
+  if (url.pathname.startsWith('/api/d1')) {
+    url.pathname = url.pathname.replace('/api/d1', '') || '/';
+    request = new Request(url.toString(), request);
+  }
+  return app.fetch(request, context.env, context);
 }
 
 // ==============================================================================

@@ -10,11 +10,13 @@ dispatchRoutes.post('/', async (c) => {
   const db = c.env.DB;
   const body = await c.req.json();
   const action = body.action || body.Action || '';
-  const p = body.params || body || {};
+  // Support three payload shapes: { payload }, { params }, or flat body
+  const p = body.payload || body.params || body || {};
 
   switch (action) {
     // 1. SafeLock Order Booking & Pipeline Management
     case 'CREATE_ORDER':
+    case 'CREATE_SAFELOCK_ORDER':
     case 'SAFELOCK_ORDER':
     case 'UPDATE_ORDER_STATUS':
     case 'UPDATE_SAFELOCK_STATUS':

@@ -16,6 +16,16 @@ export const coreRoutes = new Hono();
 // Health check
 coreRoutes.get('/health', async (c) => {
   const db = c.env.DB;
+  // Simulation mode: no DB binding (local dev / test harness without wrangler)
+  if (!db) {
+    return c.json({
+      status: 'READY_TO_BIND',
+      engine: 'Cloudflare D1 Sovereign SQL',
+      note: 'DB binding not yet attached — bind via wrangler.toml or Pages dashboard',
+      timestamp: new Date().toISOString(),
+      alive: false
+    });
+  }
   const result = await db.prepare('SELECT 1 as alive;').first();
   return c.json({
     status: 'ONLINE',

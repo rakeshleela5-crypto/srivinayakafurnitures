@@ -108,8 +108,6 @@ export function UniversalDateAuditModal({ isOpen, onClose, data = {} }) {
     }
   }, [isOpen, callerContext, data.fromDate, data.toDate, auditDateWindow?.fromDate, auditDateWindow?.toDate]);
 
-  if (!isOpen) return null;
-
   // Universal robust date checker using StoreContext's parseToIsoDate
   const isDateBetween = (dateVal) => {
     if (!dateVal) return true;
@@ -761,6 +759,8 @@ export function UniversalDateAuditModal({ isOpen, onClose, data = {} }) {
     triggerGoldenConfetti();
     showToast(`⚡ Synchronized with Tally Prime 9 & Cloud Gateway!`, true);
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="modal-overlay" onClick={onClose} style={{ zIndex: 9999 }}>

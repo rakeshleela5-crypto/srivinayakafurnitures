@@ -27,7 +27,8 @@ import { EditableCell } from '../components/common/InlineCellRenderer';
 
 export function InventorySafeLockView() {
   const { 
-    inventory, 
+    inventory,
+    setInventory,
     orders,
     smartKitBoxes, 
     adjustStock, 
@@ -39,8 +40,8 @@ export function InventorySafeLockView() {
     isSyncing
   } = useStore();
 
-  // 📝 Inline cell edit — orders table
-  const cellEdit = useInlineCellEdit({ table: 'orders', pkField: 'Order_ID', readOnly: ['OTP_Code','Order_ID'], setRows: setOrders, showToast });
+  // 📝 Inline cell edit — inventory table, saves to D1 'inventory'
+  const cellEdit = useInlineCellEdit({ table: 'inventory', pkField: 'SKU', readOnly: ['SKU', 'Warehouse_Qty', 'Reserved_SafeLock', 'Reorder_Status'], setRows: setInventory, showToast });
 
   const [selectedSku, setSelectedSku] = useState('BED-MOD-001');
   const [selectedCustomerFilter, setSelectedCustomerFilter] = useState('ALL');
@@ -301,8 +302,15 @@ export function InventorySafeLockView() {
                   <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
                     {idx + 1}
                   </td>
+                  {/* SKU Code — Protected PK */}
                   <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-cyan)' }}>{item.SKU}</td>
-                  <td>
+                  {/* Product Name — Editable */}
+                  <EditableCell
+                    value={item.Product_Name} field="Product_Name" rowIdx={idx}
+                    pkVal={item.SKU} isProtected={false}
+                    style={{ padding: '8px 10px' }}
+                    {...cellEdit}
+                  >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span style={{ fontWeight: '800', color: '#FFFFFF' }}>{item.Product_Name}</span>
                       {floorDisplaySkus.includes(item.SKU) && (
@@ -312,11 +320,17 @@ export function InventorySafeLockView() {
                       )}
                     </div>
                     <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>Unit Cost: ₹{item.Unit_Cost_INR?.toLocaleString()}</div>
-                  </td>
-                  <td>
+                  </EditableCell>
+                  {/* Category / Bay — Editable */}
+                  <EditableCell
+                    value={item.Bay} field="Bay" rowIdx={idx}
+                    pkVal={item.SKU} isProtected={false}
+                    style={{ padding: '8px 10px' }}
+                    {...cellEdit}
+                  >
                     <div style={{ color: '#FFFFFF', fontSize: '11.5px' }}>{item.Category}</div>
                     <div style={{ fontSize: '10px', color: 'var(--accent-gold)' }}>{item.Bay}</div>
-                  </td>
+                  </EditableCell>
                   <td style={{ textAlign: 'center' }}>
                     <strong style={{ fontSize: '15px', color: item.Warehouse_Qty > 1 ? 'var(--accent-emerald)' : 'var(--accent-rose)', fontFamily: 'JetBrains Mono' }}>
                       {item.Warehouse_Qty} Units

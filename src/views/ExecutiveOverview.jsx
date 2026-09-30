@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { useStore } from '../context/StoreContext';
 import CustomerOrderSearchSelector from '../components/common/CustomerOrderSearchSelector';
 import { SpotlightCard, BorderBeamCard, ShimmerButton } from '../components/common/LuxuryComponents';
+import { useInlineCellEdit } from '../hooks/useInlineCellEdit';
+import { EditableCell } from '../components/common/InlineCellRenderer';
 import { 
   TrendingUp, 
   ShieldCheck, 
@@ -45,7 +47,8 @@ import { askShowroomAssistant, getGeminiApiKey } from '../services/geminiService
 
 export function ExecutiveOverview() {
   const { 
-    orders, 
+    orders,
+    setOrders,
     inventory, 
     catalog,
     smartKitBoxes,
@@ -69,6 +72,15 @@ export function ExecutiveOverview() {
     isDateInAuditWindow,
     auditDateWindow
   } = useStore();
+
+  // 📝 Inline Cell Edit — orders table, saves to D1 'orders'
+  const cellEdit = useInlineCellEdit({
+    table: 'orders',
+    pkField: 'Order_ID',
+    readOnly: ['Order_ID', 'OTP_Code', 'SafeLock_Status'],
+    setRows: setOrders,
+    showToast
+  });
 
   // Local Executive States
   const [selectedCustomerFilter, setSelectedCustomerFilter] = useState('ALL');
@@ -1096,12 +1108,25 @@ export function ExecutiveOverview() {
                     <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
                       {idx + 1}
                     </td>
-                    <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-cyan)' }}>{order.Order_ID}</td>
-                    <td>
+                    {/* Order ID — Protected PK */}
+                    <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-cyan)', padding: '8px 10px' }}>{order.Order_ID}</td>
+                    {/* Customer Name — Editable */}
+                    <EditableCell
+                      value={order.Customer_Name} field="Customer_Name" rowIdx={idx}
+                      pkVal={order.Order_ID} isProtected={false}
+                      style={{ padding: '8px 10px' }}
+                      {...cellEdit}
+                    >
                       <div style={{ fontWeight: '800', color: '#FFFFFF' }}>{order.Customer_Name}</div>
                       <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{order.Project_Address} • 📞 {order.Customer_Phone}</div>
-                    </td>
-                    <td style={{ fontWeight: '600' }}>{order.Ordered_SKU}</td>
+                    </EditableCell>
+                    {/* Ordered SKU — Editable */}
+                    <EditableCell
+                      value={order.Ordered_SKU} field="Ordered_SKU" rowIdx={idx}
+                      pkVal={order.Order_ID} isProtected={false}
+                      style={{ padding: '8px 10px', fontWeight: '600' }}
+                      {...cellEdit}
+                    />
                     
                     {/* 📦 SmartKit™ Dynamic Flat-Pack Staging Column */}
                     <td>
@@ -1164,11 +1189,23 @@ export function ExecutiveOverview() {
                         <option value="DELIVERED (ePOD VERIFIED ✓)">✅ DELIVERED (ePOD VERIFIED)</option>
                       </select>
                     </td>
-                    <td>
+                    {/* Driver / Carpenter — Editable */}
+                    <EditableCell
+                      value={order.Assigned_Driver} field="Assigned_Driver" rowIdx={idx}
+                      pkVal={order.Order_ID} isProtected={false}
+                      style={{ padding: '8px 10px' }}
+                      {...cellEdit}
+                    >
                       <div style={{ fontSize: '11.5px', color: '#FFFFFF' }}>🚚 {order.Assigned_Driver}</div>
                       <div style={{ fontSize: '10.5px', color: 'var(--accent-purple)' }}>🪚 {order.Carpenter_Assigned} (₹{order.Carpenter_Payout_INR})</div>
-                    </td>
-                    <td style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>{order.Delivery_Schedule}</td>
+                    </EditableCell>
+                    {/* Delivery Schedule — Editable */}
+                    <EditableCell
+                      value={order.Delivery_Schedule} field="Delivery_Schedule" rowIdx={idx}
+                      pkVal={order.Order_ID} isProtected={false}
+                      style={{ padding: '8px 10px', fontSize: '11.5px', color: 'var(--text-secondary)' }}
+                      {...cellEdit}
+                    />
                     <td>
                       <div style={{ display: 'flex', gap: '5px' }}>
                         <button className="btn-cyan" style={{ fontSize: '10.5px', padding: '3px 8px' }} onClick={() => openModal('order_rescheduler', { order })}>

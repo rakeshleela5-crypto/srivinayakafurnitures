@@ -34,7 +34,8 @@ import { EditableCell } from '../components/common/InlineCellRenderer';
 
 export function WhatsAppBotSimulator() {
   const { 
-    bots, 
+    bots,
+    setBots,
     catalog, 
     inventory, 
     orders, 
@@ -50,8 +51,8 @@ export function WhatsAppBotSimulator() {
     isSyncing
   } = useStore();
 
-  // 📝 Inline cell edit — bot_configurations
-  const cellEdit = useInlineCellEdit({ table: 'bot_configurations', pkField: 'bot_id', readOnly: ['bot_id'], setRows: setBotConfigurations, showToast });
+  // 📝 Inline cell edit — bot_configurations, saves to D1 'bot_configurations'
+  const cellEdit = useInlineCellEdit({ table: 'bot_configurations', pkField: 'bot_id', readOnly: ['bot_id'], setRows: setBots, showToast });
 
   const [viewMode, setViewMode] = useState('SPLIT'); // Default to 'SPLIT' for best demo experience
   const [callerMode, setCallerMode] = useState('CUSTOMER'); // 'CUSTOMER' | 'DIRECTOR'

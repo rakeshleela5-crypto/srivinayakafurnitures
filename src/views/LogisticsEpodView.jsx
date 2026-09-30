@@ -30,7 +30,8 @@ import { EditableCell } from '../components/common/InlineCellRenderer';
 export function LogisticsEpodView() {
   const { 
     drivers, 
-    orders, 
+    orders,
+    setOrders,
     openModal, 
     showToast, 
     updateOrderStatus, 
@@ -42,8 +43,8 @@ export function LogisticsEpodView() {
     isDateInAuditWindow
   } = useStore();
 
-  // 📝 Inline cell edit — logistics/orders
-  const cellEdit = useInlineCellEdit({ table: 'orders', pkField: 'Order_ID', readOnly: ['Order_ID','OTP_Code'], setRows: setOrders, showToast });
+  // 📝 Inline cell edit — orders, saves to D1 'orders'
+  const cellEdit = useInlineCellEdit({ table: 'orders', pkField: 'Order_ID', readOnly: ['Order_ID','OTP_Code','SafeLock_Status'], setRows: setOrders, showToast });
 
   const isExecutive = currentUser && (currentUser.id === 'rakesh' || currentUser.id === 'sunil_sales');
 
@@ -328,18 +329,36 @@ export function LogisticsEpodView() {
                   </td>
                   <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '900', color: 'var(--accent-gold)' }}>#{stop.Stop_No}</td>
                   <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-cyan)' }}>{stop.Order_ID}</td>
-                  <td>
+                  {/* Customer & Address — Editable */}
+                  <EditableCell
+                    value={stop.Customer_Name} field="Customer_Name" rowIdx={idx}
+                    pkVal={stop.Order_ID} isProtected={false}
+                    style={{ padding: '8px 10px' }}
+                    {...cellEdit}
+                  >
                     <div style={{ fontWeight: '800', color: '#FFFFFF' }}>{stop.Customer_Name}</div>
                     <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>📍 {stop.Address} • 📞 {maskPhone(stop.Customer_Phone)}</div>
-                  </td>
-                  <td>
+                  </EditableCell>
+                  {/* Time Slot — Editable */}
+                  <EditableCell
+                    value={stop.Time_Slot} field="Delivery_Schedule" rowIdx={idx}
+                    pkVal={stop.Order_ID} isProtected={false}
+                    style={{ padding: '8px 10px' }}
+                    {...cellEdit}
+                  >
                     <div style={{ fontWeight: '700', color: 'var(--accent-cyan)' }}>⏰ {stop.Time_Slot}</div>
                     <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Driver: {stop.Driver.split(' ')[0]}</div>
-                  </td>
-                  <td style={{ fontSize: '11.5px', color: 'var(--text-primary)', maxWidth: '220px' }}>
+                  </EditableCell>
+                  {/* Items / Carpenter — Editable */}
+                  <EditableCell
+                    value={stop.Items} field="Ordered_SKU" rowIdx={idx}
+                    pkVal={stop.Order_ID} isProtected={false}
+                    style={{ padding: '8px 10px', fontSize: '11.5px', maxWidth: '220px' }}
+                    {...cellEdit}
+                  >
                     <b>{stop.Items}</b>
                     <div style={{ fontSize: '10px', color: 'var(--accent-purple)' }}>🪚 {stop.Carpenter}</div>
-                  </td>
+                  </EditableCell>
                   <td>
                     <strong style={{ color: 'var(--accent-gold-light)', fontFamily: 'JetBrains Mono' }}>
                       ₹{(Number(stop?.Amount_Due) || 0).toLocaleString()}

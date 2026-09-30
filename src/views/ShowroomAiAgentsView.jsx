@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useStore } from '../context/StoreContext';
 import { 
   Bot, 
   Sparkles, 
@@ -28,6 +29,8 @@ import {
 import { SpotlightCard, ShimmerButton, BorderBeamBadge } from '../components/common/LuxuryComponents';
 import { getAiRouterTelemetry, getAiProviderKeys, saveAiProviderKey } from '../services/aiRouterService';
 import { searchGroundedKnowledge } from '../services/catalogRagService';
+import { useInlineCellEdit } from '../hooks/useInlineCellEdit';
+import { EditableCell } from '../components/common/InlineCellRenderer';
 
 const DEFAULT_ARCHITECTS = [
   { id: 'arc-1', name: 'Ar. Rajesh Mohapatra', firm: 'DesignStudio Rayagada', phone: '9861054321', defaultRate: 10 },
@@ -42,6 +45,7 @@ const DEFAULT_DEPOT_ITEMS = [
 ];
 
 export default function ShowroomAiAgentsView() {
+  const { showToast } = useStore();
   const [activeTab, setActiveTab] = useState('quotation'); // 'quotation' | 'architect' | 'depot' | 'cart_recovery' | 'telemetry'
   const [telemetry, setTelemetry] = useState(getAiRouterTelemetry());
   const [keys, setKeys] = useState(getAiProviderKeys());
@@ -85,6 +89,15 @@ export default function ShowroomAiAgentsView() {
   const [newDepotSku, setNewDepotSku] = useState('');
   const [newDepotName, setNewDepotName] = useState('');
   const [newDepotIndent, setNewDepotIndent] = useState(2);
+
+  // 📝 Inline Cell Edit — Depot indent table (local state only, no D1 table for depot items)
+  const depotCellEdit = useInlineCellEdit({
+    table: 'depot_indent_items',
+    pkField: 'id',
+    readOnly: ['id', 'status'],
+    setRows: setDepotItems,
+    showToast
+  });
 
   // =========================================================================
   // AGENT 4: VIP CART RECOVERY STATE (EDITABLE CANVAS)
@@ -798,10 +811,22 @@ export default function ShowroomAiAgentsView() {
                   </tr>
                 </thead>
                 <tbody>
-                  {depotItems.map((row) => (
+                  {depotItems.map((row, rowIdx) => (
                     <tr key={row.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <td style={{ padding: '10px', fontWeight: '700', color: 'var(--accent-cyan)' }}>{row.sku}</td>
-                      <td style={{ padding: '10px', color: '#FFFFFF' }}>{row.name}</td>
+                      {/* SKU Code — Editable */}
+                      <EditableCell
+                        value={row.sku} field="sku" rowIdx={rowIdx}
+                        pkVal={row.id} isProtected={false}
+                        style={{ padding: '10px', fontWeight: '700', color: 'var(--accent-cyan)' }}
+                        {...depotCellEdit}
+                      />
+                      {/* Product Name — Editable */}
+                      <EditableCell
+                        value={row.name} field="name" rowIdx={rowIdx}
+                        pkVal={row.id} isProtected={false}
+                        style={{ padding: '10px', color: '#FFFFFF' }}
+                        {...depotCellEdit}
+                      />
                       <td style={{ padding: '10px', color: row.stock === 0 ? '#EF4444' : '#F59E0B' }}>
                         {row.stock} Units
                       </td>

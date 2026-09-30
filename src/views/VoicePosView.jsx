@@ -30,9 +30,9 @@ import { useInlineCellEdit } from '../hooks/useInlineCellEdit';
 import { EditableCell } from '../components/common/InlineCellRenderer';
 
 export function VoicePosView() {
-  const { catalog = [], inquiries, triggerSafeLockOrder, openModal, showToast, setActiveTab, verifyDirectorPin } = useStore();
+  const { catalog = [], setCatalog, inquiries, triggerSafeLockOrder, openModal, showToast, setActiveTab, verifyDirectorPin } = useStore();
 
-  // 📝 Inline cell edit — catalog
+  // 📝 Inline cell edit — catalog table, saves to D1 'catalog'
   const cellEdit = useInlineCellEdit({ table: 'catalog', pkField: 'SKU', readOnly: ['SKU'], setRows: setCatalog, showToast });
 
   // 🔍 115+ Stock Search & Filter State

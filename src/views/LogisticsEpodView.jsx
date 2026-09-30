@@ -359,14 +359,20 @@ export function LogisticsEpodView() {
                     <b>{stop.Items}</b>
                     <div style={{ fontSize: '10px', color: 'var(--accent-purple)' }}>🪚 {stop.Carpenter}</div>
                   </EditableCell>
-                  <td>
+                  {/* Balance Due — Editable */}
+                  <EditableCell
+                    value={stop.Amount_Due} field="Balance_Due_INR" rowIdx={idx}
+                    pkVal={stop.Order_ID} isProtected={false} numeric
+                    style={{ padding: '8px 10px' }}
+                    {...cellEdit}
+                  >
                     <strong style={{ color: 'var(--accent-gold-light)', fontFamily: 'JetBrains Mono' }}>
                       ₹{(Number(stop?.Amount_Due) || 0).toLocaleString()}
                     </strong>
                     <div style={{ fontSize: '9.5px', color: 'var(--accent-emerald)', fontWeight: '700' }}>
                       {stop.Payment_Mode}
                     </div>
-                  </td>
+                  </EditableCell>
                   <td>
                     <span className={`badge ${stop.Status === 'DELIVERED_COMPLETE' ? 'badge-emerald' : stop.Status.includes('TRANSIT') ? 'badge-cyan' : stop.Status.includes('GATEPASS') ? 'badge-purple' : 'badge-amber'}`} style={{ fontSize: '9.5px', fontWeight: '800' }}>
                       {stop.Status === 'DELIVERED_COMPLETE' ? 'DELIVERED ✓' : stop.Status.includes('TRANSIT') ? '🚚 IN TRANSIT' : stop.Status.includes('GATEPASS') ? '📦 DOCK 1 READY' : '🔒 SAFELOCKED'}

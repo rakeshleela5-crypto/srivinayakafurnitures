@@ -267,10 +267,15 @@ export function ArchitectPortalView() {
                         </span>
                       </EditableCell>
 
-                      {/* Total Sales — read-only display */}
-                      <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono', padding: '8px 10px' }}>
+                      {/* Total Sales — Editable numeric */}
+                      <EditableCell
+                        value={arch.Total_Sales_INR} field="Total_Sales_INR" rowIdx={idx}
+                        pkVal={arch.Architect_ID} isProtected={false} numeric
+                        style={{ textAlign: 'right', fontFamily: 'JetBrains Mono', padding: '8px 10px' }}
+                        {...cellEdit}
+                      >
                         ₹{arch.Total_Sales_INR?.toLocaleString()}
-                      </td>
+                      </EditableCell>
 
                       {/* Commission Earned — Editable numeric */}
                       <EditableCell

@@ -1825,11 +1825,69 @@ export function AutoProcureView() {
                           {idx + 1}
                         </td>
                         <td style={{ fontWeight: '700', color: 'var(--accent-gold-light)' }}>{p.po_id}</td>
-                        <td style={{ padding: '8px 10px', color: '#E2E8F0' }}>{p.supplier}</td>
-                        <td style={{ padding: '8px 10px', fontWeight: '700', color: '#FFFFFF' }}>{p.qty}</td>
-                        <td style={{ padding: '8px 10px', fontWeight: '800', color: '#FFFFFF', fontFamily: 'JetBrains Mono' }}>₹{Number(p.total_value).toLocaleString()}</td>
-                        <td style={{ padding: '8px 10px', color: 'var(--accent-emerald)', fontFamily: 'JetBrains Mono' }}>₹{Number(p.advance_paid || 0).toLocaleString()}</td>
-                        <td style={{ padding: '8px 10px', color: 'var(--accent-gold-light)', fontFamily: 'JetBrains Mono' }}>₹{Number(p.balance_due || (p.total_value - (p.advance_paid || 0))).toLocaleString()}</td>
+                        {/* Manufacturer Plant — Editable */}
+                        <EditableCell
+                          value={p.supplier}
+                          field="supplier"
+                          rowIdx={idx}
+                          pkVal={p.po_id}
+                          style={{ padding: '8px 10px', color: '#E2E8F0' }}
+                          {...cellEdit}
+                        >
+                          {p.supplier}
+                        </EditableCell>
+
+                        {/* Sets — Editable */}
+                        <EditableCell
+                          value={p.qty}
+                          field="qty"
+                          rowIdx={idx}
+                          pkVal={p.po_id}
+                          numeric
+                          style={{ padding: '8px 10px', fontWeight: '700', color: '#FFFFFF' }}
+                          {...cellEdit}
+                        >
+                          {p.qty}
+                        </EditableCell>
+
+                        {/* Net PO Value — Editable */}
+                        <EditableCell
+                          value={p.total_value}
+                          field="total_value"
+                          rowIdx={idx}
+                          pkVal={p.po_id}
+                          numeric
+                          style={{ padding: '8px 10px', fontWeight: '800', color: '#FFFFFF', fontFamily: 'JetBrains Mono' }}
+                          {...cellEdit}
+                        >
+                          ₹{Number(p.total_value).toLocaleString()}
+                        </EditableCell>
+
+                        {/* Advance Paid — Editable */}
+                        <EditableCell
+                          value={p.advance_paid}
+                          field="advance_paid"
+                          rowIdx={idx}
+                          pkVal={p.po_id}
+                          numeric
+                          style={{ padding: '8px 10px', color: 'var(--accent-emerald)', fontFamily: 'JetBrains Mono' }}
+                          {...cellEdit}
+                        >
+                          ₹{Number(p.advance_paid || 0).toLocaleString()}
+                        </EditableCell>
+
+                        {/* Balance Due — Editable */}
+                        <EditableCell
+                          value={p.balance_due}
+                          field="balance_due"
+                          rowIdx={idx}
+                          pkVal={p.po_id}
+                          numeric
+                          style={{ padding: '8px 10px', color: 'var(--accent-gold-light)', fontFamily: 'JetBrains Mono' }}
+                          {...cellEdit}
+                        >
+                          ₹{Number(p.balance_due || (p.total_value - (p.advance_paid || 0))).toLocaleString()}
+                        </EditableCell>
                         <td style={{ padding: '8px 10px' }}>
                           {p.status === "PO_ACTIVE" && <span className="badge badge-gold" style={{ fontSize: '9px' }}>🟡 ACTIVE</span>}
                           {p.status === "TRUCK_IN_TRANSIT" && <span className="badge badge-cyan" style={{ fontSize: '9px' }}>🔵 IN-TRANSIT</span>}

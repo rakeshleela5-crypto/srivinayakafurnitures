@@ -1093,7 +1093,8 @@ export function ExecutiveOverview() {
                 <th>Customer & Address</th>
                 <th>Ordered Furniture Model</th>
                 <th>SmartKit™ Staging & Gatepass</th>
-                <th>Total / Advance</th>
+                <th style={{ textAlign: 'right' }}>Total (₹)</th>
+                <th style={{ textAlign: 'right' }}>Advance (₹)</th>
                 <th>SafeLock & Dispatch Status</th>
                 <th>Driver / Carpenter</th>
                 <th>Schedule</th>
@@ -1162,10 +1163,35 @@ export function ExecutiveOverview() {
                       </div>
                     </td>
 
-                    <td>
-                      <div style={{ fontWeight: '800', color: 'var(--accent-gold-light)' }}>₹{(Number(order.Total_Amount_INR) || 0).toLocaleString()}</div>
-                      <div style={{ fontSize: '10.5px', color: 'var(--accent-emerald)' }}>Adv: ₹{(Number(order.Advance_Paid_INR) || 0).toLocaleString()}</div>
-                    </td>
+                    {/* Total Amount (INR) — Editable */}
+                    <EditableCell
+                      value={order.Total_Amount_INR}
+                      field="Total_Amount_INR"
+                      rowIdx={idx}
+                      pkVal={order.Order_ID}
+                      numeric
+                      style={{ padding: '8px 10px', textAlign: 'right' }}
+                      {...cellEdit}
+                    >
+                      <div style={{ fontWeight: '800', color: 'var(--accent-gold-light)', fontFamily: 'JetBrains Mono' }}>
+                        ₹{(Number(order.Total_Amount_INR) || 0).toLocaleString()}
+                      </div>
+                    </EditableCell>
+
+                    {/* Advance Paid (INR) — Editable */}
+                    <EditableCell
+                      value={order.Advance_Paid_INR}
+                      field="Advance_Paid_INR"
+                      rowIdx={idx}
+                      pkVal={order.Order_ID}
+                      numeric
+                      style={{ padding: '8px 10px', textAlign: 'right' }}
+                      {...cellEdit}
+                    >
+                      <div style={{ fontSize: '11px', color: 'var(--accent-emerald)', fontFamily: 'JetBrains Mono', fontWeight: '700' }}>
+                        ₹{(Number(order.Advance_Paid_INR) || 0).toLocaleString()}
+                      </div>
+                    </EditableCell>
                     <td>
                       {/* Fast Inline Status Dropdown */}
                       <select

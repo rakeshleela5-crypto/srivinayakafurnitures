@@ -735,17 +735,31 @@ table.sheets-grid td:hover {
   outline-offset: -1px;
 }
 
-/* In-line Cell Edit Trigger Button (Google Sheets style) */
+/* In-line Cell Edit Trigger Badge (Google Sheets style) */
+td .cell-edit-badge,
 td .cell-edit-trigger {
-  opacity: 0;
-  transition: opacity 0.15s ease, transform 0.15s ease;
-}
-td:hover .cell-edit-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  background: rgba(212, 175, 55, 0.22);
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  border-radius: 4px;
+  color: #FBBF24;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
   opacity: 0.85;
+  transition: all 0.15s ease;
+  user-select: none;
 }
-td .cell-edit-trigger:hover {
+td:hover .cell-edit-badge,
+td:hover .cell-edit-trigger {
   opacity: 1 !important;
-  transform: scale(1.15);
+  background: rgba(212, 175, 55, 0.38) !important;
+  border-color: #FBBF24 !important;
+  transform: scale(1.05);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.45);
 }
 
 /* Modal Overlay & Card — Emil Kowalski Centered Physical Spring */

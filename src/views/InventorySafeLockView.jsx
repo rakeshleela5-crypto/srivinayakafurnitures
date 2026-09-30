@@ -331,16 +331,29 @@ export function InventorySafeLockView() {
                     <div style={{ color: '#FFFFFF', fontSize: '11.5px' }}>{item.Category}</div>
                     <div style={{ fontSize: '10px', color: 'var(--accent-gold)' }}>{item.Bay}</div>
                   </EditableCell>
-                  <td style={{ textAlign: 'center' }}>
+                  {/* Warehouse Qty — Editable */}
+                  <EditableCell
+                    value={item.Warehouse_Qty} field="Warehouse_Qty" rowIdx={idx}
+                    pkVal={item.SKU} isProtected={false} numeric
+                    style={{ textAlign: 'center', padding: '8px 10px' }}
+                    {...cellEdit}
+                  >
                     <strong style={{ fontSize: '15px', color: item.Warehouse_Qty > 1 ? 'var(--accent-emerald)' : 'var(--accent-rose)', fontFamily: 'JetBrains Mono' }}>
                       {item.Warehouse_Qty} Units
                     </strong>
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
+                  </EditableCell>
+
+                  {/* Reserved SafeLock — Editable */}
+                  <EditableCell
+                    value={item.Reserved_SafeLock} field="Reserved_SafeLock" rowIdx={idx}
+                    pkVal={item.SKU} isProtected={false} numeric
+                    style={{ textAlign: 'center', padding: '8px 10px' }}
+                    {...cellEdit}
+                  >
                     <strong style={{ fontSize: '15px', color: 'var(--accent-cyan)', fontFamily: 'JetBrains Mono' }}>
                       {item.Reserved_SafeLock} Reserved
                     </strong>
-                  </td>
+                  </EditableCell>
                   <td style={{ textAlign: 'center' }}>
                     <span className={`badge ${item.Reorder_Status === 'HEALTHY' ? 'badge-emerald' : 'badge-rose'}`}>
                       {item.Reorder_Status}

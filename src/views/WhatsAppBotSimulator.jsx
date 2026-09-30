@@ -29,6 +29,8 @@ import {
   Landmark
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
+import { useInlineCellEdit } from '../hooks/useInlineCellEdit';
+import { EditableCell } from '../components/common/InlineCellRenderer';
 
 export function WhatsAppBotSimulator() {
   const { 
@@ -47,6 +49,9 @@ export function WhatsAppBotSimulator() {
     syncWithGoogleSheets,
     isSyncing
   } = useStore();
+
+  // 📝 Inline cell edit — bot_configurations
+  const cellEdit = useInlineCellEdit({ table: 'bot_configurations', pkField: 'bot_id', readOnly: ['bot_id'], setRows: setBotConfigurations, showToast });
 
   const [viewMode, setViewMode] = useState('SPLIT'); // Default to 'SPLIT' for best demo experience
   const [callerMode, setCallerMode] = useState('CUSTOMER'); // 'CUSTOMER' | 'DIRECTOR'

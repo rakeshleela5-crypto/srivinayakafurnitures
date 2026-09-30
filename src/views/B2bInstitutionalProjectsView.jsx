@@ -25,6 +25,8 @@ import {
   Archive
 } from 'lucide-react';
 import { SpotlightCard, ShimmerButton, BorderBeamBadge } from '../components/common/LuxuryComponents';
+import { useInlineCellEdit } from '../hooks/useInlineCellEdit';
+import { EditableCell } from '../components/common/InlineCellRenderer';
 
 const STAGES = [
   { id: 'LEAD_INGESTION', label: '1. Lead Ingested', badge: 'badge-amber' },

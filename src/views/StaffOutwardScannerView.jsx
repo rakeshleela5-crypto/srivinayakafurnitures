@@ -40,6 +40,8 @@ import { dispatchWebhookAction } from '../services/webhookService';
 import { decodeBarcodeFromSource, decodeBarcodeFromImageFile, sanitizeBarcode } from '../utils/barcodeDecoder';
 import { generateBoxesForProduct } from '../utils/knockdownBoxGenerator';
 import { useHardwareBarcodeScanner } from '../hooks/useHardwareBarcodeScanner';
+import { useInlineCellEdit } from '../hooks/useInlineCellEdit';
+import { EditableCell } from '../components/common/InlineCellRenderer';
 
 export function StaffOutwardScannerView() {
   const { 
@@ -52,6 +54,9 @@ export function StaffOutwardScannerView() {
     syncWithGoogleSheets,
     isSyncing
   } = useStore();
+
+  // 📝 Inline cell edit — outward_scan_log
+  const cellEdit = useInlineCellEdit({ table: 'outward_scan_log', pkField: 'scan_id', readOnly: ['scan_id'], setRows: () => {}, showToast });
 
   const [sunnyMode, setSunnyMode] = useState(false);
   const [outwardStep, setOutwardStep] = useState(1);

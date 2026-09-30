@@ -45,6 +45,8 @@ import { playSuccessChime, playScanBeep, triggerGoldenConfetti } from '../utils/
 import { dispatchWebhookAction } from '../services/webhookService';
 import { generateTallyPrimeXml, generateTallyExcelCsv, downloadFile } from '../services/tallyExportService';
 import { generateGstr1Json, generateGstr3bSummary } from '../services/gstComplianceService';
+import { useInlineCellEdit } from '../hooks/useInlineCellEdit';
+import { EditableCell } from '../components/common/InlineCellRenderer';
 
 export function BankStatementLedgerView() {
   const { 
@@ -67,6 +69,9 @@ export function BankStatementLedgerView() {
     isDateInAuditWindow,
     auditDateWindow
   } = useStore();
+
+  // 📝 Inline cell edit — bank_transactions
+  const cellEdit = useInlineCellEdit({ table: 'bank_transactions', pkField: 'txn_id', readOnly: ['txn_id'], setRows: setBankTransactions, showToast });
 
   // Persist transactions to localStorage
   const saveTransactions = (updated) => {

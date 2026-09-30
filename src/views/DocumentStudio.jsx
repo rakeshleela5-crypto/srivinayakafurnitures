@@ -36,6 +36,8 @@ import { FURNITURE_CATALOG } from '../data/initialData';
 import { formatDateTimeIndian, formatDateIndian, dispatchWebhookAction } from '../services/webhookService';
 import { DynamicQrCode } from '../utils/qrcodeGenerator';
 import { playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
+import { useInlineCellEdit } from '../hooks/useInlineCellEdit';
+import { EditableCell } from '../components/common/InlineCellRenderer';
 
 export function DocumentStudio() {
   const { 
@@ -52,6 +54,9 @@ export function DocumentStudio() {
     auditDateWindow,
     isDateInAuditWindow
   } = useStore();
+
+  // 📝 Inline cell edit — documents_log
+  const cellEdit = useInlineCellEdit({ table: 'documents_log', pkField: 'doc_id', readOnly: ['doc_id'], setRows: () => {}, showToast });
 
   const fullCatalog = (catalog && catalog.length > 0) ? catalog : FURNITURE_CATALOG;
 

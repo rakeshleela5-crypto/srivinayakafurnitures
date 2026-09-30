@@ -62,6 +62,8 @@ import {
 } from '../services/tallyExportService';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
+import { useInlineCellEdit } from '../hooks/useInlineCellEdit';
+import { EditableCell } from '../components/common/InlineCellRenderer';
 
 export function TallyGstOfficeView() {
   const { 
@@ -77,6 +79,9 @@ export function TallyGstOfficeView() {
     auditDateWindow,
     isDateInAuditWindow
   } = useStore();
+
+  // 📝 Inline cell edit — tally_vouchers
+  const cellEdit = useInlineCellEdit({ table: 'tally_vouchers', pkField: 'voucher_id', readOnly: ['voucher_id'], setRows: () => {}, showToast });
 
   // Active Desk Sub-Tab: 'gateway' | 'drilldown' | 'vouchers' | 'gst_portal'
   const [activeSubTab, setActiveSubTab] = useState('gateway');

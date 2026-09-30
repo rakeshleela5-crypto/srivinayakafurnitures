@@ -24,10 +24,12 @@ import {
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
+import { useInlineCellEdit } from '../hooks/useInlineCellEdit';
+import { EditableCell } from '../components/common/InlineCellRenderer';
 
 export function ArchitectPortalView() {
   const { 
-    architects, 
+    architects, setArchitects,
     orders, 
     openModal, 
     showToast, 
@@ -37,8 +39,17 @@ export function ArchitectPortalView() {
   } = useStore();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [tierFilter, setTierFilter] = useState('ALL'); // 'ALL' | 'Platinum' | 'Gold' | 'Silver' | 'DUE_ONLY'
+  const [tierFilter, setTierFilter] = useState('ALL');
   const [expandedArchitectId, setExpandedArchitectId] = useState(null);
+
+  // 📝 Inline Cell Edit — saves to D1 'architects'
+  const cellEdit = useInlineCellEdit({
+    table: 'architects',
+    pkField: 'Architect_ID',
+    readOnly: ['Total_Sales_INR'],
+    setRows: setArchitects,
+    showToast
+  });
 
   const totalSalesByArchitects = architects.reduce((sum, a) => sum + (a.Total_Sales_INR || 0), 0);
   const totalCommissionEarned = architects.reduce((sum, a) => sum + (a.Commission_Earned_INR || 0), 0);
@@ -233,24 +244,53 @@ export function ArchitectPortalView() {
                           </div>
                         </div>
                       </td>
-                      <td>
+                      {/* Phone & UPI — Editable */}
+                      <EditableCell
+                        value={arch.Phone_Number} field="Phone_Number" rowIdx={idx}
+                        pkVal={arch.Architect_ID} isProtected={false}
+                        style={{ padding: '8px 10px' }}
+                        {...cellEdit}
+                      >
                         <div style={{ fontSize: '11.5px', color: '#FFFFFF' }}>📞 {arch.Phone_Number}</div>
                         <div style={{ fontSize: '10.5px', color: 'var(--accent-cyan)' }}>UPI: {arch.UPI_Bank}</div>
-                      </td>
-                      <td>
+                      </EditableCell>
+
+                      {/* Tier & Commission Rate — Editable */}
+                      <EditableCell
+                        value={arch.Tier_Slab} field="Tier_Slab" rowIdx={idx}
+                        pkVal={arch.Architect_ID} isProtected={false}
+                        style={{ padding: '8px 10px' }}
+                        {...cellEdit}
+                      >
                         <span className={`badge ${arch.Tier_Slab === 'Platinum' ? 'badge-gold' : arch.Tier_Slab === 'Gold' ? 'badge-amber' : 'badge-cyan'}`}>
                           {arch.Tier_Slab} ({arch.Commission_Rate})
                         </span>
-                      </td>
-                      <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono' }}>
+                      </EditableCell>
+
+                      {/* Total Sales — read-only display */}
+                      <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono', padding: '8px 10px' }}>
                         ₹{arch.Total_Sales_INR?.toLocaleString()}
                       </td>
-                      <td style={{ textAlign: 'right', fontWeight: '800', color: 'var(--accent-gold-light)', fontFamily: 'JetBrains Mono' }}>
+
+                      {/* Commission Earned — Editable numeric */}
+                      <EditableCell
+                        value={arch.Commission_Earned_INR} field="Commission_Earned_INR" rowIdx={idx}
+                        pkVal={arch.Architect_ID} isProtected={false} numeric
+                        style={{ textAlign: 'right', fontWeight: '800', color: 'var(--accent-gold-light)', fontFamily: 'JetBrains Mono', padding: '8px 10px' }}
+                        {...cellEdit}
+                      >
                         ₹{arch.Commission_Earned_INR?.toLocaleString()}
-                      </td>
-                      <td style={{ textAlign: 'right', fontWeight: '900', color: arch.Balance_Due_INR > 0 ? 'var(--accent-rose)' : 'var(--accent-emerald)', fontFamily: 'JetBrains Mono' }}>
+                      </EditableCell>
+
+                      {/* Balance Due — Editable numeric */}
+                      <EditableCell
+                        value={arch.Balance_Due_INR} field="Balance_Due_INR" rowIdx={idx}
+                        pkVal={arch.Architect_ID} isProtected={false} numeric
+                        style={{ textAlign: 'right', fontWeight: '900', color: arch.Balance_Due_INR > 0 ? 'var(--accent-rose)' : 'var(--accent-emerald)', fontFamily: 'JetBrains Mono', padding: '8px 10px' }}
+                        {...cellEdit}
+                      >
                         ₹{arch.Balance_Due_INR?.toLocaleString()}
-                      </td>
+                      </EditableCell>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', flexWrap: 'wrap' }}>
                           

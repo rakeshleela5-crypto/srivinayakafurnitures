@@ -26,6 +26,8 @@ import {
 } from 'lucide-react';
 import { playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
+import { useInlineCellEdit } from '../hooks/useInlineCellEdit';
+import { EditableCell } from '../components/common/InlineCellRenderer';
 
 export function ShowroomCrmView() {
   const { inquiries, setInquiries, openModal, setActiveTab, showToast, isDateInAuditWindow, auditDateWindow } = useStore();
@@ -34,6 +36,15 @@ export function ShowroomCrmView() {
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [filterCategory, setFilterCategory] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // 📝 Inline Cell Edit — editable fields in CRM table, saves to D1 'inquiries'
+  const cellEdit = useInlineCellEdit({
+    table: 'inquiries',
+    pkField: 'Inquiry_ID',
+    readOnly: ['AI_Intent_Score'],
+    setRows: setInquiries,
+    showToast
+  });
 
   // 📊 Executive KPI Calculations
   const totalLeads = inquiries.length;
@@ -298,27 +309,40 @@ export function ShowroomCrmView() {
                     {idx + 1}
                   </td>
                   
-                  {/* Lead ID */}
-                  <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-cyan)' }}>
+                  {/* Lead ID — Protected PK */}
+                  <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-cyan)', padding: '8px 10px' }}>
                     {inq.Inquiry_ID}
                   </td>
 
-                  {/* Customer Info */}
-                  <td style={{ padding: '12px 10px' }}>
+                  {/* Customer Name — Editable */}
+                  <EditableCell
+                    value={inq.Customer_Name} field="Customer_Name" rowIdx={idx}
+                    pkVal={inq.Inquiry_ID} isProtected={false}
+                    style={{ padding: '8px 10px' }}
+                    {...cellEdit}
+                  >
                     <div style={{ fontWeight: '800', color: '#FFFFFF' }}>{inq.Customer_Name}</div>
                     <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>📞 {inq.Customer_Phone}</div>
                     <div style={{ fontSize: '10.5px', color: '#94A3B8' }}>📍 {inq.Address || inq.Locality_Address || 'Rayagada'}</div>
-                  </td>
+                  </EditableCell>
 
-                  {/* Requirements */}
-                  <td style={{ padding: '12px 10px', fontSize: '11.5px', color: 'var(--text-primary)', fontWeight: '600' }}>
-                    {inq.Category_Models}
-                  </td>
+                  {/* Requirements — Editable */}
+                  <EditableCell
+                    value={inq.Category_Models} field="Category_Models" rowIdx={idx}
+                    pkVal={inq.Inquiry_ID} isProtected={false}
+                    style={{ padding: '8px 10px', fontSize: '11.5px', fontWeight: '600' }}
+                    {...cellEdit}
+                  />
 
-                  {/* Budget */}
-                  <td style={{ padding: '12px 10px', fontWeight: '800', color: 'var(--accent-gold-light)', fontFamily: 'JetBrains Mono' }}>
+                  {/* Budget — Editable numeric */}
+                  <EditableCell
+                    value={inq.Budget_INR} field="Budget_INR" rowIdx={idx}
+                    pkVal={inq.Inquiry_ID} isProtected={false} numeric
+                    style={{ padding: '8px 10px', fontWeight: '800', color: 'var(--accent-gold-light)', fontFamily: 'JetBrains Mono' }}
+                    {...cellEdit}
+                  >
                     ₹{(inq.Budget_INR || 0).toLocaleString()}
-                  </td>
+                  </EditableCell>
 
                   {/* AI Intent Score */}
                   <td style={{ padding: '12px 10px' }}>
@@ -357,12 +381,13 @@ export function ShowroomCrmView() {
                     })()}
                   </td>
 
-                  {/* Follow-up Schedule */}
-                  <td style={{ padding: '12px 10px' }}>
-                    <div style={{ fontSize: '11px', color: '#E2E8F0', fontWeight: '600' }}>
-                      {inq.Follow_Up_Date || 'Tomorrow'}
-                    </div>
-                  </td>
+                  {/* Follow-up Date — Editable */}
+                  <EditableCell
+                    value={inq.Follow_Up_Date || 'Tomorrow'} field="Follow_Up_Date" rowIdx={idx}
+                    pkVal={inq.Inquiry_ID} isProtected={false}
+                    style={{ padding: '8px 10px', fontSize: '11px', color: '#E2E8F0', fontWeight: '600' }}
+                    {...cellEdit}
+                  />
 
                   {/* Status & Staff */}
                   <td style={{ padding: '12px 10px' }}>

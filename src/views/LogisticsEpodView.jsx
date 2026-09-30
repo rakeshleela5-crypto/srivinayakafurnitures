@@ -24,6 +24,8 @@ import {
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
+import { useInlineCellEdit } from '../hooks/useInlineCellEdit';
+import { EditableCell } from '../components/common/InlineCellRenderer';
 
 export function LogisticsEpodView() {
   const { 
@@ -39,6 +41,9 @@ export function LogisticsEpodView() {
     auditDateWindow,
     isDateInAuditWindow
   } = useStore();
+
+  // 📝 Inline cell edit — logistics/orders
+  const cellEdit = useInlineCellEdit({ table: 'orders', pkField: 'Order_ID', readOnly: ['Order_ID','OTP_Code'], setRows: setOrders, showToast });
 
   const isExecutive = currentUser && (currentUser.id === 'rakesh' || currentUser.id === 'sunil_sales');
 

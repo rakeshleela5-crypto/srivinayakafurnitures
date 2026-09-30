@@ -35,6 +35,8 @@ import {
 } from 'lucide-react';
 import { playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
+import { useInlineCellEdit } from '../hooks/useInlineCellEdit';
+import { EditableCell } from '../components/common/InlineCellRenderer';
 
 export function AutoProcureView() {
   const { 
@@ -49,6 +51,9 @@ export function AutoProcureView() {
     purchaseOrders: poHistory = [],
     setPurchaseOrders: setPoHistory
   } = useStore();
+
+  // 📝 Inline cell edit — purchase_orders_log
+  const cellEdit = useInlineCellEdit({ table: 'purchase_orders_log', pkField: 'po_id', readOnly: ['po_id'], setRows: setPoHistory, showToast });
 
   // 🤖 BOT-08 Autonomous PO Auto-Pilot State
   const [bot08Autopilot, setBot08Autopilot] = useState(true);

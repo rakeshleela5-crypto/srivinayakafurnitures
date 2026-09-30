@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import { playScanBeep, playSuccessChime, playSafeLockSound, triggerGoldenConfetti } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
+import { useInlineCellEdit } from '../hooks/useInlineCellEdit';
+import { EditableCell } from '../components/common/InlineCellRenderer';
 
 export function InventorySafeLockView() {
   const { 
@@ -36,6 +38,9 @@ export function InventorySafeLockView() {
     syncWithGoogleSheets,
     isSyncing
   } = useStore();
+
+  // 📝 Inline cell edit — orders table
+  const cellEdit = useInlineCellEdit({ table: 'orders', pkField: 'Order_ID', readOnly: ['OTP_Code','Order_ID'], setRows: setOrders, showToast });
 
   const [selectedSku, setSelectedSku] = useState('BED-MOD-001');
   const [selectedCustomerFilter, setSelectedCustomerFilter] = useState('ALL');

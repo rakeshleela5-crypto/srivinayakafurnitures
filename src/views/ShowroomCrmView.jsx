@@ -289,12 +289,14 @@ export function ShowroomCrmView() {
         <div className="data-table-wrapper" style={{ overflowX: 'auto' }}>
           <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
             <thead>
-              <tr>
+              <tr style={{ background: '#0B132B' }}>
                 <th style={{ width: '45px', textAlign: 'center' }}>#</th>
                 <th>Lead ID</th>
-                <th>Customer & Contact</th>
+                <th>Customer Name</th>
+                <th>Phone</th>
+                <th>Address</th>
                 <th>Requirement & Models</th>
-                <th>Budget (₹)</th>
+                <th style={{ textAlign: 'right' }}>Budget (₹)</th>
                 <th>AI Buying Intent</th>
                 <th>Follow-Up Schedule</th>
                 <th>Status / Staff</th>
@@ -316,15 +318,36 @@ export function ShowroomCrmView() {
 
                   {/* Customer Name — Editable */}
                   <EditableCell
-                    value={inq.Customer_Name} field="Customer_Name" rowIdx={idx}
-                    pkVal={inq.Inquiry_ID} isProtected={false}
-                    style={{ padding: '8px 10px' }}
+                    value={inq.Customer_Name} 
+                    field="Customer_Name" 
+                    rowIdx={idx}
+                    pkVal={inq.Inquiry_ID} 
+                    isProtected={false}
+                    style={{ padding: '8px 10px', fontWeight: '700', color: '#FFFFFF' }}
                     {...cellEdit}
-                  >
-                    <div style={{ fontWeight: '800', color: '#FFFFFF' }}>{inq.Customer_Name}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>📞 {inq.Customer_Phone}</div>
-                    <div style={{ fontSize: '10.5px', color: '#94A3B8' }}>📍 {inq.Address || inq.Locality_Address || 'Rayagada'}</div>
-                  </EditableCell>
+                  />
+
+                  {/* Phone — Editable */}
+                  <EditableCell
+                    value={inq.Customer_Phone} 
+                    field="Customer_Phone" 
+                    rowIdx={idx}
+                    pkVal={inq.Inquiry_ID} 
+                    isProtected={false}
+                    style={{ padding: '8px 10px', fontFamily: 'JetBrains Mono', color: 'var(--accent-cyan)' }}
+                    {...cellEdit}
+                  />
+
+                  {/* Address — Editable */}
+                  <EditableCell
+                    value={inq.Address || inq.Locality_Address || 'Rayagada'} 
+                    field="Address" 
+                    rowIdx={idx}
+                    pkVal={inq.Inquiry_ID} 
+                    isProtected={false}
+                    style={{ padding: '8px 10px', color: '#94A3B8', minWidth: '130px' }}
+                    {...cellEdit}
+                  />
 
                   {/* Requirements — Editable */}
                   <EditableCell

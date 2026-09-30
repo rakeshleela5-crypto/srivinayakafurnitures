@@ -208,14 +208,17 @@ export function ArchitectPortalView() {
         <div className="data-table-wrapper">
           <table className="luxury-table sheets-grid">
             <thead>
-              <tr>
+              <tr style={{ background: '#0B132B' }}>
                 <th style={{ width: '45px', textAlign: 'center' }}>#</th>
-                <th>Architect / Firm</th>
-                <th>Contact & VPA</th>
+                <th>Architect ID</th>
+                <th>Full Name</th>
+                <th>Firm Name</th>
+                <th>Phone</th>
+                <th>UPI ID</th>
                 <th>Commission Tier</th>
-                <th style={{ textAlign: 'right' }}>Total Sales</th>
-                <th style={{ textAlign: 'right' }}>Commission Earned</th>
-                <th style={{ textAlign: 'right' }}>Balance Due</th>
+                <th style={{ textAlign: 'right' }}>Total Sales (₹)</th>
+                <th style={{ textAlign: 'right' }}>Commission Earned (₹)</th>
+                <th style={{ textAlign: 'right' }}>Balance Due (₹)</th>
                 <th style={{ textAlign: 'center' }}>VIP Actions & Tools</th>
               </tr>
             </thead>
@@ -229,8 +232,10 @@ export function ArchitectPortalView() {
                       <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
                         {idx + 1}
                       </td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+
+                      {/* Architect ID — Protected PK */}
+                      <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-gold-light)', padding: '8px 10px', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                           <button 
                             onClick={() => setExpandedArchitectId(isExpanded ? null : arch.Architect_ID)}
                             style={{ background: 'none', border: 'none', color: 'var(--accent-gold-light)', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
@@ -238,27 +243,61 @@ export function ArchitectPortalView() {
                           >
                             {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                           </button>
-                          <div>
-                            <div style={{ fontWeight: '800', color: '#FFFFFF' }}>{arch.Full_Name}</div>
-                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>🏛️ {arch.Firm_Name} • <span style={{ fontFamily: 'JetBrains Mono', color: 'var(--accent-gold-light)' }}>{arch.Architect_ID}</span></div>
-                          </div>
+                          <span>{arch.Architect_ID}</span>
                         </div>
                       </td>
-                      {/* Phone & UPI — Editable */}
+
+                      {/* Full Name — Editable */}
                       <EditableCell
-                        value={arch.Phone_Number} field="Phone_Number" rowIdx={idx}
-                        pkVal={arch.Architect_ID} isProtected={false}
-                        style={{ padding: '8px 10px' }}
+                        value={arch.Full_Name} 
+                        field="Full_Name" 
+                        rowIdx={idx}
+                        pkVal={arch.Architect_ID} 
+                        isProtected={false}
+                        style={{ padding: '8px 10px', fontWeight: '700', color: '#FFFFFF' }}
                         {...cellEdit}
-                      >
-                        <div style={{ fontSize: '11.5px', color: '#FFFFFF' }}>📞 {arch.Phone_Number}</div>
-                        <div style={{ fontSize: '10.5px', color: 'var(--accent-cyan)' }}>UPI: {arch.UPI_Bank}</div>
-                      </EditableCell>
+                      />
+
+                      {/* Firm Name — Editable */}
+                      <EditableCell
+                        value={arch.Firm_Name} 
+                        field="Firm_Name" 
+                        rowIdx={idx}
+                        pkVal={arch.Architect_ID} 
+                        isProtected={false}
+                        style={{ padding: '8px 10px', color: '#E2E8F0' }}
+                        {...cellEdit}
+                      />
+
+                      {/* Phone — Editable */}
+                      <EditableCell
+                        value={arch.Phone_Number} 
+                        field="Phone_Number" 
+                        rowIdx={idx}
+                        pkVal={arch.Architect_ID} 
+                        isProtected={false}
+                        style={{ padding: '8px 10px', fontFamily: 'JetBrains Mono', color: 'var(--accent-cyan)' }}
+                        {...cellEdit}
+                      />
+
+                      {/* UPI ID — Editable */}
+                      <EditableCell
+                        value={arch.UPI_Bank} 
+                        field="UPI_Bank" 
+                        rowIdx={idx}
+                        pkVal={arch.Architect_ID} 
+                        isProtected={false}
+                        style={{ padding: '8px 10px', fontFamily: 'JetBrains Mono', color: '#94A3B8' }}
+                        {...cellEdit}
+                      />
 
                       {/* Tier & Commission Rate — Editable */}
                       <EditableCell
-                        value={arch.Tier_Slab} field="Tier_Slab" rowIdx={idx}
-                        pkVal={arch.Architect_ID} isProtected={false}
+                        value={arch.Tier_Slab} 
+                        field="Tier_Slab" 
+                        rowIdx={idx}
+                        pkVal={arch.Architect_ID} 
+                        isProtected={false}
                         style={{ padding: '8px 10px' }}
                         {...cellEdit}
                       >

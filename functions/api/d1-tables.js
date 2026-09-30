@@ -528,11 +528,27 @@ export async function onRequestPost(context) {
         changes = result.meta?.changes ?? 1;
         isLiveD1 = true;
       } catch (dbErr) {
-        console.error(`Error updating ${tableName}.${columnName} in Cloudflare D1`, dbErr);
-        return new Response(JSON.stringify({
-          success: false,
-          error: `D1 SQLite Execution Error: ${dbErr.message}`
-        }), { status: 500, headers });
+        if (String(dbErr.message || '').includes('no such column')) {
+          try {
+            await env.DB.prepare(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} TEXT;`).run();
+            const updateSql = `UPDATE ${tableName} SET ${columnName} = ? WHERE ${primaryKeyColumn} = ?;`;
+            const retryRes = await env.DB.prepare(updateSql).bind(sanitizedVal, primaryKeyValue).run();
+            changes = retryRes.meta?.changes ?? 1;
+            isLiveD1 = true;
+          } catch (altErr) {
+            console.error(`Auto-add column failed for ${tableName}.${columnName}`, altErr);
+            return new Response(JSON.stringify({
+              success: false,
+              error: `D1 SQLite Execution Error: ${altErr.message}`
+            }), { status: 500, headers });
+          }
+        } else {
+          console.error(`Error updating ${tableName}.${columnName} in Cloudflare D1`, dbErr);
+          return new Response(JSON.stringify({
+            success: false,
+            error: `D1 SQLite Execution Error: ${dbErr.message}`
+          }), { status: 500, headers });
+        }
       }
     } else {
       // Local development or simulated fallback

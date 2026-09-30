@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS orders (
   delivery_schedule TEXT,
   assigned_driver TEXT,
   assigned_driver_id TEXT,
+  vehicle_no TEXT,
   carpenter_assigned TEXT,
   carpenter_id TEXT,
   otp_code TEXT DEFAULT '5842',

@@ -1085,20 +1085,24 @@ export function ExecutiveOverview() {
         </div>
 
         <div className="data-table-wrapper">
-          <table className="luxury-table sheets-grid">
+          <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
             <thead>
-              <tr>
-                <th style={{ width: '45px', textAlign: 'center' }}>#</th>
+              <tr style={{ background: '#0B132B' }}>
+                <th style={{ width: '45px', textAlign: 'center', color: '#94A3B8' }}>#</th>
                 <th>Order ID</th>
-                <th>Customer & Address</th>
-                <th>Ordered Furniture Model</th>
-                <th>SmartKit™ Staging & Gatepass</th>
-                <th style={{ textAlign: 'right' }}>Total (₹)</th>
-                <th style={{ textAlign: 'right' }}>Advance (₹)</th>
-                <th>SafeLock & Dispatch Status</th>
-                <th>Driver / Carpenter</th>
+                <th>Customer</th>
+                <th>Customer Address</th>
+                <th>Phone</th>
+                <th>Order Furniture Model</th>
+                <th style={{ textAlign: 'right' }}>Total Amount (₹)</th>
+                <th style={{ textAlign: 'right' }}>Advance Amount (₹)</th>
+                <th>Driver</th>
+                <th>Car / Vehicle</th>
+                <th>Carpenter</th>
                 <th>Schedule</th>
-                <th>Actions</th>
+                <th>Dispatch Status</th>
+                <th style={{ textAlign: 'center' }}>SmartKit™ Bay</th>
+                <th style={{ textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -1109,91 +1113,131 @@ export function ExecutiveOverview() {
                     <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
                       {idx + 1}
                     </td>
-                    {/* Order ID — Protected PK */}
-                    <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-cyan)', padding: '8px 10px' }}>{order.Order_ID}</td>
-                    {/* Customer Name — Editable */}
-                    <EditableCell
-                      value={order.Customer_Name} field="Customer_Name" rowIdx={idx}
-                      pkVal={order.Order_ID} isProtected={false}
-                      style={{ padding: '8px 10px' }}
-                      {...cellEdit}
-                    >
-                      <div style={{ fontWeight: '800', color: '#FFFFFF' }}>{order.Customer_Name}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{order.Project_Address} • 📞 {order.Customer_Phone}</div>
-                    </EditableCell>
-                    {/* Ordered SKU — Editable */}
-                    <EditableCell
-                      value={order.Ordered_SKU} field="Ordered_SKU" rowIdx={idx}
-                      pkVal={order.Order_ID} isProtected={false}
-                      style={{ padding: '8px 10px', fontWeight: '600' }}
-                      {...cellEdit}
-                    />
-                    
-                    {/* 📦 SmartKit™ Dynamic Flat-Pack Staging Column */}
-                    <td>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                          <span 
-                            className={`badge ${isStaged ? 'badge-emerald' : 'badge-purple'}`} 
-                            style={{ fontSize: '9px', fontWeight: '800' }}
-                          >
-                            {isStaged ? '📦 5/5 STAGED (GATEPASS ✓)' : '⚠️ Staging Pending'}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                          <button 
-                            className="btn-ghost-edit" 
-                            style={{ fontSize: '10px', padding: '3px 7px', color: 'var(--accent-purple)', borderColor: 'rgba(168,85,247,0.4)', background: 'rgba(168,85,247,0.08)' }}
-                            onClick={() => openModal('smartkit_staging', { order })}
-                            title="Open SmartKit Flat-Pack Component Staging Bay"
-                          >
-                            📦 Staging Bay
-                          </button>
-                          {!isStaged && (
-                            <button 
-                              className="btn-emerald" 
-                              style={{ fontSize: '10px', padding: '3px 8px', fontWeight: '800' }}
-                              onClick={() => handleQuickIssueGatepass(order)}
-                              title="1-Click Verify All Component Cartons & Issue Dock Gatepass"
-                            >
-                              ⚡ Issue Gatepass
-                            </button>
-                          )}
-                        </div>
+
+                    {/* 1. Order ID — Protected PK */}
+                    <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-cyan)', padding: '8px 10px', whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <Key size={11} color="var(--accent-gold)" title="Primary Key" />
+                        <span>{order.Order_ID}</span>
                       </div>
                     </td>
 
-                    {/* Total Amount (INR) — Editable */}
+                    {/* 2. Customer Name — Editable */}
+                    <EditableCell
+                      value={order.Customer_Name} 
+                      field="Customer_Name" 
+                      rowIdx={idx}
+                      pkVal={order.Order_ID} 
+                      isProtected={false}
+                      style={{ padding: '8px 10px', fontWeight: '700', color: '#FFFFFF' }}
+                      {...cellEdit}
+                    />
+
+                    {/* 3. Customer Address — Editable */}
+                    <EditableCell
+                      value={order.Project_Address} 
+                      field="Project_Address" 
+                      rowIdx={idx}
+                      pkVal={order.Order_ID} 
+                      isProtected={false}
+                      style={{ padding: '8px 10px', color: '#E2E8F0', minWidth: '150px' }}
+                      {...cellEdit}
+                    />
+
+                    {/* 4. Phone — Editable */}
+                    <EditableCell
+                      value={order.Customer_Phone} 
+                      field="Customer_Phone" 
+                      rowIdx={idx}
+                      pkVal={order.Order_ID} 
+                      isProtected={false}
+                      style={{ padding: '8px 10px', fontFamily: 'JetBrains Mono', color: 'var(--accent-cyan)' }}
+                      {...cellEdit}
+                    />
+
+                    {/* 5. Ordered Furniture Model — Editable */}
+                    <EditableCell
+                      value={order.Ordered_SKU} 
+                      field="Ordered_SKU" 
+                      rowIdx={idx}
+                      pkVal={order.Order_ID} 
+                      isProtected={false}
+                      style={{ padding: '8px 10px', fontWeight: '600', color: '#FFFFFF', minWidth: '150px' }}
+                      {...cellEdit}
+                    />
+
+                    {/* 6. Total Amount (₹) — Editable Numeric */}
                     <EditableCell
                       value={order.Total_Amount_INR}
                       field="Total_Amount_INR"
                       rowIdx={idx}
                       pkVal={order.Order_ID}
                       numeric
-                      style={{ padding: '8px 10px', textAlign: 'right' }}
+                      style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: 'var(--accent-gold-light)', fontFamily: 'JetBrains Mono' }}
                       {...cellEdit}
                     >
-                      <div style={{ fontWeight: '800', color: 'var(--accent-gold-light)', fontFamily: 'JetBrains Mono' }}>
-                        ₹{(Number(order.Total_Amount_INR) || 0).toLocaleString()}
-                      </div>
+                      ₹{(Number(order.Total_Amount_INR) || 0).toLocaleString()}
                     </EditableCell>
 
-                    {/* Advance Paid (INR) — Editable */}
+                    {/* 7. Advance Amount (₹) — Editable Numeric */}
                     <EditableCell
                       value={order.Advance_Paid_INR}
                       field="Advance_Paid_INR"
                       rowIdx={idx}
                       pkVal={order.Order_ID}
                       numeric
-                      style={{ padding: '8px 10px', textAlign: 'right' }}
+                      style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '700', color: 'var(--accent-emerald)', fontFamily: 'JetBrains Mono' }}
                       {...cellEdit}
                     >
-                      <div style={{ fontSize: '11px', color: 'var(--accent-emerald)', fontFamily: 'JetBrains Mono', fontWeight: '700' }}>
-                        ₹{(Number(order.Advance_Paid_INR) || 0).toLocaleString()}
-                      </div>
+                      ₹{(Number(order.Advance_Paid_INR) || 0).toLocaleString()}
                     </EditableCell>
-                    <td>
-                      {/* Fast Inline Status Dropdown */}
+
+                    {/* 8. Driver — Editable */}
+                    <EditableCell
+                      value={order.Assigned_Driver} 
+                      field="Assigned_Driver" 
+                      rowIdx={idx}
+                      pkVal={order.Order_ID} 
+                      isProtected={false}
+                      style={{ padding: '8px 10px', color: '#FFFFFF' }}
+                      {...cellEdit}
+                    />
+
+                    {/* 9. Car / Vehicle — Editable */}
+                    <EditableCell
+                      value={order.Vehicle_No || (order.Assigned_Driver?.match(/\((.*?)\)/)?.[1] || 'OD-18-A-1234')} 
+                      field="Vehicle_No" 
+                      rowIdx={idx}
+                      pkVal={order.Order_ID} 
+                      isProtected={false}
+                      style={{ padding: '8px 10px', fontFamily: 'JetBrains Mono', color: 'var(--accent-cyan)' }}
+                      {...cellEdit}
+                    />
+
+                    {/* 10. Carpenter — Editable */}
+                    <EditableCell
+                      value={order.Carpenter_Assigned} 
+                      field="Carpenter_Assigned" 
+                      rowIdx={idx}
+                      pkVal={order.Order_ID} 
+                      isProtected={false}
+                      style={{ padding: '8px 10px', color: 'var(--accent-purple)', fontWeight: '600' }}
+                      {...cellEdit}
+                    />
+
+                    {/* 11. Schedule — Editable */}
+                    <EditableCell
+                      value={order.Delivery_Schedule} 
+                      field="Delivery_Schedule" 
+                      rowIdx={idx}
+                      pkVal={order.Order_ID} 
+                      isProtected={false}
+                      style={{ padding: '8px 10px', color: 'var(--accent-gold-light)' }}
+                      {...cellEdit}
+                    />
+
+                    {/* 12. Dispatch Status */}
+                    <td style={{ padding: '8px 10px' }}>
                       <select
                         value={order.SafeLock_Status}
                         onChange={e => handleFastStatusChange(order.Order_ID, e.target.value)}
@@ -1209,39 +1253,44 @@ export function ExecutiveOverview() {
                           cursor: 'pointer'
                         }}
                       >
-                        <option value="SAFELOCKED (RESERVED)">🔒 SAFELOCKED (RESERVED)</option>
-                        <option value="5/5 STAGED (DOCK GATEPASS ISSUED ✓)">📦 5/5 STAGED (GATEPASS ISSUED ✓)</option>
-                        <option value="DISPATCHED_IN_TRANSIT (Tata Ace OD-18-A-1234)">🚚 DISPATCHED IN TRANSIT</option>
-                        <option value="DELIVERED (ePOD VERIFIED ✓)">✅ DELIVERED (ePOD VERIFIED)</option>
+                        <option value="SAFELOCKED (RESERVED)">🔒 SAFELOCKED</option>
+                        <option value="5/5 STAGED (DOCK GATEPASS ISSUED ✓)">📦 STAGED (GATEPASS)</option>
+                        <option value="DISPATCHED_IN_TRANSIT (Tata Ace OD-18-A-1234)">🚚 IN TRANSIT</option>
+                        <option value="DELIVERED (ePOD VERIFIED ✓)">✅ DELIVERED</option>
                       </select>
                     </td>
-                    {/* Driver / Carpenter — Editable */}
-                    <EditableCell
-                      value={order.Assigned_Driver} field="Assigned_Driver" rowIdx={idx}
-                      pkVal={order.Order_ID} isProtected={false}
-                      style={{ padding: '8px 10px' }}
-                      {...cellEdit}
-                    >
-                      <div style={{ fontSize: '11.5px', color: '#FFFFFF' }}>🚚 {order.Assigned_Driver}</div>
-                      <div style={{ fontSize: '10.5px', color: 'var(--accent-purple)' }}>🪚 {order.Carpenter_Assigned} (₹{order.Carpenter_Payout_INR})</div>
-                    </EditableCell>
-                    {/* Delivery Schedule — Editable */}
-                    <EditableCell
-                      value={order.Delivery_Schedule} field="Delivery_Schedule" rowIdx={idx}
-                      pkVal={order.Order_ID} isProtected={false}
-                      style={{ padding: '8px 10px', fontSize: '11.5px', color: 'var(--text-secondary)' }}
-                      {...cellEdit}
-                    />
-                    <td>
-                      <div style={{ display: 'flex', gap: '5px' }}>
-                        <button className="btn-cyan" style={{ fontSize: '10.5px', padding: '3px 8px' }} onClick={() => openModal('order_rescheduler', { order })}>
+
+                    {/* 13. SmartKit™ Dynamic Flat-Pack Staging Bay */}
+                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                      <div style={{ display: 'inline-flex', flexDirection: 'column', gap: '4px', alignItems: 'center' }}>
+                        <span 
+                          className={`badge ${isStaged ? 'badge-emerald' : 'badge-purple'}`} 
+                          style={{ fontSize: '9px', fontWeight: '800' }}
+                        >
+                          {isStaged ? '📦 5/5 STAGED' : '⚠️ Pending'}
+                        </span>
+                        <button 
+                          className="btn-ghost-edit" 
+                          style={{ fontSize: '9.5px', padding: '2px 6px', color: 'var(--accent-purple)', borderColor: 'rgba(168,85,247,0.4)', background: 'rgba(168,85,247,0.08)' }}
+                          onClick={() => openModal('smartkit_staging', { order })}
+                          title="Open SmartKit Flat-Pack Component Staging Bay"
+                        >
+                          📦 Staging Bay
+                        </button>
+                      </div>
+                    </td>
+
+                    {/* 14. Actions */}
+                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                        <button className="btn-cyan" style={{ fontSize: '10px', padding: '3px 6px' }} onClick={() => openModal('order_rescheduler', { order })}>
                           📅 Reschedule
                         </button>
-                        <button className="btn-ghost-edit" onClick={() => openModal('order_invoice', { order })}>
+                        <button className="btn-ghost-edit" style={{ fontSize: '10px', padding: '3px 6px' }} onClick={() => openModal('order_invoice', { order })}>
                           🧾 Invoice
                         </button>
-                        <button className="btn-ghost-edit" onClick={() => openModal('manage_order', { order })}>
-                          ✏️
+                        <button className="btn-ghost-edit" style={{ fontSize: '10px', padding: '3px 6px' }} onClick={() => openModal('manage_order', { order })}>
+                          ✏️ Full
                         </button>
                       </div>
                     </td>

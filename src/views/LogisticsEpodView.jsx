@@ -307,17 +307,21 @@ export function LogisticsEpodView() {
         </div>
 
         <div className="data-table-wrapper">
-          <table className="luxury-table sheets-grid">
+          <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
             <thead>
-              <tr>
+              <tr style={{ background: '#0B132B' }}>
                 <th style={{ width: '45px', textAlign: 'center' }}>#</th>
                 <th>Stop</th>
                 <th>Order Ref</th>
-                <th>Customer & Address</th>
+                <th>Customer</th>
+                <th>Delivery Address</th>
+                <th>Phone</th>
                 <th>Delivery Time Slot</th>
-                <th>Items in Vehicle</th>
-                <th>Balance Due</th>
-                <th>Delivery Status</th>
+                <th>Furniture Model</th>
+                <th>Driver</th>
+                <th>Carpenter</th>
+                <th style={{ textAlign: 'right' }}>Balance Due (₹)</th>
+                <th>Status</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -329,49 +333,96 @@ export function LogisticsEpodView() {
                   </td>
                   <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '900', color: 'var(--accent-gold)' }}>#{stop.Stop_No}</td>
                   <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-cyan)' }}>{stop.Order_ID}</td>
-                  {/* Customer & Address — Editable */}
+
+                  {/* Customer — Editable */}
                   <EditableCell
-                    value={stop.Customer_Name} field="Customer_Name" rowIdx={idx}
-                    pkVal={stop.Order_ID} isProtected={false}
-                    style={{ padding: '8px 10px' }}
+                    value={stop.Customer_Name} 
+                    field="Customer_Name" 
+                    rowIdx={idx}
+                    pkVal={stop.Order_ID} 
+                    isProtected={false}
+                    style={{ padding: '8px 10px', fontWeight: '700', color: '#FFFFFF' }}
                     {...cellEdit}
-                  >
-                    <div style={{ fontWeight: '800', color: '#FFFFFF' }}>{stop.Customer_Name}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>📍 {stop.Address} • 📞 {maskPhone(stop.Customer_Phone)}</div>
-                  </EditableCell>
+                  />
+
+                  {/* Address — Editable */}
+                  <EditableCell
+                    value={stop.Address} 
+                    field="Project_Address" 
+                    rowIdx={idx}
+                    pkVal={stop.Order_ID} 
+                    isProtected={false}
+                    style={{ padding: '8px 10px', color: '#E2E8F0', minWidth: '150px' }}
+                    {...cellEdit}
+                  />
+
+                  {/* Phone — Editable */}
+                  <EditableCell
+                    value={stop.Customer_Phone} 
+                    field="Customer_Phone" 
+                    rowIdx={idx}
+                    pkVal={stop.Order_ID} 
+                    isProtected={false}
+                    style={{ padding: '8px 10px', fontFamily: 'JetBrains Mono', color: 'var(--accent-cyan)' }}
+                    {...cellEdit}
+                  />
+
                   {/* Time Slot — Editable */}
                   <EditableCell
-                    value={stop.Time_Slot} field="Delivery_Schedule" rowIdx={idx}
-                    pkVal={stop.Order_ID} isProtected={false}
-                    style={{ padding: '8px 10px' }}
+                    value={stop.Time_Slot} 
+                    field="Delivery_Schedule" 
+                    rowIdx={idx}
+                    pkVal={stop.Order_ID} 
+                    isProtected={false}
+                    style={{ padding: '8px 10px', color: 'var(--accent-gold-light)', fontWeight: '600' }}
                     {...cellEdit}
-                  >
-                    <div style={{ fontWeight: '700', color: 'var(--accent-cyan)' }}>⏰ {stop.Time_Slot}</div>
-                    <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Driver: {stop.Driver.split(' ')[0]}</div>
-                  </EditableCell>
-                  {/* Items / Carpenter — Editable */}
+                  />
+
+                  {/* Furniture Model — Editable */}
                   <EditableCell
-                    value={stop.Items} field="Ordered_SKU" rowIdx={idx}
-                    pkVal={stop.Order_ID} isProtected={false}
-                    style={{ padding: '8px 10px', fontSize: '11.5px', maxWidth: '220px' }}
+                    value={stop.Items} 
+                    field="Ordered_SKU" 
+                    rowIdx={idx}
+                    pkVal={stop.Order_ID} 
+                    isProtected={false}
+                    style={{ padding: '8px 10px', fontSize: '11.5px', color: '#FFFFFF', fontWeight: '600' }}
                     {...cellEdit}
-                  >
-                    <b>{stop.Items}</b>
-                    <div style={{ fontSize: '10px', color: 'var(--accent-purple)' }}>🪚 {stop.Carpenter}</div>
-                  </EditableCell>
+                  />
+
+                  {/* Driver — Editable */}
+                  <EditableCell
+                    value={stop.Driver} 
+                    field="Assigned_Driver" 
+                    rowIdx={idx}
+                    pkVal={stop.Order_ID} 
+                    isProtected={false}
+                    style={{ padding: '8px 10px', color: '#FFFFFF' }}
+                    {...cellEdit}
+                  />
+
+                  {/* Carpenter — Editable */}
+                  <EditableCell
+                    value={stop.Carpenter} 
+                    field="Carpenter_Assigned" 
+                    rowIdx={idx}
+                    pkVal={stop.Order_ID} 
+                    isProtected={false}
+                    style={{ padding: '8px 10px', color: 'var(--accent-purple)', fontWeight: '600' }}
+                    {...cellEdit}
+                  />
+
                   {/* Balance Due — Editable */}
                   <EditableCell
-                    value={stop.Amount_Due} field="Balance_Due_INR" rowIdx={idx}
-                    pkVal={stop.Order_ID} isProtected={false} numeric
-                    style={{ padding: '8px 10px' }}
+                    value={stop.Amount_Due} 
+                    field="Balance_Due_INR" 
+                    rowIdx={idx}
+                    pkVal={stop.Order_ID} 
+                    isProtected={false} 
+                    numeric
+                    style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: 'var(--accent-gold-light)', fontFamily: 'JetBrains Mono' }}
                     {...cellEdit}
                   >
-                    <strong style={{ color: 'var(--accent-gold-light)', fontFamily: 'JetBrains Mono' }}>
-                      ₹{(Number(stop?.Amount_Due) || 0).toLocaleString()}
-                    </strong>
-                    <div style={{ fontSize: '9.5px', color: 'var(--accent-emerald)', fontWeight: '700' }}>
-                      {stop.Payment_Mode}
-                    </div>
+                    ₹{(Number(stop?.Amount_Due) || 0).toLocaleString()}
                   </EditableCell>
                   <td>
                     <span className={`badge ${stop.Status === 'DELIVERED_COMPLETE' ? 'badge-emerald' : stop.Status.includes('TRANSIT') ? 'badge-cyan' : stop.Status.includes('GATEPASS') ? 'badge-purple' : 'badge-amber'}`} style={{ fontSize: '9.5px', fontWeight: '800' }}>

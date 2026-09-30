@@ -288,7 +288,9 @@ export function InventorySafeLockView() {
                 <th style={{ width: '45px', textAlign: 'center' }}>#</th>
                 <th>SKU Code</th>
                 <th>Furniture Model</th>
-                <th>Category / Bay</th>
+                <th>Category</th>
+                <th>Warehouse Bay</th>
+                <th style={{ textAlign: 'right' }}>Unit Cost (₹)</th>
                 <th style={{ textAlign: 'center' }}>Warehouse Avail</th>
                 <th style={{ textAlign: 'center' }}>Reserved SafeLock</th>
                 <th style={{ textAlign: 'center' }}>Reorder Status</th>
@@ -319,17 +321,29 @@ export function InventorySafeLockView() {
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>Unit Cost: ₹{item.Unit_Cost_INR?.toLocaleString()}</div>
                   </EditableCell>
-                  {/* Category / Bay — Editable */}
+                  {/* Category — Editable */}
+                  <EditableCell
+                    value={item.Category} field="Category" rowIdx={idx}
+                    pkVal={item.SKU} isProtected={false}
+                    style={{ padding: '8px 10px', color: '#FFFFFF' }}
+                    {...cellEdit}
+                  />
+                  {/* Bay — Editable */}
                   <EditableCell
                     value={item.Bay} field="Bay" rowIdx={idx}
                     pkVal={item.SKU} isProtected={false}
-                    style={{ padding: '8px 10px' }}
+                    style={{ padding: '8px 10px', color: 'var(--accent-gold-light)', fontFamily: 'JetBrains Mono' }}
+                    {...cellEdit}
+                  />
+                  {/* Unit Cost — Editable Numeric */}
+                  <EditableCell
+                    value={item.Unit_Cost_INR} field="Unit_Cost_INR" rowIdx={idx}
+                    pkVal={item.SKU} isProtected={false} numeric
+                    style={{ padding: '8px 10px', textAlign: 'right', fontFamily: 'JetBrains Mono', color: 'var(--accent-cyan)' }}
                     {...cellEdit}
                   >
-                    <div style={{ color: '#FFFFFF', fontSize: '11.5px' }}>{item.Category}</div>
-                    <div style={{ fontSize: '10px', color: 'var(--accent-gold)' }}>{item.Bay}</div>
+                    ₹{(Number(item.Unit_Cost_INR) || 0).toLocaleString()}
                   </EditableCell>
                   {/* Warehouse Qty — Editable */}
                   <EditableCell

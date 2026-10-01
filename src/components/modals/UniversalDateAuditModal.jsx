@@ -48,13 +48,17 @@ export function UniversalDateAuditModal({ isOpen, onClose, data = {} }) {
     tallyVouchers = [], 
     bankTransactions = [], 
     purchaseOrders = [], 
+    setPurchaseOrders,
     routeStops = [], 
     vipProjects = [],
+    setVipProjects,
     architects = [],
+    setArchitects,
     inventory = [],
     setInventory,
     floorAgingStock = [],
     documentsLog = [],
+    setDocumentsLog,
     stockLedger = [],
     activeTab, 
     parseToIsoDate,
@@ -67,6 +71,60 @@ export function UniversalDateAuditModal({ isOpen, onClose, data = {} }) {
     pkField: 'Order_ID',
     readOnly: ['Order_ID'],
     setRows: setOrders,
+    showToast
+  });
+
+  // 📝 Inline Cell Edit for Factory POs in Modal
+  const poCellEdit = useInlineCellEdit({
+    table: 'purchase_orders_log',
+    pkField: 'po_id',
+    readOnly: ['po_id'],
+    setRows: setPurchaseOrders,
+    showToast
+  });
+
+  // 📝 Inline Cell Edit for SafeLock Inventory in Modal
+  const inventoryCellEdit = useInlineCellEdit({
+    table: 'inventory',
+    pkField: 'SKU',
+    readOnly: ['SKU'],
+    setRows: setInventory,
+    showToast
+  });
+
+  // 📝 Inline Cell Edit for CRM Inquiries in Modal
+  const inquiriesCellEdit = useInlineCellEdit({
+    table: 'inquiries',
+    pkField: 'Inquiry_ID',
+    readOnly: ['Inquiry_ID'],
+    setRows: setInquiries,
+    showToast
+  });
+
+  // 📝 Inline Cell Edit for B2B VIP Projects in Modal
+  const vipProjectsCellEdit = useInlineCellEdit({
+    table: 'vip_projects',
+    pkField: 'id',
+    readOnly: ['id'],
+    setRows: setVipProjects,
+    showToast
+  });
+
+  // 📝 Inline Cell Edit for VIP Architects in Modal
+  const architectsCellEdit = useInlineCellEdit({
+    table: 'architects',
+    pkField: 'Architect_ID',
+    readOnly: ['Architect_ID'],
+    setRows: setArchitects,
+    showToast
+  });
+
+  // 📝 Inline Cell Edit for Document Studio Log in Modal
+  const documentsCellEdit = useInlineCellEdit({
+    table: 'documents_log',
+    pkField: 'Doc_ID',
+    readOnly: ['Doc_ID'],
+    setRows: setDocumentsLog,
     showToast
   });
 
@@ -1087,545 +1145,668 @@ export function UniversalDateAuditModal({ isOpen, onClose, data = {} }) {
           
           {/* TAB: PROCUREMENT & POs */}
           {activeSubTab === 'procurement' && (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
-              <thead>
-                <tr style={{ background: '#070B16', color: '#94A3B8', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                  <th style={{ padding: '8px 10px' }}>PO Number</th>
-                  <th style={{ padding: '8px 10px' }}>Date</th>
-                  <th style={{ padding: '8px 10px' }}>Manufacturer / Supplier</th>
-                  <th style={{ padding: '8px 10px' }}>Ordered SKUs</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'center' }}>Sets</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>Total Value</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>Advance Paid</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>Balance Due</th>
-                  <th style={{ padding: '8px 10px' }}>Transporter / Bilty</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'center' }}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredPOs.length === 0 ? (
-                  <tr><td colSpan="10" style={{ textAlign: 'center', padding: '30px', color: '#94A3B8' }}>No factory purchase orders recorded in selected date range.</td></tr>
-                ) : (
-                  filteredPOs.map(po => (
-                    <tr key={po.po_id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                      <td style={{ padding: '8px 10px', fontWeight: '800', color: '#F59E0B' }}>{po.po_id}</td>
-                      <td style={{ padding: '8px 10px', color: '#CBD5E1', fontFamily: 'monospace' }}>{formatDisplayDate(parseToIsoDate(po.created_at) || fromDate)}</td>
-                      <td style={{ padding: '8px 10px', fontWeight: '700', color: '#FFFFFF' }}>{po.supplier}</td>
-                      <td style={{ padding: '8px 10px', color: '#94A3B8' }}>{po.sku}</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: '700', color: '#38BDF8' }}>{po.qty} Sets</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#FFFFFF' }}>₹{Number(po.total_value || 0).toLocaleString('en-IN')}</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#22C55E' }}>₹{Number(po.advance_paid || 0).toLocaleString('en-IN')}</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#F43F5E' }}>₹{Number(po.balance_due || 0).toLocaleString('en-IN')}</td>
-                      <td style={{ padding: '8px 10px', color: '#E2E8F0' }}>{po.transporter} <span style={{ color: '#F59E0B', fontSize: '10px' }}>({po.lr_number})</span></td>
-                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                        <span className={`badge ${po.status === 'PO_ACTIVE' ? 'badge-emerald' : 'badge-amber'}`} style={{ fontSize: '9px' }}>
-                          {po.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+            <div className="data-table-wrapper">
+              <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
+                <thead>
+                  <tr style={{ background: '#0B132B', color: '#94A3B8', textAlign: 'left' }}>
+                    <th style={{ width: '40px', textAlign: 'center' }}>#</th>
+                    <th>PO Number</th>
+                    <th>Date</th>
+                    <th>Manufacturer / Supplier</th>
+                    <th>Ordered SKUs</th>
+                    <th style={{ textAlign: 'center' }}>Sets</th>
+                    <th style={{ textAlign: 'right' }}>Total Value</th>
+                    <th style={{ textAlign: 'right' }}>Advance Paid</th>
+                    <th style={{ textAlign: 'right' }}>Balance Due</th>
+                    <th>Transporter / Bilty</th>
+                    <th style={{ textAlign: 'center' }}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredPOs.length === 0 ? (
+                    <tr><td colSpan="11" style={{ textAlign: 'center', padding: '30px', color: '#94A3B8' }}>No factory purchase orders recorded in selected date range.</td></tr>
+                  ) : (
+                    filteredPOs.map((po, idx) => (
+                      <tr key={po.po_id}>
+                        <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                          {idx + 1}
+                        </td>
+                        <td style={{ padding: '8px 10px', fontWeight: '800', color: '#F59E0B', fontFamily: 'JetBrains Mono' }}>{po.po_id}</td>
+                        <td style={{ padding: '8px 10px', color: '#CBD5E1', fontFamily: 'JetBrains Mono' }}>{formatDisplayDate(parseToIsoDate(po.created_at) || fromDate)}</td>
+                        <EditableCell value={po.supplier} field="supplier" rowIdx={idx} pkVal={po.po_id} style={{ padding: '8px 10px', fontWeight: '700', color: '#FFFFFF' }} {...poCellEdit} />
+                        <EditableCell value={po.sku} field="sku" rowIdx={idx} pkVal={po.po_id} style={{ padding: '8px 10px', color: '#CBD5E1' }} {...poCellEdit} />
+                        <EditableCell value={po.qty} field="qty" rowIdx={idx} pkVal={po.po_id} numeric style={{ textAlign: 'center', padding: '8px 10px', fontWeight: '700', color: '#38BDF8' }} {...poCellEdit}>
+                          {po.qty} Sets
+                        </EditableCell>
+                        <EditableCell value={po.total_value} field="total_value" rowIdx={idx} pkVal={po.po_id} numeric style={{ textAlign: 'right', padding: '8px 10px', fontWeight: '800', color: '#FFFFFF' }} {...poCellEdit}>
+                          ₹{Number(po.total_value || 0).toLocaleString('en-IN')}
+                        </EditableCell>
+                        <EditableCell value={po.advance_paid} field="advance_paid" rowIdx={idx} pkVal={po.po_id} numeric style={{ textAlign: 'right', padding: '8px 10px', fontWeight: '800', color: '#22C55E' }} {...poCellEdit}>
+                          ₹{Number(po.advance_paid || 0).toLocaleString('en-IN')}
+                        </EditableCell>
+                        <EditableCell value={po.balance_due} field="balance_due" rowIdx={idx} pkVal={po.po_id} numeric style={{ textAlign: 'right', padding: '8px 10px', fontWeight: '800', color: '#F43F5E' }} {...poCellEdit}>
+                          ₹{Number(po.balance_due || 0).toLocaleString('en-IN')}
+                        </EditableCell>
+                        <EditableCell value={po.transporter} field="transporter" rowIdx={idx} pkVal={po.po_id} style={{ padding: '8px 10px', color: '#E2E8F0' }} {...poCellEdit}>
+                          {po.transporter} <span style={{ color: '#F59E0B', fontSize: '10px' }}>({po.lr_number})</span>
+                        </EditableCell>
+                        <EditableCell value={po.status} field="status" rowIdx={idx} pkVal={po.po_id} style={{ textAlign: 'center', padding: '8px 10px' }} {...poCellEdit}>
+                          <span className={`badge ${po.status === 'PO_ACTIVE' ? 'badge-emerald' : 'badge-amber'}`} style={{ fontSize: '9px' }}>
+                            {po.status}
+                          </span>
+                        </EditableCell>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
 
           {/* TAB: LOGISTICS FLEET */}
           {activeSubTab === 'logistics' && (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
-              <thead>
-                <tr style={{ background: '#070B16', color: '#94A3B8', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                  <th style={{ padding: '8px 10px' }}>Stop ID</th>
-                  <th style={{ padding: '8px 10px' }}>Order ID</th>
-                  <th style={{ padding: '8px 10px' }}>Date</th>
-                  <th style={{ padding: '8px 10px' }}>Customer Name</th>
-                  <th style={{ padding: '8px 10px' }}>Address</th>
-                  <th style={{ padding: '8px 10px' }}>Assigned Driver</th>
-                  <th style={{ padding: '8px 10px' }}>Item / SKU</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>COD Balance</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'center' }}>OTP / Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredLogistics.length === 0 ? (
-                  <tr><td colSpan="9" style={{ textAlign: 'center', padding: '30px', color: '#94A3B8' }}>No delivery dispatches in selected range.</td></tr>
-                ) : (
-                  filteredLogistics.map(l => (
-                    <tr key={l.stop_id + l.order_id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                      <td style={{ padding: '8px 10px', fontWeight: '800', color: '#38BDF8' }}>{l.stop_id}</td>
-                      <td style={{ padding: '8px 10px', fontWeight: '800', color: '#F59E0B' }}>{l.order_id}</td>
-                      <td style={{ padding: '8px 10px', color: '#CBD5E1', fontFamily: 'monospace' }}>{formatDisplayDate(parseToIsoDate(l.date) || fromDate)}</td>
-                      <td style={{ padding: '8px 10px', fontWeight: '700', color: '#FFF' }}>{l.customer}</td>
-                      <td style={{ padding: '8px 10px', color: '#94A3B8' }}>{l.address}</td>
-                      <td style={{ padding: '8px 10px', color: '#38BDF8', fontWeight: '600' }}>{l.driver}</td>
-                      <td style={{ padding: '8px 10px', color: '#E2E8F0' }}>{l.sku}</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: l.amount_due > 0 ? '#F43F5E' : '#22C55E' }}>
-                        ₹{Number(l.amount_due).toLocaleString('en-IN')}
-                      </td>
-                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                        <span className={`badge ${l.status === 'DELIVERED_COMPLETE' ? 'badge-emerald' : 'badge-amber'}`} style={{ fontSize: '9px' }}>
-                          {l.status === 'DELIVERED_COMPLETE' ? '✓ ePOD SIGNED' : 'IN TRANSIT'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+            <div className="data-table-wrapper">
+              <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
+                <thead>
+                  <tr style={{ background: '#0B132B', color: '#94A3B8', textAlign: 'left' }}>
+                    <th style={{ width: '40px', textAlign: 'center' }}>#</th>
+                    <th>Stop ID</th>
+                    <th>Order ID</th>
+                    <th>Date</th>
+                    <th>Customer Name</th>
+                    <th>Address</th>
+                    <th>Assigned Driver</th>
+                    <th>Item / SKU</th>
+                    <th style={{ textAlign: 'right' }}>COD Balance</th>
+                    <th style={{ textAlign: 'center' }}>OTP / Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredLogistics.length === 0 ? (
+                    <tr><td colSpan="10" style={{ textAlign: 'center', padding: '30px', color: '#94A3B8' }}>No delivery dispatches in selected range.</td></tr>
+                  ) : (
+                    filteredLogistics.map((l, idx) => (
+                      <tr key={l.stop_id + l.order_id}>
+                        <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                          {idx + 1}
+                        </td>
+                        <td style={{ padding: '8px 10px', fontWeight: '800', color: '#38BDF8', fontFamily: 'JetBrains Mono' }}>{l.stop_id}</td>
+                        <td style={{ padding: '8px 10px', fontWeight: '800', color: '#F59E0B', fontFamily: 'JetBrains Mono' }}>{l.order_id}</td>
+                        <td style={{ padding: '8px 10px', color: '#CBD5E1', fontFamily: 'monospace' }}>{formatDisplayDate(parseToIsoDate(l.date) || fromDate)}</td>
+                        <EditableCell value={l.customer} field="Customer_Name" rowIdx={idx} pkVal={l.order_id} style={{ padding: '8px 10px', fontWeight: '700', color: '#FFF' }} {...ordersCellEdit} />
+                        <EditableCell value={l.address} field="Project_Address" rowIdx={idx} pkVal={l.order_id} style={{ padding: '8px 10px', color: '#CBD5E1' }} {...ordersCellEdit} />
+                        <EditableCell value={l.driver} field="Assigned_Driver" rowIdx={idx} pkVal={l.order_id} style={{ padding: '8px 10px', color: '#38BDF8', fontWeight: '600' }} {...ordersCellEdit} />
+                        <EditableCell value={l.sku} field="Ordered_SKU" rowIdx={idx} pkVal={l.order_id} style={{ padding: '8px 10px', color: '#E2E8F0' }} {...ordersCellEdit} />
+                        <EditableCell value={l.amount_due} field="Balance_Due_INR" rowIdx={idx} pkVal={l.order_id} numeric style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: l.amount_due > 0 ? '#F43F5E' : '#22C55E' }} {...ordersCellEdit}>
+                          ₹{Number(l.amount_due).toLocaleString('en-IN')}
+                        </EditableCell>
+                        <EditableCell value={l.status} field="SafeLock_Status" rowIdx={idx} pkVal={l.order_id} style={{ padding: '8px 10px', textAlign: 'center' }} {...ordersCellEdit}>
+                          <span className={`badge ${l.status === 'DELIVERED_COMPLETE' ? 'badge-emerald' : 'badge-amber'}`} style={{ fontSize: '9px' }}>
+                            {l.status === 'DELIVERED_COMPLETE' ? '✓ ePOD SIGNED' : 'IN TRANSIT'}
+                          </span>
+                        </EditableCell>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
 
           {/* TAB: SAFELOCK WAREHOUSE */}
           {activeSubTab === 'safelock' && (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
-              <thead>
-                <tr style={{ background: '#070B16', color: '#94A3B8', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                  <th style={{ padding: '8px 10px' }}>SKU Code</th>
-                  <th style={{ padding: '8px 10px' }}>Product Description</th>
-                  <th style={{ padding: '8px 10px' }}>Classification</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'center' }}>Qty</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'center' }}>Aging Days</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>Clearance / Price</th>
-                  <th style={{ padding: '8px 10px' }}>Bay Location</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'center' }}>Staging Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredSafeLock.map((s, idx) => (
-                  <tr key={s.sku + idx} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                    <td style={{ padding: '8px 10px', fontWeight: '800', color: '#F59E0B' }}>{s.sku}</td>
-                    <td style={{ padding: '8px 10px', fontWeight: '700', color: '#FFF' }}>{s.name}</td>
-                    <td style={{ padding: '8px 10px', color: '#94A3B8' }}>{s.category}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: '700', color: '#38BDF8' }}>{s.warehouse_qty}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'center', color: s.aging_days > 40 ? '#F43F5E' : '#22C55E', fontWeight: '800' }}>
-                      {s.aging_days} Days
-                    </td>
-                    <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#FFFFFF' }}>₹{Number(s.price).toLocaleString('en-IN')}</td>
-                    <td style={{ padding: '8px 10px', color: '#E2E8F0' }}>{s.bay}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                      <span className="badge badge-gold" style={{ fontSize: '9px' }}>{s.status}</span>
-                    </td>
+            <div className="data-table-wrapper">
+              <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
+                <thead>
+                  <tr style={{ background: '#0B132B', color: '#94A3B8', textAlign: 'left' }}>
+                    <th style={{ width: '40px', textAlign: 'center' }}>#</th>
+                    <th>SKU Code</th>
+                    <th>Product Description</th>
+                    <th>Classification</th>
+                    <th style={{ textAlign: 'center' }}>Qty</th>
+                    <th style={{ textAlign: 'center' }}>Aging Days</th>
+                    <th style={{ textAlign: 'right' }}>Clearance / Price</th>
+                    <th>Bay Location</th>
+                    <th style={{ textAlign: 'center' }}>Staging Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredSafeLock.map((s, idx) => (
+                    <tr key={s.sku + idx}>
+                      <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                        {idx + 1}
+                      </td>
+                      <td style={{ padding: '8px 10px', fontWeight: '800', color: '#F59E0B', fontFamily: 'JetBrains Mono' }}>{s.sku}</td>
+                      <EditableCell value={s.name} field="Product_Name" rowIdx={idx} pkVal={s.sku} style={{ padding: '8px 10px', fontWeight: '700', color: '#FFF' }} {...inventoryCellEdit} />
+                      <EditableCell value={s.category} field="Category" rowIdx={idx} pkVal={s.sku} style={{ padding: '8px 10px', color: '#CBD5E1' }} {...inventoryCellEdit} />
+                      <EditableCell value={s.warehouse_qty} field="Warehouse_Qty" rowIdx={idx} pkVal={s.sku} numeric style={{ padding: '8px 10px', textAlign: 'center', fontWeight: '700', color: '#38BDF8' }} {...inventoryCellEdit} />
+                      <td style={{ padding: '8px 10px', textAlign: 'center', color: s.aging_days > 40 ? '#F43F5E' : '#22C55E', fontWeight: '800' }}>
+                        {s.aging_days} Days
+                      </td>
+                      <EditableCell value={s.price} field="Selling_Price_INR" rowIdx={idx} pkVal={s.sku} numeric style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#FFFFFF' }} {...inventoryCellEdit}>
+                        ₹{Number(s.price).toLocaleString('en-IN')}
+                      </EditableCell>
+                      <EditableCell value={s.bay} field="Bay" rowIdx={idx} pkVal={s.sku} style={{ padding: '8px 10px', color: '#E2E8F0', fontFamily: 'JetBrains Mono' }} {...inventoryCellEdit} />
+                      <EditableCell value={s.status} field="Status" rowIdx={idx} pkVal={s.sku} style={{ padding: '8px 10px', textAlign: 'center' }} {...inventoryCellEdit}>
+                        <span className="badge badge-gold" style={{ fontSize: '9px' }}>{s.status}</span>
+                      </EditableCell>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
 
           {/* TAB: B2B TURNKEY PROJECTS */}
           {activeSubTab === 'b2b_projects' && (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
-              <thead>
-                <tr style={{ background: '#070B16', color: '#94A3B8', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                  <th style={{ padding: '8px 10px' }}>Project ID</th>
-                  <th style={{ padding: '8px 10px' }}>VIP Client Name & Title</th>
-                  <th style={{ padding: '8px 10px' }}>Site Location</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>Contract Value</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>Advance Paid</th>
-                  <th style={{ padding: '8px 10px' }}>Milestone Stage</th>
-                  <th style={{ padding: '8px 10px' }}>Partner Architect</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'center' }}>Turnkey Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredVipProjects.map(vp => (
-                  <tr key={vp.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                    <td style={{ padding: '8px 10px', fontWeight: '800', color: '#F59E0B' }}>{vp.id}</td>
-                    <td style={{ padding: '8px 10px', fontWeight: '700', color: '#FFF' }}>{vp.name}</td>
-                    <td style={{ padding: '8px 10px', color: '#94A3B8' }}>{vp.location}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#FFFFFF' }}>₹{Number(vp.value).toLocaleString('en-IN')}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#22C55E' }}>₹{Number(vp.advance).toLocaleString('en-IN')}</td>
-                    <td style={{ padding: '8px 10px', color: '#38BDF8' }}>{vp.stage}</td>
-                    <td style={{ padding: '8px 10px', color: '#E2E8F0' }}>{vp.architect}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                      <span className="badge badge-purple" style={{ fontSize: '9px' }}>{vp.status || 'SAFELOCKED'}</span>
-                    </td>
+            <div className="data-table-wrapper">
+              <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
+                <thead>
+                  <tr style={{ background: '#0B132B', color: '#94A3B8', textAlign: 'left' }}>
+                    <th style={{ width: '40px', textAlign: 'center' }}>#</th>
+                    <th>Project ID</th>
+                    <th>VIP Client Name & Title</th>
+                    <th>Site Location</th>
+                    <th style={{ textAlign: 'right' }}>Contract Value</th>
+                    <th style={{ textAlign: 'right' }}>Advance Paid</th>
+                    <th>Milestone Stage</th>
+                    <th>Partner Architect</th>
+                    <th style={{ textAlign: 'center' }}>Turnkey Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredVipProjects.length === 0 ? (
+                    <tr><td colSpan="9" style={{ textAlign: 'center', padding: '30px', color: '#94A3B8' }}>No turnkey VIP projects found.</td></tr>
+                  ) : (
+                    filteredVipProjects.map((vp, idx) => (
+                      <tr key={vp.id}>
+                        <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                          {idx + 1}
+                        </td>
+                        <td style={{ padding: '8px 10px', fontWeight: '800', color: '#F59E0B', fontFamily: 'JetBrains Mono' }}>{vp.id}</td>
+                        <EditableCell value={vp.name} field="name" rowIdx={idx} pkVal={vp.id} style={{ padding: '8px 10px', fontWeight: '700', color: '#FFF' }} {...vipProjectsCellEdit} />
+                        <EditableCell value={vp.location} field="location" rowIdx={idx} pkVal={vp.id} style={{ padding: '8px 10px', color: '#94A3B8' }} {...vipProjectsCellEdit} />
+                        <EditableCell value={vp.value} field="value" rowIdx={idx} pkVal={vp.id} numeric style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#FFFFFF', fontFamily: 'JetBrains Mono' }} {...vipProjectsCellEdit}>
+                          ₹{Number(vp.value || 0).toLocaleString('en-IN')}
+                        </EditableCell>
+                        <EditableCell value={vp.advance} field="advance" rowIdx={idx} pkVal={vp.id} numeric style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#22C55E', fontFamily: 'JetBrains Mono' }} {...vipProjectsCellEdit}>
+                          ₹{Number(vp.advance || 0).toLocaleString('en-IN')}
+                        </EditableCell>
+                        <EditableCell value={vp.stage} field="stage" rowIdx={idx} pkVal={vp.id} style={{ padding: '8px 10px', color: '#38BDF8', fontWeight: '600' }} {...vipProjectsCellEdit} />
+                        <EditableCell value={vp.architect} field="architect" rowIdx={idx} pkVal={vp.id} style={{ padding: '8px 10px', color: '#E2E8F0' }} {...vipProjectsCellEdit} />
+                        <EditableCell value={vp.status} field="status" rowIdx={idx} pkVal={vp.id} style={{ padding: '8px 10px', textAlign: 'center' }} {...vipProjectsCellEdit}>
+                          <span className="badge badge-purple" style={{ fontSize: '9px' }}>{vp.status || 'SAFELOCKED'}</span>
+                        </EditableCell>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
 
           {/* TAB: TALLY VOUCHERS */}
           {activeSubTab === 'tally_vouchers' && (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
-              <thead>
-                <tr style={{ background: '#070B16', color: '#94A3B8', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                  <th style={{ padding: '8px 10px' }}>Voucher No</th>
-                  <th style={{ padding: '8px 10px' }}>Type</th>
-                  <th style={{ padding: '8px 10px' }}>Voucher Date</th>
-                  <th style={{ padding: '8px 10px' }}>Party Ledger</th>
-                  <th style={{ padding: '8px 10px' }}>Narration</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>Amount (₹)</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'center' }}>Tally Sync Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredVouchers.length === 0 ? (
-                  <tr><td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: '#94A3B8' }}>No Tally vouchers found in selected range.</td></tr>
-                ) : (
-                  filteredVouchers.map(v => (
-                    <tr key={v.voucher_no || v.voucher_id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                      <td style={{ padding: '8px 10px', fontWeight: '800', color: '#F59E0B' }}>{v.voucher_no}</td>
-                      <td style={{ padding: '8px 10px' }}>
-                        <span style={{ 
-                          background: v.voucher_type === 'SALES' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(56, 189, 248, 0.2)',
-                          color: v.voucher_type === 'SALES' ? '#4ADE80' : '#38BDF8',
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                          fontWeight: '800'
-                        }}>
-                          {v.voucher_type}
-                        </span>
-                      </td>
-                      <td style={{ padding: '8px 10px', color: '#CBD5E1', fontFamily: 'monospace' }}>{formatDisplayDate(v.voucher_date)}</td>
-                      <td style={{ padding: '8px 10px', fontWeight: '700', color: '#FFF' }}>{v.party_ledger}</td>
-                      <td style={{ padding: '8px 10px', color: '#94A3B8' }}>{v.narration}</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#FFFFFF' }}>₹{Number(v.amount_inr || 0).toLocaleString('en-IN')}</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                        <span className="badge badge-emerald" style={{ fontSize: '9px' }}>✓ {v.status || 'POSTED'}</span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+            <div className="data-table-wrapper">
+              <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
+                <thead>
+                  <tr style={{ background: '#0B132B', color: '#94A3B8', textAlign: 'left' }}>
+                    <th style={{ width: '40px', textAlign: 'center' }}>#</th>
+                    <th>Voucher No</th>
+                    <th>Type</th>
+                    <th>Voucher Date</th>
+                    <th>Party Ledger</th>
+                    <th>Narration</th>
+                    <th style={{ textAlign: 'right' }}>Amount (₹)</th>
+                    <th style={{ textAlign: 'center' }}>Tally Sync Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredVouchers.length === 0 ? (
+                    <tr><td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: '#94A3B8' }}>No Tally vouchers found in selected range.</td></tr>
+                  ) : (
+                    filteredVouchers.map((v, idx) => (
+                      <tr key={v.voucher_no || v.voucher_id}>
+                        <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                          {idx + 1}
+                        </td>
+                        <td style={{ padding: '8px 10px', fontWeight: '800', color: '#F59E0B', fontFamily: 'JetBrains Mono' }}>{v.voucher_no}</td>
+                        <td style={{ padding: '8px 10px' }}>
+                          <span style={{ 
+                            background: v.voucher_type === 'SALES' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(56, 189, 248, 0.2)',
+                            color: v.voucher_type === 'SALES' ? '#4ADE80' : '#38BDF8',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            fontWeight: '800'
+                          }}>
+                            {v.voucher_type}
+                          </span>
+                        </td>
+                        <td style={{ padding: '8px 10px', color: '#CBD5E1', fontFamily: 'monospace' }}>{formatDisplayDate(v.voucher_date)}</td>
+                        <td style={{ padding: '8px 10px', fontWeight: '700', color: '#FFF' }}>{v.party_ledger}</td>
+                        <td style={{ padding: '8px 10px', color: '#94A3B8' }}>{v.narration}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#FFFFFF', fontFamily: 'JetBrains Mono' }}>₹{Number(v.amount_inr || 0).toLocaleString('en-IN')}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                          <span className="badge badge-emerald" style={{ fontSize: '9px' }}>✓ {v.status || 'POSTED'}</span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
 
           {/* TAB: BANK & RTGS */}
           {activeSubTab === 'bank' && (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
-              <thead>
-                <tr style={{ background: '#070B16', color: '#94A3B8', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                  <th style={{ padding: '8px 10px' }}>Date</th>
-                  <th style={{ padding: '8px 10px' }}>Ref / UTR No</th>
-                  <th style={{ padding: '8px 10px' }}>Description / Narrative</th>
-                  <th style={{ padding: '8px 10px' }}>Category</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>Credit (+₹)</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>Debit (-₹)</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>Balance</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredBankTxns.length === 0 ? (
-                  <tr><td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: '#94A3B8' }}>No bank settlements found in selected range.</td></tr>
-                ) : (
-                  filteredBankTxns.map((bt, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                      <td style={{ padding: '8px 10px', color: '#CBD5E1', fontFamily: 'monospace' }}>{formatDisplayDate(bt.Date || bt.dateTime)}</td>
-                      <td style={{ padding: '8px 10px', fontWeight: '800', color: '#38BDF8' }}>{bt.Reference_No}</td>
-                      <td style={{ padding: '8px 10px', fontWeight: '600', color: '#FFF' }}>{bt.Description}</td>
-                      <td style={{ padding: '8px 10px', color: '#94A3B8' }}>{bt.Category}</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: bt.Type === 'CR' ? '#22C55E' : '#475569' }}>
-                        {bt.Type === 'CR' ? `+₹${Number(bt.Amount_INR).toLocaleString('en-IN')}` : '—'}
-                      </td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: bt.Type === 'DR' ? '#F43F5E' : '#475569' }}>
-                        {bt.Type === 'DR' ? `-₹${Number(bt.Amount_INR).toLocaleString('en-IN')}` : '—'}
-                      </td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#D4AF37' }}>
-                        ₹{Number(bt.Balance_INR || 0).toLocaleString('en-IN')}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+            <div className="data-table-wrapper">
+              <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
+                <thead>
+                  <tr style={{ background: '#0B132B', color: '#94A3B8', textAlign: 'left' }}>
+                    <th style={{ width: '40px', textAlign: 'center' }}>#</th>
+                    <th>Date</th>
+                    <th>Ref / UTR No</th>
+                    <th>Description / Narrative</th>
+                    <th>Category</th>
+                    <th style={{ textAlign: 'right' }}>Credit (+₹)</th>
+                    <th style={{ textAlign: 'right' }}>Debit (-₹)</th>
+                    <th style={{ textAlign: 'right' }}>Balance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredBankTxns.length === 0 ? (
+                    <tr><td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: '#94A3B8' }}>No bank settlements found in selected range.</td></tr>
+                  ) : (
+                    filteredBankTxns.map((bt, idx) => (
+                      <tr key={idx}>
+                        <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                          {idx + 1}
+                        </td>
+                        <td style={{ padding: '8px 10px', color: '#CBD5E1', fontFamily: 'monospace' }}>{formatDisplayDate(bt.Date || bt.dateTime)}</td>
+                        <td style={{ padding: '8px 10px', fontWeight: '800', color: '#38BDF8', fontFamily: 'JetBrains Mono' }}>{bt.Reference_No}</td>
+                        <td style={{ padding: '8px 10px', fontWeight: '600', color: '#FFF' }}>{bt.Description}</td>
+                        <td style={{ padding: '8px 10px', color: '#94A3B8' }}>{bt.Category}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: bt.Type === 'CR' ? '#22C55E' : '#475569', fontFamily: 'JetBrains Mono' }}>
+                          {bt.Type === 'CR' ? `+₹${Number(bt.Amount_INR).toLocaleString('en-IN')}` : '—'}
+                        </td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: bt.Type === 'DR' ? '#F43F5E' : '#475569', fontFamily: 'JetBrains Mono' }}>
+                          {bt.Type === 'DR' ? `-₹${Number(bt.Amount_INR).toLocaleString('en-IN')}` : '—'}
+                        </td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#D4AF37', fontFamily: 'JetBrains Mono' }}>
+                          ₹{Number(bt.Balance_INR || 0).toLocaleString('en-IN')}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
 
           {/* TAB: CRM INQUIRIES */}
           {activeSubTab === 'inquiries' && (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
-              <thead>
-                <tr style={{ background: '#070B16', color: '#94A3B8', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                  <th style={{ padding: '8px 10px' }}>Lead ID</th>
-                  <th style={{ padding: '8px 10px' }}>Inquiry Date</th>
-                  <th style={{ padding: '8px 10px' }}>Customer Name</th>
-                  <th style={{ padding: '8px 10px' }}>Phone</th>
-                  <th style={{ padding: '8px 10px' }}>Interested Category</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>Budget / Deal (₹)</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'center' }}>Funnel Stage</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredInquiries.length === 0 ? (
-                  <tr><td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: '#94A3B8' }}>No CRM leads recorded in selected range.</td></tr>
-                ) : (
-                  filteredInquiries.map(iq => (
-                    <tr key={iq.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                      <td style={{ padding: '8px 10px', fontWeight: '800', color: '#F59E0B' }}>{iq.id}</td>
-                      <td style={{ padding: '8px 10px', color: '#CBD5E1', fontFamily: 'monospace' }}>{formatDisplayDate(iq.inquiry_date || fromDate)}</td>
-                      <td style={{ padding: '8px 10px', fontWeight: '700', color: '#FFF' }}>{iq.customer_name}</td>
-                      <td style={{ padding: '8px 10px', color: '#94A3B8' }}>{iq.phone}</td>
-                      <td style={{ padding: '8px 10px', color: '#E2E8F0' }}>{iq.category}</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#FFFFFF' }}>₹{Number(iq.estimated_value || 0).toLocaleString('en-IN')}</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                        <span className="badge badge-purple" style={{ fontSize: '9px' }}>{iq.status}</span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+            <div className="data-table-wrapper">
+              <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
+                <thead>
+                  <tr style={{ background: '#0B132B', color: '#94A3B8', textAlign: 'left' }}>
+                    <th style={{ width: '40px', textAlign: 'center' }}>#</th>
+                    <th>Lead ID</th>
+                    <th>Inquiry Date</th>
+                    <th>Customer Name</th>
+                    <th>Phone</th>
+                    <th>Interested Category</th>
+                    <th style={{ textAlign: 'right' }}>Budget / Deal (₹)</th>
+                    <th style={{ textAlign: 'center' }}>Funnel Stage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredInquiries.length === 0 ? (
+                    <tr><td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: '#94A3B8' }}>No CRM leads recorded in selected range.</td></tr>
+                  ) : (
+                    filteredInquiries.map((iq, idx) => (
+                      <tr key={iq.id}>
+                        <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                          {idx + 1}
+                        </td>
+                        <td style={{ padding: '8px 10px', fontWeight: '800', color: '#F59E0B', fontFamily: 'JetBrains Mono' }}>{iq.id}</td>
+                        <td style={{ padding: '8px 10px', color: '#CBD5E1', fontFamily: 'monospace' }}>{formatDisplayDate(iq.inquiry_date || fromDate)}</td>
+                        <EditableCell value={iq.customer_name} field="Customer_Name" rowIdx={idx} pkVal={iq.id} style={{ padding: '8px 10px', fontWeight: '700', color: '#FFF' }} {...inquiriesCellEdit} />
+                        <EditableCell value={iq.phone} field="Customer_Phone" rowIdx={idx} pkVal={iq.id} style={{ padding: '8px 10px', color: 'var(--accent-cyan)', fontFamily: 'JetBrains Mono' }} {...inquiriesCellEdit} />
+                        <EditableCell value={iq.category} field="Category_Models" rowIdx={idx} pkVal={iq.id} style={{ padding: '8px 10px', color: '#E2E8F0' }} {...inquiriesCellEdit} />
+                        <EditableCell value={iq.estimated_value} field="Budget_INR" rowIdx={idx} pkVal={iq.id} numeric style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#FFFFFF', fontFamily: 'JetBrains Mono' }} {...inquiriesCellEdit}>
+                          ₹{Number(iq.estimated_value || 0).toLocaleString('en-IN')}
+                        </EditableCell>
+                        <EditableCell value={iq.status} field="Status" rowIdx={idx} pkVal={iq.id} style={{ padding: '8px 10px', textAlign: 'center' }} {...inquiriesCellEdit}>
+                          <span className="badge badge-purple" style={{ fontSize: '9px' }}>{iq.status}</span>
+                        </EditableCell>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
 
           {/* TAB: ARCHITECTS */}
           {activeSubTab === 'architects' && (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
-              <thead>
-                <tr style={{ background: '#070B16', color: '#94A3B8', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                  <th style={{ padding: '8px 10px' }}>Architect Name</th>
-                  <th style={{ padding: '8px 10px' }}>Studio / Firm</th>
-                  <th style={{ padding: '8px 10px' }}>Phone</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>Total Orders Referred</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>Earned Commission</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>Payout Due</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'center' }}>Partner Tier</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredArchitects.map(a => (
-                  <tr key={a.id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                    <td style={{ padding: '8px 10px', fontWeight: '800', color: '#F59E0B' }}>{a.name}</td>
-                    <td style={{ padding: '8px 10px', fontWeight: '700', color: '#FFF' }}>{a.firm}</td>
-                    <td style={{ padding: '8px 10px', color: '#94A3B8' }}>{a.phone}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#FFFFFF' }}>₹{Number(a.total_orders_referred || 0).toLocaleString('en-IN')}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#22C55E' }}>₹{Number(a.total_commission_earned || 0).toLocaleString('en-IN')}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#F43F5E' }}>₹{Number(a.commission_balance_due || 0).toLocaleString('en-IN')}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                      <span className="badge badge-emerald" style={{ fontSize: '9px' }}>{a.tier || 'VIP PARTNER'}</span>
-                    </td>
+            <div className="data-table-wrapper">
+              <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
+                <thead>
+                  <tr style={{ background: '#0B132B', color: '#94A3B8', textAlign: 'left' }}>
+                    <th style={{ width: '40px', textAlign: 'center' }}>#</th>
+                    <th>Architect Name</th>
+                    <th>Studio / Firm</th>
+                    <th>Phone</th>
+                    <th style={{ textAlign: 'right' }}>Total Orders Referred</th>
+                    <th style={{ textAlign: 'right' }}>Earned Commission</th>
+                    <th style={{ textAlign: 'right' }}>Payout Due</th>
+                    <th style={{ textAlign: 'center' }}>Partner Tier</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredArchitects.length === 0 ? (
+                    <tr><td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: '#94A3B8' }}>No architect partners found.</td></tr>
+                  ) : (
+                    filteredArchitects.map((a, idx) => {
+                      const archId = a.Architect_ID || a.id;
+                      const archName = a.Full_Name || a.name;
+                      const archFirm = a.Firm_Name || a.firm;
+                      const archPhone = a.Phone_Number || a.phone;
+                      const totalSales = Number(a.Total_Sales_INR ?? a.total_orders_referred ?? 0);
+                      const commEarned = Number(a.Commission_Earned_INR ?? a.total_commission_earned ?? 0);
+                      const balDue = Number(a.Balance_Due_INR ?? a.commission_balance_due ?? 0);
+                      const tier = a.Tier_Slab || a.tier || 'VIP PARTNER';
+
+                      return (
+                        <tr key={archId}>
+                          <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                            {idx + 1}
+                          </td>
+                          <EditableCell value={archName} field={a.Full_Name !== undefined ? 'Full_Name' : 'name'} rowIdx={idx} pkVal={archId} style={{ padding: '8px 10px', fontWeight: '800', color: '#F59E0B' }} {...architectsCellEdit} />
+                          <EditableCell value={archFirm} field={a.Firm_Name !== undefined ? 'Firm_Name' : 'firm'} rowIdx={idx} pkVal={archId} style={{ padding: '8px 10px', fontWeight: '700', color: '#FFF' }} {...architectsCellEdit} />
+                          <EditableCell value={archPhone} field={a.Phone_Number !== undefined ? 'Phone_Number' : 'phone'} rowIdx={idx} pkVal={archId} style={{ padding: '8px 10px', color: '#94A3B8', fontFamily: 'JetBrains Mono' }} {...architectsCellEdit} />
+                          <EditableCell value={totalSales} field={a.Total_Sales_INR !== undefined ? 'Total_Sales_INR' : 'total_orders_referred'} rowIdx={idx} pkVal={archId} numeric style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#FFFFFF', fontFamily: 'JetBrains Mono' }} {...architectsCellEdit}>
+                            ₹{totalSales.toLocaleString('en-IN')}
+                          </EditableCell>
+                          <EditableCell value={commEarned} field={a.Commission_Earned_INR !== undefined ? 'Commission_Earned_INR' : 'total_commission_earned'} rowIdx={idx} pkVal={archId} numeric style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#22C55E', fontFamily: 'JetBrains Mono' }} {...architectsCellEdit}>
+                            ₹{commEarned.toLocaleString('en-IN')}
+                          </EditableCell>
+                          <EditableCell value={balDue} field={a.Balance_Due_INR !== undefined ? 'Balance_Due_INR' : 'commission_balance_due'} rowIdx={idx} pkVal={archId} numeric style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#F43F5E', fontFamily: 'JetBrains Mono' }} {...architectsCellEdit}>
+                            ₹{balDue.toLocaleString('en-IN')}
+                          </EditableCell>
+                          <EditableCell value={tier} field={a.Tier_Slab !== undefined ? 'Tier_Slab' : 'tier'} rowIdx={idx} pkVal={archId} style={{ padding: '8px 10px', textAlign: 'center' }} {...architectsCellEdit}>
+                            <span className="badge badge-emerald" style={{ fontSize: '9px' }}>{tier}</span>
+                          </EditableCell>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
 
           {/* TAB: DOCUMENTS */}
           {activeSubTab === 'documents' && (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
-              <thead>
-                <tr style={{ background: '#070B16', color: '#94A3B8', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                  <th style={{ padding: '8px 10px' }}>Document No</th>
-                  <th style={{ padding: '8px 10px' }}>Type</th>
-                  <th style={{ padding: '8px 10px' }}>Customer / Vendor</th>
-                  <th style={{ padding: '8px 10px' }}>Order Ref</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>Total Value</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>GST Tax</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'center' }}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredDocuments.map(d => (
-                  <tr key={d.Doc_ID} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                    <td style={{ padding: '8px 10px', fontWeight: '800', color: '#F59E0B' }}>{d.Doc_ID}</td>
-                    <td style={{ padding: '8px 10px', color: '#38BDF8', fontWeight: '700' }}>{d.Doc_Type}</td>
-                    <td style={{ padding: '8px 10px', fontWeight: '700', color: '#FFF' }}>{d.Customer_Vendor_Name}</td>
-                    <td style={{ padding: '8px 10px', color: '#94A3B8' }}>{d.Entity_Ref_ID}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#FFFFFF' }}>₹{Number(d.Total_Amount_INR || 0).toLocaleString('en-IN')}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#F59E0B' }}>₹{Number(d.GST_Amount_INR || 0).toLocaleString('en-IN')}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                      <span className="badge badge-emerald" style={{ fontSize: '9px' }}>✓ {d.Status || 'COMPLIANT'}</span>
-                    </td>
+            <div className="data-table-wrapper">
+              <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
+                <thead>
+                  <tr style={{ background: '#0B132B', color: '#94A3B8', textAlign: 'left' }}>
+                    <th style={{ width: '40px', textAlign: 'center' }}>#</th>
+                    <th>Document No</th>
+                    <th>Type</th>
+                    <th>Customer / Vendor</th>
+                    <th>Order Ref</th>
+                    <th style={{ textAlign: 'right' }}>Total Value</th>
+                    <th style={{ textAlign: 'right' }}>GST Tax</th>
+                    <th style={{ textAlign: 'center' }}>Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredDocuments.length === 0 ? (
+                    <tr><td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: '#94A3B8' }}>No documents or e-way bills found in selected range.</td></tr>
+                  ) : (
+                    filteredDocuments.map((d, idx) => (
+                      <tr key={d.Doc_ID}>
+                        <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                          {idx + 1}
+                        </td>
+                        <td style={{ padding: '8px 10px', fontWeight: '800', color: '#F59E0B', fontFamily: 'JetBrains Mono' }}>{d.Doc_ID}</td>
+                        <EditableCell value={d.Doc_Type} field="Doc_Type" rowIdx={idx} pkVal={d.Doc_ID} style={{ padding: '8px 10px', color: '#38BDF8', fontWeight: '700' }} {...documentsCellEdit} />
+                        <EditableCell value={d.Customer_Vendor_Name} field="Customer_Vendor_Name" rowIdx={idx} pkVal={d.Doc_ID} style={{ padding: '8px 10px', fontWeight: '700', color: '#FFF' }} {...documentsCellEdit} />
+                        <EditableCell value={d.Entity_Ref_ID} field="Entity_Ref_ID" rowIdx={idx} pkVal={d.Doc_ID} style={{ padding: '8px 10px', color: '#94A3B8', fontFamily: 'JetBrains Mono' }} {...documentsCellEdit} />
+                        <EditableCell value={d.Total_Amount_INR} field="Total_Amount_INR" rowIdx={idx} pkVal={d.Doc_ID} numeric style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#FFFFFF', fontFamily: 'JetBrains Mono' }} {...documentsCellEdit}>
+                          ₹{Number(d.Total_Amount_INR || 0).toLocaleString('en-IN')}
+                        </EditableCell>
+                        <EditableCell value={d.GST_Amount_INR} field="GST_Amount_INR" rowIdx={idx} pkVal={d.Doc_ID} numeric style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#F59E0B', fontFamily: 'JetBrains Mono' }} {...documentsCellEdit}>
+                          ₹{Number(d.GST_Amount_INR || 0).toLocaleString('en-IN')}
+                        </EditableCell>
+                        <EditableCell value={d.Status} field="Status" rowIdx={idx} pkVal={d.Doc_ID} style={{ padding: '8px 10px', textAlign: 'center' }} {...documentsCellEdit}>
+                          <span className="badge badge-emerald" style={{ fontSize: '9px' }}>✓ {d.Status || 'COMPLIANT'}</span>
+                        </EditableCell>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
 
           {/* TAB: DOCK SCANS */}
           {activeSubTab === 'dock_scans' && (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
-              <thead>
-                <tr style={{ background: '#070B16', color: '#94A3B8', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                  <th style={{ padding: '8px 10px' }}>Scan ID</th>
-                  <th style={{ padding: '8px 10px' }}>SKU Code</th>
-                  <th style={{ padding: '8px 10px' }}>Warehouse Bay</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'center' }}>Change Qty</th>
-                  <th style={{ padding: '8px 10px' }}>Document / PO Reference</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'center' }}>QC Verdict</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredDockScans.map(ds => (
-                  <tr key={ds.scan_id} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                    <td style={{ padding: '8px 10px', fontWeight: '800', color: '#F59E0B' }}>{ds.scan_id}</td>
-                    <td style={{ padding: '8px 10px', fontWeight: '700', color: '#FFF' }}>{ds.sku}</td>
-                    <td style={{ padding: '8px 10px', color: '#38BDF8' }}>{ds.warehouse}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: '800', color: '#22C55E' }}>+{ds.change_qty} Sets</td>
-                    <td style={{ padding: '8px 10px', color: '#94A3B8' }}>{ds.doc_ref}</td>
-                    <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                      <span className="badge badge-emerald" style={{ fontSize: '9px' }}>✓ {ds.qc_status}</span>
-                    </td>
+            <div className="data-table-wrapper">
+              <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
+                <thead>
+                  <tr style={{ background: '#0B132B', color: '#94A3B8', textAlign: 'left' }}>
+                    <th style={{ width: '40px', textAlign: 'center' }}>#</th>
+                    <th>Scan ID</th>
+                    <th>SKU Code</th>
+                    <th>Warehouse Bay</th>
+                    <th style={{ textAlign: 'center' }}>Change Qty</th>
+                    <th>Document / PO Reference</th>
+                    <th style={{ textAlign: 'center' }}>QC Verdict</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredDockScans.length === 0 ? (
+                    <tr><td colSpan="7" style={{ textAlign: 'center', padding: '30px', color: '#94A3B8' }}>No dock barcode/QR scans in selected range.</td></tr>
+                  ) : (
+                    filteredDockScans.map((ds, idx) => (
+                      <tr key={ds.scan_id}>
+                        <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                          {idx + 1}
+                        </td>
+                        <td style={{ padding: '8px 10px', fontWeight: '800', color: '#F59E0B', fontFamily: 'JetBrains Mono' }}>{ds.scan_id}</td>
+                        <td style={{ padding: '8px 10px', fontWeight: '700', color: '#FFF' }}>{ds.sku}</td>
+                        <td style={{ padding: '8px 10px', color: '#38BDF8' }}>{ds.warehouse}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: '800', color: '#22C55E', fontFamily: 'JetBrains Mono' }}>+{ds.change_qty} Sets</td>
+                        <td style={{ padding: '8px 10px', color: '#94A3B8' }}>{ds.doc_ref}</td>
+                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                          <span className="badge badge-emerald" style={{ fontSize: '9px' }}>✓ {ds.qc_status}</span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
 
           {/* TAB: RETAIL & B2B ORDERS */}
           {activeSubTab === 'sales_orders' && (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
-              <thead>
-                <tr style={{ background: '#070B16', color: '#94A3B8', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                  <th style={{ padding: '8px 10px' }}>Order ID</th>
-                  <th style={{ padding: '8px 10px' }}>Date</th>
-                  <th style={{ padding: '8px 10px' }}>Customer Name</th>
-                  <th style={{ padding: '8px 10px' }}>Phone</th>
-                  <th style={{ padding: '8px 10px' }}>Ordered Items / SKU</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>Total Value</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>Advance Paid</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'center' }}>SafeLock Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredOrders.length === 0 ? (
-                  <tr><td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: '#94A3B8' }}>No orders found in selected range.</td></tr>
-                ) : (
-                  filteredOrders.map((o, idx) => (
-                    <tr key={o.Order_ID} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                      <td style={{ padding: '8px 10px', fontWeight: '800', color: '#F59E0B' }}>{o.Order_ID}</td>
-                      <td style={{ padding: '8px 10px', color: '#CBD5E1', fontFamily: 'monospace' }}>{formatDisplayDate((o.Created_At || '').slice(0, 10) || fromDate)}</td>
-                      {/* Customer Name — Editable */}
-                      <EditableCell
-                        value={o.Customer_Name}
-                        field="Customer_Name"
-                        rowIdx={idx}
-                        pkVal={o.Order_ID}
-                        isProtected={false}
-                        style={{ padding: '8px 10px', fontWeight: '700', color: '#FFFFFF' }}
-                        {...ordersCellEdit}
-                      />
-                      {/* Customer Phone — Editable */}
-                      <EditableCell
-                        value={o.Customer_Phone}
-                        field="Customer_Phone"
-                        rowIdx={idx}
-                        pkVal={o.Order_ID}
-                        isProtected={false}
-                        style={{ padding: '8px 10px', color: 'var(--accent-cyan)', fontFamily: 'JetBrains Mono' }}
-                        {...ordersCellEdit}
-                      />
-                      {/* Ordered SKU — Editable */}
-                      <EditableCell
-                        value={o.Ordered_SKU}
-                        field="Ordered_SKU"
-                        rowIdx={idx}
-                        pkVal={o.Order_ID}
-                        isProtected={false}
-                        style={{ padding: '8px 10px', color: '#E2E8F0' }}
-                        {...ordersCellEdit}
-                      />
-                      {/* Total Value — Editable Numeric */}
-                      <EditableCell
-                        value={o.Total_Amount_INR}
-                        field="Total_Amount_INR"
-                        rowIdx={idx}
-                        pkVal={o.Order_ID}
-                        numeric
-                        style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#FFFFFF' }}
-                        {...ordersCellEdit}
-                      >
-                        ₹{Number(o.Total_Amount_INR || 0).toLocaleString('en-IN')}
-                      </EditableCell>
-                      {/* Advance Paid — Editable Numeric */}
-                      <EditableCell
-                        value={o.Advance_Paid_INR}
-                        field="Advance_Paid_INR"
-                        rowIdx={idx}
-                        pkVal={o.Order_ID}
-                        numeric
-                        style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#22C55E' }}
-                        {...ordersCellEdit}
-                      >
-                        ₹{Number(o.Advance_Paid_INR || 0).toLocaleString('en-IN')}
-                      </EditableCell>
-                      {/* SafeLock Status — Editable */}
-                      <EditableCell
-                        value={o.SafeLock_Status}
-                        field="SafeLock_Status"
-                        rowIdx={idx}
-                        pkVal={o.Order_ID}
-                        style={{ padding: '8px 10px', textAlign: 'center' }}
-                        {...ordersCellEdit}
-                      >
-                        <span className="badge badge-gold" style={{ fontSize: '9px' }}>{o.SafeLock_Status || 'SAFELOCKED'}</span>
-                      </EditableCell>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+            <div className="data-table-wrapper">
+              <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
+                <thead>
+                  <tr style={{ background: '#0B132B', color: '#94A3B8', textAlign: 'left' }}>
+                    <th style={{ width: '40px', textAlign: 'center' }}>#</th>
+                    <th>Order ID</th>
+                    <th>Date</th>
+                    <th>Customer Name</th>
+                    <th>Phone</th>
+                    <th>Ordered Items / SKU</th>
+                    <th style={{ textAlign: 'right' }}>Total Value</th>
+                    <th style={{ textAlign: 'right' }}>Advance Paid</th>
+                    <th style={{ textAlign: 'center' }}>SafeLock Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredOrders.length === 0 ? (
+                    <tr><td colSpan="9" style={{ textAlign: 'center', padding: '30px', color: '#94A3B8' }}>No orders found in selected range.</td></tr>
+                  ) : (
+                    filteredOrders.map((o, idx) => (
+                      <tr key={o.Order_ID}>
+                        <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                          {idx + 1}
+                        </td>
+                        <td style={{ padding: '8px 10px', fontWeight: '800', color: '#F59E0B', fontFamily: 'JetBrains Mono' }}>{o.Order_ID}</td>
+                        <td style={{ padding: '8px 10px', color: '#CBD5E1', fontFamily: 'monospace' }}>{formatDisplayDate((o.Created_At || '').slice(0, 10) || fromDate)}</td>
+                        {/* Customer Name — Editable */}
+                        <EditableCell
+                          value={o.Customer_Name}
+                          field="Customer_Name"
+                          rowIdx={idx}
+                          pkVal={o.Order_ID}
+                          isProtected={false}
+                          style={{ padding: '8px 10px', fontWeight: '700', color: '#FFFFFF' }}
+                          {...ordersCellEdit}
+                        />
+                        {/* Customer Phone — Editable */}
+                        <EditableCell
+                          value={o.Customer_Phone}
+                          field="Customer_Phone"
+                          rowIdx={idx}
+                          pkVal={o.Order_ID}
+                          isProtected={false}
+                          style={{ padding: '8px 10px', color: 'var(--accent-cyan)', fontFamily: 'JetBrains Mono' }}
+                          {...ordersCellEdit}
+                        />
+                        {/* Ordered SKU — Editable */}
+                        <EditableCell
+                          value={o.Ordered_SKU}
+                          field="Ordered_SKU"
+                          rowIdx={idx}
+                          pkVal={o.Order_ID}
+                          isProtected={false}
+                          style={{ padding: '8px 10px', color: '#E2E8F0' }}
+                          {...ordersCellEdit}
+                        />
+                        {/* Total Value — Editable Numeric */}
+                        <EditableCell
+                          value={o.Total_Amount_INR}
+                          field="Total_Amount_INR"
+                          rowIdx={idx}
+                          pkVal={o.Order_ID}
+                          numeric
+                          style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#FFFFFF', fontFamily: 'JetBrains Mono' }}
+                          {...ordersCellEdit}
+                        >
+                          ₹{Number(o.Total_Amount_INR || 0).toLocaleString('en-IN')}
+                        </EditableCell>
+                        {/* Advance Paid — Editable Numeric */}
+                        <EditableCell
+                          value={o.Advance_Paid_INR}
+                          field="Advance_Paid_INR"
+                          rowIdx={idx}
+                          pkVal={o.Order_ID}
+                          numeric
+                          style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#22C55E', fontFamily: 'JetBrains Mono' }}
+                          {...ordersCellEdit}
+                        >
+                          ₹{Number(o.Advance_Paid_INR || 0).toLocaleString('en-IN')}
+                        </EditableCell>
+                        {/* SafeLock Status — Editable */}
+                        <EditableCell
+                          value={o.SafeLock_Status}
+                          field="SafeLock_Status"
+                          rowIdx={idx}
+                          pkVal={o.Order_ID}
+                          style={{ padding: '8px 10px', textAlign: 'center' }}
+                          {...ordersCellEdit}
+                        >
+                          <span className="badge badge-gold" style={{ fontSize: '9px' }}>{o.SafeLock_Status || 'SAFELOCKED'}</span>
+                        </EditableCell>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
 
           {/* TAB: MASTER DAYBOOK */}
           {activeSubTab === 'all_daybook' && (
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px' }}>
-              <thead>
-                <tr style={{ background: '#070B16', color: '#94A3B8', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                  <th style={{ padding: '8px 10px' }}>Date & Time</th>
-                  <th style={{ padding: '8px 10px' }}>Voucher / Ref ID</th>
-                  <th style={{ padding: '8px 10px' }}>Classification</th>
-                  <th style={{ padding: '8px 10px' }}>Party / Client Ledger</th>
-                  <th style={{ padding: '8px 10px' }}>Narration / Particulars</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>Inflow (₹ Cr)</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'right' }}>Outflow (₹ Dr)</th>
-                  <th style={{ padding: '8px 10px', textAlign: 'center' }}>Audit Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {masterDaybook.length === 0 ? (
-                  <tr>
-                    <td colSpan="8" style={{ textAlign: 'center', padding: '40px', color: '#94A3B8' }}>
-                      No transactions recorded between {formatDisplayDate(fromDate)} and {formatDisplayDate(toDate)}.
-                    </td>
+            <div className="data-table-wrapper">
+              <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
+                <thead>
+                  <tr style={{ background: '#0B132B', color: '#94A3B8', textAlign: 'left' }}>
+                    <th style={{ width: '40px', textAlign: 'center' }}>#</th>
+                    <th>Date & Time</th>
+                    <th>Voucher / Ref ID</th>
+                    <th>Classification</th>
+                    <th>Party / Client Ledger</th>
+                    <th>Narration / Particulars</th>
+                    <th style={{ textAlign: 'right' }}>Inflow (₹ Cr)</th>
+                    <th style={{ textAlign: 'right' }}>Outflow (₹ Dr)</th>
+                    <th style={{ textAlign: 'center' }}>Audit Status</th>
                   </tr>
-                ) : (
-                  masterDaybook.map((row, idx) => (
-                    <tr 
-                      key={row.id + idx}
-                      style={{
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-                        background: idx % 2 === 0 ? 'rgba(255, 255, 255, 0.02)' : 'transparent'
-                      }}
-                    >
-                      <td style={{ padding: '8px 10px', color: '#CBD5E1', fontFamily: 'monospace' }}>
-                        {formatDisplayDate(row.date)} <span style={{ color: '#64748B' }}>{row.time}</span>
-                      </td>
-                      <td style={{ padding: '8px 10px', fontWeight: '700', color: '#F59E0B' }}>
-                        {row.id}
-                      </td>
-                      <td style={{ padding: '8px 10px' }}>
-                        <span style={{
-                          background: `${row.badgeColor}22`,
-                          color: row.badgeColor,
-                          border: `1px solid ${row.badgeColor}55`,
-                          padding: '2px 6px',
-                          borderRadius: '4px',
-                          fontSize: '10px',
-                          fontWeight: '800'
-                        }}>
-                          {row.typeLabel}
-                        </span>
-                      </td>
-                      <td style={{ padding: '8px 10px', fontWeight: '700', color: '#FFFFFF' }}>
-                        {row.party}
-                      </td>
-                      <td style={{ padding: '8px 10px', color: '#94A3B8', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {row.details}
-                      </td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: row.inflow ? '#22C55E' : '#475569' }}>
-                        {row.inflow ? `+₹${row.inflow.toLocaleString('en-IN')}` : '—'}
-                      </td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: row.outflow ? '#F43F5E' : '#475569' }}>
-                        {row.outflow ? `-₹${row.outflow.toLocaleString('en-IN')}` : '—'}
-                      </td>
-                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                        <span className="badge badge-emerald" style={{ fontSize: '9px' }}>
-                          ✓ {row.status}
-                        </span>
+                </thead>
+                <tbody>
+                  {masterDaybook.length === 0 ? (
+                    <tr>
+                      <td colSpan="9" style={{ textAlign: 'center', padding: '40px', color: '#94A3B8' }}>
+                        No transactions recorded between {formatDisplayDate(fromDate)} and {formatDisplayDate(toDate)}.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    masterDaybook.map((row, idx) => (
+                      <tr 
+                        key={row.id + idx}
+                      >
+                        <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                          {idx + 1}
+                        </td>
+                        <td style={{ padding: '8px 10px', color: '#CBD5E1', fontFamily: 'monospace' }}>
+                          {formatDisplayDate(row.date)} <span style={{ color: '#64748B' }}>{row.time}</span>
+                        </td>
+                        <td style={{ padding: '8px 10px', fontWeight: '700', color: '#F59E0B', fontFamily: 'JetBrains Mono' }}>
+                          {row.id}
+                        </td>
+                        <td style={{ padding: '8px 10px' }}>
+                          <span style={{
+                            background: `${row.badgeColor}22`,
+                            color: row.badgeColor,
+                            border: `1px solid ${row.badgeColor}55`,
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            fontSize: '10px',
+                            fontWeight: '800'
+                          }}>
+                            {row.typeLabel}
+                          </span>
+                        </td>
+                        <td style={{ padding: '8px 10px', fontWeight: '700', color: '#FFFFFF' }}>
+                          {row.party}
+                        </td>
+                        <td style={{ padding: '8px 10px', color: '#94A3B8', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {row.details}
+                        </td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: row.inflow ? '#22C55E' : '#475569', fontFamily: 'JetBrains Mono' }}>
+                          {row.inflow ? `+₹${row.inflow.toLocaleString('en-IN')}` : '—'}
+                        </td>
+                        <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: row.outflow ? '#F43F5E' : '#475569', fontFamily: 'JetBrains Mono' }}>
+                          {row.outflow ? `-₹${row.outflow.toLocaleString('en-IN')}` : '—'}
+                        </td>
+                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                          <span className="badge badge-emerald" style={{ fontSize: '9px' }}>
+                            ✓ {row.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
 

@@ -185,9 +185,10 @@ export function EnterprisePipelineModal({ isOpen, onClose, pipelineData = {} }) 
 
           {/* Line items table */}
           <div className="data-table-wrapper" style={{ marginBottom: '14px' }}>
-            <table className="luxury-table">
+            <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
               <thead>
-                <tr>
+                <tr style={{ background: '#0B132B' }}>
+                  <th style={{ width: '40px', textAlign: 'center' }}>#</th>
                   <th>Item Name</th>
                   <th>HSN Code</th>
                   <th style={{ textAlign: 'center' }}>Qty</th>
@@ -203,6 +204,9 @@ export function EnterprisePipelineModal({ isOpen, onClose, pipelineData = {} }) 
                   const itGst = Math.round((itGross - itTaxable) * 100) / 100;
                   return (
                     <tr key={idx}>
+                      <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                        {idx + 1}
+                      </td>
                       <td style={{ fontWeight: '700', color: '#FFFFFF' }}>{it.name}</td>
                       <td style={{ fontFamily: 'JetBrains Mono', color: 'var(--accent-gold-light)', fontSize: '11px' }}>{it.hsn || '9403'}</td>
                       <td style={{ textAlign: 'center' }}>{it.qty || 1}</td>

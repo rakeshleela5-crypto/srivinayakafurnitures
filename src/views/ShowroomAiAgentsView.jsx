@@ -798,26 +798,30 @@ export default function ShowroomAiAgentsView() {
               </button>
             </form>
 
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+            <div className="data-table-wrapper">
+              <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
                 <thead>
-                  <tr style={{ background: 'rgba(15,23,42,0.8)', color: 'var(--text-muted)', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
-                    <th style={{ padding: '10px' }}>SKU Code</th>
-                    <th style={{ padding: '10px' }}>Product Description</th>
-                    <th style={{ padding: '10px' }}>Floor Stock</th>
-                    <th style={{ padding: '10px' }}>Depot Indent Qty</th>
-                    <th style={{ padding: '10px' }}>Status</th>
-                    <th style={{ padding: '10px' }}>Action</th>
+                  <tr style={{ background: '#0B132B' }}>
+                    <th style={{ width: '35px', textAlign: 'center' }}>#</th>
+                    <th style={{ padding: '8px 10px' }}>SKU Code</th>
+                    <th style={{ padding: '8px 10px' }}>Product Description</th>
+                    <th style={{ padding: '8px 10px' }}>Floor Stock</th>
+                    <th style={{ padding: '8px 10px' }}>Depot Indent Qty</th>
+                    <th style={{ padding: '8px 10px' }}>Status</th>
+                    <th style={{ padding: '8px 10px', textAlign: 'right' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {depotItems.map((row, rowIdx) => (
-                    <tr key={row.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <tr key={row.id}>
+                      <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                        {rowIdx + 1}
+                      </td>
                       {/* SKU Code — Editable */}
                       <EditableCell
                         value={row.sku} field="sku" rowIdx={rowIdx}
                         pkVal={row.id} isProtected={false}
-                        style={{ padding: '10px', fontWeight: '700', color: 'var(--accent-cyan)' }}
+                        style={{ padding: '8px 10px', fontWeight: '700', color: 'var(--accent-cyan)' }}
                         {...depotCellEdit}
                       />
                       {/* Product Name — Editable */}

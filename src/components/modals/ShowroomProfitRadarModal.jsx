@@ -461,23 +461,27 @@ export function ShowroomProfitRadarModal({ isOpen, onClose }) {
             </div>
           )}
 
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11.5px', textAlign: 'left' }}>
+          <div className="data-table-wrapper">
+            <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px', textAlign: 'left' }}>
               <thead>
-                <tr style={{ background: 'rgba(255,255,255,0.03)', color: 'var(--text-secondary)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-                  <th style={{ padding: '8px' }}>Order ID & Date</th>
-                  <th style={{ padding: '8px' }}>Customer & Locality</th>
-                  <th style={{ padding: '8px' }}>Ordered Furniture SKU</th>
-                  <th style={{ padding: '8px' }}>Landed COGS (₹)</th>
-                  <th style={{ padding: '8px' }}>Selling Price (₹)</th>
-                  <th style={{ padding: '8px' }}>Deductions</th>
-                  <th style={{ padding: '8px' }}>Net Take-Home (₹)</th>
-                  <th style={{ padding: '8px' }}>Realization Status</th>
+                <tr style={{ background: '#0B132B' }}>
+                  <th style={{ width: '40px', textAlign: 'center' }}>#</th>
+                  <th>Order ID & Date</th>
+                  <th>Customer & Locality</th>
+                  <th>Ordered Furniture SKU</th>
+                  <th style={{ textAlign: 'right' }}>Landed COGS (₹)</th>
+                  <th style={{ textAlign: 'right' }}>Selling Price (₹)</th>
+                  <th>Deductions</th>
+                  <th style={{ textAlign: 'right' }}>Net Take-Home (₹)</th>
+                  <th style={{ textAlign: 'center' }}>Realization Status</th>
                 </tr>
               </thead>
               <tbody>
-                {orderBreakdown.map(ord => (
-                  <tr key={ord.Order_ID} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                {orderBreakdown.map((ord, idx) => (
+                  <tr key={ord.Order_ID}>
+                    <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                      {idx + 1}
+                    </td>
                     
                     {/* Order ID */}
                     <td style={{ padding: '10px 8px', fontFamily: 'JetBrains Mono', color: 'var(--accent-cyan)', fontWeight: '700' }}>

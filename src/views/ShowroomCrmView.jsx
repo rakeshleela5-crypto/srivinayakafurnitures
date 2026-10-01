@@ -22,7 +22,12 @@ import {
   Edit3,
   Clock,
   Briefcase,
-  Layers
+  Layers,
+  X,
+  FileText,
+  CheckCircle2,
+  AlertTriangle,
+  ChevronDown
 } from 'lucide-react';
 import { playSuccessChime, triggerGoldenConfetti } from '../utils/audioUtils';
 import { dispatchWebhookAction } from '../services/webhookService';
@@ -36,6 +41,15 @@ export function ShowroomCrmView() {
   const [filterStatus, setFilterStatus] = useState('ALL');
   const [filterCategory, setFilterCategory] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // 💬 Interactive WhatsApp Template Dispatcher State
+  const [selectedLeadForWhatsApp, setSelectedLeadForWhatsApp] = useState(null);
+  const [activeWhatsAppTemplate, setActiveWhatsAppTemplate] = useState('festive_offer');
+  const [customWhatsAppMsg, setCustomWhatsAppMsg] = useState('');
+
+  // 📝 Lead Conversation Notes & Activity State
+  const [selectedLeadForNotes, setSelectedLeadForNotes] = useState(null);
+  const [newNoteInput, setNewNoteInput] = useState('');
 
   // 📝 Inline Cell Edit — editable fields in CRM table, saves to D1 'inquiries'
   const cellEdit = useInlineCellEdit({
@@ -106,26 +120,147 @@ export function ShowroomCrmView() {
     });
   }, [inquiries, filterStatus, filterCategory, searchQuery, isDateInAuditWindow, auditDateWindow]);
 
-  // 📲 1-Click WhatsApp Festive Catalog Drip
-  const handleSendWhatsAppCatalog = (inq) => {
-    const text = `🛋️ *Namaste ${inq.Customer_Name || 'Ji'}! Greetings from Godrej Interio Rayagada.*\n\n` +
-      `Thank you for visiting our flagship showroom today! As discussed regarding *${inq.Category_Models || 'Premium Furniture Packages'}* (Budget ~₹${(inq.Budget_INR || 0).toLocaleString()}):\n\n` +
-      `✨ *Special Festive Showroom Privileges:*\n` +
-      `• 0% Interest EMI with Zero Down Payment (Bajaj Finserv / HDFC)\n` +
-      `• Free 3D Laser Room Measurement by Master Carpenter Narayana\n` +
-      `• Free Monsoon 5-Box Weather-Proof Delivery to your site in Rayagada\n\n` +
-      `📖 *Explore Our 2026 Interactive 3D Catalog:* https://shreeganesh-godrej.web.app\n\n` +
-      `Let us know if you would like us to reserve your preferred model before stock allocation.\n` +
-      `*Showroom Directors:* Naresh & Naren (+91 93905 53301)\n*Godrej Interio — Main Road, Rayagada*`;
+  // ⏰ Follow-up Cadence & Urgency Analyzer
+  const getFollowUpUrgency = (dateStr) => {
+    if (!dateStr) return { type: 'NONE', label: '📅 Not Set', color: '#94A3B8', bg: 'rgba(255,255,255,0.04)' };
+    const str = String(dateStr).trim();
+    const today = new Date().toISOString().slice(0, 10);
+    
+    if (str.toLowerCase().includes('today') || str.toLowerCase().includes('immediate')) {
+      return { type: 'DUE_TODAY', label: '⚡ Due Today', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.2)' };
+    }
+    if (str.toLowerCase().includes('tomorrow')) {
+      return { type: 'TOMORROW', label: '📅 Tomorrow', color: '#38BDF8', bg: 'rgba(56, 189, 248, 0.15)' };
+    }
+    const parsed = new Date(str);
+    if (!isNaN(parsed.getTime())) {
+      const iso = parsed.toISOString().slice(0, 10);
+      if (iso < today) {
+        return { type: 'OVERDUE', label: `🚨 Overdue (${str})`, color: '#F43F5E', bg: 'rgba(244, 63, 94, 0.25)' };
+      }
+      if (iso === today) {
+        return { type: 'DUE_TODAY', label: '⚡ Due Today', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.2)' };
+      }
+      return { type: 'FUTURE', label: `📅 ${str}`, color: '#38BDF8', bg: 'rgba(56, 189, 248, 0.12)' };
+    }
+    return { type: 'CUSTOM', label: str, color: '#CBD5E1', bg: 'rgba(255, 255, 255, 0.05)' };
+  };
+
+  // 🔄 1-Click Stage Transition Handler (Saves to D1)
+  const handleQuickStatusChange = async (inqId, newStatus) => {
+    setInquiries(prev => prev.map(inq => inq.Inquiry_ID === inqId ? { ...inq, Status: newStatus } : inq));
+    await cellEdit.updateCell(inqId, 'Status', newStatus);
+    showToast(`🔄 Lead #${inqId} status updated to ${newStatus}!`, true);
+  };
+
+  // 📝 Generate WhatsApp Dynamic Templates
+  const getWhatsAppTemplateText = (inq, templateId) => {
+    if (!inq) return '';
+    const name = inq.Customer_Name || 'Ji';
+    const models = inq.Category_Models || 'Premium Furniture Collection';
+    const budget = Number(inq.Budget_INR || 0).toLocaleString('en-IN');
+    const emiPerMonth = Math.round((Number(inq.Budget_INR || 60000) * 0.9) / 12).toLocaleString('en-IN');
+
+    switch (templateId) {
+      case 'festive_offer':
+        return `🛋️ *Namaste ${name}! Greetings from Sri Vinayaka Furnitures (Godrej Interio Rayagada).*\n\n` +
+          `Thank you for visiting our flagship showroom regarding *${models}* (Budget: ~₹${budget})!\n\n` +
+          `✨ *Exclusive Showroom Privileges:*\n` +
+          `• 🎁 Special 10% Festive Cash Voucher or Free Memory-Foam Pillows\n` +
+          `• 💳 0% Interest EMI Scheme via Bajaj Finserv / HDFC with Zero Down Payment\n` +
+          `• 🚚 100% Free Rain-Safe Delivery across Rayagada district\n\n` +
+          `📖 Explore our live catalog: https://srivinayakafurnitures.pages.dev\n\n` +
+          `Would you like us to block this piece in SafeLock holding before weekend stock allocation?\n\n` +
+          `*Showroom Directors:* Naresh & Naren (+91 93905 53301)\n*Godrej Interio — Main Road, Rayagada*`;
+
+      case 'mistri_visit':
+        return `📐 *Free 3D Room Laser Measurement — Godrej Interio Rayagada*\n\n` +
+          `Dear ${name},\n` +
+          `We have scheduled a complimentary site inspection & laser measurement for your room layout regarding *${models}*.\n\n` +
+          `👷 *Assigned Master Carpenter:* Narayana Mistri (+91 94371 88291)\n` +
+          `📍 *Site Location:* ${inq.Address || 'Rayagada Town'}\n` +
+          `🛠️ *Service Includes:* Laser precision wall check, modular clearance plan & skirting allowance.\n\n` +
+          `Please reply with your preferred morning (10 AM - 1 PM) or evening (4 PM - 7 PM) slot.\n\n` +
+          `*Sri Vinayaka Furnitures, Main Road, Rayagada*`;
+
+      case 'emi_scheme':
+        return `💳 *0% Down Payment EMI Options — Godrej Interio Rayagada*\n\n` +
+          `Dear ${name},\n` +
+          `Here is the verified financing breakdown for your selected *${models}* (₹${budget}):\n\n` +
+          `• *12 Months EMI:* Just ~₹${emiPerMonth}/month (0% Interest)\n` +
+          `• *Down Payment:* ₹0 / Token Advance of ₹5,000 only\n` +
+          `• *Financing Partners:* Bajaj Finserv, HDFC Bank, TVS Credit\n` +
+          `• *Instant Approval:* Just Aadhaar + PAN on counter (2-minute approval)\n\n` +
+          `Visit us or reply to reserve with zero upfront cash!\n\n` +
+          `*Naresh & Naren — +91 93905 53301*`;
+
+      case 'quotation_link':
+        return `📑 *Official Price Quotation & SafeLock Booking Link*\n\n` +
+          `Dear ${name},\n` +
+          `Your customized commercial proposal for *${models}* has been prepared:\n\n` +
+          `• Gross Value: ₹${budget}\n` +
+          `• Statutory GST: 18% HSN 9403 Compliant Tax Invoice Included\n` +
+          `• Warranty: 5 Years Godrej Interio Official Seal\n\n` +
+          `🔒 *To Lock Price & Staging:* Deposit 10% UPI advance to showroom VPA: 9390553301@ybl\n` +
+          `Digital Ledger Ref: #${inq.Inquiry_ID}\n\n` +
+          `*Sri Vinayaka Furnitures Flagship Showroom, Rayagada*`;
+
+      case 'custom':
+      default:
+        return `Namaste ${name}, regarding your showroom inquiry for ${models} at Sri Vinayaka Furnitures, how can we assist you today? Feel free to call us at +91 93905 53301.`;
+    }
+  };
+
+  // 📲 Open WhatsApp Dispatcher Modal
+  const handleOpenWhatsAppModal = (inq) => {
+    setSelectedLeadForWhatsApp(inq);
+    setActiveWhatsAppTemplate('festive_offer');
+    setCustomWhatsAppMsg(getWhatsAppTemplateText(inq, 'festive_offer'));
+  };
+
+  // 📲 Send Selected WhatsApp Message
+  const handleSendSelectedWhatsApp = () => {
+    if (!selectedLeadForWhatsApp) return;
+    const phone = (selectedLeadForWhatsApp.Customer_Phone || '9437188291').replace(/[^0-9]/g, '').slice(-10);
+    const text = customWhatsAppMsg;
 
     dispatchWebhookAction("DISPATCH_WHATSAPP_PO_DISPATCH", {
-      inquiry_id: inq.Inquiry_ID,
-      phone: inq.Customer_Phone || "+91 94371",
+      inquiry_id: selectedLeadForWhatsApp.Inquiry_ID,
+      phone: selectedLeadForWhatsApp.Customer_Phone,
       message: text
     });
 
-    window.open(`https://wa.me/91${(inq.Customer_Phone || '9437188291').replace(/[^0-9]/g, '').slice(-10)}?text=${encodeURIComponent(text)}`, '_blank');
-    showToast(`📲 WhatsApp Festive Catalog sent to ${inq.Customer_Name}!`, true);
+    window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(text)}`, '_blank');
+    showToast(`📲 WhatsApp dispatched to ${selectedLeadForWhatsApp.Customer_Name}!`, true);
+    setSelectedLeadForWhatsApp(null);
+  };
+
+  // 📝 Open Conversation Notes Modal
+  const handleOpenNotesModal = (inq) => {
+    setSelectedLeadForNotes(inq);
+    setNewNoteInput('');
+  };
+
+  // 📝 Add Note to Lead (Syncs with local & D1)
+  const handleAddLeadNote = async () => {
+    if (!newNoteInput.trim() || !selectedLeadForNotes) return;
+    const nowStamp = `${new Date().toLocaleDateString('en-IN')} ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
+    const newEntry = `[${nowStamp} • Staff]: ${newNoteInput.trim()}`;
+    const existingNotes = selectedLeadForNotes.Notes || '';
+    const updatedNotes = existingNotes ? `${existingNotes}\n${newEntry}` : newEntry;
+
+    // Update in memory
+    setInquiries(prev => prev.map(inq => 
+      inq.Inquiry_ID === selectedLeadForNotes.Inquiry_ID 
+        ? { ...inq, Notes: updatedNotes } 
+        : inq
+    ));
+    setSelectedLeadForNotes(prev => ({ ...prev, Notes: updatedNotes }));
+    setNewNoteInput('');
+
+    // Persist via cellEdit hook
+    await cellEdit.updateCell(selectedLeadForNotes.Inquiry_ID, 'Notes', updatedNotes);
+    showToast(`📝 Call note logged for ${selectedLeadForNotes.Customer_Name}!`, true);
   };
 
   // 🎙️ Handoff to Tab 2 (Voice POS)
@@ -404,33 +539,82 @@ export function ShowroomCrmView() {
                     })()}
                   </td>
 
-                  {/* Follow-up Date — Editable */}
-                  <EditableCell
-                    value={inq.Follow_Up_Date || 'Tomorrow'} field="Follow_Up_Date" rowIdx={idx}
-                    pkVal={inq.Inquiry_ID} isProtected={false}
-                    style={{ padding: '8px 10px', fontSize: '11px', color: '#E2E8F0', fontWeight: '600' }}
-                    {...cellEdit}
-                  />
-
-                  {/* Status & Staff */}
-                  <td style={{ padding: '12px 10px' }}>
-                    <div>
-                      <span className={`badge ${
-                        inq.Status.includes('CONVERTED') ? 'badge-emerald' : 
-                        inq.Status.includes('ENGAGED_ON_MOBILE_AI') ? 'badge-cyan' :
-                        inq.Status.includes('MISTRI') ? 'badge-purple' : 
-                        'badge-gold'
-                      }`}>
-                        {inq.Status === 'ENGAGED_ON_MOBILE_AI' ? '📱 Mobile AI Engaged' : inq.Status}
-                      </span>
+                  {/* Follow-up Date & Urgency Cadence */}
+                  <td style={{ padding: '8px 10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <EditableCell
+                        value={inq.Follow_Up_Date || 'Tomorrow'} field="Follow_Up_Date" rowIdx={idx}
+                        pkVal={inq.Inquiry_ID} isProtected={false}
+                        style={{ padding: '0', fontSize: '11px', color: '#E2E8F0', fontWeight: '600' }}
+                        {...cellEdit}
+                      />
+                      {(() => {
+                        const urgency = getFollowUpUrgency(inq.Follow_Up_Date);
+                        return (
+                          <span style={{
+                            fontSize: '9px',
+                            padding: '1px 5px',
+                            borderRadius: '3px',
+                            fontWeight: '800',
+                            background: urgency.bg,
+                            color: urgency.color,
+                            border: `1px solid ${urgency.color}55`,
+                            display: 'inline-block',
+                            width: 'fit-content'
+                          }}>
+                            {urgency.label}
+                          </span>
+                        );
+                      })()}
                     </div>
-                    <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                      {(inq.Status === 'ENGAGED_ON_MOBILE_AI' && !inq.Assigned_Staff) ? '🤖 24/7 AI Concierge' : `👤 ${inq.Assigned_Staff || 'Naresh & Naren'}`}
+                  </td>
+
+                  {/* Status & Staff with 1-Click Stage Transition */}
+                  <td style={{ padding: '8px 6px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                      <select
+                        value={inq.Status}
+                        onChange={(e) => handleQuickStatusChange(inq.Inquiry_ID, e.target.value)}
+                        style={{
+                          background: inq.Status.includes('CONVERTED') ? 'rgba(34, 197, 94, 0.25)' : 
+                                      inq.Status.includes('ENGAGED_ON_MOBILE_AI') ? 'rgba(56, 189, 248, 0.25)' :
+                                      inq.Status.includes('MISTRI') ? 'rgba(168, 85, 247, 0.25)' : 
+                                      inq.Status.includes('HOT') ? 'rgba(244, 63, 94, 0.25)' : 
+                                      'rgba(245, 158, 11, 0.25)',
+                          color: inq.Status.includes('CONVERTED') ? '#4ADE80' : 
+                                 inq.Status.includes('ENGAGED_ON_MOBILE_AI') ? '#38BDF8' :
+                                 inq.Status.includes('MISTRI') ? '#C084FC' : 
+                                 inq.Status.includes('HOT') ? '#FB7185' : 
+                                 '#FBBF24',
+                          border: '1px solid rgba(255, 255, 255, 0.15)',
+                          borderRadius: '4px',
+                          padding: '2px 4px',
+                          fontSize: '10.5px',
+                          fontWeight: '800',
+                          cursor: 'pointer',
+                          outline: 'none'
+                        }}
+                        title="1-Click Stage Transition (syncs directly to Cloudflare D1)"
+                      >
+                        <option value="NEW_HOT_LEAD" style={{ background: '#0F172A', color: '#FB7185' }}>🔥 New Hot Lead</option>
+                        <option value="HOT_LEAD" style={{ background: '#0F172A', color: '#FB7185' }}>🔥 Hot Intent</option>
+                        <option value="WARM_LEAD" style={{ background: '#0F172A', color: '#FBBF24' }}>⚡ Warm Lead</option>
+                        <option value="ENGAGED_ON_MOBILE_AI" style={{ background: '#0F172A', color: '#38BDF8' }}>📱 Mobile AI Lead</option>
+                        <option value="MISTRI_SCHEDULED" style={{ background: '#0F172A', color: '#C084FC' }}>📐 Mistri Scheduled</option>
+                        <option value="QUOTATION_SHARED" style={{ background: '#0F172A', color: '#38BDF8' }}>📄 Quote Shared</option>
+                        <option value="FOLLOW_UP" style={{ background: '#0F172A', color: '#FBBF24' }}>📅 Follow-Up Due</option>
+                        <option value="CONVERTED" style={{ background: '#0F172A', color: '#4ADE80' }}>✅ Converted Order</option>
+                        <option value="CANCELLED" style={{ background: '#0F172A', color: '#94A3B8' }}>❌ Void / Cold</option>
+                      </select>
+                      
+                      <div style={{ fontSize: '9.5px', color: 'var(--text-secondary)' }}>
+                        {(inq.Status === 'ENGAGED_ON_MOBILE_AI' && !inq.Assigned_Staff) ? '🤖 24/7 AI Concierge' : `👤 ${inq.Assigned_Staff || 'Naresh & Naren'}`}
+                      </div>
                     </div>
                   </td>
 
                   {/* Actions Column */}
-                  <td style={{ padding: '12px 10px', textAlign: 'right' }}>
+                  <td style={{ padding: '10px 8px', textAlign: 'right' }}>
                     <div style={{ display: 'flex', gap: '5px', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap' }}>
                       
                       {/* 📞 Immediate Direct Phone Call */}
@@ -445,6 +629,16 @@ export function ShowroomCrmView() {
                         </a>
                       )}
 
+                      {/* 📝 View & Log Call / Conversation Notes */}
+                      <button 
+                        className="btn-ghost-edit" 
+                        onClick={() => handleOpenNotesModal(inq)}
+                        title="View & Log Customer Conversation History & Notes"
+                        style={{ padding: '5px 8px', fontSize: '11px', color: '#38BDF8', borderColor: 'rgba(56, 189, 248, 0.4)' }}
+                      >
+                        <MessageSquare size={13} />
+                      </button>
+
                       {/* ✏️ Edit Lead */}
                       <button 
                         className="btn-ghost-edit" 
@@ -455,11 +649,11 @@ export function ShowroomCrmView() {
                         <Edit3 size={13} />
                       </button>
 
-                      {/* 📲 WhatsApp Festive Catalog */}
+                      {/* 📲 WhatsApp Multi-Template Dispatcher */}
                       <button 
                         className="btn-emerald" 
-                        onClick={() => handleSendWhatsAppCatalog(inq)}
-                        title="Send Curated WhatsApp Festive Catalog & EMI Scheme"
+                        onClick={() => handleOpenWhatsAppModal(inq)}
+                        title="1-Click WhatsApp Personalized Template Dispatcher"
                         style={{ padding: '5px 8px', fontSize: '11px' }}
                       >
                         <Send size={13} />
@@ -517,6 +711,239 @@ export function ShowroomCrmView() {
         </div>
 
       </div>
+
+      {/* ============================================================== */}
+      {/* 📲 1-CLICK WHATSAPP MULTI-TEMPLATE DISPATCHER MODAL */}
+      {/* ============================================================== */}
+      {selectedLeadForWhatsApp && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(3, 7, 18, 0.85)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '16px'
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: '620px',
+            width: '100%',
+            background: '#0B132B',
+            border: '1px solid rgba(16, 185, 129, 0.4)',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)'
+          }}>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '14px', marginBottom: '16px' }}>
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#10B981', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Send size={18} /> WhatsApp Customer Dispatcher
+                </h3>
+                <p style={{ fontSize: '11.5px', color: '#94A3B8', margin: '3px 0 0 0' }}>
+                  Sending to <strong>{selectedLeadForWhatsApp.Customer_Name}</strong> ({selectedLeadForWhatsApp.Customer_Phone}) • Ref #{selectedLeadForWhatsApp.Inquiry_ID}
+                </p>
+              </div>
+              <button 
+                onClick={() => setSelectedLeadForWhatsApp(null)}
+                style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Template Selector Pills */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ fontSize: '11px', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '8px' }}>
+                Select Curated Message Template:
+              </label>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {[
+                  { id: 'festive_offer', label: '🎁 Festive Offer & EMI' },
+                  { id: 'mistri_visit', label: '📐 Mistri 3D Laser Measurement' },
+                  { id: 'emi_scheme', label: '💳 0% Down Financing' },
+                  { id: 'quotation_link', label: '📑 Price Quotation & Token' },
+                  { id: 'custom', label: '💬 Custom Message' }
+                ].map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => {
+                      setActiveWhatsAppTemplate(t.id);
+                      setCustomWhatsAppMsg(getWhatsAppTemplateText(selectedLeadForWhatsApp, t.id));
+                    }}
+                    className={`btn-ghost-edit ${activeWhatsAppTemplate === t.id ? 'badge-emerald' : ''}`}
+                    style={{ fontSize: '11px', padding: '5px 10px', borderRadius: '6px' }}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Message Preview & Editor */}
+            <div style={{ marginBottom: '18px' }}>
+              <label style={{ fontSize: '11px', color: '#94A3B8', display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <span>Message Text (Editable before sending):</span>
+                <span style={{ color: '#10B981' }}>✓ WhatsApp Markdown Supported</span>
+              </label>
+              <textarea
+                rows={9}
+                value={customWhatsAppMsg}
+                onChange={(e) => setCustomWhatsAppMsg(e.target.value)}
+                style={{
+                  width: '100%',
+                  background: 'rgba(0, 0, 0, 0.4)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  borderRadius: '8px',
+                  color: '#FFFFFF',
+                  padding: '12px',
+                  fontSize: '12px',
+                  fontFamily: 'Inter, sans-serif',
+                  lineHeight: '1.5',
+                  resize: 'vertical'
+                }}
+              />
+            </div>
+
+            {/* Footer Actions */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                className="btn-ghost-edit"
+                onClick={() => setSelectedLeadForWhatsApp(null)}
+                style={{ padding: '8px 16px', fontSize: '12px' }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn-emerald"
+                onClick={handleSendSelectedWhatsApp}
+                style={{ padding: '8px 20px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Send size={14} /> Send via WhatsApp Web / App
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* 📝 CUSTOMER INTERACTION & CALL NOTES MODAL */}
+      {/* ============================================================== */}
+      {selectedLeadForNotes && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(3, 7, 18, 0.85)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '16px'
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: '580px',
+            width: '100%',
+            background: '#0B132B',
+            border: '1px solid rgba(56, 189, 248, 0.4)',
+            borderRadius: '16px',
+            padding: '24px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)'
+          }}>
+            {/* Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '14px', marginBottom: '16px' }}>
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: '900', color: '#38BDF8', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <MessageSquare size={18} /> Customer Conversation Timeline
+                </h3>
+                <p style={{ fontSize: '11.5px', color: '#94A3B8', margin: '3px 0 0 0' }}>
+                  Lead: <strong>{selectedLeadForNotes.Customer_Name}</strong> ({selectedLeadForNotes.Customer_Phone}) • {selectedLeadForNotes.Category_Models}
+                </p>
+              </div>
+              <button 
+                onClick={() => setSelectedLeadForNotes(null)}
+                style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Conversation Log Box */}
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ fontSize: '11px', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '6px' }}>
+                Conversation History:
+              </label>
+              <div style={{
+                maxHeight: '200px',
+                overflowY: 'auto',
+                background: 'rgba(0, 0, 0, 0.4)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                borderRadius: '8px',
+                padding: '12px',
+                fontSize: '11.5px',
+                color: '#E2E8F0',
+                lineHeight: '1.6',
+                whiteSpace: 'pre-wrap'
+              }}>
+                {selectedLeadForNotes.Notes ? (
+                  selectedLeadForNotes.Notes
+                ) : (
+                  <span style={{ color: '#64748B', fontStyle: 'italic' }}>No call notes logged yet. Add the first conversation note below.</span>
+                )}
+              </div>
+            </div>
+
+            {/* New Note Input */}
+            <div style={{ marginBottom: '18px' }}>
+              <label style={{ fontSize: '11px', color: '#94A3B8', display: 'block', marginBottom: '6px' }}>
+                Add New Call Note / Discussion Summary:
+              </label>
+              <textarea
+                rows={3}
+                placeholder="E.g. Visited with family. Prefers walnut teak finish. Requested delivery before Dussehra. Follow-up Saturday morning."
+                value={newNoteInput}
+                onChange={(e) => setNewNoteInput(e.target.value)}
+                style={{
+                  width: '100%',
+                  background: 'rgba(0, 0, 0, 0.4)',
+                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                  borderRadius: '8px',
+                  color: '#FFFFFF',
+                  padding: '10px',
+                  fontSize: '12px',
+                  fontFamily: 'Inter, sans-serif'
+                }}
+              />
+            </div>
+
+            {/* Footer Actions */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: '10.5px', color: '#10B981' }}>
+                ⚡ Auto-syncs to Cloudflare D1 Inquiries Table
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  className="btn-ghost-edit"
+                  onClick={() => setSelectedLeadForNotes(null)}
+                  style={{ padding: '7px 14px', fontSize: '11.5px' }}
+                >
+                  Close
+                </button>
+                <button
+                  className="btn-luxury-gold"
+                  onClick={handleAddLeadNote}
+                  disabled={!newNoteInput.trim()}
+                  style={{ padding: '7px 18px', fontSize: '11.5px', opacity: newNoteInput.trim() ? 1 : 0.5 }}
+                >
+                  ➕ Log Note
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

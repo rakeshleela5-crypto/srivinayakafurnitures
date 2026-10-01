@@ -360,34 +360,38 @@ KIT-MOD-404,Modular Kitchen 710 Marine Ply (Rft),Modular Kitchen,4500,3600,20,IS
                     </button>
                   </div>
 
-                  <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}>
-                    <table className="luxury-table" style={{ fontSize: '11px' }}>
+                  <div className="data-table-wrapper" style={{ maxHeight: '240px', overflowY: 'auto' }}>
+                    <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11px' }}>
                       <thead>
-                        <tr>
+                        <tr style={{ background: '#0B132B' }}>
+                          <th style={{ width: '40px', textAlign: 'center' }}>#</th>
                           <th>SKU</th>
                           <th>Model Name</th>
                           <th>Category</th>
-                          <th>MRP (₹)</th>
-                          <th>Selling (₹)</th>
-                          <th>Stock</th>
+                          <th style={{ textAlign: 'right' }}>MRP (₹)</th>
+                          <th style={{ textAlign: 'right' }}>Selling (₹)</th>
+                          <th style={{ textAlign: 'center' }}>Stock</th>
                         </tr>
                       </thead>
                       <tbody>
                         {parsedPreview.slice(0, 10).map((row, idx) => (
                           <tr key={idx}>
-                            <td style={{ fontFamily: 'JetBrains Mono', color: 'var(--accent-cyan)' }}>{row.SKU}</td>
-                            <td style={{ fontWeight: 'bold' }}>{row.Product_Name}</td>
-                            <td>{row.Main_Category}</td>
-                            <td>₹{row.MRP_INR.toLocaleString('en-IN')}</td>
-                            <td style={{ color: 'var(--accent-gold)' }}>₹{row.Selling_Price_INR.toLocaleString('en-IN')}</td>
-                            <td>{row.Warehouse_Qty}</td>
+                            <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10px' }}>
+                              {idx + 1}
+                            </td>
+                            <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-cyan)', padding: '6px 8px' }}>{row.SKU}</td>
+                            <td style={{ fontWeight: '700', color: '#FFF', padding: '6px 8px' }}>{row.Product_Name}</td>
+                            <td style={{ color: '#CBD5E1', padding: '6px 8px' }}>{row.Main_Category}</td>
+                            <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono', padding: '6px 8px' }}>₹{row.MRP_INR.toLocaleString('en-IN')}</td>
+                            <td style={{ textAlign: 'right', color: 'var(--accent-gold)', fontWeight: '800', fontFamily: 'JetBrains Mono', padding: '6px 8px' }}>₹{row.Selling_Price_INR.toLocaleString('en-IN')}</td>
+                            <td style={{ textAlign: 'center', fontWeight: '800', color: '#22C55E', padding: '6px 8px' }}>{row.Warehouse_Qty}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                     {parsedPreview.length > 10 && (
-                      <div style={{ padding: '6px 12px', fontSize: '10px', color: '#94A3B8', textAlign: 'center' }}>
-                        + {parsedPreview.length - 10} more items will be inserted...
+                      <div style={{ padding: '6px 12px', fontSize: '10px', color: '#94A3B8', textAlign: 'center', background: 'rgba(255,255,255,0.02)' }}>
+                        + {parsedPreview.length - 10} more items will be inserted into Cloudflare D1...
                       </div>
                     )}
                   </div>

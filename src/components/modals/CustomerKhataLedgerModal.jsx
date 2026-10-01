@@ -266,9 +266,10 @@ export function CustomerKhataLedgerModal({ isOpen, onClose, customerData = {} })
           )}
 
           <div className="data-table-wrapper">
-            <table className="luxury-table">
+            <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
               <thead>
-                <tr>
+                <tr style={{ background: '#0B132B' }}>
+                  <th style={{ width: '40px', textAlign: 'center' }}>#</th>
                   <th>Order Ref</th>
                   <th>Date</th>
                   <th>Order Items / Description</th>
@@ -281,6 +282,9 @@ export function CustomerKhataLedgerModal({ isOpen, onClose, customerData = {} })
               <tbody>
                 {khataOrders.map((o, idx) => (
                   <tr key={o.orderId}>
+                    <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>
+                      {idx + 1}
+                    </td>
                     <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-gold-light)', padding: '8px 10px' }}>
                       {o.orderId}
                     </td>

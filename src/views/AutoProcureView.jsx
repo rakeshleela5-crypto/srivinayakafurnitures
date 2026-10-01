@@ -2053,10 +2053,10 @@ export function AutoProcureView() {
                 <div style={{ fontSize: '12px', fontWeight: '800', color: 'var(--accent-gold-light)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   📦 ORDERED LINE ITEMS ({selectedPrintPo.items?.length || 1} SKUs • {selectedPrintPo.qty} Sets):
                 </div>
-                <table className="luxury-table" style={{ width: '100%' }}>
+                <table className="luxury-table sheets-grid" style={{ width: '100%', fontSize: '11.5px' }}>
                   <thead>
-                    <tr>
-                      <th style={{ width: '30px' }}>#</th>
+                    <tr style={{ background: '#0B132B' }}>
+                      <th style={{ width: '35px', textAlign: 'center' }}>#</th>
                       <th style={{ width: '56px', textAlign: 'center' }}>Photo</th>
                       <th>Furniture Model & Description</th>
                       <th>SKU Code</th>
@@ -2073,7 +2073,7 @@ export function AutoProcureView() {
                       const lineTot = (Number(it.qty) || 1) * (Number(it.unit_cost) || 0);
                       return (
                         <tr key={idx}>
-                          <td style={{ color: '#94A3B8', fontSize: '11px' }}>{idx + 1}</td>
+                          <td className="row-num" style={{ textAlign: 'center', color: '#94A3B8', fontFamily: 'JetBrains Mono', fontSize: '10.5px' }}>{idx + 1}</td>
                           <td style={{ textAlign: 'center', padding: '4px' }}>
                             <img 
                               src={imgUrl} 

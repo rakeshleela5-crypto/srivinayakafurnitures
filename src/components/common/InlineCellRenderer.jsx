@@ -36,12 +36,13 @@ export function EditableCell({
   children, style = {}, numeric = false,
   ...tdProps
 }) {
+  const resolvedProtected = typeof isProtected === 'function' ? isProtected(field) : Boolean(isProtected);
   const editing = isEditingFn ? isEditingFn(rowIdx, field) : false;
   const saving  = isSavingFn ? isSavingFn(rowIdx, field) : false;
   const saved   = isSavedFn ? isSavedFn(rowIdx, field) : false;
 
   const handleCellClick = (e) => {
-    if (isProtected || editing || saving) return;
+    if (resolvedProtected || editing || saving) return;
     if (e.target.closest('button, a, select, input, .no-edit-click')) {
       return;
     }
@@ -50,7 +51,7 @@ export function EditableCell({
 
   const tdStyle = {
     position: 'relative',
-    cursor: isProtected ? 'default' : 'pointer',
+    cursor: resolvedProtected ? 'default' : 'pointer',
     whiteSpace: 'nowrap',
     transition: 'background 0.2s, outline 0.2s',
     background: saved    ? 'rgba(16, 185, 129, 0.2)' :
@@ -63,8 +64,8 @@ export function EditableCell({
   return (
     <td
       onClick={handleCellClick}
-      onDoubleClick={() => !isProtected && !editing && startEdit?.(rowIdx, field, value, pkVal)}
-      title={isProtected ? `🔒 Protected field` : `Click or double-click to edit (saves to Cloudflare D1 SQL)`}
+      onDoubleClick={() => !resolvedProtected && !editing && startEdit?.(rowIdx, field, value, pkVal)}
+      title={resolvedProtected ? `🔒 Protected field` : `Click or double-click to edit (saves to Cloudflare D1 SQL)`}
       style={tdStyle}
       {...tdProps}
     >
@@ -141,7 +142,7 @@ export function EditableCell({
       ) : (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', width: '100%' }}>
           <div style={{ flex: 1, minWidth: 0 }}>{children ?? String(value ?? '—')}</div>
-          {!isProtected && (
+          {!resolvedProtected && (
             <button
               type="button"
               className="cell-edit-badge"

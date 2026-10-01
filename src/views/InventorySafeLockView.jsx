@@ -41,7 +41,7 @@ export function InventorySafeLockView() {
   } = useStore();
 
   // 📝 Inline cell edit — inventory table, saves to D1 'inventory'
-  const cellEdit = useInlineCellEdit({ table: 'inventory', pkField: 'SKU', readOnly: ['SKU', 'Warehouse_Qty', 'Reserved_SafeLock', 'Reorder_Status'], setRows: setInventory, showToast });
+  const cellEdit = useInlineCellEdit({ table: 'inventory', pkField: 'SKU', readOnly: ['SKU', 'Reorder_Status'], setRows: setInventory, showToast });
 
   const [selectedSku, setSelectedSku] = useState('BED-MOD-001');
   const [selectedCustomerFilter, setSelectedCustomerFilter] = useState('ALL');

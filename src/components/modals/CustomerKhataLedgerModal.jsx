@@ -27,6 +27,8 @@ import {
   generateKhataPaymentReminderText 
 } from '../../services/enterpriseErpService';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../../utils/audioUtils';
+import { EditableCell } from '../common/InlineCellRenderer';
+import { useInlineCellEdit } from '../../hooks/useInlineCellEdit';
 
 export function CustomerKhataLedgerModal({ isOpen, onClose, customerData = {} }) {
   const { showToast } = useStore();
@@ -38,6 +40,28 @@ export function CustomerKhataLedgerModal({ isOpen, onClose, customerData = {} })
   const [newPayRef, setNewPayRef] = useState('');
 
   const currentKhata = SAMPLE_CUSTOMER_KHATAS.find(k => k.customerId === selectedCustomerId) || SAMPLE_CUSTOMER_KHATAS[0];
+  const [khataOrders, setKhataOrders] = useState(currentKhata.orders);
+
+  React.useEffect(() => {
+    setKhataOrders(currentKhata.orders);
+  }, [selectedCustomerId]);
+
+  const cellEdit = useInlineCellEdit({
+    table: 'orders',
+    pkField: 'orderId',
+    readOnly: ['orderId', 'date'],
+    setRows: setKhataOrders,
+    showToast,
+    onSaved: (idx, field, val) => {
+      if (currentKhata.orders[idx]) {
+        currentKhata.orders[idx][field] = val;
+        const tot = currentKhata.orders.reduce((s, o) => s + (Number(o.total) || 0), 0);
+        const pd = currentKhata.orders.reduce((s, o) => s + (Number(o.paid) || 0), 0);
+        currentKhata.totalPaid = pd;
+        currentKhata.outstandingBalance = Math.max(0, tot - pd);
+      }
+    }
+  });
 
   if (!isOpen) return null;
 
@@ -255,23 +279,62 @@ export function CustomerKhataLedgerModal({ isOpen, onClose, customerData = {} })
                 </tr>
               </thead>
               <tbody>
-                {currentKhata.orders.map(o => (
+                {khataOrders.map((o, idx) => (
                   <tr key={o.orderId}>
-                    <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-gold-light)' }}>
+                    <td style={{ fontFamily: 'JetBrains Mono', fontWeight: '800', color: 'var(--accent-gold-light)', padding: '8px 10px' }}>
                       {o.orderId}
                     </td>
-                    <td style={{ color: '#94A3B8', fontSize: '11px' }}>{o.date}</td>
-                    <td style={{ color: '#FFFFFF', fontWeight: '700' }}>{o.description}</td>
-                    <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono' }}>₹{o.total.toLocaleString()}</td>
-                    <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono', color: 'var(--accent-emerald)' }}>₹{o.paid.toLocaleString()}</td>
-                    <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono', fontWeight: '800', color: o.total - o.paid > 0 ? 'var(--accent-rose)' : '#94A3B8' }}>
-                      ₹{(o.total - o.paid).toLocaleString()}
+                    <td style={{ color: '#94A3B8', fontSize: '11px', padding: '8px 10px' }}>{o.date}</td>
+                    {/* Description — Editable */}
+                    <EditableCell
+                      value={o.description}
+                      field="description"
+                      rowIdx={idx}
+                      pkVal={o.orderId}
+                      isProtected={false}
+                      style={{ color: '#FFFFFF', fontWeight: '700', padding: '8px 10px' }}
+                      {...cellEdit}
+                    />
+                    {/* Total — Editable Numeric */}
+                    <EditableCell
+                      value={o.total}
+                      field="total"
+                      rowIdx={idx}
+                      pkVal={o.orderId}
+                      numeric
+                      style={{ textAlign: 'right', fontFamily: 'JetBrains Mono', padding: '8px 10px' }}
+                      {...cellEdit}
+                    >
+                      ₹{(Number(o.total) || 0).toLocaleString()}
+                    </EditableCell>
+                    {/* Paid — Editable Numeric */}
+                    <EditableCell
+                      value={o.paid}
+                      field="paid"
+                      rowIdx={idx}
+                      pkVal={o.orderId}
+                      numeric
+                      style={{ textAlign: 'right', fontFamily: 'JetBrains Mono', color: 'var(--accent-emerald)', padding: '8px 10px' }}
+                      {...cellEdit}
+                    >
+                      ₹{(Number(o.paid) || 0).toLocaleString()}
+                    </EditableCell>
+                    <td style={{ textAlign: 'right', fontFamily: 'JetBrains Mono', fontWeight: '800', color: o.total - o.paid > 0 ? 'var(--accent-rose)' : '#94A3B8', padding: '8px 10px' }}>
+                      ₹{Math.max(0, (Number(o.total) || 0) - (Number(o.paid) || 0)).toLocaleString()}
                     </td>
-                    <td style={{ textAlign: 'center' }}>
+                    {/* Status — Editable */}
+                    <EditableCell
+                      value={o.status}
+                      field="status"
+                      rowIdx={idx}
+                      pkVal={o.orderId}
+                      style={{ textAlign: 'center', padding: '8px 10px' }}
+                      {...cellEdit}
+                    >
                       <span className={`badge ${o.status === 'PAID_FULL' ? 'badge-emerald' : 'badge-gold'}`} style={{ fontSize: '9.5px' }}>
-                        {o.status.replace(/_/g, ' ')}
+                        {String(o.status || '').replace(/_/g, ' ')}
                       </span>
-                    </td>
+                    </EditableCell>
                   </tr>
                 ))}
               </tbody>

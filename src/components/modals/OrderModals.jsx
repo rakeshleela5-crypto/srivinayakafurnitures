@@ -64,6 +64,20 @@ export function EditInquiryModal({ isOpen, onClose, inquiry = {} }) {
       timestamp: new Date().toISOString()
     });
 
+    // Cloudflare D1 SQL Live Sync
+    fetch('/api/d1-tables', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update_cell',
+        tableName: 'inquiries',
+        primaryKeyColumn: 'Inquiry_ID',
+        primaryKeyValue: inquiry.Inquiry_ID,
+        columnName: 'Customer_Name',
+        newValue: name
+      })
+    }).catch(e => console.warn('D1 sync', e));
+
     playSuccessChime();
     showToast(`✅ Lead #${inquiry.Inquiry_ID} (${name}) updated & synced to Cloudflare D1!`, true);
     onClose();
@@ -254,6 +268,20 @@ export function ManageOrderModal({ isOpen, onClose, order = {} }) {
       safelock_status: status,
       carpenter_payout: Number(payout)
     });
+
+    // Cloudflare D1 SQL Live Sync
+    fetch('/api/d1-tables', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update_cell',
+        tableName: 'orders',
+        primaryKeyColumn: 'Order_ID',
+        primaryKeyValue: order.Order_ID,
+        columnName: 'SafeLock_Status',
+        newValue: status
+      })
+    }).catch(e => console.warn('D1 sync', e));
 
     playSuccessChime();
     showToast(`Order #${order.Order_ID} updated in orders & synced to Cloudflare D1!`, true);

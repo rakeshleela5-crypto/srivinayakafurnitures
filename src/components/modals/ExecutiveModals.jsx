@@ -3,6 +3,8 @@ import { useStore } from '../../context/StoreContext';
 import { X, Check, Landmark, DollarSign, Send, Award, QrCode, FileText, Printer, Barcode, Copy, Share2, MapPin, Wrench, ShieldCheck, Truck, Users } from 'lucide-react';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../../utils/audioUtils';
 import { dispatchWebhookAction } from '../../services/webhookService';
+import { EditableCell } from '../common/InlineCellRenderer';
+import { useInlineCellEdit } from '../../hooks/useInlineCellEdit';
 
 export function RegisterArchitectModal({ isOpen, onClose }) {
   const { architects, setArchitects, showToast } = useStore();
@@ -1890,6 +1892,14 @@ export function ExecutiveRevenueLedgerModal({ isOpen, onClose }) {
   const [entryMode, setEntryMode] = useState('Showroom Counter Cash');
   const [entryReason, setEntryReason] = useState('Counter Token Advance');
 
+  const cellEdit = useInlineCellEdit({
+    table: 'orders',
+    pkField: 'Order_ID',
+    readOnly: ['Order_ID'],
+    setRows: setOrders,
+    showToast
+  });
+
   if (!isOpen) return null;
 
   const totalGrossRevenue = orders.reduce((sum, o) => sum + (Number(o.Total_Amount_INR) || 0), 0);
@@ -2134,31 +2144,91 @@ export function ExecutiveRevenueLedgerModal({ isOpen, onClose }) {
               </tr>
             </thead>
             <tbody>
-              {filteredOrders.map(o => {
+              {filteredOrders.map((o, idx) => {
                 const bal = Math.max(0, (Number(o.Total_Amount_INR) || 0) - (Number(o.Advance_Paid_INR) || 0));
                 return (
                   <tr key={o.Order_ID}>
-                    <td style={{ fontFamily: 'JetBrains Mono', color: 'var(--accent-cyan)', fontWeight: '800' }}>{o.Order_ID}</td>
-                    <td>
-                      <div style={{ fontWeight: '800', color: '#FFFFFF' }}>{o.Customer_Name}</div>
-                      <div style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>{o.Customer_Phone}</div>
-                    </td>
-                    <td style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.Ordered_SKU}</td>
-                    <td style={{ fontWeight: '800', color: 'var(--accent-gold-light)', fontFamily: 'JetBrains Mono' }}>₹{Number(o.Total_Amount_INR).toLocaleString()}</td>
-                    <td style={{ fontWeight: '800', color: 'var(--accent-emerald)', fontFamily: 'JetBrains Mono' }}>₹{Number(o.Advance_Paid_INR || 0).toLocaleString()}</td>
-                    <td style={{ fontWeight: '800', color: bal > 0 ? 'var(--accent-amber)' : 'var(--text-secondary)', fontFamily: 'JetBrains Mono' }}>
+                    <td style={{ fontFamily: 'JetBrains Mono', color: 'var(--accent-cyan)', fontWeight: '800', padding: '8px 10px' }}>{o.Order_ID}</td>
+                    {/* Customer Name — Editable */}
+                    <EditableCell
+                      value={o.Customer_Name}
+                      field="Customer_Name"
+                      rowIdx={idx}
+                      pkVal={o.Order_ID}
+                      isProtected={false}
+                      style={{ padding: '8px 10px', color: '#FFFFFF', fontWeight: '800' }}
+                      {...cellEdit}
+                    >
+                      <div>
+                        <div style={{ fontWeight: '800', color: '#FFFFFF' }}>{o.Customer_Name}</div>
+                        <div style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>{o.Customer_Phone}</div>
+                      </div>
+                    </EditableCell>
+                    {/* Ordered Suite — Editable */}
+                    <EditableCell
+                      value={o.Ordered_SKU}
+                      field="Ordered_SKU"
+                      rowIdx={idx}
+                      pkVal={o.Order_ID}
+                      isProtected={false}
+                      style={{ padding: '8px 10px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                      {...cellEdit}
+                    />
+                    {/* Total Bill — Editable Numeric */}
+                    <EditableCell
+                      value={o.Total_Amount_INR}
+                      field="Total_Amount_INR"
+                      rowIdx={idx}
+                      pkVal={o.Order_ID}
+                      numeric
+                      style={{ padding: '8px 10px', fontWeight: '800', color: 'var(--accent-gold-light)', fontFamily: 'JetBrains Mono' }}
+                      {...cellEdit}
+                    >
+                      ₹{Number(o.Total_Amount_INR).toLocaleString()}
+                    </EditableCell>
+                    {/* Advance Paid — Editable Numeric */}
+                    <EditableCell
+                      value={o.Advance_Paid_INR}
+                      field="Advance_Paid_INR"
+                      rowIdx={idx}
+                      pkVal={o.Order_ID}
+                      numeric
+                      style={{ padding: '8px 10px', fontWeight: '800', color: 'var(--accent-emerald)', fontFamily: 'JetBrains Mono' }}
+                      {...cellEdit}
+                    >
+                      ₹{Number(o.Advance_Paid_INR || 0).toLocaleString()}
+                    </EditableCell>
+                    <td style={{ fontWeight: '800', color: bal > 0 ? 'var(--accent-amber)' : 'var(--text-secondary)', fontFamily: 'JetBrains Mono', padding: '8px 10px' }}>
                       {bal > 0 ? `₹${bal.toLocaleString()}` : 'Settled ✓'}
                     </td>
-                    <td>
+                    {/* Payment Mode — Editable */}
+                    <EditableCell
+                      value={o.Payment_Mode || 'Dynamic UPI QR'}
+                      field="Payment_Mode"
+                      rowIdx={idx}
+                      pkVal={o.Order_ID}
+                      isProtected={false}
+                      style={{ padding: '8px 10px' }}
+                      {...cellEdit}
+                    >
                       <span className="badge badge-purple" style={{ fontSize: '9px' }}>
                         {o.Payment_Mode || 'Dynamic UPI QR'}
                       </span>
-                    </td>
-                    <td>
+                    </EditableCell>
+                    {/* Status — Editable */}
+                    <EditableCell
+                      value={o.SafeLock_Status || 'SAFELOCKED'}
+                      field="SafeLock_Status"
+                      rowIdx={idx}
+                      pkVal={o.Order_ID}
+                      isProtected={false}
+                      style={{ padding: '8px 10px' }}
+                      {...cellEdit}
+                    >
                       <span className={`badge ${(o.SafeLock_Status || '').includes('DELIVERED') ? 'badge-emerald' : 'badge-gold'}`} style={{ fontSize: '8.5px' }}>
                         {o.SafeLock_Status || 'SAFELOCKED'}
                       </span>
-                    </td>
+                    </EditableCell>
                   </tr>
                 );
               })}

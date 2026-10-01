@@ -34,13 +34,17 @@ import {
 } from 'lucide-react';
 import { formatDisplayDate } from '../common/UniversalAuditWindowBar';
 import { playScanBeep, playSuccessChime, triggerGoldenConfetti } from '../../utils/audioUtils';
+import { EditableCell } from '../common/InlineCellRenderer';
+import { useInlineCellEdit } from '../../hooks/useInlineCellEdit';
 
 export function UniversalDateAuditModal({ isOpen, onClose, data = {} }) {
   const { 
     auditDateWindow, 
     updateAuditWindow, 
     orders = [], 
+    setOrders,
     inquiries = [], 
+    setInquiries,
     tallyVouchers = [], 
     bankTransactions = [], 
     purchaseOrders = [], 
@@ -48,6 +52,7 @@ export function UniversalDateAuditModal({ isOpen, onClose, data = {} }) {
     vipProjects = [],
     architects = [],
     inventory = [],
+    setInventory,
     floorAgingStock = [],
     documentsLog = [],
     stockLedger = [],
@@ -55,6 +60,15 @@ export function UniversalDateAuditModal({ isOpen, onClose, data = {} }) {
     parseToIsoDate,
     showToast 
   } = useStore();
+
+  // 📝 Inline Cell Edit for Orders in Modal
+  const ordersCellEdit = useInlineCellEdit({
+    table: 'orders',
+    pkField: 'Order_ID',
+    readOnly: ['Order_ID'],
+    setRows: setOrders,
+    showToast
+  });
 
   // Active context: which screen triggered the modal
   const callerContext = data.context || activeTab || 'executive';
@@ -1464,18 +1478,75 @@ export function UniversalDateAuditModal({ isOpen, onClose, data = {} }) {
                 {filteredOrders.length === 0 ? (
                   <tr><td colSpan="8" style={{ textAlign: 'center', padding: '30px', color: '#94A3B8' }}>No orders found in selected range.</td></tr>
                 ) : (
-                  filteredOrders.map(o => (
+                  filteredOrders.map((o, idx) => (
                     <tr key={o.Order_ID} style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
                       <td style={{ padding: '8px 10px', fontWeight: '800', color: '#F59E0B' }}>{o.Order_ID}</td>
                       <td style={{ padding: '8px 10px', color: '#CBD5E1', fontFamily: 'monospace' }}>{formatDisplayDate((o.Created_At || '').slice(0, 10) || fromDate)}</td>
-                      <td style={{ padding: '8px 10px', fontWeight: '700', color: '#FFFFFF' }}>{o.Customer_Name}</td>
-                      <td style={{ padding: '8px 10px', color: '#94A3B8' }}>{o.Customer_Phone}</td>
-                      <td style={{ padding: '8px 10px', color: '#E2E8F0' }}>{o.Ordered_SKU}</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#FFFFFF' }}>₹{Number(o.Total_Amount_INR || 0).toLocaleString('en-IN')}</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#22C55E' }}>₹{Number(o.Advance_Paid_INR || 0).toLocaleString('en-IN')}</td>
-                      <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                      {/* Customer Name — Editable */}
+                      <EditableCell
+                        value={o.Customer_Name}
+                        field="Customer_Name"
+                        rowIdx={idx}
+                        pkVal={o.Order_ID}
+                        isProtected={false}
+                        style={{ padding: '8px 10px', fontWeight: '700', color: '#FFFFFF' }}
+                        {...ordersCellEdit}
+                      />
+                      {/* Customer Phone — Editable */}
+                      <EditableCell
+                        value={o.Customer_Phone}
+                        field="Customer_Phone"
+                        rowIdx={idx}
+                        pkVal={o.Order_ID}
+                        isProtected={false}
+                        style={{ padding: '8px 10px', color: 'var(--accent-cyan)', fontFamily: 'JetBrains Mono' }}
+                        {...ordersCellEdit}
+                      />
+                      {/* Ordered SKU — Editable */}
+                      <EditableCell
+                        value={o.Ordered_SKU}
+                        field="Ordered_SKU"
+                        rowIdx={idx}
+                        pkVal={o.Order_ID}
+                        isProtected={false}
+                        style={{ padding: '8px 10px', color: '#E2E8F0' }}
+                        {...ordersCellEdit}
+                      />
+                      {/* Total Value — Editable Numeric */}
+                      <EditableCell
+                        value={o.Total_Amount_INR}
+                        field="Total_Amount_INR"
+                        rowIdx={idx}
+                        pkVal={o.Order_ID}
+                        numeric
+                        style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#FFFFFF' }}
+                        {...ordersCellEdit}
+                      >
+                        ₹{Number(o.Total_Amount_INR || 0).toLocaleString('en-IN')}
+                      </EditableCell>
+                      {/* Advance Paid — Editable Numeric */}
+                      <EditableCell
+                        value={o.Advance_Paid_INR}
+                        field="Advance_Paid_INR"
+                        rowIdx={idx}
+                        pkVal={o.Order_ID}
+                        numeric
+                        style={{ padding: '8px 10px', textAlign: 'right', fontWeight: '800', color: '#22C55E' }}
+                        {...ordersCellEdit}
+                      >
+                        ₹{Number(o.Advance_Paid_INR || 0).toLocaleString('en-IN')}
+                      </EditableCell>
+                      {/* SafeLock Status — Editable */}
+                      <EditableCell
+                        value={o.SafeLock_Status}
+                        field="SafeLock_Status"
+                        rowIdx={idx}
+                        pkVal={o.Order_ID}
+                        style={{ padding: '8px 10px', textAlign: 'center' }}
+                        {...ordersCellEdit}
+                      >
                         <span className="badge badge-gold" style={{ fontSize: '9px' }}>{o.SafeLock_Status || 'SAFELOCKED'}</span>
-                      </td>
+                      </EditableCell>
                     </tr>
                   ))
                 )}
